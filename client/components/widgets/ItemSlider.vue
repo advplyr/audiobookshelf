@@ -132,10 +132,10 @@ export default {
     editAuthor(author) {
       this.$store.commit('globals/showEditAuthorModal', author)
     },
-    editItem(libraryItem) {
+    editItem(libraryItem, tab = 'details') {
       var itemIds = this.items.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', itemIds)
-      this.$store.commit('showEditModal', libraryItem)
+      this.$store.commit('showEditModalOnTab', { libraryItem, tab: tab || 'details' })
     },
     selectItem(payload) {
       this.$emit('selectEntity', payload)

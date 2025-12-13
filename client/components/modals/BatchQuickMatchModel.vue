@@ -88,7 +88,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
@@ -96,6 +96,9 @@ export default {
   },
   methods: {
     init() {
+      // Fetch providers when modal is shown
+      this.$store.dispatch('scanners/fetchProviders')
+
       // If we don't have a set provider (first open of dialog) or we've switched library, set
       // the selected provider to the current library default provider
       if (!this.options.provider || this.lastUsedLibrary != this.currentLibraryId) {
@@ -127,8 +130,7 @@ export default {
           this.show = false
         })
     }
-  },
-  mounted() {}
+  }
 }
 </script>
 

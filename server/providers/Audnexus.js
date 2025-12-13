@@ -55,7 +55,7 @@ class Audnexus {
     return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
       .then((res) => res.data || [])
       .catch((error) => {
-        Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error)
+        Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error.message)
         return []
       })
   }
@@ -82,7 +82,7 @@ class Audnexus {
     return this._processRequest(this.limiter(() => axios.get(authorRequestUrl.toString())))
       .then((res) => res.data)
       .catch((error) => {
-        Logger.error(`[Audnexus] Author request failed for ${asin}`, error)
+        Logger.error(`[Audnexus] Author request failed for ${asin}`, error.message)
         return null
       })
   }
@@ -158,7 +158,7 @@ class Audnexus {
     return this._processRequest(this.limiter(() => axios.get(chaptersRequestUrl.toString())))
       .then((res) => res.data)
       .catch((error) => {
-        Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
+        Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error.message)
         return null
       })
   }

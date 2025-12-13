@@ -12,24 +12,24 @@
       <p class="text-base font-mono ml-4 hidden md:block">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
-    <div class="flex flex-wrap-reverse lg:flex-nowrap justify-center py-4 px-4">
+    <div class="flex flex-wrap-reverse min-[1120px]:flex-nowrap justify-center py-4 px-4">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
-          <div class="w-12 hidden lg:block" />
+          <div class="w-12 hidden min-w-[1120px]:block" />
           <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
           <div class="grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" :label="$strings.LabelShowSeconds" class="mx-2" />
-          <div class="w-32 hidden lg:block" />
+          <div class="w-32 hidden min-[1120px]:block" />
         </div>
         <div class="flex items-center mb-3 py-1 -mx-1">
-          <div class="w-12 hidden lg:block" />
+          <div class="w-12 hidden min-[1120px]:block" />
           <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1 whitespace-nowrap" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
           <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg-bg' : 'bg-primary'" class="mx-1 whitespace-nowrap" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
           <ui-btn color="bg-primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
           <div class="grow" />
           <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
           <ui-btn v-if="hasChanges" color="bg-success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
-          <div class="w-32 hidden lg:block" />
+          <div class="w-32 hidden min-[1120px]:block" />
         </div>
 
         <div class="overflow-hidden">
@@ -117,16 +117,16 @@
                 </button>
               </ui-tooltip>
               <ui-tooltip :text="selectedChapterId === chapter.id && isPlayingChapter ? $strings.MessagePauseChapter : $strings.MessagePlayChapter" direction="bottom">
-                <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
+                <button :disabled="!getAudioTrackForTime(chapter.start)" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150 disabled:opacity-50 disabled:cursor-not-allowed" @click="playChapter(chapter)">
                   <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
                   <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-symbols text-base">pause</span>
-                  <span v-else class="material-symbols text-base">play_arrow</span>
+                  <span v-else class="material-symbols text-xl">play_arrow</span>
                 </button>
               </ui-tooltip>
               <ui-tooltip v-if="selectedChapterId === chapter.id && (isPlayingChapter || isLoadingChapter)" :text="$strings.TooltipAdjustChapterStart" direction="bottom">
                 <div class="ml-2 text-xs text-gray-300 font-mono min-w-10 cursor-pointer hover:text-white transition-colors duration-150" @click="adjustChapterStartTime(chapter)">{{ elapsedTime }}s</div>
               </ui-tooltip>
-              <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
+              <ui-tooltip v-if="chapter.error" :text="chapter.error" plaintext direction="left">
                 <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
                   <span class="material-symbols text-lg">error_outline</span>
                 </button>
@@ -150,7 +150,7 @@
         </div>
       </div>
 
-      <div class="w-full max-w-xl py-4 px-2">
+      <div class="w-full max-w-3xl min-[1120px]:max-w-xl py-4 px-2">
         <div class="flex items-center mb-4 py-1">
           <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
           <div class="grow" />
@@ -160,13 +160,13 @@
           </ui-tooltip>
         </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
-          <div class="grow">{{ $strings.LabelFilename }}</div>
+          <div class="grow min-[1120px]:max-w-64 xl:max-w-sm">{{ $strings.LabelFilename }}</div>
           <div class="w-20">{{ $strings.LabelDuration }}</div>
           <div class="w-20 hidden md:block text-center">{{ $strings.HeaderChapters }}</div>
         </div>
         <div v-for="track in audioTracks" :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success/10' : ''">
-          <div class="grow max-w-[calc(100%-80px)] pr-2">
-            <p class="text-xs truncate max-w-sm">{{ track.metadata.filename }}</p>
+          <div class="pr-2 grow min-[1120px]:max-w-64 xl:max-w-sm">
+            <p class="text-xs truncate">{{ track.metadata.filename }}</p>
           </div>
           <div class="w-20" style="min-width: 80px">
             <p class="text-xs font-mono text-gray-200">{{ $secondsToTimestamp(Math.round(track.duration), false, true) }}</p>
@@ -594,6 +594,14 @@ export default {
 
       this.hasChanges = hasChanges
     },
+    getAudioTrackForTime(time) {
+      if (typeof time !== 'number') {
+        return null
+      }
+      return this.tracks.find((at) => {
+        return time >= at.startOffset && time < at.startOffset + at.duration
+      })
+    },
     playChapter(chapter) {
       console.log('Play Chapter', chapter.id)
       if (this.selectedChapterId === chapter.id) {
@@ -608,9 +616,12 @@ export default {
         this.destroyAudioEl()
       }
 
-      const audioTrack = this.tracks.find((at) => {
-        return chapter.start >= at.startOffset && chapter.start < at.startOffset + at.duration
-      })
+      const audioTrack = this.getAudioTrackForTime(chapter.start)
+      if (!audioTrack) {
+        console.error('No audio track found for chapter', chapter)
+        return
+      }
+
       this.selectedChapter = chapter
       this.isLoadingChapter = true
 
@@ -697,11 +708,7 @@ export default {
           this.saving = false
           if (data.updated) {
             this.$toast.success(this.$strings.ToastChaptersUpdated)
-            if (this.previousRoute) {
-              this.$router.push(this.previousRoute)
-            } else {
-              this.$router.push(`/item/${this.libraryItem.id}`)
-            }
+            this.reloadLibraryItem()
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
@@ -874,11 +881,7 @@ export default {
         .then((data) => {
           if (data.updated) {
             this.$toast.success(this.$strings.ToastChaptersRemoved)
-            if (this.previousRoute) {
-              this.$router.push(this.previousRoute)
-            } else {
-              this.$router.push(`/item/${this.libraryItem.id}`)
-            }
+            this.reloadLibraryItem()
           } else {
             this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
@@ -983,6 +986,18 @@ export default {
         }
         this.libraryItem = libraryItem
       }
+    },
+    reloadLibraryItem() {
+      this.$axios
+        .$get(`/api/items/${this.libraryItem.id}?expanded=1`)
+        .then((data) => {
+          this.libraryItem = data
+          this.initChapters()
+        })
+        .catch((error) => {
+          console.error('Failed to reload library item', error)
+          this.$toast.error(this.$strings.ToastFailedToLoadData)
+        })
     }
   },
   mounted() {

@@ -48,9 +48,14 @@ class BackupManager {
   }
 
   async init() {
-    const backupsDirExists = await fs.pathExists(this.backupPath)
-    if (!backupsDirExists) {
-      await fs.ensureDir(this.backupPath)
+    try {
+      const backupsDirExists = await fs.pathExists(this.backupPath)
+      if (!backupsDirExists) {
+        await fs.ensureDir(this.backupPath)
+      }
+    } catch (error) {
+      Logger.error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}": ${error.message}`)
+      throw new Error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}"`, { cause: error })
     }
 
     await this.loadBackups()

@@ -2,7 +2,7 @@
   <div id="match-wrapper" class="w-full h-full overflow-hidden px-2 md:px-4 py-4 md:py-6 relative">
     <form @submit.prevent="submitSearch">
       <div class="flex flex-wrap md:flex-nowrap items-center justify-start -mx-1">
-        <div class="w-36 px-1">
+        <div v-if="providersLoaded" class="w-36 px-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="grow md:w-72 px-1">
@@ -77,8 +77,8 @@
           <ui-checkbox v-model="selectedMatchUsage.author" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" :label="$strings.LabelAuthor" />
-            <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white/60">
-              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('author', mediaMetadata.authorName)">{{ mediaMetadata.authorName }}</a>
+            <p v-if="mediaMetadata.authorName || (isPodcast && mediaMetadata.author)" class="text-xs ml-1 text-white/60">
+              {{ $strings.LabelCurrently }} <a title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('author', isPodcast ? mediaMetadata.author : mediaMetadata.authorName)">{{ isPodcast ? mediaMetadata.author : mediaMetadata.authorName }}</a>
             </p>
           </div>
         </div>
@@ -253,6 +253,7 @@ export default {
       hasSearched: false,
       selectedMatch: null,
       selectedMatchOrig: null,
+      waitingForProviders: false,
       selectedMatchUsage: {
         title: true,
         subtitle: true,
@@ -285,9 +286,19 @@ export default {
       handler(newVal) {
         if (newVal) this.init()
       }
+    },
+    providersLoaded(isLoaded) {
+      // Complete initialization once providers are loaded
+      if (isLoaded && this.waitingForProviders) {
+        this.waitingForProviders = false
+        this.initProviderAndSearch()
+      }
     }
   },
   computed: {
+    providersLoaded() {
+      return this.$store.getters['scanners/areProvidersLoaded']
+    },
     isProcessing: {
       get() {
         return this.processing
@@ -319,7 +330,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return this.$store.state.scanners.bookProviders
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -400,7 +411,9 @@ export default {
         this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
-      this.persistProvider()
+      if (!this.isPodcast) {
+        this.persistProvider()
+      }
       this.runSearch()
     },
     async runSearch() {
@@ -476,6 +489,24 @@ export default {
 
       this.checkboxToggled()
     },
+    initProviderAndSearch() {
+      // Set provider based on media type
+      if (this.isPodcast) {
+        this.provider = 'itunes'
+      } else {
+        this.provider = this.getDefaultBookProvider()
+      }
+
+      // Prefer using ASIN if set and using audible provider
+      if (this.provider.startsWith('audible') && this.libraryItem.media.metadata.asin) {
+        this.searchTitle = this.libraryItem.media.metadata.asin
+        this.searchAuthor = ''
+      }
+
+      if (this.searchTitle) {
+        this.submitSearch()
+      }
+    },
     init() {
       this.clearSelectedMatch()
       this.initSelectedMatchUsage()
@@ -493,19 +524,13 @@ export default {
       }
       this.searchTitle = this.libraryItem.media.metadata.title
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
-      if (this.isPodcast) this.provider = 'itunes'
-      else {
-        this.provider = this.getDefaultBookProvider()
-      }
 
-      // Prefer using ASIN if set and using audible provider
-      if (this.provider.startsWith('audible') && this.libraryItem.media.metadata.asin) {
-        this.searchTitle = this.libraryItem.media.metadata.asin
-        this.searchAuthor = ''
-      }
-
-      if (this.searchTitle) {
-        this.submitSearch()
+      // Wait for providers to be loaded before setting provider and searching
+      if (this.providersLoaded || this.isPodcast) {
+        this.waitingForProviders = false
+        this.initProviderAndSearch()
+      } else {
+        this.waitingForProviders = true
       }
     },
     selectMatch(match) {
@@ -635,6 +660,10 @@ export default {
       this.selectedMatch = null
       this.selectedMatchOrig = null
     }
+  },
+  mounted() {
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
   }
 }
 </script>

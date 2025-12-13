@@ -11,7 +11,7 @@ const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } 
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class BookFinder {
-  #providerResponseTimeout = 30000
+  #providerResponseTimeout = 10000
 
   constructor() {
     this.openLibrary = new OpenLibrary()
@@ -385,6 +385,11 @@ class BookFinder {
 
     if (!title) return books
 
+    // Truncate excessively long inputs to prevent ReDoS attacks
+    const MAX_INPUT_LENGTH = 500
+    title = title.substring(0, MAX_INPUT_LENGTH)
+    author = author?.substring(0, MAX_INPUT_LENGTH) || author
+
     const isTitleAsin = isValidASIN(title.toUpperCase())
 
     let actualTitleQuery = title
@@ -402,7 +407,8 @@ class BookFinder {
       let authorCandidates = new BookFinder.AuthorCandidates(cleanAuthor, this.audnexus)
 
       // Remove underscores and parentheses with their contents, and replace with a separator
-      const cleanTitle = title.replace(/\[.*?\]|\(.*?\)|{.*?}|_/g, ' - ')
+      // Use negated character classes to prevent ReDoS vulnerability (input length validated at entry point)
+      const cleanTitle = title.replace(/\[[^\]]*\]|\([^)]*\)|{[^}]*}|_/g, ' - ')
       // Split title into hypen-separated parts
       const titleParts = cleanTitle.split(/ - | -|- /)
       for (const titlePart of titleParts) authorCandidates.add(titlePart)
@@ -422,7 +428,7 @@ class BookFinder {
       }
     }
 
-    if (books.length) {
+    if (books.length && libraryItem) {
       const isAudibleProvider = provider.startsWith('audible')
       const libraryItemDurationMinutes = libraryItem?.media?.duration ? libraryItem.media.duration / 60 : null
 
@@ -608,6 +614,14 @@ class BookFinder {
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)
       }
+    } else if (provider === 'best') {
+      // Best providers: google, fantlab, and audible.com
+      const bestProviders = ['google', 'fantlab', 'audible']
+      for (const providerString of bestProviders) {
+        const providerResults = await this.search(null, providerString, title, author, options)
+        Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
+        searchResults.push(...providerResults)
+      }
     } else {
       searchResults = await this.search(null, provider, title, author, options)
     }
@@ -660,7 +674,9 @@ function cleanTitleForCompares(title, keepSubtitle = false) {
   let stripped = keepSubtitle ? title : stripSubtitle(title)
 
   // Remove text in paranthesis (i.e. "Ender's Game (Ender's Saga)" becomes "Ender's Game")
-  let cleaned = stripped.replace(/ *\([^)]*\) */g, '')
+  // Use negated character class to prevent ReDoS vulnerability (input length validated at entry point)
+  let cleaned = stripped.replace(/\([^)]*\)/g, '') // Remove parenthetical content
+  cleaned = cleaned.replace(/\s+/g, ' ').trim() // Clean up any resulting multiple spaces
 
   // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
   cleaned = cleaned.replace(/'/g, '')

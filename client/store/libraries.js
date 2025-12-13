@@ -117,7 +117,6 @@ export const actions = {
         const library = data.library
         const filterData = data.filterdata
         const issues = data.issues || 0
-        const customMetadataProviders = data.customMetadataProviders || []
         const numUserPlaylists = data.numUserPlaylists
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
@@ -131,8 +130,6 @@ export const actions = {
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setNumUserPlaylists', numUserPlaylists)
-        commit('scanners/setCustomMetadataProviders', customMetadataProviders, { root: true })
-
         commit('setCurrentLibrary', { id: libraryId })
         return data
       })
@@ -159,7 +156,7 @@ export const actions = {
       .$get(`/api/libraries`)
       .then((data) => {
         commit('set', data.libraries)
-        commit('setLastLoad')
+        commit('setLastLoad', new Date())
       })
       .catch((error) => {
         console.error('Failed', error)
@@ -176,8 +173,8 @@ export const mutations = {
   setFoldersLastUpdate(state) {
     state.folderLastUpdate = Date.now()
   },
-  setLastLoad(state) {
-    state.lastLoad = Date.now()
+  setLastLoad(state, date) {
+    state.lastLoad = date
   },
   setLibraryIssues(state, val) {
     state.issues = val

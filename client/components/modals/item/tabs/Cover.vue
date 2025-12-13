@@ -51,19 +51,21 @@
     <form @submit.prevent="submitSearchForm">
       <div class="flex flex-wrap sm:flex-nowrap items-center justify-start -mx-1">
         <div class="w-48 grow p-1">
-          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
+          <ui-dropdown v-model="provider" :items="providers" :disabled="searchInProgress" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 grow p-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
+          <ui-text-input-with-label v-model="searchTitle" :disabled="searchInProgress" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
         <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 grow p-1">
-          <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
+          <ui-text-input-with-label v-model="searchAuthor" :disabled="searchInProgress" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn v-if="!searchInProgress" class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
+        <ui-btn v-else class="mt-5 ml-1 md:min-w-24" :padding-x="4" type="button" color="bg-error" @click.prevent="cancelCurrentSearch">{{ $strings.ButtonCancel }}</ui-btn>
       </div>
     </form>
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center sm:max-h-80 sm:overflow-y-scroll mt-2 max-w-full">
-      <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
+      <p v-if="searchInProgress && !coversFound.length" class="text-gray-300 py-4">{{ $strings.MessageLoading }}</p>
+      <p v-else-if="!searchInProgress && !coversFound.length" class="text-gray-300 py-4">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -105,7 +107,10 @@ export default {
       showLocalCovers: false,
       previewUpload: null,
       selectedFile: null,
-      provider: 'google'
+      provider: 'google',
+      currentSearchRequestId: null,
+      searchInProgress: false,
+      socketListenersActive: false
     }
   },
   watch: {
@@ -128,8 +133,8 @@ export default {
       }
     },
     providers() {
-      if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return [{ text: 'All', value: 'all' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
+      if (this.isPodcast) return this.$store.state.scanners.podcastCoverProviders
+      return this.$store.state.scanners.bookCoverProviders
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -186,6 +191,9 @@ export default {
           _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
+    },
+    socket() {
+      return this.$root.socket
     }
   },
   methods: {
@@ -235,7 +243,19 @@ export default {
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
+      else {
+        // Migrate from 'all' to 'best' (only once)
+        const migrationKey = 'book-cover-provider-migrated'
+        const currentProvider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
+
+        if (!localStorage.getItem(migrationKey) && currentProvider === 'all') {
+          localStorage.setItem('book-cover-provider', 'best')
+          localStorage.setItem(migrationKey, 'true')
+          this.provider = 'best'
+        } else {
+          this.provider = currentProvider
+        }
+      }
     },
     removeCover() {
       if (!this.coverPath) {
@@ -291,22 +311,116 @@ export default {
         console.error('PersistProvider', error)
       }
     },
+    generateRequestId() {
+      return `cover-search-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    },
+    addSocketListeners() {
+      if (!this.socket || this.socketListenersActive) return
+
+      this.socket.on('cover_search_result', this.handleSearchResult)
+      this.socket.on('cover_search_complete', this.handleSearchComplete)
+      this.socket.on('cover_search_error', this.handleSearchError)
+      this.socket.on('cover_search_provider_error', this.handleProviderError)
+      this.socket.on('cover_search_cancelled', this.handleSearchCancelled)
+      this.socket.on('disconnect', this.handleSocketDisconnect)
+      this.socketListenersActive = true
+    },
+    removeSocketListeners() {
+      if (!this.socket || !this.socketListenersActive) return
+
+      this.socket.off('cover_search_result', this.handleSearchResult)
+      this.socket.off('cover_search_complete', this.handleSearchComplete)
+      this.socket.off('cover_search_error', this.handleSearchError)
+      this.socket.off('cover_search_provider_error', this.handleProviderError)
+      this.socket.off('cover_search_cancelled', this.handleSearchCancelled)
+      this.socket.off('disconnect', this.handleSocketDisconnect)
+      this.socketListenersActive = false
+    },
+    handleSearchResult(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      // Add new covers to the list (avoiding duplicates)
+      const newCovers = data.covers.filter((cover) => !this.coversFound.includes(cover))
+      this.coversFound.push(...newCovers)
+    },
+    handleSearchComplete(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleSearchError(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.error('[Cover Search] Search error:', data.error)
+      this.$toast.error(this.$strings.ToastCoverSearchFailed)
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleProviderError(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      console.warn(`[Cover Search] Provider ${data.provider} failed:`, data.error)
+    },
+    handleSearchCancelled(data) {
+      if (data.requestId !== this.currentSearchRequestId) return
+
+      this.searchInProgress = false
+      this.currentSearchRequestId = null
+    },
+    handleSocketDisconnect() {
+      // If we were in the middle of a search, cancel it (server can't send results anymore)
+      if (this.searchInProgress && this.currentSearchRequestId) {
+        this.searchInProgress = false
+        this.currentSearchRequestId = null
+      }
+    },
+    cancelCurrentSearch() {
+      if (!this.currentSearchRequestId || !this.socket?.connected) {
+        console.error('[Cover Search] Socket not connected')
+        this.$toast.error(this.$strings.ToastConnectionNotAvailable)
+        return
+      }
+
+      this.socket.emit('cancel_cover_search', this.currentSearchRequestId)
+      this.currentSearchRequestId = null
+      this.searchInProgress = false
+    },
     async submitSearchForm() {
+      if (!this.socket?.connected) {
+        console.error('[Cover Search] Socket not connected')
+        this.$toast.error(this.$strings.ToastConnectionNotAvailable)
+        return
+      }
+
+      // Cancel any existing search
+      if (this.searchInProgress) {
+        this.cancelCurrentSearch()
+      }
+
       // Store provider in local storage
       this.persistProvider()
 
-      this.isProcessing = true
-      const searchQuery = this.getSearchQuery()
-      const results = await this.$axios
-        .$get(`/api/search/covers?${searchQuery}`)
-        .then((res) => res.results)
-        .catch((error) => {
-          console.error('Failed', error)
-          return []
-        })
-      this.coversFound = results
-      this.isProcessing = false
+      // Setup socket listeners if not already done
+      this.addSocketListeners()
+
+      // Clear previous results
+      this.coversFound = []
       this.hasSearched = true
+      this.searchInProgress = true
+
+      // Generate unique request ID
+      const requestId = this.generateRequestId()
+      this.currentSearchRequestId = requestId
+
+      // Emit search request via WebSocket
+      this.socket.emit('search_covers', {
+        requestId,
+        title: this.searchTitle,
+        author: this.searchAuthor || '',
+        provider: this.provider,
+        podcast: this.isPodcast
+      })
     },
     setCover(coverFile) {
       this.isProcessing = true
@@ -320,6 +434,20 @@ export default {
           this.isProcessing = false
         })
     }
+  },
+  mounted() {
+    // Setup socket listeners when component is mounted
+    this.addSocketListeners()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
+  },
+  beforeDestroy() {
+    // Cancel any ongoing search when component is destroyed
+    if (this.searchInProgress) {
+      this.cancelCurrentSearch()
+    }
+    // Remove socket listeners
+    this.removeSocketListeners()
   }
 }
 </script>

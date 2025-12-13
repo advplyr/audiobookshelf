@@ -121,28 +121,27 @@ class PodcastManager {
       await fs.mkdir(this.currentDownload.libraryItem.path)
     }
 
-    let success = false
-    if (this.currentDownload.isMp3) {
-      // Download episode and tag it
-      const ffmpegDownloadResponse = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
-        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-      })
-      success = !!ffmpegDownloadResponse?.success
+    // Download episode and tag it
+    const ffmpegDownloadResponse = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+      Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+    })
+    let success = !!ffmpegDownloadResponse?.success
 
-      // If failed due to ffmpeg error, retry without tagging
-      // e.g. RSS feed may have incorrect file extension and file type
-      // See https://github.com/advplyr/audiobookshelf/issues/3837
-      if (!success && ffmpegDownloadResponse?.isFfmpegError) {
-        Logger.info(`[PodcastManager] Retrying episode download without tagging`)
-        // Download episode only
-        success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
-          .then(() => true)
-          .catch((error) => {
-            Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-            return false
-          })
+    if (success) {
+      // Attempt to ffprobe and add podcast episode audio file
+      success = await this.scanAddPodcastEpisodeAudioFile()
+      if (!success) {
+        Logger.error(`[PodcastManager] Failed to scan and add podcast episode audio file - removing file`)
+        await fs.remove(this.currentDownload.targetPath)
       }
-    } else {
+    }
+
+    // If failed due to ffmpeg or ffprobe error, retry without tagging
+    // e.g. RSS feed may have incorrect file extension and file type
+    // See https://github.com/advplyr/audiobookshelf/issues/3837
+    // e.g. Ffmpeg may be download the file without streams causing the ffprobe to fail
+    if (!success && !ffmpegDownloadResponse?.isRequestError) {
+      Logger.info(`[PodcastManager] Retrying episode download without tagging`)
       // Download episode only
       success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath)
         .then(() => true)
@@ -150,23 +149,20 @@ class PodcastManager {
           Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
           return false
         })
+
+      if (success) {
+        success = await this.scanAddPodcastEpisodeAudioFile()
+        if (!success) {
+          Logger.error(`[PodcastManager] Failed to scan and add podcast episode audio file - removing file`)
+          await fs.remove(this.currentDownload.targetPath)
+        }
+      }
     }
 
     if (success) {
-      success = await this.scanAddPodcastEpisodeAudioFile()
-      if (!success) {
-        await fs.remove(this.currentDownload.targetPath)
-        this.currentDownload.setFinished(false)
-        const taskFailedString = {
-          text: 'Failed',
-          key: 'MessageTaskFailed'
-        }
-        task.setFailed(taskFailedString)
-      } else {
-        Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.episodeTitle}"`)
-        this.currentDownload.setFinished(true)
-        task.setFinished()
-      }
+      Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.episodeTitle}"`)
+      this.currentDownload.setFinished(true)
+      task.setFinished()
     } else {
       const taskFailedString = {
         text: 'Failed',

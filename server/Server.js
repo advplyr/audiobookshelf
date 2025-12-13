@@ -11,6 +11,7 @@ const axios = require('axios')
 const { version } = require('../package.json')
 
 // Utils
+const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
 const Logger = require('./Logger')
@@ -406,8 +407,7 @@ class Server {
       const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
-      router.get('*', (req, res) => handle(req, res))
-      router.post('/internal-api/*', (req, res) => handle(req, res))
+      router.all('*', (req, res) => handle(req, res))
     }
 
     const unixSocketPrefix = 'unix/'
@@ -419,7 +419,7 @@ class Server {
       })
     } else {
       this.server.listen(this.Port, this.Host, () => {
-        if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+        if (this.Host) Logger.info(`Listening on http://${is.ipv6(this.Host) ? `[${this.Host}]` : this.Host}:${this.Port}`)
         else Logger.info(`Listening on port :${this.Port}`)
       })
     }

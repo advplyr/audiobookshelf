@@ -289,7 +289,11 @@ module.exports = {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
-      return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
+      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
+    } else if (sortBy === 'progress.createdAt') {
+      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
+    } else if (sortBy === 'progress.finishedAt') {
+      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
     }
@@ -519,7 +523,7 @@ module.exports = {
       }
       bookIncludes.push({
         model: Database.mediaProgressModel,
-        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
         where: mediaProgressWhere,
         required: false
       })
@@ -530,10 +534,10 @@ module.exports = {
     }
 
     // When sorting by progress but not filtering by progress, include media progresses
-    if (filterGroup !== 'progress' && sortBy === 'progress') {
+    if (filterGroup !== 'progress' && ['progress.createdAt', 'progress.finishedAt', 'progress'].includes(sortBy)) {
       bookIncludes.push({
         model: Database.mediaProgressModel,
-        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
         where: {
           userId: user.id
         },
