@@ -84,7 +84,7 @@ module.exports = {
         seriesWhere.push(Sequelize.where(Sequelize.literal(`(${progQuery})`), 0))
         userPermissionBookWhere.replacements.userId = user.id
       } else if (filterValue === 'in-progress') {
-        attrQuery = 'SELECT count(*) FROM books b JOIN bookSeries bs ON bs.bookId = b.id LEFT JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id GROUP BY bs.seriesId HAVING SUM(CASE WHEN mp.isFinished = 1 THEN 1 ELSE 0 END) < count(*) AND SUM(CASE WHEN mp.currentTime > 0 OR mp.ebookProgress > 0 OR mp.isFinished = 1 THEN 1 ELSE 0 END) > 0'
+        attrQuery = 'SELECT count(*) FROM books b JOIN bookSeries bs ON bs.bookId = b.id LEFT JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id GROUP BY bs.seriesId HAVING SUM(mp.isFinished = 1) < COUNT(*) AND SUM(mp.currentTime > 0 OR mp.ebookProgress > 0 OR mp.isFinished = 1) > 0'
         userPermissionBookWhere.replacements.userId = user.id
       }
     }
