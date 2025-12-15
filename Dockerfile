@@ -62,6 +62,7 @@ COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 EXPOSE 80
 
 ENV PORT=80
+ENV HOST=0.0.0.0
 ENV NODE_ENV=production
 ENV CONFIG_PATH="/config"
 ENV METADATA_PATH="/metadata"
