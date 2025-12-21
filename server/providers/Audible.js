@@ -57,8 +57,13 @@ class Audible {
       })
     }
 
-    const genresFiltered = genres ? genres.filter((g) => g.type == 'genre').map((g) => g.name) : []
-    const tagsFiltered = genres ? genres.filter((g) => g.type == 'tag').map((g) => g.name) : []
+    let genresCleaned = null
+    let tagsCleaned = null
+
+    if (genres && Array.isArray(genres)) {
+      genresCleaned = [...new Set(genres.filter((g) => g.type == 'genre').map((g) => g.name))]
+      tagsCleaned = [...new Set(genres.filter((g) => g.type == 'tag').map((g) => g.name))]
+    }
 
     return {
       title,
@@ -71,8 +76,8 @@ class Audible {
       cover: image,
       asin,
       isbn,
-      genres: genresFiltered.length ? genresFiltered : null,
-      tags: tagsFiltered.length ? tagsFiltered.join(', ') : null,
+      genres: genresCleaned.length ? genresCleaned : null,
+      tags: tagsCleaned.length ? tagsCleaned : null,
       series: series.length ? series : null,
       language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
       duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
