@@ -275,7 +275,7 @@
   "LabelBonus": "额外",
   "LabelBooks": "图书",
   "LabelButtonText": "按钮文本",
-  "LabelByAuthor": "由 {0}",
+  "LabelByAuthor": "作者: {0}",
   "LabelChangePassword": "修改密码",
   "LabelChannels": "声道",
   "LabelChapterCount": "{0} 章节",
