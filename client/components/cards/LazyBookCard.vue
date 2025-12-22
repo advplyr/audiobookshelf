@@ -78,7 +78,7 @@
         </div>
 
         <!-- Error widget -->
-        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" class="absolute bottom-4e left-0 z-10">
+        <ui-tooltip cy-id="ErrorTooltip" v-if="showError" :text="errorText" plaintext class="absolute bottom-4e left-0 z-10">
           <div :style="{ height: 1.5 + 'em', width: 2.5 + 'em' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
             <span class="material-symbols text-red-100 pr-1e" :style="{ fontSize: 0.875 + 'em' }">priority_high</span>
           </div>
@@ -121,12 +121,12 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div cy-id="detailBottom" :id="`description-area-${index}`" v-if="isAlternativeBookshelfView || isAuthorBookshelfView" dir="auto" class="relative mt-2e mb-2e left-0 z-50 w-full">
       <div :style="{ fontSize: 0.9 + 'em' }">
-        <ui-tooltip v-if="displayTitle" :text="displayTitle" :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
-          <p cy-id="title" ref="displayTitle" role="heading" aria-level="3" class="truncate">{{ displayTitle }}</p>
+        <ui-tooltip v-if="displayTitle" :text="displayTitle" plaintext :disabled="!displayTitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+          <p cy-id="title" ref="displayTitle" class="truncate" role="heading" aria-level="3">{{ displayTitle }}</p>
           <widgets-explicit-indicator cy-id="explicitIndicator" v-if="isExplicit" />
         </ui-tooltip>
       </div>
-      <ui-tooltip v-if="showSubtitles" :text="displaySubtitle" :disabled="!displaySubtitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
+      <ui-tooltip v-if="showSubtitles" :text="displaySubtitle" plaintext :disabled="!displaySubtitleTruncated" direction="bottom" :delayOnShow="500" class="flex items-center">
         <p cy-id="subtitle" class="truncate" ref="displaySubtitle" :style="{ fontSize: 0.6 + 'em' }">{{ displaySubtitle }}</p>
       </ui-tooltip>
       <p cy-id="line2" class="truncate text-gray-400" :style="{ fontSize: 0.8 + 'em' }">{{ displayLineTwo || '&nbsp;' }}</p>
