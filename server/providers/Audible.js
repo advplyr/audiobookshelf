@@ -57,8 +57,8 @@ class Audible {
       })
     }
 
-    let genresCleaned = null
-    let tagsCleaned = null
+    let genresCleaned = []
+    let tagsCleaned = []
 
     if (genres && Array.isArray(genres)) {
       genresCleaned = [...new Set(genres.filter((g) => g.type == 'genre').map((g) => g.name))]
