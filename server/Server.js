@@ -7,6 +7,8 @@ const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const cookieParser = require('cookie-parser')
 const axios = require('axios')
+const { AxiosError } = require('axios')
+const dns = require('dns').promises
 
 const { version } = require('../package.json')
 
@@ -86,6 +88,82 @@ class Server {
         global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
       }
     }
+
+    if (process.env.EXP_DNS_RESOLUTION === '1') {
+      // https://github.com/advplyr/audiobookshelf/pull/3754
+      Logger.info(`[Server] Experimental DNS Resolution Enabled`)
+
+      // Resolve DNS using dns package before making request
+      axios.interceptors.request.use(async (config) => {
+        try {
+          const urlObj = new URL(config.url)
+          const hostname = urlObj.hostname
+          let resolved = false
+
+          const resolvers = [
+            { protocol: 'IPv4', method: dns.resolve4, format: (ip) => ip },
+            { protocol: 'IPv6', method: dns.resolve6, format: (ip) => `[${ip}]` }
+          ]
+          if (process.env.PREFER_IPV6 === '1') {
+            resolvers.reverse()
+          }
+
+          for (const { protocol, method, format } of resolvers) {
+            const addresses = await method(hostname).catch(() => null)
+            if (addresses?.length > 0) {
+              const ip = format(addresses[0])
+              urlObj.hostname = ip
+              config.url = urlObj.toString()
+              config.headers = { ...config.headers, Host: hostname }
+              Logger.debug(`[Server] Resolved ${hostname} -> ${addresses[0]} (${protocol})`)
+              resolved = true
+              break
+            }
+          }
+
+          if (!resolved) {
+            throw new Error(`Could not resolve hostname ${hostname} to any IP address`)
+          }
+        } catch (err) {
+          Logger.warn(`[Server] DNS pre-resolution error: ${err.message}`)
+        }
+        return config
+      })
+
+      // Manually handle redirects, otherwise axios would bypass custom dns resolution on redirects
+      const maxRedirects = axios.defaults.maxRedirects || 21 // axios default
+      axios.defaults.maxRedirects = 0
+      axios.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+          if (error.response && [301, 302, 303, 307, 308].includes(error.response.status) && error.response.headers.location) {
+            const redirectUrl = error.response.headers.location
+            if (!error.config._redirectCount) {
+              error.config._redirectCount = 0
+              error.config._redirectUrls = new Set()
+            }
+            if (error.config._redirectUrls.has(redirectUrl)) {
+              const visitedUrls = Array.from(error.config._redirectUrls).join(' -> ')
+              Logger.error(`[Server] Redirect loop detected: ${visitedUrls} -> ${redirectUrl}`)
+              return Promise.reject(new AxiosError(`Redirect loop detected: ${redirectUrl}`, 'ERR_FR_TOO_MANY_REDIRECTS', error.config, error.request))
+            }
+            if (error.config._redirectCount >= maxRedirects) {
+              Logger.error(`[Server] Maximum redirect limit (${maxRedirects}) exceeded`)
+              return Promise.reject(new AxiosError(`Maximum number of redirects exceeded (${maxRedirects})`, 'ERR_FR_TOO_MANY_REDIRECTS', error.config, error.request))
+            }
+            Logger.debug(`[Server] Following ${error.response.status} redirect to ${redirectUrl} (${error.config._redirectCount + 1}/${maxRedirects})`)
+            error.config._redirectUrls.add(redirectUrl)
+            error.config._redirectCount++
+            return axios({
+              ...error.config,
+              url: redirectUrl
+            })
+          }
+          return Promise.reject(error)
+        }
+      )
+    }
+
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
