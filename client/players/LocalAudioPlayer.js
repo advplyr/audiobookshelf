@@ -290,7 +290,9 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   setVolume(volume) {
     if (!this.player) return
-    this.player.volume = volume
+    const useLogarithmicVolume = this.ctx.$store.getters['user/getUserSetting']('useLogarithmicVolume')
+    // Apply quadratic curve for more natural volume perception if enabled
+    this.player.volume = useLogarithmicVolume ? volume * volume : volume
   }
 
   // Utils
