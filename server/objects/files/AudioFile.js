@@ -6,6 +6,7 @@ class AudioFile {
   constructor(data) {
     this.index = null
     this.ino = null
+    this.deviceId = null
     /** @type {FileMetadata} */
     this.metadata = null
     this.addedAt = null
@@ -44,6 +45,7 @@ class AudioFile {
     return {
       index: this.index,
       ino: this.ino,
+      deviceId: this.deviceId,
       metadata: this.metadata.toJSON(),
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,
@@ -69,9 +71,13 @@ class AudioFile {
     }
   }
 
+  /**
+   * @param {{ index: any; ino: any; deviceId: any; metadata: any; addedAt: any; updatedAt: any; manuallyVerified: any; exclude: any; error: null; trackNumFromMeta: any; discNumFromMeta: any; trackNumFromFilename: any; cdNumFromFilename: undefined; discNumFromFilename: any; format: any; duration: any; bitRate: any; language: any; codec: null; timeBase: any; channels: any; channelLayout: any; chapters: any[]; embeddedCoverArt: null; metaTags: any; }} data
+   */
   construct(data) {
     this.index = data.index
     this.ino = data.ino
+    this.deviceId = data.deviceId
     this.metadata = new FileMetadata(data.metadata || {})
     this.addedAt = data.addedAt
     this.updatedAt = data.updatedAt
@@ -112,6 +118,7 @@ class AudioFile {
   // New scanner creates AudioFile from AudioFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
+    this.deviceId = libraryFile.deviceId || null
 
     if (libraryFile.metadata instanceof FileMetadata) {
       this.metadata = libraryFile.metadata.clone()
@@ -137,7 +144,7 @@ class AudioFile {
 
   syncChapters(updatedChapters) {
     if (this.chapters.length !== updatedChapters.length) {
-      this.chapters = updatedChapters.map(ch => ({ ...ch }))
+      this.chapters = updatedChapters.map((ch) => ({ ...ch }))
       return true
     } else if (updatedChapters.length === 0) {
       if (this.chapters.length > 0) {
@@ -154,7 +161,7 @@ class AudioFile {
       }
     }
     if (hasUpdates) {
-      this.chapters = updatedChapters.map(ch => ({ ...ch }))
+      this.chapters = updatedChapters.map((ch) => ({ ...ch }))
     }
     return hasUpdates
   }
@@ -164,8 +171,8 @@ class AudioFile {
   }
 
   /**
-   * 
-   * @param {AudioFile} scannedAudioFile 
+   *
+   * @param {AudioFile} scannedAudioFile
    * @returns {boolean} true if updates were made
    */
   updateFromScan(scannedAudioFile) {
