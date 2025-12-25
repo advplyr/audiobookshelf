@@ -382,6 +382,27 @@ class MeController {
   }
 
   /**
+   * POST: /api/me/series/:id/hide
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async hideSeries(req, res) {
+    if (!(await Database.seriesModel.checkExistsById(req.params.id))) {
+      Logger.error(`[MeController] hideSeries: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const { makeHidden } = req.body
+
+    const hasUpdated = await req.user.hideSeries(req.params.id, makeHidden)
+    if (hasUpdated) {
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
+    }
+    res.json(req.user.toOldJSONForBrowser())
+  }
+
+  /**
    * GET: api/me/progress/:id/remove-from-continue-listening
    *
    * @param {RequestWithUser} req
