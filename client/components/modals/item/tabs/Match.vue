@@ -174,6 +174,16 @@
           </div>
         </div>
 
+        <div v-if="selectedMatchOrig.rating" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.rating" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.rating" type="number" step="0.1" min="0" max="5" :disabled="!selectedMatchUsage.rating" label="Rating" />
+            <p v-if="mediaMetadata.rating" class="text-xs ml-1 text-white/60">
+              {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('rating', Number(mediaMetadata.rating))">{{ Number(mediaMetadata.rating).toFixed(1) }}</a>
+            </p>
+          </div>
+        </div>
+
         <div v-if="selectedMatchOrig.itunesId" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.itunesId" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
@@ -270,6 +280,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        rating: true,
         abridged: true,
         // Podcast specific
         itunesPageUrl: true,
@@ -324,6 +335,9 @@ export default {
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
     },
     filterData() {
       return this.$store.state.libraries.filterData || {}
@@ -464,6 +478,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        rating: true,
         abridged: true,
         // Podcast specific
         itunesPageUrl: true,
@@ -559,6 +574,11 @@ export default {
         if (match.narrator && !Array.isArray(match.narrator)) {
           match.narrator = match.narrator.split(',').map((g) => g.trim())
         }
+        if (match.rating && typeof match.rating === 'object' && match.rating.average) {
+          match.rating = Number(match.rating.average) || null
+        } else if (match.rating !== undefined && match.rating !== null) {
+          match.rating = Number(match.rating) || null
+        }
       }
 
       console.log('Select Match', match)
@@ -570,7 +590,7 @@ export default {
       updatePayload.metadata = {}
 
       for (const key in this.selectedMatchUsage) {
-        if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
+        if (this.selectedMatchUsage[key] && this.selectedMatch[key] !== undefined && this.selectedMatch[key] !== null) {
           if (key === 'series') {
             if (!Array.isArray(this.selectedMatch[key])) {
               console.error('Invalid series in selectedMatch', this.selectedMatch[key])
@@ -609,6 +629,13 @@ export default {
             updatePayload.tags = this.selectedMatch[key]
           } else if (key === 'itunesId') {
             updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
+          } else if (key === 'rating') {
+            const ratingValue = Number(this.selectedMatch[key])
+            if (!isNaN(ratingValue) && ratingValue > 0) {
+              updatePayload.metadata.rating = ratingValue
+            } else if (ratingValue === 0 || isNaN(ratingValue)) {
+              updatePayload.metadata.rating = undefined
+            }
           } else {
             updatePayload.metadata[key] = this.selectedMatch[key]
           }
