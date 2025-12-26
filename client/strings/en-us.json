@@ -366,6 +366,7 @@
   "LabelExplicit": "Explicit",
   "LabelExplicitChecked": "Explicit (checked)",
   "LabelExplicitUnchecked": "Not Explicit (unchecked)",
+  "LabelAuthenticatedFeed": "Authenticated Feed",
   "LabelExportOPML": "Export OPML",
   "LabelFeedURL": "Feed URL",
   "LabelFetchingMetadata": "Fetching Metadata",

@@ -44,6 +44,8 @@ class Podcast extends Model {
     /** @type {boolean} */
     this.explicit
     /** @type {boolean} */
+    this.isAuthenticatedFeed
+    /** @type {boolean} */
     this.autoDownloadEpisodes
     /** @type {string} */
     this.autoDownloadSchedule
@@ -104,6 +106,7 @@ class Podcast extends Model {
         language: typeof payload.metadata.language === 'string' ? payload.metadata.language : null,
         podcastType: typeof payload.metadata.type === 'string' ? payload.metadata.type : null,
         explicit: !!payload.metadata.explicit,
+        isAuthenticatedFeed: !!payload.metadata.isAuthenticatedFeed,
         autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
         autoDownloadSchedule: autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule,
         lastEpisodeCheck: new Date(),
@@ -141,6 +144,7 @@ class Podcast extends Model {
         language: DataTypes.STRING,
         podcastType: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
+        isAuthenticatedFeed: DataTypes.BOOLEAN,
 
         autoDownloadEpisodes: DataTypes.BOOLEAN,
         autoDownloadSchedule: DataTypes.STRING,
@@ -249,6 +253,11 @@ class Podcast extends Model {
 
       if (payload.metadata.explicit !== undefined && payload.metadata.explicit !== this.explicit) {
         this.explicit = !!payload.metadata.explicit
+        hasUpdates = true
+      }
+
+      if (payload.metadata.isAuthenticatedFeed !== undefined && payload.metadata.isAuthenticatedFeed !== this.isAuthenticatedFeed) {
+        this.isAuthenticatedFeed = !!payload.metadata.isAuthenticatedFeed
         hasUpdates = true
       }
 
@@ -407,6 +416,7 @@ class Podcast extends Model {
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
+      isAuthenticatedFeed: this.isAuthenticatedFeed,
       language: this.language,
       type: this.podcastType
     }
