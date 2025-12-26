@@ -154,29 +154,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     const podcastEpisode = podcastEpisodeDownload.rssPodcastEpisode
     const finalSizeInBytes = Number(podcastEpisode.enclosure?.length || 0)
 
-    const taggings = {
-      album: podcast.title,
-      'album-sort': podcast.title,
-      artist: podcast.author,
-      'artist-sort': podcast.author,
-      comment: podcastEpisode.description,
-      subtitle: podcastEpisode.subtitle,
-      disc: podcastEpisode.season,
-      genre: podcast.genres.length ? podcast.genres.join(';') : null,
-      language: podcast.language,
-      MVNM: podcast.title,
-      MVIN: podcastEpisode.episode,
-      track: podcastEpisode.episode,
-      'series-part': podcastEpisode.episode,
-      title: podcastEpisode.title,
-      'title-sort': podcastEpisode.title,
-      year: podcastEpisodeDownload.pubYear,
-      date: podcastEpisode.pubDate,
-      releasedate: podcastEpisode.pubDate,
-      'itunes-id': podcast.itunesId,
-      'podcast-type': podcast.podcastType,
-      'episode-type': podcastEpisode.episodeType
-    }
+    const taggings = getPodcastEpisodeFFMetadataObject(podcast, podcastEpisode, podcastEpisodeDownload)
 
     for (const tag in taggings) {
       if (taggings[tag]) {
@@ -426,6 +404,73 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
 }
 
 module.exports.getFFMetadataObject = getFFMetadataObject
+
+/**
+ * Build ffmetadata key-value pairs for a single podcast episode based on the library item and episode.
+ *
+ * @param {import('../models/LibraryItem')} libraryItem
+ * @param {import('../models/PodcastEpisode')} podcastEpisode
+ * @returns {Object}
+ */
+function getPodcastEpisodeFFMetadataObject(podcast, podcastEpisode, podcastEpisodeDownload = {}) {
+  function formatToISO8601(date) {
+    if (!date) return null
+
+    let d
+    if (date instanceof Date) {
+      d = date
+    } else {
+      d = new Date(date)
+    }
+
+    if (isNaN(d.getTime())) return null
+    return d.toISOString()
+  }
+
+  const pubDateISO = formatToISO8601(podcastEpisode.pubDate)
+  let pubYearISO = null
+  if (podcastEpisodeDownload?.pubYear) {
+    pubYearISO = podcastEpisodeDownload.pubYear
+  } else if (podcastEpisode.pubDate) {
+    const pubDateObj = new Date(podcastEpisode.pubDate)
+    if (pubDateObj && !isNaN(pubDateObj.getTime())) {
+      pubYearISO = pubDateObj.getUTCFullYear().toString()
+    }
+  }
+
+  const taggings = {
+    album: podcast.title,
+    'album-sort': podcast.title,
+    artist: podcast.author,
+    'artist-sort': podcast.author,
+    comment: podcastEpisode.description,
+    subtitle: podcastEpisode.subtitle,
+    disc: podcastEpisode.season,
+    genre: Array.isArray(podcast.genres) && podcast.genres.length ? podcast.genres.join(';') : null,
+    language: podcast.language,
+    MVNM: podcast.title,
+    MVIN: podcastEpisode.episode,
+    track: podcastEpisode.episode,
+    'series-part': podcastEpisode.episode,
+    title: podcastEpisode.title,
+    'title-sort': podcastEpisode.title,
+    year: pubYearISO,
+    date: pubDateISO,
+    releasedate: pubDateISO,
+    'itunes-id': podcast.itunesId,
+    'podcast-type': podcast.podcastType,
+    'episode-type': podcastEpisode.episodeType
+  }
+
+  Object.keys(taggings).forEach((key) => {
+    if (taggings[key] === undefined || taggings[key] === null || taggings[key] === '') {
+      delete taggings[key]
+    }
+  })
+  return taggings
+}
+
+module.exports.getPodcastEpisodeFFMetadataObject = getPodcastEpisodeFFMetadataObject
 
 /**
  * Merges audio files into a single output file using FFmpeg.
