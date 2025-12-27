@@ -389,7 +389,7 @@ export default {
       return this.filterData.publishedDecades || []
     },
     progress() {
-      return [
+      const items = [
         {
           id: 'finished',
           name: this.$strings.LabelFinished
@@ -398,6 +398,15 @@ export default {
           id: 'in-progress',
           name: this.$strings.LabelInProgress
         },
+      ]
+      // only add "started series" filter in series view
+      if (this.isSeries) {
+        items.push({
+          id: 'started-series',
+          name: this.$strings.LabelStarted
+        })
+      }
+      items.push(
         {
           id: 'not-started',
           name: this.$strings.LabelNotStarted
@@ -406,7 +415,8 @@ export default {
           id: 'not-finished',
           name: this.$strings.LabelNotFinished
         }
-      ]
+      )
+      return items
     },
     tracks() {
       return [
