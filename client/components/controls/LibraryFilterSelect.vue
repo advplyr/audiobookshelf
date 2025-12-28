@@ -147,7 +147,7 @@ export default {
         },
         {
           text: this.$strings.LabelSeriesProgress,
-          value: 'progress',
+          value: 'progressSeries',
           sublist: true
         }
       ]
@@ -385,6 +385,30 @@ export default {
         {
           id: 'in-progress',
           name: this.$strings.LabelInProgress
+        },
+        {
+          id: 'not-started',
+          name: this.$strings.LabelNotStarted
+        },
+        {
+          id: 'not-finished',
+          name: this.$strings.LabelNotFinished
+        }
+      ]
+    },
+    progressSeries() {
+      return [
+        {
+          id: 'finished',
+          name: this.$strings.LabelFinished
+        },
+        {
+          id: 'in-progress',
+          name: this.$strings.LabelInProgress
+        },
+        {
+          id: 'started-series',
+          name: this.$strings.LabelStarted
         },
         {
           id: 'not-started',
