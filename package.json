@@ -57,7 +57,8 @@
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.7",
     "ssrf-req-filter": "^1.1.0",
-    "xml2js": "^0.5.0"
+    "xml2js": "^0.5.0",
+    "yt-dlp-wrap": "^2.3.12"
   },
   "devDependencies": {
     "chai": "^4.3.10",

@@ -35,6 +35,7 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const YouTubeDownloadController = require('../controllers/YouTubeDownloadController')
 
 class ApiRouter {
   constructor(Server) {
@@ -334,6 +335,13 @@ class ApiRouter {
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
     this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
     this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
+
+    //
+    // YouTube Download Routes
+    //
+    this.router.post('/youtube/download', YouTubeDownloadController.downloadFromYouTube.bind(this))
+    this.router.get('/youtube/queue', YouTubeDownloadController.getDownloadQueue.bind(this))
+    this.router.delete('/youtube/download/:downloadId', YouTubeDownloadController.cancelDownload.bind(this))
 
     //
     // Misc Routes

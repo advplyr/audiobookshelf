@@ -13,6 +13,7 @@ export const state = () => ({
   showShareModal: false,
   showConfirmPrompt: false,
   showRawCoverPreviewModal: false,
+  showYouTubeDownloadModal: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
   rssFeedEntity: null,
@@ -170,6 +171,9 @@ export const mutations = {
   setRawCoverPreviewModal(state, rawCoverUrl) {
     state.selectedRawCoverUrl = rawCoverUrl
     state.showRawCoverPreviewModal = true
+  },
+  setShowYouTubeDownloadModal(state, val) {
+    state.showYouTubeDownloadModal = val
   },
   setEditCollection(state, collection) {
     state.selectedCollection = collection

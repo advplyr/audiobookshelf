@@ -36,6 +36,12 @@
           </ui-tooltip>
         </nuxt-link>
 
+        <div v-if="userIsAdminOrUp && currentLibrary" @click="openYouTubeDownloadModal" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+          <ui-tooltip text="Download from YouTube" direction="bottom" class="flex items-center">
+            <span class="material-symbols text-2xl" aria-label="YouTube Download" role="button">download</span>
+          </ui-tooltip>
+        </div>
+
         <nuxt-link v-if="userIsAdminOrUp" to="/config" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
             <span class="material-symbols text-2xl" aria-label="System Settings" role="button">&#xe8b8;</span>
@@ -193,6 +199,9 @@ export default {
     }
   },
   methods: {
+    openYouTubeDownloadModal() {
+      this.$store.commit('globals/setShowYouTubeDownloadModal', true)
+    },
     requestBatchQuickEmbed() {
       const payload = {
         message: this.$strings.MessageConfirmQuickEmbed,

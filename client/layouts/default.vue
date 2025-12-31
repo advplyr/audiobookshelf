@@ -21,6 +21,7 @@
     <modals-rssfeed-open-close-modal />
     <modals-raw-cover-preview-modal />
     <modals-share-modal />
+    <modals-you-tube-download-modal />
     <prompt-confirm />
     <readers-reader />
   </div>
@@ -379,6 +380,26 @@ export default {
       // Refresh providers cache
       this.$store.dispatch('scanners/refreshProviders')
     },
+    youtubeDownloadStarted(download) {
+      console.log('YouTube download started:', download)
+      this.$toast.info(`Downloading: ${download.title || download.url}`)
+    },
+    youtubeDownloadProgress(data) {
+      // Optional: Could show progress in a notification or widget
+      console.log('YouTube download progress:', data.progress, data.title)
+    },
+    youtubeDownloadCompleted(download) {
+      console.log('YouTube download completed:', download)
+      this.$toast.success(`Download completed: ${download.title || 'YouTube video'}`)
+    },
+    youtubeDownloadFailed(download) {
+      console.log('YouTube download failed:', download)
+      this.$toast.error(`Download failed: ${download.error || 'Unknown error'}`)
+    },
+    youtubeDownloadQueued(download) {
+      console.log('YouTube download queued:', download)
+      this.$toast.info(`Queued: ${download.title || download.url}`)
+    },
     initializeSocket() {
       if (this.$root.socket) {
         // Can happen in dev due to hot reload
@@ -477,6 +498,13 @@ export default {
       // Custom metadata provider Listeners
       this.socket.on('custom_metadata_provider_added', this.customMetadataProviderAdded)
       this.socket.on('custom_metadata_provider_removed', this.customMetadataProviderRemoved)
+
+      // YouTube Download Listeners
+      this.socket.on('youtube_download_started', this.youtubeDownloadStarted)
+      this.socket.on('youtube_download_progress', this.youtubeDownloadProgress)
+      this.socket.on('youtube_download_completed', this.youtubeDownloadCompleted)
+      this.socket.on('youtube_download_failed', this.youtubeDownloadFailed)
+      this.socket.on('youtube_download_queued', this.youtubeDownloadQueued)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')
