@@ -71,7 +71,7 @@ ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
 # Construct cache and metadata directories
 RUN mkdir -p ${CONFIG_PATH} ${METADATA_PATH} && chmod 777 ${CONFIG_PATH} ${METADATA_PATH}
-VOLUME  ${CONFIG_PATH} ${METADATA_PATH}
+VOLUME ${CONFIG_PATH} ${METADATA_PATH}
 
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
