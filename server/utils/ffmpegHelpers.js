@@ -295,18 +295,19 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
 async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg(), copyFunc = copyToExisting) {
+  const isMp4 = mimeType === 'audio/mp4'
+  const isMp3 = mimeType === 'audio/mpeg'
+
   const audioFileDir = Path.dirname(audioFilePath)
   const audioFileExt = Path.extname(audioFilePath)
   const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
   const tempFilePath = filePathToPOSIX(Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`))
 
-  const isMp4 = mimeType === 'audio/mp4' || audioFileExt.toLowerCase() === '.m4b'
-  const isMp3 = mimeType === 'audio/mpeg'
-
   return new Promise((resolve, reject) => {
     ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
       '-map 0:a', // map audio stream from input file
-      '-map_metadata 1', // map metadata tags from metadata file (contains all desired metadata)
+      '-map_metadata 1', // map metadata tags from metadata file first
+      '-map_metadata 0', // add additional metadata tags from input file
       '-map_chapters 1', // map chapters from metadata file
       '-c copy' // copy streams
     ])
@@ -317,8 +318,7 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
 
     if (isMp4) {
       ffmpeg.outputOptions([
-        '-f mp4', // force output format to mp4
-        '-movflags use_metadata_tags' // preserve custom tags like AUDIBLE_ASIN
+        '-f mp4' // force output format to mp4
       ])
     } else if (isMp3) {
       ffmpeg.outputOptions([
@@ -414,8 +414,7 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     copyright: libraryItem.media.publisher,
     publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; '),
-    AUDIBLE_ASIN: libraryItem.media.asin // Audible ASIN tag for m4b/mp4 files
+    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {

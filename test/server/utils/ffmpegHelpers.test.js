@@ -120,7 +120,7 @@ describe('addCoverAndMetadataToFile', () => {
     expect(ffmpegStub.input.getCall(2).args[0]).to.equal(coverFilePath)
 
     expect(ffmpegStub.outputOptions.callCount).to.equal(4)
-    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_chapters 1', '-c copy'])
+    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_metadata 0', '-map_chapters 1', '-c copy'])
     expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-metadata track=1'])
     expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-id3v2_version 3'])
     expect(ffmpegStub.outputOptions.getCall(3).args[0]).to.deep.equal(['-map 2:v', '-disposition:v:0 attached_pic', '-metadata:s:v', 'title=Cover', '-metadata:s:v', 'comment=Cover'])
@@ -153,7 +153,7 @@ describe('addCoverAndMetadataToFile', () => {
     expect(ffmpegStub.input.getCall(1).args[0]).to.equal(metadataFilePath)
 
     expect(ffmpegStub.outputOptions.callCount).to.equal(4)
-    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_chapters 1', '-c copy'])
+    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_metadata 0', '-map_chapters 1', '-c copy'])
     expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-metadata track=1'])
     expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-id3v2_version 3'])
     expect(ffmpegStub.outputOptions.getCall(3).args[0]).to.deep.equal(['-map 0:v?'])
@@ -195,7 +195,7 @@ describe('addCoverAndMetadataToFile', () => {
     expect(ffmpegStub.input.getCall(2).args[0]).to.equal(coverFilePath)
 
     expect(ffmpegStub.outputOptions.callCount).to.equal(4)
-    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_chapters 1', '-c copy'])
+    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_metadata 0', '-map_chapters 1', '-c copy'])
     expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-metadata track=1'])
     expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-id3v2_version 3'])
     expect(ffmpegStub.outputOptions.getCall(3).args[0]).to.deep.equal(['-map 2:v', '-disposition:v:0 attached_pic', '-metadata:s:v', 'title=Cover', '-metadata:s:v', 'comment=Cover'])
@@ -227,9 +227,9 @@ describe('addCoverAndMetadataToFile', () => {
     expect(ffmpegStub.input.getCall(2).args[0]).to.equal(coverFilePath)
 
     expect(ffmpegStub.outputOptions.callCount).to.equal(4)
-    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_chapters 1', '-c copy'])
+    expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_metadata 0', '-map_chapters 1', '-c copy'])
     expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-metadata track=1'])
-    expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-f mp4', '-movflags use_metadata_tags'])
+    expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-f mp4'])
     expect(ffmpegStub.outputOptions.getCall(3).args[0]).to.deep.equal(['-map 2:v', '-disposition:v:0 attached_pic', '-metadata:s:v', 'title=Cover', '-metadata:s:v', 'comment=Cover'])
 
     expect(ffmpegStub.output.calledOnce).to.be.true
