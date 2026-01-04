@@ -393,6 +393,34 @@ function escapeFFMetadataValue(value) {
 }
 
 /**
+ * Computes the ALBUMSORT tag for proper series ordering.
+ * Format:
+ *   - No series: "Title" or "Title - Subtitle"
+ *   - In series: "Series Name 001 - Title" (zero-padded sequence)
+ *
+ * @param {import('../models/LibraryItem')} libraryItem
+ * @returns {string}
+ */
+function computeAlbumSort(libraryItem) {
+  const title = libraryItem.media.title || ''
+  const subtitle = libraryItem.media.subtitle
+  const series = libraryItem.media.series?.[0]
+
+  if (series?.name) {
+    // In series: "Series Name 001 - Title"
+    const sequence = series.bookSeries?.sequence || ''
+    const paddedSequence = sequence ? String(sequence).padStart(3, '0') : ''
+    return `${series.name} ${paddedSequence} - ${title}`.trim()
+  }
+
+  // Not in series: "Title" or "Title - Subtitle"
+  if (subtitle) {
+    return `${title} - ${subtitle}`
+  }
+  return title
+}
+
+/**
  * Retrieves the FFmpeg metadata object for a given library item.
  *
  * @param {import('../models/LibraryItem')} libraryItem - The library item containing the media metadata.
@@ -407,6 +435,11 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
   } else if (libraryItem.media.abridged === false) {
     format = 'unabridged'
   }
+
+  // Get first series for series tags (multiple series not widely supported)
+  const primarySeries = libraryItem.media.series?.[0]
+  const seriesName = primarySeries?.name
+  const seriesSequence = primarySeries?.bookSeries?.sequence
 
   const ffmetadata = {
     title: libraryItem.media.title,
@@ -431,7 +464,17 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     LANGUAGE: libraryItem.media.language,
     EXPLICIT: libraryItem.media.explicit ? '1' : null,
     ITUNESADVISORY: libraryItem.media.explicit ? '1' : '2', // 1 = explicit, 2 = clean
-    FORMAT: format
+    FORMAT: format,
+    // Series tags (Mp3tag standard)
+    SERIES: seriesName,
+    'SERIES-PART': seriesSequence,
+    PART: seriesSequence, // Libation uses PART
+    // M4B-specific series tags
+    MOVEMENTNAME: seriesName,
+    MOVEMENT: seriesSequence,
+    SHOWMOVEMENT: seriesName ? '1' : null,
+    // Album sort for proper series ordering
+    ALBUMSORT: computeAlbumSort(libraryItem)
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
