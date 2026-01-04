@@ -400,14 +400,24 @@ function escapeFFMetadataValue(value) {
  * @returns {Object} - The FFmpeg metadata object.
  */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
+  // Determine abridged/unabridged format string
+  let format = null
+  if (libraryItem.media.abridged === true) {
+    format = 'abridged'
+  } else if (libraryItem.media.abridged === false) {
+    format = 'unabridged'
+  }
+
   const ffmetadata = {
     title: libraryItem.media.title,
     artist: libraryItem.media.authorName,
     album_artist: libraryItem.media.authorName,
     album: (libraryItem.media.title || '') + (libraryItem.media.subtitle ? `: ${libraryItem.media.subtitle}` : ''),
     TIT3: libraryItem.media.subtitle, // mp3 only
+    subtitle: libraryItem.media.subtitle, // m4b/mp4
     genre: libraryItem.media.genres?.join('; '),
     date: libraryItem.media.publishedYear,
+    RELEASETIME: libraryItem.media.publishedDate, // Full release date YYYY-MM-DD
     comment: libraryItem.media.description,
     description: libraryItem.media.description,
     composer: (libraryItem.media.narrators || []).join(', '),
@@ -415,7 +425,13 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
     grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; '),
-    AUDIBLE_ASIN: libraryItem.media.asin // Audible ASIN tag for m4b/mp4 files
+    asin: libraryItem.media.asin, // Lowercase for Libation compatibility
+    AUDIBLE_ASIN: libraryItem.media.asin, // Uppercase for Libation compatibility
+    ISBN: libraryItem.media.isbn,
+    LANGUAGE: libraryItem.media.language,
+    EXPLICIT: libraryItem.media.explicit ? '1' : null,
+    ITUNESADVISORY: libraryItem.media.explicit ? '1' : '2', // 1 = explicit, 2 = clean
+    FORMAT: format
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
