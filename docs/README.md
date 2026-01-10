@@ -31,3 +31,12 @@ redocly bundle root.yaml > bundled.yaml && \
 yq -p yaml -o json bundled.yaml > openapi.json && \
 redocly build-docs openapi.json
 ```
+The OpenAPI specification is generated using [swagger-autogen](https://swagger-autogen.github.io/).
+
+To regenerate, run:
+
+```
+node swagger.js
+```
+
+Generates `docs/swagger-output.json`
