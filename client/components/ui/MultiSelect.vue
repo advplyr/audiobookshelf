@@ -278,7 +278,7 @@ export default {
       })
     },
     insertNewItem(item) {
-      this.selected.push(item)
+      if (!this.selected.includes(item)) this.selected.push(item)
       this.$emit('input', this.selected)
       this.$emit('newItem', item)
       this.textInput = null
