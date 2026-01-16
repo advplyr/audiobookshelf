@@ -47,28 +47,72 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
 }
 module.exports.writeConcatFile = writeConcatFile
 
-async function extractCoverArt(filepath, outputpath) {
+/**
+ * Extracts cover art from an audio file
+ * @param {string} filepath - Path to the input audio file
+ * @param {string} outputpath - Path to save the extracted cover art
+ * @param {import('../libs/fluentFfmpeg/index')} ffmpegModule - The Ffmpeg module to use (optional). Used for dependency injection in tests.
+ * @returns {Promise<string|false>} - The output path if successful, false otherwise
+ */
+async function extractCoverArt(filepath, outputpath, ffmpegModule = Ffmpeg) {
   var dirname = Path.dirname(outputpath)
   await fs.ensureDir(dirname)
 
   return new Promise((resolve) => {
-    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
-    var ffmpeg = Ffmpeg(filepath)
-    ffmpeg.addOption(['-map 0:v:0', '-frames:v 1'])
-    ffmpeg.output(outputpath)
+    // First, probe the file to find all video streams and select the largest one
+    ffmpegModule.ffprobe(filepath, (err, metadata) => {
+      if (err) {
+        Logger.error(`[FfmpegHelpers] ffprobe error: ${err}`)
+        resolve(false)
+        return
+      }
 
-    ffmpeg.on('start', (cmd) => {
-      Logger.debug(`[FfmpegHelpers] Extract Cover Cmd: ${cmd}`)
+      // Find all video streams and filter out tiny placeholder images (width or height <= 1)
+      const videoStreams = metadata.streams.filter(stream => {
+        if (stream.codec_type !== 'video') return false
+        const width = stream.width || 0
+        const height = stream.height || 0
+        return width > 1 && height > 1
+      })
+
+      if (!videoStreams || videoStreams.length === 0) {
+        Logger.error(`[FfmpegHelpers] No usable video streams found in ${filepath}`)
+        resolve(false)
+        return
+      }
+
+      // Select the video stream with the largest resolution (width * height)
+      let largestStream = videoStreams[0]
+      let maxResolution = (largestStream.width || 0) * (largestStream.height || 0)
+
+      for (const stream of videoStreams) {
+        const resolution = (stream.width || 0) * (stream.height || 0)
+        if (resolution > maxResolution) {
+          maxResolution = resolution
+          largestStream = stream
+        }
+      }
+
+      Logger.debug(`[FfmpegHelpers] Selected video stream ${largestStream.index} with resolution ${largestStream.width}x${largestStream.height}`)
+
+      /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
+      var ffmpeg = ffmpegModule(filepath)
+      ffmpeg.addOption([`-map 0:${largestStream.index}`, '-frames:v 1'])
+      ffmpeg.output(outputpath)
+
+      ffmpeg.on('start', (cmd) => {
+        Logger.debug(`[FfmpegHelpers] Extract Cover Cmd: ${cmd}`)
+      })
+      ffmpeg.on('error', (err, stdout, stderr) => {
+        Logger.error(`[FfmpegHelpers] Extract Cover Error ${err}`)
+        resolve(false)
+      })
+      ffmpeg.on('end', () => {
+        Logger.debug(`[FfmpegHelpers] Cover Art Extracted Successfully`)
+        resolve(outputpath)
+      })
+      ffmpeg.run()
     })
-    ffmpeg.on('error', (err, stdout, stderr) => {
-      Logger.error(`[FfmpegHelpers] Extract Cover Error ${err}`)
-      resolve(false)
-    })
-    ffmpeg.on('end', () => {
-      Logger.debug(`[FfmpegHelpers] Cover Art Extracted Successfully`)
-      resolve(outputpath)
-    })
-    ffmpeg.run()
   })
 }
 module.exports.extractCoverArt = extractCoverArt
