@@ -12,9 +12,9 @@ class TokenManager {
 
   constructor() {
     /** @type {number} Refresh token expiry in seconds */
-    this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 30 * 24 * 60 * 60 // 30 days
+    this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 3 // 3 seconds for testing
     /** @type {number} Access token expiry in seconds */
-    this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 1 * 60 * 60 // 1 hour
+    this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 60 // 60 seconds for testing
 
     if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)
@@ -193,6 +193,11 @@ class TokenManager {
     // Calculate new expiration time
     const newExpiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
 
+    // Set grace period of old refresh token in case of race condition in token rotation.
+    // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
+    session.lastRefreshToken = session.refreshToken
+    session.lastRefreshTokenExpiresAt = new Date(Date.now() + 10 * 1000) // 10 seconds grace period
+
     // Update the session with the new refresh token and expiration
     session.refreshToken = newRefreshToken
     session.expiresAt = newExpiresAt
@@ -287,8 +292,10 @@ class TokenManager {
         }
       }
 
-      const session = await Database.sessionModel.findOne({
-        where: { refreshToken: refreshToken }
+      let session = await Database.sessionModel.findOne({
+        where: {
+          [Op.or]: [{ refreshToken: refreshToken }, { lastRefreshToken: refreshToken }]
+        }
       })
 
       if (!session) {
@@ -298,12 +305,27 @@ class TokenManager {
         }
       }
 
-      // Check if session is expired in database
-      if (session.expiresAt < new Date()) {
-        Logger.info(`[TokenManager] Session expired in database, cleaning up`)
-        await session.destroy()
-        return {
-          error: 'Refresh token expired'
+      let isGracePeriod = false
+      if (session.refreshToken !== refreshToken) {
+        // Token matched lastRefreshToken
+        if (session.lastRefreshTokenExpiresAt && session.lastRefreshTokenExpiresAt > new Date()) {
+          isGracePeriod = true
+          Logger.debug(`[TokenManager] Grace period hit for user ${session.userId}`)
+        } else {
+          Logger.debug(`[TokenManager] Grace period expired for user ${session.userId}`)
+          return {
+            error: 'Invalid refresh token'
+          }
+        }
+      } else {
+        // Token matched current refreshToken
+        // Check if session is expired in database
+        if (session.expiresAt < new Date()) {
+          Logger.info(`[TokenManager] Session expired in database, cleaning up`)
+          await session.destroy()
+          return {
+            error: 'Refresh token expired'
+          }
         }
       }
 
@@ -312,6 +334,20 @@ class TokenManager {
         Logger.error(`[TokenManager] Failed to refresh token. User not found or inactive for user id: ${decoded.userId}`)
         return {
           error: 'User not found or inactive'
+        }
+      }
+
+      if (isGracePeriod) {
+        // Return the already rotated refresh token store in the database,
+        // and generate a new access token without changing the refresh token
+        // again
+        const accessToken = this.generateTempAccessToken(user)
+        this.setRefreshTokenCookie(req, res, session.refreshToken)
+
+        return {
+          accessToken,
+          refreshToken: session.refreshToken,
+          user
         }
       }
 
