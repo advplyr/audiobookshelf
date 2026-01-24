@@ -133,8 +133,8 @@ export default {
       }
     },
     providers() {
-      if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return [{ text: 'Best', value: 'best' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders, { text: 'All', value: 'all' }]
+      if (this.isPodcast) return this.$store.state.scanners.podcastCoverProviders
+      return this.$store.state.scanners.bookCoverProviders
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -438,6 +438,8 @@ export default {
   mounted() {
     // Setup socket listeners when component is mounted
     this.addSocketListeners()
+    // Fetch providers if not already loaded
+    this.$store.dispatch('scanners/fetchProviders')
   },
   beforeDestroy() {
     // Cancel any ongoing search when component is destroyed

@@ -142,6 +142,9 @@ class MiscController {
       Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
       return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
     }
+    if (settingsUpdate.allowedOrigins && !Array.isArray(settingsUpdate.allowedOrigins)) {
+      return res.status(400).send('allowedOrigins must be an array')
+    }
 
     const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
