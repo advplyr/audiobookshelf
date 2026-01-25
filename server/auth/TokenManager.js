@@ -183,15 +183,15 @@ class TokenManager {
    * @param {import('../models/User')} user
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @param {boolean} noGracePeriod - whether to skip the grace period
+   * @param {boolean} gracePeriod - whether to use the grace period
    * @returns {Promise<{ accessToken:string, refreshToken:string }>}
    */
-  async rotateTokensForSession(session, user, req, res, noGracePeriod = false) {
+  async rotateTokensForSession(session, user, req, res, gracePeriod = true) {
     // Generate new tokens
     const newAccessToken = this.generateTempAccessToken(user)
     let newRefreshToken = this.generateRefreshToken(user)
 
-    if (noGracePeriod) {
+    if (gracePeriod) {
       // Set grace period of old refresh token in case of race condition in token rotation.
       // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
       session.lastRefreshToken = session.refreshToken
@@ -423,7 +423,7 @@ class TokenManager {
       // So rotate token for current session
       const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
       if (currentSession) {
-        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res, true)
+        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res, false)
 
         // Invalidate all sessions for the user except the current one
         await Database.sessionModel.destroy({
