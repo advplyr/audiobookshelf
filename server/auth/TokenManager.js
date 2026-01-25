@@ -183,17 +183,23 @@ class TokenManager {
    * @param {import('../models/User')} user
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @returns {Promise<{ accessToken:string, refreshToken:string }>}
+   * @param {boolean} noGracePeriod - whether to skip the grace period
    */
-  async rotateTokensForSession(session, user, req, res) {
+  async rotateTokensForSession(session, user, req, res, noGracePeriod = false) {
     // Generate new tokens
     const newAccessToken = this.generateTempAccessToken(user)
     let newRefreshToken = this.generateRefreshToken(user)
 
-    // Set grace period of old refresh token in case of race condition in token rotation.
-    // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
-    session.lastRefreshToken = session.refreshToken
-    session.lastRefreshTokenExpiresAt = new Date(Date.now() + 60 * 1000) // 1 minute grace period
+    if (noGracePeriod) {
+      // Set grace period of old refresh token in case of race condition in token rotation.
+      // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
+      session.lastRefreshToken = session.refreshToken
+      session.lastRefreshTokenExpiresAt = new Date(Date.now() + 60 * 1000) // 1 minute grace period
+    } else {
+      // Do not set grace period of old refresh token, such as when specifically invalidating sessions for a user
+      session.lastRefreshToken = null
+      session.lastRefreshTokenExpiresAt = null
+    }
 
     // Update the session with the new refresh token and expiration
     session.refreshToken = newRefreshToken
@@ -416,7 +422,7 @@ class TokenManager {
       // So rotate token for current session
       const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
       if (currentSession) {
-        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res)
+        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res, true)
 
         // Invalidate all sessions for the user except the current one
         await Database.sessionModel.destroy({
