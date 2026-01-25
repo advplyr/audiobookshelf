@@ -184,6 +184,7 @@ class TokenManager {
    * @param {import('express').Request} req
    * @param {import('express').Response} res
    * @param {boolean} noGracePeriod - whether to skip the grace period
+   * @returns {Promise<{ accessToken:string, refreshToken:string }>}
    */
   async rotateTokensForSession(session, user, req, res, noGracePeriod = false) {
     // Generate new tokens
