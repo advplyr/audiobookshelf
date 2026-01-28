@@ -36,6 +36,12 @@ class LogManager {
     return global.ServerSettings.loggerDailyLogsToKeep || 7
   }
 
+  async enforceDailyLogRetention() {
+    while (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
+      await this.removeLogFile(this.dailyLogFiles[0])
+    }
+  }
+
   async ensureLogDirs() {
     try {
       await fs.ensureDir(this.DailyLogPath)
@@ -49,22 +55,15 @@ class LogManager {
   /**
    * 1. Ensure log directories exist
    * 2. Load daily log files
-   * 3. Remove old daily log files
-   * 4. Create/set current daily log file
+   * 3. Create/set current daily log file
+   * 4. Remove old daily log files
+   * 5. Log any buffered daily logs
    */
   async init() {
     await this.ensureLogDirs()
 
     // Load daily logs
     await this.scanLogFiles()
-
-    // Check remove extra daily logs
-    if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
-      const dailyLogFilesCopy = [...this.dailyLogFiles]
-      for (let i = 0; i < dailyLogFilesCopy.length - this.loggerDailyLogsToKeep; i++) {
-        await this.removeLogFile(dailyLogFilesCopy[i])
-      }
-    }
 
     // set current daily log file or create if does not exist
     const currentDailyLogFilename = DailyLog.getCurrentDailyLogFilename()
@@ -78,6 +77,9 @@ class LogManager {
     } else {
       this.dailyLogFiles.push(this.currentDailyLog.filename)
     }
+
+    // Check remove extra daily logs
+    await this.enforceDailyLogRetention()
 
     // Log buffered daily logs
     if (this.dailyLogBuffer.length) {
@@ -146,10 +148,13 @@ class LogManager {
     // Check log rolls to next day
     if (this.currentDailyLog.id !== DailyLog.getCurrentDateString()) {
       this.currentDailyLog = new DailyLog(this.DailyLogPath)
-      if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
-        // Remove oldest log
-        this.removeLogFile(this.dailyLogFiles[0])
+
+      // Track the new daily log file so retention works for long-running servers
+      if (!this.dailyLogFiles.includes(this.currentDailyLog.filename)) {
+        this.dailyLogFiles.push(this.currentDailyLog.filename)
       }
+
+      await this.enforceDailyLogRetention()
     }
 
     // Append log line to log file
