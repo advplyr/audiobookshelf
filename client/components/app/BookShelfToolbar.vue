@@ -74,6 +74,9 @@
         <!-- issues page remove all button -->
         <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="bg-error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ $formatNumber(numShowing) }} {{ entityName }}</ui-btn>
 
+        <!-- issues page remove all button user does not have permissions to delete -->
+        <ui-btn v-if="isIssuesFilter && !userCanDelete && !isBatchSelecting" :title="$strings.ButtonRemoveAllInsufficientPermissions" color="bg-error" small class="ml-4" disabled>{{ $strings.ButtonRemoveAll }} {{ $formatNumber(numShowing) }} {{ entityName }}</ui-btn>
+
         <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- search page -->
