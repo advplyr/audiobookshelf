@@ -13,6 +13,7 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
+const CacheManager = require('../managers/CacheManager')
 
 /**
  * @typedef RequestUserObject
@@ -454,6 +455,34 @@ class PodcastController {
     }
 
     res.json(episode.toOldJSON(req.libraryItem.id))
+  }
+
+  /**
+   * GET: /api/podcasts/:id/episode/:episodeId/cover
+   * Get episode cover image
+   * Fallback to podcast cover if episode has no custom cover art
+   *
+   * @param {import('express').Request} req
+   * @param {Response} res
+   */
+  async getEpisodeCover(req, res) {
+    const libraryItemId = req.params.id
+    const episodeId = req.params.episodeId
+    const { query: { width, height, format } } = req
+
+    if (!libraryItemId || !episodeId) {
+      return res.sendStatus(400)
+    }
+
+    if (req.query.ts) res.set('Cache-Control', 'private, max-age=86400')
+
+    const options = {
+      format: format || 'webp',
+      width: width ? parseInt(width) : null,
+      height: height ? parseInt(height) : null
+    }
+
+    return CacheManager.handleEpisodeCoverCache(res, libraryItemId, episodeId, options)
   }
 
   /**
