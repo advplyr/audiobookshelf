@@ -411,6 +411,31 @@ module.exports = {
   },
 
   /**
+   * Get podcast episodes for continue series shelf
+   * Returns the next episode for podcasts that have at least 1 finished episode and at least 1 unfinished episode
+   * - Serial podcasts: oldest unfinished episode (oldest to newest)
+   * - Episodic podcasts: newest unfinished episode (latest to oldest)
+   * An episode is unfinished if: has progress with isFinished = false OR no progress entry
+   * @param {import('../../models/Library')} library
+   * @param {import('../../models/User')} user
+   * @param {number} limit
+   * @returns {Promise<{libraryItems:oldLibraryItem[], count:number}>}
+   */
+  async getPodcastEpisodesContinueSeries(library, user, limit) {
+    if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
+
+    const { libraryItems, count } = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, limit, 0)
+    return {
+      count,
+      libraryItems: libraryItems.map((li) => {
+        const oldLibraryItem = li.toOldJSONMinified()
+        oldLibraryItem.recentEpisode = li.recentEpisode
+        return oldLibraryItem
+      })
+    }
+  },
+
+  /**
    * Get library items for an author, optional use user permissions
    * @param {import('../../models/Author')} author
    * @param {import('../../models/User')} user
