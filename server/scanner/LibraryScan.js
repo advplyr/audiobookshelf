@@ -30,6 +30,10 @@ class LibraryScan {
     this.logs = []
   }
 
+  get loggerScannerLogsToKeep() {
+    return global.ServerSettings?.loggerScannerLogsToKeep || 2
+  }
+
   get libraryId() {
     return this.library.id
   }
@@ -125,9 +129,7 @@ class LibraryScan {
   async saveLog() {
     const scanLogDir = Path.join(global.MetadataPath, 'logs', 'scans')
 
-    if (!(await fs.pathExists(scanLogDir))) {
-      await fs.mkdir(scanLogDir)
-    }
+    await fs.ensureDir(scanLogDir)
 
     const outputPath = Path.join(scanLogDir, this.logFilename)
     const logLines = [JSON.stringify(this.toJSON())]
@@ -137,6 +139,40 @@ class LibraryScan {
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
 
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
+
+    await this.purgeOldScanLogs(scanLogDir)
+  }
+
+  /**
+   * Keep the most recent N scan logs in metadata/logs/scans.
+   * Where N is the server setting `loggerScannerLogsToKeep`.
+   *
+   * @param {string} scanLogDir
+   */
+  async purgeOldScanLogs(scanLogDir) {
+    const scanLogsToKeep = this.loggerScannerLogsToKeep
+
+    let scanFiles
+    try {
+      scanFiles = await fs.readdir(scanLogDir)
+    } catch (error) {
+      Logger.warn(`[LibraryScan] Failed to read scan log dir "${scanLogDir}": ${error.message}`)
+      return
+    }
+
+    const scanLogFiles = (scanFiles || []).filter((f) => Path.extname(f) === '.txt').sort()
+    if (scanLogFiles.length <= scanLogsToKeep) return
+
+    const filesToRemove = scanLogFiles.slice(0, scanLogFiles.length - scanLogsToKeep)
+    for (const file of filesToRemove) {
+      const fullPath = Path.join(scanLogDir, file)
+      try {
+        await fs.unlink(fullPath)
+        Logger.info(`[LibraryScan] Removed scan log "${fullPath}"`)
+      } catch (error) {
+        Logger.warn(`[LibraryScan] Failed to remove scan log "${fullPath}": ${error.message}`)
+      }
+    }
   }
 }
 module.exports = LibraryScan
