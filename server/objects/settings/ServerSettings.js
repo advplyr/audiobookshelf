@@ -82,6 +82,9 @@ class ServerSettings {
     this.authOpenIDGroupClaim = ''
     this.authOpenIDAdvancedPermsClaim = ''
     this.authOpenIDSubfolderForRedirectURLs = undefined
+    this.authOpenIDScopes = 'openid profile email'
+    this.authOpenIDGroupMap = {}
+    this.authOpenIDRequireVerifiedEmail = false
 
     if (settings) {
       this.construct(settings)
@@ -146,6 +149,9 @@ class ServerSettings {
     this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
     this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
+    this.authOpenIDScopes = settings.authOpenIDScopes || 'openid profile email'
+    this.authOpenIDGroupMap = settings.authOpenIDGroupMap || {}
+    this.authOpenIDRequireVerifiedEmail = !!settings.authOpenIDRequireVerifiedEmail
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -255,7 +261,10 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
-      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
+      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
+      authOpenIDScopes: this.authOpenIDScopes,
+      authOpenIDGroupMap: this.authOpenIDGroupMap,
+      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail
     }
   }
 
@@ -267,6 +276,9 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    delete json.authOpenIDScopes
+    delete json.authOpenIDGroupMap
+    delete json.authOpenIDRequireVerifiedEmail
     return json
   }
 
@@ -281,29 +293,41 @@ class ServerSettings {
     return this.authOpenIDIssuerURL && this.authOpenIDAuthorizationURL && this.authOpenIDTokenURL && this.authOpenIDUserInfoURL && this.authOpenIDJwksURL && this.authOpenIDClientID && this.authOpenIDClientSecret && this.authOpenIDTokenSigningAlgorithm
   }
 
-  get authenticationSettings() {
+  /**
+   * All OIDC-related setting keys (values only, for admin API)
+   */
+  get openIDSettingsValues() {
     return {
-      authLoginCustomMessage: this.authLoginCustomMessage,
-      authActiveAuthMethods: this.authActiveAuthMethods,
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
       authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
       authOpenIDJwksURL: this.authOpenIDJwksURL,
       authOpenIDLogoutURL: this.authOpenIDLogoutURL,
-      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
-      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDClientID: this.authOpenIDClientID,
+      authOpenIDClientSecret: this.authOpenIDClientSecret,
       authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
       authOpenIDButtonText: this.authOpenIDButtonText,
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
-      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs,
+      authOpenIDGroupClaim: this.authOpenIDGroupClaim,
+      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim,
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
+      authOpenIDScopes: this.authOpenIDScopes,
+      authOpenIDGroupMap: this.authOpenIDGroupMap,
+      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail
+    }
+  }
 
-      authOpenIDSamplePermissions: User.getSampleAbsPermissions()
+  get authenticationSettings() {
+    return {
+      authLoginCustomMessage: this.authLoginCustomMessage,
+      authActiveAuthMethods: this.authActiveAuthMethods,
+      openIDSettings: {
+        values: this.openIDSettingsValues
+      }
     }
   }
 

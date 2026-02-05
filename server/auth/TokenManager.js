@@ -156,9 +156,10 @@ class TokenManager {
    *
    * @param {{ id:string, username:string }} user
    * @param {import('express').Request} req
+   * @param {string|null} [oidcIdToken=null] - OIDC id_token to store in session for logout
    * @returns {Promise<{ accessToken:string, refreshToken:string, session:import('../models/Session') }>}
    */
-  async createTokensAndSession(user, req) {
+  async createTokensAndSession(user, req, oidcIdToken = null) {
     const ipAddress = requestIp.getClientIp(req)
     const userAgent = req.headers['user-agent']
     const accessToken = this.generateTempAccessToken(user)
@@ -167,7 +168,7 @@ class TokenManager {
     // Calculate expiration time for the refresh token
     const expiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
 
-    const session = await Database.sessionModel.createSession(user.id, ipAddress, userAgent, refreshToken, expiresAt)
+    const session = await Database.sessionModel.createSession(user.id, ipAddress, userAgent, refreshToken, expiresAt, oidcIdToken)
 
     return {
       accessToken,
@@ -390,6 +391,17 @@ class TokenManager {
     // So invalidate all sessions for the user
     await Database.sessionModel.destroy({ where: { userId: user.id } })
     return null
+  }
+
+  /**
+   * Get a session by its refresh token
+   *
+   * @param {string} refreshToken
+   * @returns {Promise<import('../models/Session')|null>}
+   */
+  async getSessionByRefreshToken(refreshToken) {
+    if (!refreshToken) return null
+    return await Database.sessionModel.findOne({ where: { refreshToken } })
   }
 
   /**

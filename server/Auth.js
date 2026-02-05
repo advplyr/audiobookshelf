@@ -107,6 +107,7 @@ class Auth {
   // #region Passport strategies
   /**
    * Inializes all passportjs strategies and other passportjs ralated initialization.
+   * Note: OIDC no longer uses passport - only local auth and JWT use it.
    */
   async initPassportJs() {
     // Check if we should load the local strategy (username + password login)
@@ -114,10 +115,7 @@ class Auth {
       this.localAuthStrategy.init()
     }
 
-    // Check if we should load the openid strategy
-    if (global.ServerSettings.authActiveAuthMethods.includes('openid')) {
-      this.oidcAuthStrategy.init()
-    }
+    // OIDC no longer needs passport initialization - it handles tokens directly
 
     // Load the JwtStrategy (always) -> for bearer token auth
     passport.use(
@@ -168,7 +166,7 @@ class Auth {
    */
   unuseAuthStrategy(name) {
     if (name === 'openid') {
-      this.oidcAuthStrategy.unuse()
+      this.oidcAuthStrategy.reload()
     } else if (name === 'local') {
       this.localAuthStrategy.unuse()
     } else {
@@ -183,7 +181,7 @@ class Auth {
    */
   useAuthStrategy(name) {
     if (name === 'openid') {
-      this.oidcAuthStrategy.init()
+      this.oidcAuthStrategy.reload()
     } else if (name === 'local') {
       this.localAuthStrategy.init()
     } else {
@@ -202,84 +200,7 @@ class Auth {
   }
 
   /**
-   * Stores the client's choice of login callback method in temporary cookies.
-   *
-   * The `authMethod` parameter specifies the authentication strategy and can have the following values:
-   * - 'local': Standard authentication,
-   * - 'api': Authentication for API use
-   * - 'openid': OpenID authentication directly over web
-   * - 'openid-mobile': OpenID authentication, but done via an mobile device
-   *
-   * @param {Request} req
-   * @param {Response} res
-   * @param {string} authMethod - The authentication method, default is 'local'.
-   * @returns {Object|null} - Returns error object if validation fails, null if successful
-   */
-  paramsToCookies(req, res, authMethod = 'local') {
-    const TWO_MINUTES = 120000 // 2 minutes in milliseconds
-    const callback = req.query.redirect_uri || req.query.callback
-
-    // Additional handling for non-API based authMethod
-    if (!this.isAuthMethodAPIBased(authMethod)) {
-      // Store 'auth_state' if present in the request
-      if (req.query.state) {
-        res.cookie('auth_state', req.query.state, { maxAge: TWO_MINUTES, httpOnly: true })
-      }
-
-      // Validate and store the callback URL
-      if (!callback) {
-        res.status(400).send({ message: 'No callback parameter' })
-        return { error: 'No callback parameter' }
-      }
-
-      // Security: Validate callback URL is same-origin only
-      if (!this.oidcAuthStrategy.isValidWebCallbackUrl(callback, req)) {
-        Logger.warn(`[Auth] Rejected invalid callback URL: ${callback}`)
-        res.status(400).send({ message: 'Invalid callback URL - must be same-origin' })
-        return { error: 'Invalid callback URL - must be same-origin' }
-      }
-
-      res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
-    }
-
-    // Store the authentication method for long
-    Logger.debug(`[Auth] paramsToCookies: setting auth_method cookie to ${authMethod}`)
-    res.cookie('auth_method', authMethod, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
-    return null
-  }
-
-  /**
-   * Informs the client in the right mode about a successfull login and the token
-   * (clients choise is restored from cookies).
-   *
-   * @param {Request} req
-   * @param {Response} res
-   */
-  async handleLoginSuccessBasedOnCookie(req, res) {
-    // Handle token generation and get userResponse object
-    // For API based auth (e.g. mobile), we will return the refresh token in the response
-    const isApiBased = this.isAuthMethodAPIBased(req.cookies.auth_method)
-    Logger.debug(`[Auth] handleLoginSuccessBasedOnCookie: isApiBased: ${isApiBased}, auth_method: ${req.cookies.auth_method}`)
-    const userResponse = await this.handleLoginSuccess(req, res, isApiBased)
-
-    if (isApiBased) {
-      // REST request - send data
-      res.json(userResponse)
-    } else {
-      // UI request -> check if we have a callback url
-      if (req.cookies.auth_cb) {
-        let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
-        // UI request -> redirect to auth_cb url and send the jwt token as parameter
-        // TODO: Temporarily continue sending the old token as setToken
-        res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.token}&accessToken=${userResponse.user.accessToken}${stateQuery}`)
-      } else {
-        res.status(400).send('No callback or already expired')
-      }
-    }
-  }
-
-  /**
-   * After login success from local or oidc
+   * After login success from local auth
    * req.user is set by passport.authenticate
    *
    * attaches the access token to the user in the response
@@ -318,6 +239,9 @@ class Auth {
   async initAuthRoutes(router) {
     // Local strategy login route (takes username and password)
     router.post('/login', this.authRateLimiter, passport.authenticate('local'), async (req, res) => {
+      // Clear auth_method cookie so a stale 'openid' value doesn't affect logout
+      res.clearCookie('auth_method')
+
       // Check if mobile app wants refresh token in response
       const returnTokens = req.headers['x-return-tokens'] === 'true'
 
@@ -358,16 +282,24 @@ class Auth {
 
     // openid strategy login route (this redirects to the configured openid login provider)
     router.get('/auth/openid', this.authRateLimiter, (req, res) => {
-      const authorizationUrlResponse = this.oidcAuthStrategy.getAuthorizationUrl(req)
+      // Validate callback URL for web flow
+      const callback = req.query.redirect_uri || req.query.callback
+      const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
+
+      if (!isMobileFlow) {
+        if (!callback) {
+          return res.status(400).send({ message: 'No callback parameter' })
+        }
+        if (!this.oidcAuthStrategy.isValidWebCallbackUrl(callback, req)) {
+          Logger.warn(`[Auth] Rejected invalid callback URL: ${callback}`)
+          return res.status(400).send({ message: 'Invalid callback URL - must be same-origin' })
+        }
+      }
+
+      const authorizationUrlResponse = this.oidcAuthStrategy.getAuthorizationUrl(req, isMobileFlow, callback)
 
       if (authorizationUrlResponse.error) {
         return res.status(authorizationUrlResponse.status).send(authorizationUrlResponse.error)
-      }
-
-      // Check if paramsToCookies sent a response (e.g., due to invalid callback URL)
-      const cookieResult = this.paramsToCookies(req, res, authorizationUrlResponse.isMobileFlow ? 'openid-mobile' : 'openid')
-      if (cookieResult && cookieResult.error) {
-        return // Response already sent by paramsToCookies
       }
 
       res.redirect(authorizationUrlResponse.authorizationUrl)
@@ -377,77 +309,66 @@ class Auth {
     // It will redirect to an app-link like audiobookshelf://oauth
     router.get('/auth/openid/mobile-redirect', this.authRateLimiter, (req, res) => this.oidcAuthStrategy.handleMobileRedirect(req, res))
 
-    // openid strategy callback route (this receives the token from the configured openid login provider)
-    router.get(
-      '/auth/openid/callback',
-      this.authRateLimiter,
-      (req, res, next) => {
-        const sessionKey = this.oidcAuthStrategy.getStrategy()._key
+    // openid strategy callback route - now uses direct token exchange (no passport)
+    router.get('/auth/openid/callback', this.authRateLimiter, async (req, res) => {
+      const isMobile = !!req.session.oidc?.isMobile
+      // Extract session data before cleanup (needed for redirect on success)
+      const callbackUrl = req.session.oidc?.callbackUrl
 
-        if (!req.session[sessionKey]) {
-          return res.status(400).send('No session')
+      try {
+        const user = await this.oidcAuthStrategy.handleCallback(req)
+
+        // req.login still works (passport initialized for JWT/local)
+        await new Promise((resolve, reject) => {
+          req.login(user, (err) => (err ? reject(err) : resolve()))
+        })
+
+        // Create tokens and session, storing oidcIdToken in DB
+        const returnTokens = isMobile
+        const { accessToken, refreshToken } = await this.tokenManager.createTokensAndSession(user, req, user.openid_id_token)
+
+        const userResponse = await this.getUserLoginResponsePayload(user)
+        userResponse.user.accessToken = accessToken
+        userResponse.user.refreshToken = returnTokens ? refreshToken : null
+
+        // Set auth_method cookie
+        const authMethod = isMobile ? 'openid-mobile' : 'openid'
+        res.cookie('auth_method', authMethod, {
+          maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+          httpOnly: true,
+          secure: req.secure || req.get('x-forwarded-proto') === 'https',
+          sameSite: 'lax'
+        })
+
+        if (!returnTokens) {
+          this.tokenManager.setRefreshTokenCookie(req, res, refreshToken)
         }
 
-        // If the client sends us a code_verifier, we will tell passport to use this to send this in the token request
-        // The code_verifier will be validated by the oauth2 provider by comparing it to the code_challenge in the first request
-        // Crucial for API/Mobile clients
-        if (req.query.code_verifier) {
-          req.session[sessionKey].code_verifier = req.query.code_verifier
-        }
-
-        function handleAuthError(isMobile, errorCode, errorMessage, logMessage, response) {
-          Logger.error(JSON.stringify(logMessage, null, 2))
-          if (response) {
-            // Depending on the error, it can also have a body
-            // We also log the request header the passport plugin sents for the URL
-            const header = response.req?._header.replace(/Authorization: [^\r\n]*/i, 'Authorization: REDACTED')
-            Logger.debug(header + '\n' + JSON.stringify(response.body, null, 2))
-          }
-
-          if (isMobile) {
-            return res.status(errorCode).send(errorMessage)
+        if (isMobile) {
+          res.json(userResponse)
+        } else {
+          if (callbackUrl) {
+            // TODO: Temporarily continue sending the old token as setToken
+            res.redirect(302, `${callbackUrl}?setToken=${userResponse.user.token}&accessToken=${accessToken}`)
           } else {
-            return res.redirect(`/login?error=${encodeURIComponent(errorMessage)}&autoLaunch=0`)
+            res.status(400).send('No callback URL')
           }
         }
-
-        function passportCallback(req, res, next) {
-          return (err, user, info) => {
-            const isMobile = req.session[sessionKey]?.mobile === true
-            if (err) {
-              return handleAuthError(isMobile, 500, 'Error in callback', `[Auth] Error in openid callback - ${err}`, err?.response)
-            }
-
-            if (!user) {
-              // Info usually contains the error message from the SSO provider
-              return handleAuthError(isMobile, 401, 'Unauthorized', `[Auth] No data in openid callback - ${info}`, info?.response)
-            }
-
-            req.logIn(user, (loginError) => {
-              if (loginError) {
-                return handleAuthError(isMobile, 500, 'Error during login', `[Auth] Error in openid callback: ${loginError}`)
-              }
-
-              // The id_token does not provide access to the user, but is used to identify the user to the SSO provider
-              //   instead it containts a JWT with userinfo like user email, username, etc.
-              //   the client will get to know it anyway in the logout url according to the oauth2 spec
-              //   so it is safe to send it to the client, but we use strict settings
-              res.cookie('openid_id_token', user.openid_id_token, { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true, secure: true, sameSite: 'Strict' })
-              next()
-            })
-          }
+      } catch (error) {
+        Logger.error(`[Auth] OIDC callback error: ${error.message}\n${error.stack}`)
+        if (isMobile) {
+          res.status(error.statusCode || 500).json({ error: error.message })
+        } else {
+          res.redirect(`${global.RouterBasePath}/login?error=${encodeURIComponent(error.message)}&autoLaunch=0`)
         }
-
-        // While not required by the standard, the passport plugin re-sends the original redirect_uri in the token request
-        // We need to set it correctly, as some SSO providers (e.g. keycloak) check that parameter when it is provided
-        // We set it here again because the passport param can change between requests
-        return passport.authenticate('openid-client', { redirect_uri: req.session[sessionKey].sso_redirect_uri }, passportCallback(req, res, next))(req, res, next)
-      },
-      // on a successfull login: read the cookies and react like the client requested (callback or json)
-      this.handleLoginSuccessBasedOnCookie.bind(this)
-    )
+      } finally {
+        // Clean up OIDC session data to prevent replay (on both success and error paths)
+        delete req.session.oidc
+      }
+    })
 
     /**
+     * @deprecated Use POST /api/auth-settings/openid/discover instead. This route will be removed in a future version.
      * Helper route used to auto-populate the openid URLs in config/authentication
      * Takes an issuer URL as a query param and requests the config data at "/.well-known/openid-configuration"
      *
@@ -473,7 +394,7 @@ class Auth {
 
     // Logout route
     router.post('/logout', async (req, res) => {
-      // Refresh token be alternatively be sent in the header
+      // Refresh token can alternatively be sent in the header
       const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
 
       // Clear refresh token cookie
@@ -481,8 +402,13 @@ class Auth {
         path: '/'
       })
 
-      // Invalidate the session in database using refresh token
+      // Get oidcIdToken from DB session before invalidating (for OIDC logout)
+      let oidcIdToken = null
       if (refreshToken) {
+        const session = await this.tokenManager.getSessionByRefreshToken(refreshToken)
+        if (session) {
+          oidcIdToken = session.oidcIdToken
+        }
         await this.tokenManager.invalidateRefreshToken(refreshToken)
       } else {
         Logger.info(`[Auth] logout: No refresh token on request`)
@@ -499,8 +425,7 @@ class Auth {
           let logoutUrl = null
 
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
-            logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, req.cookies.openid_id_token, authMethod)
-            res.clearCookie('openid_id_token')
+            logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, oidcIdToken, authMethod)
           }
 
           // Tell the user agent (browser) to redirect to the authentification provider's logout URL
