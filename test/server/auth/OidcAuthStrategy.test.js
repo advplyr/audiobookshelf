@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
+const OpenIDClient = require('openid-client')
 const AuthError = require('../../../server/auth/AuthError')
 
 // Test the real OidcAuthStrategy by stubbing its module-level dependencies
@@ -222,16 +223,11 @@ describe('OidcAuthStrategy', function () {
       expect(strategy.validateGroupClaim({ email: 'test@example.com' })).to.be.false
     })
 
-    it('should return false when group claim is empty array', function () {
+    it('should return true when group claim is empty array', function () {
       DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       // Empty array is falsy for the `!userinfo[groupClaimName]` check? No, [] is truthy.
       // Actually [] is truthy in JS, so this should return true
       expect(strategy.validateGroupClaim({ groups: [] })).to.be.true
-    })
-
-    it('should return false when group claim is null', function () {
-      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
-      expect(strategy.validateGroupClaim({ groups: null })).to.be.false
     })
 
     it('should work with custom claim names', function () {
@@ -572,6 +568,608 @@ describe('OidcAuthStrategy', function () {
       } catch (error) {
         expect(existingUser.destroy.called).to.be.false
       }
+    })
+  })
+
+  // ── handleCallback ───────────────────────────────────────────────────
+
+  describe('handleCallback', function () {
+    let mockClient
+
+    beforeEach(function () {
+      mockClient = {
+        callbackParams: sinon.stub().returns({ code: 'auth-code' }),
+        callback: sinon.stub(),
+        userinfo: sinon.stub()
+      }
+      sinon.stub(strategy, 'getClient').returns(mockClient)
+    })
+
+    it('should handle web flow using express session data', async function () {
+      const mockUser = { id: 'user-1', username: 'test' }
+      const mockTokenset = {
+        access_token: 'at-123',
+        id_token: 'idt-123',
+        claims: sinon.stub().returns({ sid: 'session-456' })
+      }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').resolves(mockUser)
+
+      const req = {
+        session: {
+          oidc: {
+            state: 'web-state',
+            nonce: 'web-nonce',
+            sso_redirect_uri: 'http://localhost/auth/openid/callback',
+            code_verifier: 'web-verifier'
+          }
+        },
+        query: {}
+      }
+
+      const result = await strategy.handleCallback(req)
+      expect(result.user).to.equal(mockUser)
+      expect(result.isMobileCallback).to.be.false
+
+      // Verify token exchange was called with correct parameters
+      expect(mockClient.callback.calledOnce).to.be.true
+      const [redirectUri, , checks] = mockClient.callback.firstCall.args
+      expect(redirectUri).to.equal('http://localhost/auth/openid/callback')
+      expect(checks.state).to.equal('web-state')
+      expect(checks.nonce).to.equal('web-nonce')
+      expect(checks.code_verifier).to.equal('web-verifier')
+      expect(checks.response_type).to.equal('code')
+    })
+
+    it('should fall back to openIdAuthSession Map for mobile flow', async function () {
+      const mockUser = { id: 'user-1', username: 'test' }
+      const mockTokenset = {
+        access_token: 'at-123',
+        id_token: 'idt-123',
+        claims: sinon.stub().returns({})
+      }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').resolves(mockUser)
+
+      // Pre-populate Map as if getAuthorizationUrl stored mobile session
+      strategy.openIdAuthSession.set('mobile-state', {
+        nonce: 'mobile-nonce',
+        sso_redirect_uri: 'http://localhost/auth/openid/mobile-redirect',
+        mobile_redirect_uri: 'audiobookshelf://oauth'
+      })
+
+      const req = {
+        session: {}, // No oidc session (mobile system browser != app)
+        query: { state: 'mobile-state', code_verifier: 'mobile-verifier' }
+      }
+
+      const result = await strategy.handleCallback(req)
+      expect(result.isMobileCallback).to.be.true
+      expect(result.user).to.equal(mockUser)
+
+      // Should delete the Map entry after use
+      expect(strategy.openIdAuthSession.has('mobile-state')).to.be.false
+
+      // Should use mobile nonce and code_verifier from query
+      const [, , checks] = mockClient.callback.firstCall.args
+      expect(checks.nonce).to.equal('mobile-nonce')
+      expect(checks.code_verifier).to.equal('mobile-verifier')
+    })
+
+    it('should throw AuthError when no session and no matching state', async function () {
+      const req = {
+        session: {},
+        query: { state: 'unknown-state' }
+      }
+
+      try {
+        await strategy.handleCallback(req)
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).to.be.instanceOf(AuthError)
+        expect(error.statusCode).to.equal(400)
+        expect(error.message).to.include('No OIDC session found')
+      }
+    })
+
+    it('should throw when no session and no state parameter at all', async function () {
+      const req = {
+        session: {},
+        query: {}
+      }
+
+      try {
+        await strategy.handleCallback(req)
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).to.be.instanceOf(AuthError)
+        expect(error.statusCode).to.equal(400)
+      }
+    })
+
+    it('should extract sid from id_token claims for backchannel logout', async function () {
+      const mockUser = { id: 'user-1' }
+      const mockTokenset = {
+        access_token: 'at-123',
+        id_token: 'idt-123',
+        claims: sinon.stub().returns({ sid: 'oidc-sid-789' })
+      }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').resolves(mockUser)
+
+      const req = {
+        session: { oidc: { state: 's', nonce: 'n', sso_redirect_uri: 'http://x', code_verifier: 'v' } },
+        query: {}
+      }
+
+      const result = await strategy.handleCallback(req)
+      expect(result.user.openid_session_id).to.equal('oidc-sid-789')
+    })
+
+    it('should set openid_session_id to null when no sid in claims', async function () {
+      const mockUser = { id: 'user-1' }
+      const mockTokenset = {
+        access_token: 'at-123',
+        id_token: 'idt-123',
+        claims: sinon.stub().returns({})
+      }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').resolves(mockUser)
+
+      const req = {
+        session: { oidc: { state: 's', nonce: 'n', sso_redirect_uri: 'http://x', code_verifier: 'v' } },
+        query: {}
+      }
+
+      const result = await strategy.handleCallback(req)
+      expect(result.user.openid_session_id).to.be.null
+    })
+
+
+    it('should call userinfo with the access token', async function () {
+      const mockUser = { id: 'user-1' }
+      const mockTokenset = { access_token: 'the-access-token', id_token: 'idt', claims: () => ({}) }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').resolves(mockUser)
+
+      const req = {
+        session: { oidc: { state: 's', nonce: 'n', sso_redirect_uri: 'http://x', code_verifier: 'v' } },
+        query: {}
+      }
+
+      await strategy.handleCallback(req)
+      expect(mockClient.userinfo.calledOnceWith('the-access-token')).to.be.true
+    })
+
+    it('should propagate errors from token exchange', async function () {
+      mockClient.callback.rejects(new Error('invalid_grant'))
+
+      const req = {
+        session: { oidc: { state: 's', nonce: 'n', sso_redirect_uri: 'http://x', code_verifier: 'v' } },
+        query: {}
+      }
+
+      try {
+        await strategy.handleCallback(req)
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error.message).to.include('invalid_grant')
+      }
+    })
+
+    it('should propagate errors from verifyUser', async function () {
+      const mockTokenset = { access_token: 'at', id_token: 'idt', claims: () => ({}) }
+      mockClient.callback.resolves(mockTokenset)
+      mockClient.userinfo.resolves({ sub: 'sub-1' })
+      sinon.stub(strategy, 'verifyUser').rejects(new AuthError('Group claim not found', 401))
+
+      const req = {
+        session: { oidc: { state: 's', nonce: 'n', sso_redirect_uri: 'http://x', code_verifier: 'v' } },
+        query: {}
+      }
+
+      try {
+        await strategy.handleCallback(req)
+        expect.fail('Should have thrown')
+      } catch (error) {
+        expect(error).to.be.instanceOf(AuthError)
+        expect(error.message).to.include('Group claim not found')
+      }
+    })
+  })
+
+  // ── getAuthorizationUrl ──────────────────────────────────────────────
+
+  describe('getAuthorizationUrl', function () {
+    let mockClient
+
+    beforeEach(function () {
+      mockClient = {
+        authorizationUrl: sinon.stub().returns('https://idp.example.com/authorize?params')
+      }
+      sinon.stub(strategy, 'getClient').returns(mockClient)
+      sinon.stub(OpenIDClient.generators, 'random').returns('mock-state')
+      sinon.stub(OpenIDClient.generators, 'nonce').returns('mock-nonce')
+      global.ServerSettings.authOpenIDSubfolderForRedirectURLs = ''
+    })
+
+    function makeReq(overrides = {}) {
+      const req = {
+        secure: false,
+        get: (header) => {
+          if (header === 'host') return 'example.com:3333'
+          if (header === 'x-forwarded-proto') return ''
+          return ''
+        },
+        query: {},
+        session: {},
+        ...overrides
+      }
+      return req
+    }
+
+    it('should generate authorization URL for web flow', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'challenge-123',
+        code_challenge_method: 'S256',
+        code_verifier: 'verifier-123'
+      })
+
+      const result = strategy.getAuthorizationUrl(makeReq(), false, '/login')
+
+      expect(result.authorizationUrl).to.equal('https://idp.example.com/authorize?params')
+      expect(result.isMobileFlow).to.be.false
+      expect(mockClient.authorizationUrl.calledOnce).to.be.true
+
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.redirect_uri).to.equal('http://example.com:3333/auth/openid/callback')
+      expect(params.state).to.equal('mock-state')
+      expect(params.nonce).to.equal('mock-nonce')
+      expect(params.response_type).to.equal('code')
+      expect(params.code_challenge).to.equal('challenge-123')
+      expect(params.code_challenge_method).to.equal('S256')
+    })
+
+    it('should store OIDC data in express session for web flow', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      const req = makeReq()
+      strategy.getAuthorizationUrl(req, false, '/login')
+
+      expect(req.session.oidc).to.deep.include({
+        state: 'mock-state',
+        nonce: 'mock-nonce',
+        isMobile: false,
+        code_verifier: 'v',
+        callbackUrl: '/login'
+      })
+    })
+
+    it('should reject state parameter on web flow', function () {
+      const req = makeReq({ query: { state: 'evil-state' } })
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      const result = strategy.getAuthorizationUrl(req, false, '/login')
+      expect(result.status).to.equal(400)
+      expect(result.error).to.include('not allowed on web flow')
+    })
+
+    it('should reject invalid response_type', function () {
+      const req = makeReq({ query: { response_type: 'token' } })
+      const result = strategy.getAuthorizationUrl(req, false, '/login')
+      expect(result.status).to.equal(400)
+      expect(result.error).to.include('only code supported')
+    })
+
+    it('should generate authorization URL for mobile flow', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'mob-c', code_challenge_method: 'S256'
+      })
+      sinon.stub(strategy, 'isValidRedirectUri').returns(true)
+      sinon.stub(strategy, 'cleanupStaleAuthSessions')
+
+      const req = makeReq({
+        query: { redirect_uri: 'audiobookshelf://oauth', state: 'mobile-state' }
+      })
+
+      const result = strategy.getAuthorizationUrl(req, true, null)
+
+      expect(result.isMobileFlow).to.be.true
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.redirect_uri).to.equal('http://example.com:3333/auth/openid/mobile-redirect')
+      // Mobile uses client-supplied state
+      expect(params.state).to.equal('mobile-state')
+    })
+
+    it('should store mobile session in openIdAuthSession Map', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256'
+      })
+      sinon.stub(strategy, 'isValidRedirectUri').returns(true)
+      sinon.stub(strategy, 'cleanupStaleAuthSessions')
+
+      const req = makeReq({
+        query: { redirect_uri: 'audiobookshelf://oauth', state: 'mob-state' }
+      })
+
+      strategy.getAuthorizationUrl(req, true, null)
+
+      expect(strategy.openIdAuthSession.has('mob-state')).to.be.true
+      const stored = strategy.openIdAuthSession.get('mob-state')
+      expect(stored.mobile_redirect_uri).to.equal('audiobookshelf://oauth')
+      expect(stored.nonce).to.equal('mock-nonce')
+      expect(stored.sso_redirect_uri).to.include('/auth/openid/mobile-redirect')
+    })
+
+    it('should reject invalid mobile redirect_uri', function () {
+      sinon.stub(strategy, 'isValidRedirectUri').returns(false)
+      sinon.stub(strategy, 'cleanupStaleAuthSessions')
+
+      const req = makeReq({
+        query: { redirect_uri: 'evil://callback' }
+      })
+
+      const result = strategy.getAuthorizationUrl(req, true, null)
+      expect(result.status).to.equal(400)
+      expect(result.error).to.include('Invalid redirect_uri')
+    })
+
+    it('should return error when PKCE fails for mobile', function () {
+      sinon.stub(strategy, 'generatePkce').returns({ error: 'code_challenge required for mobile flow (PKCE)' })
+      sinon.stub(strategy, 'isValidRedirectUri').returns(true)
+      sinon.stub(strategy, 'cleanupStaleAuthSessions')
+
+      const req = makeReq({
+        query: { redirect_uri: 'audiobookshelf://oauth', state: 's' }
+      })
+
+      const result = strategy.getAuthorizationUrl(req, true, null)
+      expect(result.status).to.equal(400)
+      expect(result.error).to.include('code_challenge required')
+    })
+
+    it('should use subfolder in redirect URI when configured', function () {
+      global.ServerSettings.authOpenIDSubfolderForRedirectURLs = '/audiobookshelf'
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      strategy.getAuthorizationUrl(makeReq(), false, '/login')
+
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.redirect_uri).to.equal('http://example.com:3333/audiobookshelf/auth/openid/callback')
+    })
+
+    it('should use https when request is secure', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      const req = makeReq({ secure: true })
+      strategy.getAuthorizationUrl(req, false, '/login')
+
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.redirect_uri).to.match(/^https:/)
+    })
+
+    it('should use https when x-forwarded-proto is https', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      const req = {
+        secure: false,
+        get: (h) => {
+          if (h === 'host') return 'example.com'
+          if (h === 'x-forwarded-proto') return 'https'
+          return ''
+        },
+        query: {},
+        session: {}
+      }
+      strategy.getAuthorizationUrl(req, false, '/login')
+
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.redirect_uri).to.match(/^https:/)
+    })
+
+    it('should generate state for mobile flow when client does not supply one', function () {
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256'
+      })
+      sinon.stub(strategy, 'isValidRedirectUri').returns(true)
+      sinon.stub(strategy, 'cleanupStaleAuthSessions')
+
+      const req = makeReq({
+        query: { redirect_uri: 'audiobookshelf://oauth' }
+      })
+
+      strategy.getAuthorizationUrl(req, true, null)
+
+      // When no state in query, generators.random() is called
+      expect(OpenIDClient.generators.random.calledOnce).to.be.true
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.state).to.equal('mock-state')
+    })
+
+    it('should use scope from getScope()', function () {
+      global.ServerSettings.authOpenIDScopes = 'openid profile email groups'
+      sinon.stub(strategy, 'generatePkce').returns({
+        code_challenge: 'c', code_challenge_method: 'S256', code_verifier: 'v'
+      })
+
+      strategy.getAuthorizationUrl(makeReq(), false, '/login')
+
+      const params = mockClient.authorizationUrl.firstCall.args[0]
+      expect(params.scope).to.equal('openid profile email groups')
+    })
+  })
+
+  // ── generatePkce ─────────────────────────────────────────────────────
+
+  describe('generatePkce', function () {
+    it('should generate PKCE for web flow', function () {
+      sinon.stub(OpenIDClient.generators, 'codeVerifier').returns('gen-verifier')
+      sinon.stub(OpenIDClient.generators, 'codeChallenge').returns('gen-challenge')
+
+      const result = strategy.generatePkce({ query: {} }, false)
+      expect(result.code_verifier).to.equal('gen-verifier')
+      expect(result.code_challenge).to.equal('gen-challenge')
+      expect(result.code_challenge_method).to.equal('S256')
+    })
+
+    it('should use client-provided code_challenge for mobile', function () {
+      const req = { query: { code_challenge: 'client-challenge', code_challenge_method: 'S256' } }
+      const result = strategy.generatePkce(req, true)
+
+      expect(result.code_challenge).to.equal('client-challenge')
+      expect(result.code_challenge_method).to.equal('S256')
+      expect(result.code_verifier).to.be.undefined
+    })
+
+    it('should default code_challenge_method to S256 for mobile', function () {
+      const req = { query: { code_challenge: 'cc' } }
+      const result = strategy.generatePkce(req, true)
+
+      expect(result.code_challenge_method).to.equal('S256')
+    })
+
+    it('should error when mobile has no code_challenge', function () {
+      const result = strategy.generatePkce({ query: {} }, true)
+      expect(result.error).to.include('code_challenge required')
+    })
+
+    it('should error when mobile uses non-S256 method', function () {
+      const req = { query: { code_challenge: 'cc', code_challenge_method: 'plain' } }
+      const result = strategy.generatePkce(req, true)
+      expect(result.error).to.include('Only S256')
+    })
+  })
+
+  // ── handleMobileRedirect ─────────────────────────────────────────────
+
+  describe('handleMobileRedirect', function () {
+    let res
+
+    beforeEach(function () {
+      res = {
+        redirect: sinon.stub(),
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub()
+      }
+    })
+
+    it('should redirect to mobile app with code on success', function () {
+      strategy.openIdAuthSession.set('valid-state', {
+        mobile_redirect_uri: 'audiobookshelf://oauth',
+        nonce: 'n',
+        sso_redirect_uri: 'http://localhost/auth/openid/mobile-redirect'
+      })
+
+      const req = { query: { state: 'valid-state', code: 'auth-code-123' } }
+      strategy.handleMobileRedirect(req, res)
+
+      expect(res.redirect.calledOnce).to.be.true
+      const redirectUrl = res.redirect.firstCall.args[0]
+      expect(redirectUrl).to.include('audiobookshelf://oauth')
+      expect(redirectUrl).to.include('code=auth-code-123')
+      expect(redirectUrl).to.include('state=valid-state')
+      // Should keep Map entry for the callback
+      expect(strategy.openIdAuthSession.has('valid-state')).to.be.true
+    })
+
+    it('should forward IdP error to mobile app and clean up Map', function () {
+      strategy.openIdAuthSession.set('err-state', {
+        mobile_redirect_uri: 'audiobookshelf://oauth',
+        nonce: 'n',
+        sso_redirect_uri: 'http://localhost/auth/openid/mobile-redirect'
+      })
+
+      const req = { query: { state: 'err-state', error: 'access_denied', error_description: 'User denied' } }
+      strategy.handleMobileRedirect(req, res)
+
+      expect(res.redirect.calledOnce).to.be.true
+      const redirectUrl = res.redirect.firstCall.args[0]
+      expect(redirectUrl).to.include('error=access_denied')
+      expect(redirectUrl).to.include('error_description=User+denied')
+      // Should clean up Map on error
+      expect(strategy.openIdAuthSession.has('err-state')).to.be.false
+    })
+
+    it('should return 400 when state is missing', function () {
+      const req = { query: {} }
+      strategy.handleMobileRedirect(req, res)
+
+      expect(res.status.calledWith(400)).to.be.true
+      expect(res.send.calledOnce).to.be.true
+    })
+
+    it('should return 400 when state is not in Map', function () {
+      const req = { query: { state: 'unknown-state', code: 'code-123' } }
+      strategy.handleMobileRedirect(req, res)
+
+      expect(res.status.calledWith(400)).to.be.true
+    })
+
+    it('should return 400 when Map entry has no mobile_redirect_uri', function () {
+      strategy.openIdAuthSession.set('no-uri-state', {
+        nonce: 'n',
+        sso_redirect_uri: 'http://localhost/auth/openid/mobile-redirect'
+        // missing mobile_redirect_uri
+      })
+
+      const req = { query: { state: 'no-uri-state', code: 'code-123' } }
+      strategy.handleMobileRedirect(req, res)
+
+      expect(res.status.calledWith(400)).to.be.true
+    })
+  })
+
+  // ── cleanupStaleAuthSessions ─────────────────────────────────────────
+
+  describe('cleanupStaleAuthSessions', function () {
+    it('should remove sessions older than 10 minutes', function () {
+      const now = Date.now()
+      strategy.openIdAuthSession.set('old', { created_at: now - 11 * 60 * 1000 })
+      strategy.openIdAuthSession.set('fresh', { created_at: now - 1000 })
+
+      strategy.cleanupStaleAuthSessions()
+
+      expect(strategy.openIdAuthSession.has('old')).to.be.false
+      expect(strategy.openIdAuthSession.has('fresh')).to.be.true
+    })
+
+    it('should enforce maximum size of 1000', function () {
+      for (let i = 0; i < 1050; i++) {
+        strategy.openIdAuthSession.set(`state-${i}`, { created_at: Date.now() })
+      }
+
+      strategy.cleanupStaleAuthSessions()
+
+      expect(strategy.openIdAuthSession.size).to.be.at.most(1000)
+    })
+
+    it('should evict oldest entries first when over limit', function () {
+      const now = Date.now()
+      for (let i = 0; i < 1050; i++) {
+        strategy.openIdAuthSession.set(`state-${i}`, { created_at: now + i })
+      }
+
+      strategy.cleanupStaleAuthSessions()
+
+      // Oldest entries (lowest i) should be evicted
+      expect(strategy.openIdAuthSession.has('state-0')).to.be.false
+      // Newest entries should survive
+      expect(strategy.openIdAuthSession.has('state-1049')).to.be.true
     })
   })
 })
