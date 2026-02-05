@@ -459,7 +459,7 @@ class Auth {
       if (!global.ServerSettings.authOpenIDBackchannelLogoutEnabled) {
         return res.status(501).json({ error: 'not_implemented' })
       }
-      if (!global.ServerSettings.authActiveAuthMethods.includes('openid') || !global.ServerSettings.isOpenIDAuthSettingsValid) {
+      if (!global.ServerSettings.authActiveAuthMethods.includes('openid') || !Database.serverSettings.isOpenIDAuthSettingsValid) {
         return res.status(501).json({ error: 'not_implemented' })
       }
 
