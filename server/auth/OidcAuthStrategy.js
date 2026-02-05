@@ -168,7 +168,7 @@ class OidcAuthStrategy {
       }
 
       // Enforce email_verified check on every login if configured
-      if (global.ServerSettings.authOpenIDRequireVerifiedEmail && userinfo.email_verified === false) {
+      if (global.ServerSettings.authOpenIDRequireVerifiedEmail && userinfo.email_verified !== true) {
         throw new AuthError('Email is not verified', 401)
       }
 

@@ -481,14 +481,16 @@ describe('OidcAuthStrategy', function () {
       expect(result).to.equal(user)
     })
 
-    it('should allow login when email_verified is missing and enforcement is on', async function () {
-      // Only reject when explicitly false, not when absent
+    it('should reject login when email_verified is missing and enforcement is on', async function () {
       global.ServerSettings.authOpenIDRequireVerifiedEmail = true
-      const user = makeUser()
-      DatabaseStub.userModel.findUserFromOpenIdUserInfo.resolves(user)
 
-      const result = await strategy.verifyUser({ id_token: 'tok' }, { sub: 'sub-1', email: 'a@b.com' })
-      expect(result).to.equal(user)
+      try {
+        await strategy.verifyUser({ id_token: 'tok' }, { sub: 'sub-1', email: 'a@b.com' })
+        expect.fail('should have thrown')
+      } catch (err) {
+        expect(err.message).to.equal('Email is not verified')
+        expect(err.statusCode).to.equal(401)
+      }
     })
 
     it('should auto-register new user when enabled', async function () {
