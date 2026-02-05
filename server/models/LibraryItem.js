@@ -592,6 +592,7 @@ class LibraryItem extends Model {
         description: mediaExpanded.description,
         isbn: mediaExpanded.isbn,
         asin: mediaExpanded.asin,
+        rating: mediaExpanded.rating,
         language: mediaExpanded.language,
         explicit: !!mediaExpanded.explicit,
         abridged: !!mediaExpanded.abridged

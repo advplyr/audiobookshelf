@@ -839,6 +839,7 @@ class BookScanner {
       description: libraryItem.media.description,
       isbn: libraryItem.media.isbn,
       asin: libraryItem.media.asin,
+      rating: libraryItem.media.rating,
       language: libraryItem.media.language,
       explicit: !!libraryItem.media.explicit,
       abridged: !!libraryItem.media.abridged

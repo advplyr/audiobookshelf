@@ -111,6 +111,10 @@ export default {
           value: 'media.metadata.publishedYear'
         },
         {
+          text: this.$strings.LabelRating,
+          value: 'media.metadata.rating'
+        },
+        {
           text: this.$strings.LabelAddedAt,
           value: 'addedAt'
         },

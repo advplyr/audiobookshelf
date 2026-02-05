@@ -113,7 +113,7 @@ class CustomProviderAdapter {
 
     // re-map keys to throw out
     return matches.map((match) => {
-      const { title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration } = match
+      const { title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration, rating } = match
 
       const payload = {
         title: toStringOrUndefined(title),
@@ -130,7 +130,8 @@ class CustomProviderAdapter {
         tags: validateTagsGenresArray(tags),
         series: validateSeriesArray(series),
         language: toStringOrUndefined(language),
-        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined
+        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined,
+        rating: rating !== undefined && rating !== null && !isNaN(Number(rating)) && Number(rating) > 0 ? Number(rating) : undefined
       }
 
       // Remove undefined values

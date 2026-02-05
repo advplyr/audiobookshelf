@@ -128,6 +128,12 @@ components:
           type: integer
           format: int64
           description: Duration in seconds
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          description: Star rating (0-5, typically 0.5 increments)
 
     SeriesMetadata:
       type: object
