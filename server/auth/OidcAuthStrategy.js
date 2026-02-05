@@ -175,7 +175,8 @@ class OidcAuthStrategy {
       user = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
 
       if (user?.error) {
-        throw new AuthError('Invalid userinfo or already linked', 401)
+        Logger.warn(`[OidcAuth] User lookup failed: ${user.error}`)
+        throw new AuthError(user.error, 401)
       }
 
       if (!user) {
@@ -273,7 +274,8 @@ class OidcAuthStrategy {
       if (user.type === 'root') {
         // Check OpenID Group
         if (userType !== 'admin') {
-          throw new AuthError(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`, 403)
+          Logger.warn(`[OidcAuth] Root user "${user.username}" denied login: IdP group maps to "${userType}", not admin`)
+          throw new AuthError('Root user cannot be downgraded from admin. Denying login.', 403)
         } else {
           // If root user is logging in via OpenID, we will not change the type
           return
@@ -286,7 +288,8 @@ class OidcAuthStrategy {
         await user.save()
       }
     } else {
-      throw new AuthError(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`, 401)
+      Logger.warn(`[OidcAuth] No valid group found in userinfo groups: ${JSON.stringify(userinfo[groupClaimName])}`)
+      throw new AuthError('No valid group found in userinfo', 401)
     }
   }
 
