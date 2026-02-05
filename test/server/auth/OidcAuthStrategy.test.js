@@ -2,13 +2,15 @@ const { expect } = require('chai')
 const sinon = require('sinon')
 const AuthError = require('../../../server/auth/AuthError')
 
-// We test setUserGroup in isolation by creating a minimal instance
-// and stubbing the globals it depends on
+// Test the real OidcAuthStrategy.setUserGroup method by stubbing its dependencies
 describe('OidcAuthStrategy - setUserGroup', function () {
   let OidcAuthStrategy, strategy
+  let DatabaseStub
 
-  before(function () {
-    // Stub global dependencies that OidcAuthStrategy requires at import time
+  beforeEach(function () {
+    // Clear require cache so we get fresh stubs each test
+    delete require.cache[require.resolve('../../../server/auth/OidcAuthStrategy')]
+
     global.ServerSettings = {
       authOpenIDGroupClaim: '',
       authOpenIDGroupMap: {},
@@ -16,71 +18,52 @@ describe('OidcAuthStrategy - setUserGroup', function () {
       isOpenIDAuthSettingsValid: false,
       authOpenIDMobileRedirectURIs: []
     }
-    // Stub Database to avoid requiring sequelize
-    const Database = { serverSettings: global.ServerSettings }
-    const mod = require('module')
-    const originalResolve = mod._resolveFilename
-    // We need to require the actual file, but it imports Database and Logger
-    // Use proxyquire-style approach: clear cache and provide stubs
-  })
 
-  beforeEach(function () {
-    // Create a fresh instance for each test by directly constructing the class
-    // Since the module has complex imports, we test the logic directly
-    strategy = {
-      setUserGroup: async function (user, userinfo) {
-        const groupClaimName = global.ServerSettings.authOpenIDGroupClaim
-        if (!groupClaimName) return
-
-        if (!userinfo[groupClaimName]) throw new AuthError(`Group claim ${groupClaimName} not found in userinfo`, 401)
-
-        const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase())
-        const rolesInOrderOfPriority = ['admin', 'user', 'guest']
-        const groupMap = global.ServerSettings.authOpenIDGroupMap || {}
-
-        let userType = null
-
-        if (Object.keys(groupMap).length > 0) {
-          for (const role of rolesInOrderOfPriority) {
-            const mappedGroups = Object.entries(groupMap)
-              .filter(([, v]) => v === role)
-              .map(([k]) => k.toLowerCase())
-            if (mappedGroups.some((g) => groupsList.includes(g))) {
-              userType = role
-              break
-            }
-          }
-        } else {
-          userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role))
-        }
-
-        if (userType) {
-          if (user.type === 'root') {
-            if (userType !== 'admin') {
-              throw new AuthError(`Root user "${user.username}" cannot be downgraded to ${userType}. Denying login.`, 403)
-            } else {
-              return
-            }
-          }
-          if (user.type !== userType) {
-            user.type = userType
-            await user.save()
-          }
-        } else {
-          throw new AuthError(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`, 401)
-        }
-      }
+    DatabaseStub = {
+      serverSettings: global.ServerSettings
     }
+
+    const LoggerStub = { info: sinon.stub(), warn: sinon.stub(), error: sinon.stub(), debug: sinon.stub() }
+
+    // Stub dependencies in require cache
+    const databasePath = require.resolve('../../../server/Database')
+    const loggerPath = require.resolve('../../../server/Logger')
+
+    // Save originals for cleanup
+    this._originals = {
+      databasePath,
+      loggerPath,
+      originalDatabase: require.cache[databasePath],
+      originalLogger: require.cache[loggerPath]
+    }
+
+    // Replace with stubs
+    require.cache[databasePath] = { id: databasePath, exports: DatabaseStub }
+    require.cache[loggerPath] = { id: loggerPath, exports: LoggerStub }
+
+    // Now require the real class
+    OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy')
+    strategy = new OidcAuthStrategy()
   })
 
   afterEach(function () {
+    const { databasePath, loggerPath, originalDatabase, originalLogger } = this._originals
+    if (originalDatabase) require.cache[databasePath] = originalDatabase
+    else delete require.cache[databasePath]
+    if (originalLogger) require.cache[loggerPath] = originalLogger
+    else delete require.cache[loggerPath]
+
+    delete require.cache[require.resolve('../../../server/auth/OidcAuthStrategy')]
+
     global.ServerSettings.authOpenIDGroupClaim = ''
     global.ServerSettings.authOpenIDGroupMap = {}
+    sinon.restore()
   })
 
   describe('legacy direct name match (empty groupMap)', function () {
     it('should assign admin role when group list includes admin', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {}
 
       const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
@@ -93,6 +76,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should assign user role when group list includes user but not admin', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {}
 
       const user = { type: 'guest', username: 'testuser', save: sinon.stub().resolves() }
@@ -104,6 +88,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should throw when no valid group found', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {}
 
       const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
@@ -123,6 +108,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
   describe('explicit group mapping', function () {
     it('should map custom group names to roles', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {
         'oidc-admins': 'admin',
         'oidc-users': 'user',
@@ -138,6 +124,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should prioritize admin over user', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {
         'team-leads': 'admin',
         'developers': 'user'
@@ -152,6 +139,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should be case-insensitive for group matching', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {
         'MyAdmins': 'admin'
       }
@@ -165,6 +153,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should throw when no mapped group matches', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {
         'admins': 'admin'
       }
@@ -185,6 +174,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
   describe('root user protection', function () {
     it('should not downgrade root user to non-admin', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {}
 
       const user = { type: 'root', username: 'root', save: sinon.stub().resolves() }
@@ -202,6 +192,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
 
     it('should allow root user with admin group (no change)', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
       global.ServerSettings.authOpenIDGroupMap = {}
 
       const user = { type: 'root', username: 'root', save: sinon.stub().resolves() }
@@ -216,6 +207,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
   describe('no group claim configured', function () {
     it('should do nothing when authOpenIDGroupClaim is empty', async function () {
       global.ServerSettings.authOpenIDGroupClaim = ''
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = ''
 
       const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
       const userinfo = { groups: ['admin'] }
@@ -229,6 +221,7 @@ describe('OidcAuthStrategy - setUserGroup', function () {
   describe('missing group claim in userinfo', function () {
     it('should throw when group claim is not in userinfo', async function () {
       global.ServerSettings.authOpenIDGroupClaim = 'groups'
+      DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
 
       const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
       const userinfo = { email: 'test@example.com' }

@@ -2,18 +2,25 @@
   <div class="w-full">
     <div v-for="group in sortedGroups" :key="group.id" class="mb-4">
       <p class="text-sm font-semibold text-gray-200 uppercase tracking-wide mb-2 px-1">{{ group.label }}</p>
+      <p v-if="getGroupDescription(group)" class="text-sm text-gray-300 mb-2 px-1">{{ getGroupDescription(group) }}</p>
       <div class="flex flex-wrap">
         <template v-for="field in fieldsForGroup(group.id)">
           <!-- Action button (e.g., Auto-populate) -->
           <div v-if="field.type === 'action'" :key="field.key" class="w-36 mx-1 mt-[1.375rem] mb-2">
-            <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" :disabled="isFieldDisabled(field)" @click.stop="$emit('action', field.key)">
+            <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" :disabled="isFieldDisabled(field)" :loading="loadingActions.includes(field.key)" @click.stop="$emit('action', field.key)">
               <span class="material-symbols text-base">auto_fix_high</span>
               <span class="whitespace-nowrap break-keep pl-1">{{ field.label }}</span>
             </ui-btn>
           </div>
 
           <!-- Text input -->
-          <ui-text-input-with-label v-else-if="field.type === 'text'" :key="field.key" :value="values[field.key]" :disabled="disabled || isFieldDisabled(field)" :label="field.label" class="mb-2" @input="onFieldChange(field.key, $event)" />
+          <div v-else-if="field.type === 'text'" :key="field.key" class="w-full mb-2">
+            <ui-text-input-with-label :value="values[field.key]" :disabled="disabled || isFieldDisabled(field)" :label="field.label" @input="onFieldChange(field.key, $event)" />
+            <div v-if="getFieldHtmlDescription(field)" class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
+              <p v-html="getFieldHtmlDescription(field)"></p>
+              <pre v-if="field.samplePermissions" class="text-pre-wrap mt-2">{{ field.samplePermissions }}</pre>
+            </div>
+          </div>
 
           <!-- Password input -->
           <ui-text-input-with-label v-else-if="field.type === 'password'" :key="field.key" :value="values[field.key]" :disabled="disabled || isFieldDisabled(field)" :label="field.label" type="password" class="mb-2" @input="onFieldChange(field.key, $event)" />
@@ -22,7 +29,7 @@
           <div v-else-if="field.type === 'boolean'" :key="field.key" class="flex items-center py-4 px-1 w-full">
             <ui-toggle-switch :value="!!values[field.key]" :disabled="disabled || isFieldDisabled(field)" @input="onFieldChange(field.key, $event)" />
             <p class="pl-4 whitespace-nowrap">{{ field.label }}</p>
-            <p v-if="field.description" class="pl-4 text-sm text-gray-300">{{ field.description }}</p>
+            <p v-if="field.description" class="pl-4 text-sm text-gray-300">{{ resolveDescription(field.description) }}</p>
           </div>
 
           <!-- Select dropdown -->
@@ -69,7 +76,11 @@ export default {
       type: Object,
       default: () => ({})
     },
-    disabled: Boolean
+    disabled: Boolean,
+    loadingActions: {
+      type: Array,
+      default: () => []
+    }
   },
   computed: {
     sortedGroups() {
@@ -93,6 +104,19 @@ export default {
         text: opt.label,
         value: opt.value
       }))
+    },
+    getGroupDescription(group) {
+      if (group.descriptionKey) return this.$strings[group.descriptionKey] || ''
+      return group.description || ''
+    },
+    getFieldHtmlDescription(field) {
+      if (field.descriptionKey) return this.$strings[field.descriptionKey] || ''
+      return field.description || ''
+    },
+    resolveDescription(desc) {
+      if (!desc || !desc.includes('{baseURL}')) return desc
+      const baseURL = window.location.origin + this.$config.routerBasePath
+      return desc.replace('{baseURL}', baseURL)
     },
     onFieldChange(key, value) {
       this.$emit('update', { key, value })

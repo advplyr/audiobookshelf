@@ -85,6 +85,7 @@ class ServerSettings {
     this.authOpenIDScopes = 'openid profile email'
     this.authOpenIDGroupMap = {}
     this.authOpenIDRequireVerifiedEmail = false
+    this.authOpenIDBackchannelLogoutEnabled = false
 
     if (settings) {
       this.construct(settings)
@@ -152,6 +153,7 @@ class ServerSettings {
     this.authOpenIDScopes = settings.authOpenIDScopes || 'openid profile email'
     this.authOpenIDGroupMap = settings.authOpenIDGroupMap || {}
     this.authOpenIDRequireVerifiedEmail = !!settings.authOpenIDRequireVerifiedEmail
+    this.authOpenIDBackchannelLogoutEnabled = !!settings.authOpenIDBackchannelLogoutEnabled
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -264,7 +266,8 @@ class ServerSettings {
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
       authOpenIDScopes: this.authOpenIDScopes,
       authOpenIDGroupMap: this.authOpenIDGroupMap,
-      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail
+      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail,
+      authOpenIDBackchannelLogoutEnabled: this.authOpenIDBackchannelLogoutEnabled
     }
   }
 
@@ -317,7 +320,8 @@ class ServerSettings {
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
       authOpenIDScopes: this.authOpenIDScopes,
       authOpenIDGroupMap: this.authOpenIDGroupMap,
-      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail
+      authOpenIDRequireVerifiedEmail: this.authOpenIDRequireVerifiedEmail,
+      authOpenIDBackchannelLogoutEnabled: this.authOpenIDBackchannelLogoutEnabled
     }
   }
 

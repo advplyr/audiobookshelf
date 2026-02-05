@@ -8,6 +8,7 @@ const Logger = require('./Logger')
 const TokenManager = require('./auth/TokenManager')
 const LocalAuthStrategy = require('./auth/LocalAuthStrategy')
 const OidcAuthStrategy = require('./auth/OidcAuthStrategy')
+const BackchannelLogoutHandler = require('./auth/BackchannelLogoutHandler')
 
 const RateLimiterFactory = require('./utils/rateLimiterFactory')
 const { escapeRegExp } = require('./utils')
@@ -26,6 +27,7 @@ class Auth {
     this.tokenManager = new TokenManager()
     this.localAuthStrategy = new LocalAuthStrategy()
     this.oidcAuthStrategy = new OidcAuthStrategy()
+    this.backchannelLogoutHandler = new BackchannelLogoutHandler()
   }
 
   /**
@@ -167,6 +169,7 @@ class Auth {
   unuseAuthStrategy(name) {
     if (name === 'openid') {
       this.oidcAuthStrategy.reload()
+      this.backchannelLogoutHandler.reset()
     } else if (name === 'local') {
       this.localAuthStrategy.unuse()
     } else {
@@ -182,6 +185,7 @@ class Auth {
   useAuthStrategy(name) {
     if (name === 'openid') {
       this.oidcAuthStrategy.reload()
+      this.backchannelLogoutHandler.reset()
     } else if (name === 'local') {
       this.localAuthStrategy.init()
     } else {
@@ -311,21 +315,30 @@ class Auth {
 
     // openid strategy callback route - now uses direct token exchange (no passport)
     router.get('/auth/openid/callback', this.authRateLimiter, async (req, res) => {
-      const isMobile = !!req.session.oidc?.isMobile
-      // Extract session data before cleanup (needed for redirect on success)
+      // Extract session data before callback (needed for redirect on success)
+      // These may be null for mobile flow (session not shared with system browser)
       const callbackUrl = req.session.oidc?.callbackUrl
+      let isMobile = !!req.session.oidc?.isMobile
 
       try {
-        const user = await this.oidcAuthStrategy.handleCallback(req)
+        const { user, isMobileCallback } = await this.oidcAuthStrategy.handleCallback(req)
+
+        // handleCallback detects mobile via openIdAuthSession Map fallback
+        if (isMobileCallback) isMobile = true
+
+        // Regenerate session to prevent session fixation (new session ID after login)
+        await new Promise((resolve, reject) => {
+          req.session.regenerate((err) => (err ? reject(err) : resolve()))
+        })
 
         // req.login still works (passport initialized for JWT/local)
         await new Promise((resolve, reject) => {
           req.login(user, (err) => (err ? reject(err) : resolve()))
         })
 
-        // Create tokens and session, storing oidcIdToken in DB
+        // Create tokens and session, storing oidcIdToken and oidcSessionId in DB
         const returnTokens = isMobile
-        const { accessToken, refreshToken } = await this.tokenManager.createTokensAndSession(user, req, user.openid_id_token)
+        const { accessToken, refreshToken } = await this.tokenManager.createTokensAndSession(user, req, user.openid_id_token, user.openid_session_id)
 
         const userResponse = await this.getUserLoginResponsePayload(user)
         userResponse.user.accessToken = accessToken
@@ -362,7 +375,8 @@ class Auth {
           res.redirect(`${global.RouterBasePath}/login?error=${encodeURIComponent(error.message)}&autoLaunch=0`)
         }
       } finally {
-        // Clean up OIDC session data to prevent replay (on both success and error paths)
+        // Safety net: clear OIDC session data on error paths that occur before session.regenerate()
+        // (On success, regenerate() already creates a fresh session, making this a no-op)
         delete req.session.oidc
       }
     })
@@ -425,7 +439,11 @@ class Auth {
           let logoutUrl = null
 
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
-            logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, oidcIdToken, authMethod)
+            try {
+              logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, oidcIdToken, authMethod)
+            } catch (error) {
+              Logger.error(`[Auth] Failed to get end session URL: ${error.message}`)
+            }
           }
 
           // Tell the user agent (browser) to redirect to the authentification provider's logout URL
@@ -433,6 +451,31 @@ class Auth {
           res.send({ redirect_url: logoutUrl })
         }
       })
+    })
+
+    // OIDC Back-Channel Logout endpoint
+    // Spec: https://openid.net/specs/openid-connect-backchannel-1_0.html
+    router.post('/auth/openid/backchannel-logout', this.authRateLimiter, async (req, res) => {
+      if (!global.ServerSettings.authOpenIDBackchannelLogoutEnabled) {
+        return res.status(501).json({ error: 'not_implemented' })
+      }
+      if (!global.ServerSettings.authActiveAuthMethods.includes('openid') || !global.ServerSettings.isOpenIDAuthSettingsValid) {
+        return res.status(501).json({ error: 'not_implemented' })
+      }
+
+      // Spec Section 2.7: response SHOULD include Cache-Control: no-store
+      res.set('Cache-Control', 'no-store')
+
+      const logoutToken = req.body?.logout_token
+      if (!logoutToken || typeof logoutToken !== 'string') {
+        return res.status(400).json({ error: 'invalid_request' })
+      }
+
+      const result = await this.backchannelLogoutHandler.processLogoutToken(logoutToken)
+      if (result.success) {
+        return res.sendStatus(200)
+      }
+      return res.status(400).json({ error: result.error })
     })
   }
   // #endregion

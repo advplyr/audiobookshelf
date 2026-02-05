@@ -157,9 +157,10 @@ class TokenManager {
    * @param {{ id:string, username:string }} user
    * @param {import('express').Request} req
    * @param {string|null} [oidcIdToken=null] - OIDC id_token to store in session for logout
+   * @param {string|null} [oidcSessionId=null] - OIDC session ID (sid claim) for backchannel logout
    * @returns {Promise<{ accessToken:string, refreshToken:string, session:import('../models/Session') }>}
    */
-  async createTokensAndSession(user, req, oidcIdToken = null) {
+  async createTokensAndSession(user, req, oidcIdToken = null, oidcSessionId = null) {
     const ipAddress = requestIp.getClientIp(req)
     const userAgent = req.headers['user-agent']
     const accessToken = this.generateTempAccessToken(user)
@@ -168,7 +169,7 @@ class TokenManager {
     // Calculate expiration time for the refresh token
     const expiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
 
-    const session = await Database.sessionModel.createSession(user.id, ipAddress, userAgent, refreshToken, expiresAt, oidcIdToken)
+    const session = await Database.sessionModel.createSession(user.id, ipAddress, userAgent, refreshToken, expiresAt, oidcIdToken, oidcSessionId)
 
     return {
       accessToken,

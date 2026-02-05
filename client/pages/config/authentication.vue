@@ -32,7 +32,7 @@
 
         <transition name="slide">
           <div v-if="enableOpenIDAuth" class="pt-4">
-            <app-oidc-settings :schema="openIDSchema" :groups="openIDGroups" :values="openIDValues" :schema-overrides="openIDSchemaOverrides" :disabled="savingSettings" @update="onOidcSettingChange" @action="onOidcAction" />
+            <app-oidc-settings :schema="openIDSchema" :groups="openIDGroups" :values="openIDValues" :schema-overrides="openIDSchemaOverrides" :disabled="savingSettings" :loading-actions="discovering ? ['discover'] : []" @update="onOidcSettingChange" @action="onOidcAction" />
           </div>
         </transition>
       </div>
@@ -69,6 +69,7 @@ export default {
       enableOpenIDAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      discovering: false,
       openIDSchemaOverrides: {},
       newAuthSettings: {},
       openIDValues: {}
@@ -110,6 +111,7 @@ export default {
         this.$set(this.openIDValues, 'authOpenIDIssuerURL', issuerUrl)
       }
 
+      this.discovering = true
       try {
         const data = await this.$axios.$post('/api/auth-settings/openid/discover', { issuerUrl })
 
@@ -122,14 +124,18 @@ export default {
           }
         }
 
-        // Apply schema overrides (e.g., supported signing algorithms)
+        // Merge schema overrides (e.g., supported signing algorithms) with existing ones
         if (data.schemaOverrides) {
-          this.openIDSchemaOverrides = data.schemaOverrides
+          this.openIDSchemaOverrides = { ...this.openIDSchemaOverrides, ...data.schemaOverrides }
         }
+
+        this.$toast.success('Provider endpoints auto-populated')
       } catch (error) {
         console.error('Failed to discover OIDC config', error)
         const errorMsg = error.response?.data?.error || error.response?.data || 'Unknown error'
         this.$toast.error(errorMsg)
+      } finally {
+        this.discovering = false
       }
     },
     async saveSettings() {
@@ -183,6 +189,16 @@ export default {
       this.openIDValues = {
         ...serverValues,
         authOpenIDSubfolderForRedirectURLs: serverValues.authOpenIDSubfolderForRedirectURLs === undefined ? this.$config.routerBasePath : serverValues.authOpenIDSubfolderForRedirectURLs
+      }
+
+      // Build subfolder dropdown options from routerBasePath
+      const basePath = this.$config.routerBasePath
+      const subfolderOptions = [{ value: '', label: 'None' }]
+      if (basePath && basePath !== '/') {
+        subfolderOptions.push({ value: basePath, label: basePath })
+      }
+      this.openIDSchemaOverrides = {
+        authOpenIDSubfolderForRedirectURLs: { options: subfolderOptions }
       }
 
       this.enableLocalAuth = this.authMethods.includes('local')

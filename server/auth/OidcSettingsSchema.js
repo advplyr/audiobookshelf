@@ -2,7 +2,7 @@ const groups = [
   { id: 'endpoints', label: 'Provider Endpoints', order: 1 },
   { id: 'credentials', label: 'Client Credentials', order: 2 },
   { id: 'behavior', label: 'Login Behavior', order: 3 },
-  { id: 'claims', label: 'Claims & Group Mapping', order: 4 },
+  { id: 'claims', label: 'Claims & Group Mapping', order: 4, descriptionKey: 'LabelOpenIDClaims' },
   { id: 'advanced', label: 'Advanced', order: 5 }
 ]
 
@@ -173,7 +173,7 @@ const schema = [
     group: 'claims',
     order: 2,
     validate: 'claimName',
-    description: 'Name of the claim containing group membership'
+    descriptionKey: 'LabelOpenIDGroupClaimDescription'
   },
   {
     key: 'authOpenIDGroupMap',
@@ -192,7 +192,7 @@ const schema = [
     group: 'claims',
     order: 4,
     validate: 'claimName',
-    description: 'Claim containing per-user permissions JSON'
+    descriptionKey: 'LabelOpenIDAdvancedPermsClaimDescription'
   },
 
   // Advanced group
@@ -216,6 +216,14 @@ const schema = [
       { value: '', label: 'None' }
     ],
     description: 'Subfolder prefix for redirect URLs (e.g. /audiobookshelf)'
+  },
+  {
+    key: 'authOpenIDBackchannelLogoutEnabled',
+    type: 'boolean',
+    label: 'Back-Channel Logout',
+    group: 'advanced',
+    order: 3,
+    description: 'Enable OIDC Back-Channel Logout. Configure your IdP with the logout URL: {baseURL}/auth/openid/backchannel-logout'
   }
 ]
 
@@ -230,7 +238,7 @@ function getSchema() {
     if (field.key === 'authOpenIDAdvancedPermsClaim') {
       return {
         ...field,
-        description: `Claim containing per-user permissions JSON. Sample: ${User.getSampleAbsPermissions()}`
+        samplePermissions: User.getSampleAbsPermissions()
       }
     }
     return field

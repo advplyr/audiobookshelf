@@ -64,13 +64,23 @@ class OidcAuthStrategy {
   }
 
   /**
-   * Clean up stale mobile auth sessions older than 10 minutes
+   * Clean up stale mobile auth sessions older than 10 minutes.
+   * Also enforces a maximum size to prevent memory exhaustion.
    */
   cleanupStaleAuthSessions() {
     const maxAge = 10 * 60 * 1000 // 10 minutes
+    const maxSize = 1000
     const now = Date.now()
     for (const [state, session] of this.openIdAuthSession) {
       if (now - (session.created_at || 0) > maxAge) {
+        this.openIdAuthSession.delete(state)
+      }
+    }
+    // If still over limit after TTL cleanup, evict oldest entries
+    if (this.openIdAuthSession.size > maxSize) {
+      const entries = [...this.openIdAuthSession.entries()].sort((a, b) => (a[1].created_at || 0) - (b[1].created_at || 0))
+      const toRemove = entries.slice(0, this.openIdAuthSession.size - maxSize)
+      for (const [state] of toRemove) {
         this.openIdAuthSession.delete(state)
       }
     }
@@ -81,24 +91,42 @@ class OidcAuthStrategy {
    * Replaces the passport authenticate + verifyCallback flow.
    *
    * @param {Request} req
-   * @returns {Promise<import('../models/User')>} authenticated user
+   * @returns {Promise<{user: import('../models/User'), isMobileCallback: boolean}>} authenticated user and mobile flag
    * @throws {AuthError}
    */
   async handleCallback(req) {
-    const sessionData = req.session.oidc
+    let sessionData = req.session.oidc
+    let isMobileCallback = false
+
     if (!sessionData) {
-      throw new AuthError('No OIDC session found', 400)
+      // Mobile flow: express session is not shared between system browser and app.
+      // Look up session data from the openIdAuthSession Map using the state parameter.
+      const state = req.query.state
+      if (state && this.openIdAuthSession.has(state)) {
+        const mobileSession = this.openIdAuthSession.get(state)
+        this.openIdAuthSession.delete(state)
+        sessionData = {
+          state: state,
+          nonce: mobileSession.nonce,
+          sso_redirect_uri: mobileSession.sso_redirect_uri
+        }
+        isMobileCallback = true
+      } else {
+        throw new AuthError('No OIDC session found', 400)
+      }
     }
 
     const client = this.getClient()
 
-    // If the client sends a code_verifier in query, use it (mobile flow)
+    // Mobile: code_verifier comes from query param (client generated PKCE)
+    // Web: code_verifier comes from session (server generated PKCE)
     const codeVerifier = req.query.code_verifier || sessionData.code_verifier
 
     // Exchange auth code for tokens
     const params = client.callbackParams(req)
     const tokenset = await client.callback(sessionData.sso_redirect_uri, params, {
       state: sessionData.state,
+      nonce: sessionData.nonce,
       code_verifier: codeVerifier,
       response_type: 'code'
     })
@@ -109,7 +137,11 @@ class OidcAuthStrategy {
     // Verify and find/create user
     const user = await this.verifyUser(tokenset, userinfo)
 
-    return user
+    // Extract sid from id_token for backchannel logout support
+    const idTokenClaims = tokenset.claims()
+    user.openid_session_id = idTokenClaims?.sid ?? null
+
+    return { user, isMobileCallback }
   }
 
   /**
@@ -356,10 +388,9 @@ class OidcAuthStrategy {
             error: 'Invalid redirect_uri'
           }
         }
-        // We cannot save the supplied redirect_uri in the session, because the mobile client uses browser instead of the API
-        //   for the request to mobile-redirect and as such the session is not shared
+        // Mobile flow uses system browser for auth but app's HTTP client for callback,
+        // so express session is NOT shared. Store all needed data in the openIdAuthSession Map.
         this.cleanupStaleAuthSessions()
-        this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri, created_at: Date.now() })
 
         redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
       } else {
@@ -384,9 +415,25 @@ class OidcAuthStrategy {
         }
       }
 
-      // Store OIDC session data using fixed key 'oidc'
+      // Generate nonce to bind id_token to this session (OIDC Core 3.1.2.1)
+      const nonce = OpenIDClient.generators.nonce()
+
+      if (isMobileFlow) {
+        // For mobile: store session data in the openIdAuthSession Map (keyed by state)
+        // because the mobile app's HTTP client has a different express session than the system browser
+        this.openIdAuthSession.set(state, {
+          mobile_redirect_uri: req.query.redirect_uri,
+          sso_redirect_uri: redirectUri,
+          nonce: nonce,
+          created_at: Date.now()
+        })
+      }
+
+      // Store OIDC session data in express session (used by web flow callback;
+      // mobile callback falls back to openIdAuthSession Map above)
       req.session.oidc = {
         state: state,
+        nonce: nonce,
         response_type: 'code',
         code_verifier: pkceData.code_verifier, // not null if web flow
         isMobile: !!isMobileFlow,
@@ -397,6 +444,7 @@ class OidcAuthStrategy {
       const authorizationUrl = client.authorizationUrl({
         redirect_uri: redirectUri,
         state: state,
+        nonce: nonce,
         response_type: 'code',
         scope: this.getScope(),
         code_challenge: pkceData.code_challenge,
@@ -508,7 +556,7 @@ class OidcAuthStrategy {
   handleMobileRedirect(req, res) {
     try {
       // Extract the state parameter from the request
-      const { state, code } = req.query
+      const { state, code, error, error_description } = req.query
 
       // Check if the state provided is in our list
       if (!state || !this.openIdAuthSession.has(state)) {
@@ -516,18 +564,29 @@ class OidcAuthStrategy {
         return res.status(400).send('State parameter mismatch')
       }
 
-      let mobile_redirect_uri = this.openIdAuthSession.get(state).mobile_redirect_uri
+      const sessionEntry = this.openIdAuthSession.get(state)
 
-      if (!mobile_redirect_uri) {
+      if (!sessionEntry.mobile_redirect_uri) {
         Logger.error('[OidcAuth] No redirect URI')
         return res.status(400).send('No redirect URI')
       }
 
-      this.openIdAuthSession.delete(state)
+      // Use URL object to safely append parameters (avoids fragment injection)
+      const redirectUrl = new URL(sessionEntry.mobile_redirect_uri)
+      redirectUrl.searchParams.set('state', state)
 
-      const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
-      // Redirect to the overwrite URI saved in the map
-      res.redirect(redirectUri)
+      if (error) {
+        // IdP returned an error (e.g., user denied consent) — forward to app
+        redirectUrl.searchParams.set('error', error)
+        if (error_description) redirectUrl.searchParams.set('error_description', error_description)
+        // Clean up Map entry since there will be no callback
+        this.openIdAuthSession.delete(state)
+      } else {
+        // Success — forward code to app. Keep Map entry alive for the callback.
+        redirectUrl.searchParams.set('code', code)
+      }
+
+      res.redirect(redirectUrl.toString())
     } catch (error) {
       Logger.error(`[OidcAuth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
       res.status(500).send('Internal Server Error')
