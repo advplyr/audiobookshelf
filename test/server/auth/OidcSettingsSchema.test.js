@@ -134,6 +134,24 @@ describe('OidcSettingsSchema - validateSettings', function () {
     expect(result.errors[0]).to.include('Invalid URI')
   })
 
+  it('should not hang on pathological URI input', function () {
+    this.timeout(1000)
+    const result = validateSettings({
+      ...validSettings,
+      authOpenIDMobileRedirectURIs: ['a://-/' + '/'.repeat(100) + '!']
+    })
+    expect(result.valid).to.be.false
+    expect(result.errors[0]).to.include('Invalid URI')
+  })
+
+  it('should accept URI with path segments', function () {
+    const result = validateSettings({
+      ...validSettings,
+      authOpenIDMobileRedirectURIs: ['https://example.com/path/to/callback']
+    })
+    expect(result.valid).to.be.true
+  })
+
   it('should reject unknown keys', function () {
     const result = validateSettings({
       ...validSettings,

@@ -303,7 +303,7 @@ class Auth {
       const authorizationUrlResponse = this.oidcAuthStrategy.getAuthorizationUrl(req, isMobileFlow, callback)
 
       if (authorizationUrlResponse.error) {
-        return res.status(authorizationUrlResponse.status).send(authorizationUrlResponse.error)
+        return res.status(authorizationUrlResponse.status).json({ error: authorizationUrlResponse.error })
       }
 
       res.redirect(authorizationUrlResponse.authorizationUrl)
@@ -400,7 +400,7 @@ class Auth {
 
       const openIdIssuerConfig = await this.oidcAuthStrategy.getIssuerConfig(req.query.issuer)
       if (openIdIssuerConfig.error) {
-        return res.status(openIdIssuerConfig.status).send(openIdIssuerConfig.error)
+        return res.status(openIdIssuerConfig.status).json({ error: openIdIssuerConfig.error })
       }
 
       res.json(openIdIssuerConfig)

@@ -296,7 +296,7 @@ function validateSettings(values) {
 
     if (field.validate === 'uri') {
       if (Array.isArray(value)) {
-        const uriPattern = /^\w+:\/\/[\w.-]+(\/[\w./-]*)*$/i
+        const uriPattern = /^\w+:\/\/[\w.-]+(\/[\w./-]*)?$/i
         for (const uri of value) {
           if (!uriPattern.test(uri)) {
             errors.push(`${field.label}: Invalid URI "${uri}"`)
