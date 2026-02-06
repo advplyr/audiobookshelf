@@ -22,6 +22,12 @@
 		3000,
 		3333
 	],
+	// "initializeCommand" to get host timezone
+	"initializeCommand": "powershell -File .\\.devcontainer\\getHostTimeZone.ps1 || echo ''",
+	// set container timezone
+	"remoteEnv": {
+		"TZ": "${localEnv:TZ}"
+	},
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "sh .devcontainer/post-create.sh",
 	// Configure tool-specific properties.
