@@ -76,13 +76,7 @@ class Session extends Model {
       },
       {
         sequelize,
-        modelName: 'session',
-        indexes: [
-          {
-            name: 'sessions_oidc_session_id',
-            fields: ['oidcSessionId']
-          }
-        ]
+        modelName: 'session'
       }
     )
 
