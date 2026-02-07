@@ -436,7 +436,7 @@
   "LabelLibraryFilterSublistEmpty": "Keine {0}",
   "LabelLibraryItem": "Bibliothekseintrag",
   "LabelLibraryName": "Bibliotheksname",
-  "LabelLibrarySortByProgress": "Fortschritt: Zuletzt aktualisiert",
+  "LabelLibrarySortByProgress": "Fortschritt: Letzte Aktualisierung",
   "LabelLibrarySortByProgressFinished": "Fortschritt: Beendet",
   "LabelLibrarySortByProgressStarted": "Fortschritt: Gestartet",
   "LabelLimit": "Begrenzung",
