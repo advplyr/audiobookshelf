@@ -44,6 +44,7 @@
     "express-rate-limit": "^7.5.1",
     "express-session": "^1.17.3",
     "graceful-fs": "^4.2.10",
+    "html-encoding-sniffer": "^4.0.0",
     "htmlparser2": "^8.0.1",
     "lru-cache": "^10.0.3",
     "node-unrar-js": "^2.0.2",
@@ -57,6 +58,7 @@
     "socket.io": "^4.5.4",
     "sqlite3": "^5.1.7",
     "ssrf-req-filter": "^1.1.0",
+    "whatwg-encoding": "^3.1.1",
     "xml2js": "^0.5.0"
   },
   "devDependencies": {

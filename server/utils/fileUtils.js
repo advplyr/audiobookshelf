@@ -6,6 +6,8 @@ const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
+const sniffHTMLEncoding = require('html-encoding-sniffer')
+const whatwgEncoding = require('whatwg-encoding')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -116,14 +118,60 @@ function getIno(path) {
 module.exports.getIno = getIno
 
 /**
- * Read contents of file
- * @param {string} path
+ * @typedef ReadTextFileOptions
+ * @property {boolean} [detectEncoding] detect text encoding before decoding
+ * @property {boolean} [isHtml] use HTML charset hints when detectEncoding is enabled
+ */
+
+function detectTextEncoding(buffer, options = {}) {
+  const { isHtml = false } = options
+  if (!isHtml) {
+    return 'UTF-8'
+  }
+
+  try {
+    const sniffedEncoding = sniffHTMLEncoding(buffer, { defaultEncoding: 'windows-1252' }) || 'windows-1252'
+    return whatwgEncoding.labelToName(sniffedEncoding) || 'UTF-8'
+  } catch {
+    return 'UTF-8'
+  }
+}
+
+/**
+ * Decode raw text bytes with optional encoding detection.
+ *
+ * @param {Buffer} buffer
+ * @param {ReadTextFileOptions} [options]
  * @returns {string}
  */
-async function readTextFile(path) {
+function decodeTextBuffer(buffer, options = {}) {
+  if (!buffer) return ''
+  const { detectEncoding = false, isHtml = false } = options
+
+  if (!detectEncoding) {
+    return String(buffer)
+  }
+
+  const fallbackEncoding = detectTextEncoding(buffer, { isHtml })
+  try {
+    // WHATWG decode handles BOM override and legacy encoding tables.
+    return whatwgEncoding.decode(buffer, fallbackEncoding)
+  } catch {
+    return String(buffer)
+  }
+}
+module.exports.decodeTextBuffer = decodeTextBuffer
+
+/**
+ * Read contents of file
+ * @param {string} path
+ * @param {ReadTextFileOptions} [options]
+ * @returns {string}
+ */
+async function readTextFile(path, options = {}) {
   try {
     var data = await fs.readFile(path)
-    return String(data)
+    return decodeTextBuffer(data, options)
   } catch (error) {
     Logger.error(`[FileUtils] ReadTextFile error ${error}`)
     return ''
