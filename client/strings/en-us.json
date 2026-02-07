@@ -1134,6 +1134,7 @@
   "ToastSessionCloseFailed": "Failed to close session",
   "ToastSessionDeleteFailed": "Failed to delete session",
   "ToastSessionDeleteSuccess": "Session deleted",
+  "ToastSessionEndedByProvider": "Session ended by identity provider",
   "ToastSleepTimerDone": "Sleep timer done... zZzzZz",
   "ToastSlugMustChange": "Slug contains invalid characters",
   "ToastSlugRequired": "Slug is required",
