@@ -6,6 +6,26 @@ const fs = require('fs')
 const Logger = require('../../../server/Logger')
 
 describe('fileUtils', () => {
+  describe('decodeTextBuffer', () => {
+    it('decodes html using charset declaration (windows-1252)', () => {
+      const htmlPrefix = Buffer.from('<html><head><meta charset="windows-1252"></head><body>M')
+      const htmlSuffix = Buffer.from('ller</body></html>')
+      const input = Buffer.concat([htmlPrefix, Buffer.from([0xfc]), htmlSuffix])
+
+      const decoded = fileUtils.decodeTextBuffer(input, { detectEncoding: true, isHtml: true })
+      expect(decoded).to.include('Müller')
+    })
+
+    it('falls back to windows-1252 for html without charset when utf-8 decoding is invalid', () => {
+      const htmlPrefix = Buffer.from('<html><body>Gr')
+      const htmlSuffix = Buffer.from('n</body></html>')
+      const input = Buffer.concat([htmlPrefix, Buffer.from([0xfc]), htmlSuffix])
+
+      const decoded = fileUtils.decodeTextBuffer(input, { detectEncoding: true, isHtml: true })
+      expect(decoded).to.include('Grün')
+    })
+  })
+
   it('shouldIgnoreFile', () => {
     global.isWin = process.platform === 'win32'
 

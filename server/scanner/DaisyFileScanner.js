@@ -12,7 +12,7 @@ class DaisyFileScanner {
    * @param {Object} bookMetadata
    */
   async scanBookDaisyFile(daisyLibraryFileObj, bookMetadata, audioFiles = []) {
-    const htmlText = await readTextFile(daisyLibraryFileObj.metadata.path)
+    const htmlText = await readTextFile(daisyLibraryFileObj.metadata.path, { detectEncoding: true, isHtml: true })
     const daisyMetadata = htmlText ? parseDaisyMetadata(htmlText) : null
     if (daisyMetadata) {
       for (const key in daisyMetadata) {
