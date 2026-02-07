@@ -6,7 +6,7 @@ const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
-const sniffHTMLEncoding = require('html-encoding-sniffer')
+const chardet = require('chardet')
 const whatwgEncoding = require('whatwg-encoding')
 
 /**
@@ -119,22 +119,18 @@ module.exports.getIno = getIno
 
 /**
  * @typedef ReadTextFileOptions
- * @property {boolean} [detectEncoding] detect text encoding before decoding
- * @property {boolean} [isHtml] use HTML charset hints when detectEncoding is enabled
  */
 
-function detectTextEncoding(buffer, options = {}) {
-  const { isHtml = false } = options
-  if (!isHtml) {
-    return 'UTF-8'
-  }
-
+function detectTextEncoding(buffer) {
   try {
-    const sniffedEncoding = sniffHTMLEncoding(buffer, { defaultEncoding: 'windows-1252' }) || 'windows-1252'
-    return whatwgEncoding.labelToName(sniffedEncoding) || 'UTF-8'
-  } catch {
-    return 'UTF-8'
-  }
+    const detectedEncoding = chardet.detect(buffer)
+    const labeledEncoding = detectedEncoding ? whatwgEncoding.labelToName(detectedEncoding) : null
+    if (labeledEncoding) {
+      return labeledEncoding
+    }
+  } catch {}
+
+  return 'UTF-8'
 }
 
 /**
@@ -152,7 +148,7 @@ function decodeTextBuffer(buffer, options = {}) {
     return String(buffer)
   }
 
-  const fallbackEncoding = detectTextEncoding(buffer, { isHtml })
+  const fallbackEncoding = detectTextEncoding(buffer)
   try {
     // WHATWG decode handles BOM override and legacy encoding tables.
     return whatwgEncoding.decode(buffer, fallbackEncoding)
