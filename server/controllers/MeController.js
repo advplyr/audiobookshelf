@@ -473,5 +473,171 @@ class MeController {
     const data = await userStats.getStatsForYear(req.user.id, year)
     res.json(data)
   }
+
+  /**
+   * GET: /api/me/clips
+   * Get all clips for the authenticated user
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getClips(req, res) {
+    try {
+      const clips = await Database.audioClipModel.getClipsForUser(req.user.id)
+      res.json({ clips: clips.map((c) => c.toJSON()) })
+    } catch (error) {
+      Logger.error(`[MeController] Failed to get clips:`, error)
+      res.status(500).send('Failed to get clips')
+    }
+  }
+
+  /**
+   * GET: /api/me/items/:id/clips
+   * Get all clips for a specific library item
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getItemClips(req, res) {
+    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
+
+    try {
+      const episodeId = req.query.episodeId || null
+      const clips = await Database.audioClipModel.getClipsForItem(req.user.id, req.params.id, episodeId)
+      res.json({ clips: clips.map((c) => c.toJSON()) })
+    } catch (error) {
+      Logger.error(`[MeController] Failed to get clips for item:`, error)
+      res.status(500).send('Failed to get clips')
+    }
+  }
+
+  /**
+   * POST: /api/me/items/:id/clips
+   * Create a new clip for a library item
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async createClip(req, res) {
+    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
+
+    const { startTime, endTime, title, note, episodeId } = req.body
+
+    // Validate required fields
+    if (isNullOrNaN(startTime)) {
+      Logger.error(`[MeController] createClip invalid startTime`, startTime)
+      return res.status(400).send('Invalid start time')
+    }
+    if (isNullOrNaN(endTime)) {
+      Logger.error(`[MeController] createClip invalid endTime`, endTime)
+      return res.status(400).send('Invalid end time')
+    }
+    if (!title || typeof title !== 'string') {
+      Logger.error(`[MeController] createClip invalid title`, title)
+      return res.status(400).send('Invalid title')
+    }
+
+    try {
+      const clip = await Database.audioClipModel.createClip(req.user.id, req.params.id, startTime, endTime, title, note, episodeId)
+
+      SocketAuthority.clientEmitter(req.user.id, 'clip_created', clip.toJSON())
+      res.json(clip.toJSON())
+    } catch (error) {
+      Logger.error(`[MeController] Failed to create clip:`, error)
+      res.status(400).send(error.message || 'Failed to create clip')
+    }
+  }
+
+  /**
+   * PATCH: /api/me/clips/:clipId
+   * Update an existing clip
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async updateClip(req, res) {
+    const clipId = req.params.clipId
+
+    // Check if clip exists and belongs to user
+    const existingClip = await Database.audioClipModel.findByPk(clipId)
+    if (!existingClip) {
+      Logger.error(`[MeController] updateClip not found for clip id "${clipId}"`)
+      return res.sendStatus(404)
+    }
+    if (existingClip.userId !== req.user.id) {
+      Logger.error(`[MeController] updateClip forbidden - clip does not belong to user`)
+      return res.sendStatus(403)
+    }
+
+    const { startTime, endTime, title, note } = req.body
+    const updates = {}
+
+    if (startTime !== undefined) {
+      if (isNullOrNaN(startTime)) {
+        Logger.error(`[MeController] updateClip invalid startTime`, startTime)
+        return res.status(400).send('Invalid start time')
+      }
+      updates.startTime = startTime
+    }
+    if (endTime !== undefined) {
+      if (isNullOrNaN(endTime)) {
+        Logger.error(`[MeController] updateClip invalid endTime`, endTime)
+        return res.status(400).send('Invalid end time')
+      }
+      updates.endTime = endTime
+    }
+    if (title !== undefined) {
+      if (typeof title !== 'string') {
+        Logger.error(`[MeController] updateClip invalid title`, title)
+        return res.status(400).send('Invalid title')
+      }
+      updates.title = title
+    }
+    if (note !== undefined) {
+      updates.note = note
+    }
+
+    try {
+      const clip = await Database.audioClipModel.updateClip(clipId, updates)
+
+      SocketAuthority.clientEmitter(req.user.id, 'clip_updated', clip.toJSON())
+      res.json(clip.toJSON())
+    } catch (error) {
+      Logger.error(`[MeController] Failed to update clip:`, error)
+      res.status(400).send(error.message || 'Failed to update clip')
+    }
+  }
+
+  /**
+   * DELETE: /api/me/clips/:clipId
+   * Delete a clip
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async deleteClip(req, res) {
+    const clipId = req.params.clipId
+
+    // Check if clip exists and belongs to user
+    const existingClip = await Database.audioClipModel.findByPk(clipId)
+    if (!existingClip) {
+      Logger.error(`[MeController] deleteClip not found for clip id "${clipId}"`)
+      return res.sendStatus(404)
+    }
+    if (existingClip.userId !== req.user.id) {
+      Logger.error(`[MeController] deleteClip forbidden - clip does not belong to user`)
+      return res.sendStatus(403)
+    }
+
+    try {
+      await Database.audioClipModel.deleteClip(clipId)
+
+      SocketAuthority.clientEmitter(req.user.id, 'clip_removed', { id: clipId })
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.error(`[MeController] Failed to delete clip:`, error)
+      res.status(500).send('Failed to delete clip')
+    }
+  }
 }
 module.exports = new MeController()
