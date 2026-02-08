@@ -52,6 +52,19 @@ describe('parseDaisyMetadata', () => {
     expect(result.title).to.equal('Title From Head')
   })
 
+  it('parses isbn from dc:source in DAISY ncc.html', () => {
+    const nccHtml = `
+      <html>
+        <head>
+          <meta name="dc:source" content="ISBN 978-0-553-38016-3">
+        </head>
+      </html>
+    `
+
+    const result = parseDaisyMetadata(nccHtml)
+    expect(result.isbn).to.equal('978-0-553-38016-3')
+  })
+
   it('parses chapter names from heading entries in ncc.html', () => {
     const nccHtml = `
       <html>
