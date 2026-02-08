@@ -65,7 +65,8 @@ function parseIdentifier(metaTags, identifierType) {
 
   const identifierValues = [
     ...getValues(metaTags, 'dc:identifier'),
-    ...getValues(metaTags, 'ncc:identifier')
+    ...getValues(metaTags, 'ncc:identifier'),
+    ...(identifierType === 'isbn' ? getValues(metaTags, 'dc:source') : [])
   ]
   for (const identifier of identifierValues) {
     if (identifierType === 'isbn' && /isbn/i.test(identifier)) {
