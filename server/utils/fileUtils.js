@@ -6,8 +6,6 @@ const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
-const chardet = require('chardet')
-const whatwgEncoding = require('whatwg-encoding')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -118,56 +116,14 @@ function getIno(path) {
 module.exports.getIno = getIno
 
 /**
- * @typedef ReadTextFileOptions
- */
-
-function detectTextEncoding(buffer) {
-  try {
-    const detectedEncoding = chardet.detect(buffer)
-    const labeledEncoding = detectedEncoding ? whatwgEncoding.labelToName(detectedEncoding) : null
-    if (labeledEncoding) {
-      return labeledEncoding
-    }
-  } catch {}
-
-  return 'UTF-8'
-}
-
-/**
- * Decode raw text bytes with optional encoding detection.
- *
- * @param {Buffer} buffer
- * @param {ReadTextFileOptions} [options]
- * @returns {string}
- */
-function decodeTextBuffer(buffer, options = {}) {
-  if (!buffer) return ''
-  const { detectEncoding = false, isHtml = false } = options
-
-  if (!detectEncoding) {
-    return String(buffer)
-  }
-
-  const fallbackEncoding = detectTextEncoding(buffer)
-  try {
-    // WHATWG decode handles BOM override and legacy encoding tables.
-    return whatwgEncoding.decode(buffer, fallbackEncoding)
-  } catch {
-    return String(buffer)
-  }
-}
-module.exports.decodeTextBuffer = decodeTextBuffer
-
-/**
  * Read contents of file
  * @param {string} path
- * @param {ReadTextFileOptions} [options]
  * @returns {string}
  */
-async function readTextFile(path, options = {}) {
+async function readTextFile(path) {
   try {
     var data = await fs.readFile(path)
-    return decodeTextBuffer(data, options)
+    return String(data)
   } catch (error) {
     Logger.error(`[FileUtils] ReadTextFile error ${error}`)
     return ''
