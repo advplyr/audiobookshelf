@@ -7,6 +7,7 @@ describe('LibraryItem placeholder serialization', () => {
   beforeEach(async () => {
     Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
+    global.ServerSettings = { sortingPrefixes: [] }
     await Database.buildModels()
   })
 
