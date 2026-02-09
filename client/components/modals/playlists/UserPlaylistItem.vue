@@ -7,8 +7,11 @@
     <div class="grow overflow-hidden px-2">
       <nuxt-link :to="`/playlist/${playlist.id}`" class="pl-2 pr-2 truncate hover:underline cursor-pointer" @click.native="clickNuxtLink">{{ playlist.name }}</nuxt-link>
     </div>
-    <div class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
-      <ui-btn v-if="!isItemIncluded" color="bg-success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-symbols text-2xl pt-px">add</span></ui-btn>
+    <div class="h-full flex flex-col items-end justify-center transform space-y-2" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
+      <template v-if="!isItemIncluded">
+        <ui-btn color="bg-success" :padding-x="3" small class="h-9" @click.stop="clickAddTop"><span class="material-symbols text-2xl pt-px">vertical_align_top</span></ui-btn>
+        <ui-btn color="bg-success" :padding-x="3" small class="h-9" @click.stop="clickAddBottom"><span class="material-symbols text-2xl pt-px">vertical_align_bottom</span></ui-btn>
+      </template>
       <ui-btn v-else color="bg-error" :padding-x="3" class="h-9" small @click.stop="clickRem"><span class="material-symbols text-2xl pt-px">remove</span></ui-btn>
     </div>
   </div>
@@ -45,8 +48,11 @@ export default {
     mouseleave() {
       this.isHovering = false
     },
-    clickAdd() {
-      this.$emit('add', this.playlist)
+    clickAddTop() {
+      this.$emit('add-top', this.playlist, true)
+    },
+    clickAddBottom() {
+      this.$emit('add-bottom', this.playlist, false)
     },
     clickRem() {
       this.$emit('remove', this.playlist)
