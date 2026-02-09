@@ -995,6 +995,48 @@ class LibraryController {
       stats.totalSize = bookStats.totalSize
       stats.totalDuration = bookStats.totalDuration
       stats.numAudioTracks = bookStats.numAudioFiles
+
+      // Get top 10 rated items
+      const topRatedReviews = await Database.reviewModel.findAll({
+        attributes: [
+          'libraryItemId',
+          [Sequelize.fn('AVG', Sequelize.col('rating')), 'avgRating'],
+          [Sequelize.fn('COUNT', Sequelize.col('id')), 'numReviews']
+        ],
+        include: [
+          {
+            model: Database.libraryItemModel,
+            attributes: ['id'],
+            where: { libraryId: req.library.id },
+            include: [
+              {
+                model: Database.bookModel,
+                attributes: ['id'],
+                include: [
+                  {
+                    model: Database.bookMetadataModel,
+                    attributes: ['title']
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        group: ['libraryItemId', 'libraryItem.id', 'libraryItem.book.id', 'libraryItem.book.bookMetadata.id'],
+        order: [
+          [Sequelize.literal('avgRating'), 'DESC'],
+          [Sequelize.literal('numReviews'), 'DESC']
+        ],
+        limit: 10
+      })
+      stats.topRatedItems = topRatedReviews.map((r) => {
+        return {
+          id: r.libraryItemId,
+          title: r.libraryItem?.book?.bookMetadata?.title || 'Unknown',
+          avgRating: parseFloat(r.getDataValue('avgRating')),
+          numReviews: parseInt(r.getDataValue('numReviews'))
+        }
+      })
     } else {
       const genres = await libraryItemsPodcastFilters.getGenresWithCount(req.library.id)
       const podcastStats = await libraryItemsPodcastFilters.getPodcastLibraryStats(req.library.id)

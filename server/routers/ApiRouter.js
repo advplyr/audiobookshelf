@@ -35,6 +35,7 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const ReviewController = require('../controllers/ReviewController')
 
 class ApiRouter {
   constructor(Server) {
@@ -127,6 +128,10 @@ class ApiRouter {
     this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
     this.router.patch('/items/:id/ebook/:fileid/status', LibraryItemController.middleware.bind(this), LibraryItemController.updateEbookFileStatus.bind(this))
 
+    this.router.get('/items/:id/reviews', ReviewController.middleware.bind(this), ReviewController.findAllForItem.bind(this))
+    this.router.post('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.createUpdate.bind(this))
+    this.router.delete('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.delete.bind(this))
+
     //
     // User Routes
     //
@@ -188,6 +193,7 @@ class ApiRouter {
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
     this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
     this.router.post('/me/ereader-devices', MeController.updateUserEReaderDevices.bind(this))
+    this.router.get('/me/reviews', ReviewController.findAllForUser.bind(this))
 
     //
     // Backup Routes
