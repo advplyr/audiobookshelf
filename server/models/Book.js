@@ -8,10 +8,11 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 /**
  * @typedef EBookFileObject
  * @property {string} ino
+ * @property {string} deviceId
  * @property {string} ebookFormat
  * @property {number} addedAt
  * @property {number} updatedAt
- * @property {{filename:string, ext:string, path:string, relPath:strFing, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
+ * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
  */
 
 /**
@@ -45,6 +46,7 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
  * @typedef AudioFileObject
  * @property {number} index
  * @property {string} ino
+ * @property {string} deviceId
  * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
  * @property {number} addedAt
  * @property {number} updatedAt

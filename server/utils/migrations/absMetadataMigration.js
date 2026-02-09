@@ -5,17 +5,17 @@ const fileUtils = require('../fileUtils')
 const LibraryFile = require('../../objects/files/LibraryFile')
 
 /**
- * 
- * @param {import('../../models/LibraryItem')} libraryItem 
+ *
+ * @param {import('../../models/LibraryItem')} libraryItem
  * @returns {Promise<boolean>} false if failed
  */
 async function writeMetadataFileForItem(libraryItem) {
   const storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem && !libraryItem.isFile
   const metadataPath = storeMetadataWithItem ? libraryItem.path : Path.join(global.MetadataPath, 'items', libraryItem.id)
   const metadataFilepath = fileUtils.filePathToPOSIX(Path.join(metadataPath, 'metadata.json'))
-  if ((await fsExtra.pathExists(metadataFilepath))) {
+  if (await fsExtra.pathExists(metadataFilepath)) {
     // Metadata file already exists do nothing
-    return null
+    return false
   }
   Logger.info(`[absMetadataMigration] metadata file not found at "${metadataFilepath}" - creating`)
 
@@ -27,20 +27,24 @@ async function writeMetadataFileForItem(libraryItem) {
   const metadataJson = libraryItem.media.getAbsMetadataJson()
 
   // Save to file
-  const success = await fsExtra.writeFile(metadataFilepath, JSON.stringify(metadataJson, null, 2)).then(() => true).catch((error) => {
-    Logger.error(`[absMetadataMigration] failed to save metadata file at "${metadataFilepath}"`, error.message || error)
-    return false
-  })
+  const success = await fsExtra
+    .writeFile(metadataFilepath, JSON.stringify(metadataJson, null, 2))
+    .then(() => true)
+    .catch((error) => {
+      Logger.error(`[absMetadataMigration] failed to save metadata file at "${metadataFilepath}"`, error.message || error)
+      return false
+    })
 
   if (!success) return false
   if (!storeMetadataWithItem) return true // No need to do anything else
 
   // Safety check to make sure library file with the same path isnt already there
-  libraryItem.libraryFiles = libraryItem.libraryFiles.filter(lf => lf.metadata.path !== metadataFilepath)
+  libraryItem.libraryFiles = libraryItem.libraryFiles.filter((lf) => lf.metadata.path !== metadataFilepath)
 
   // Put new library file in library item
   const newLibraryFile = new LibraryFile()
   await newLibraryFile.setDataFromPath(metadataFilepath, 'metadata.json')
+  // TODO: BUGBUG - this shouldn't be JSON and it may not be the right type LibraryFileObject
   libraryItem.libraryFiles.push(newLibraryFile.toJSON())
 
   // Update library item timestamps and total size
@@ -49,20 +53,23 @@ async function writeMetadataFileForItem(libraryItem) {
     libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
     libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
     let size = 0
-    libraryItem.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+    libraryItem.libraryFiles.forEach((lf) => (size += !isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
     libraryItem.size = size
   }
 
   libraryItem.changed('libraryFiles', true)
-  return libraryItem.save().then(() => true).catch((error) => {
-    Logger.error(`[absMetadataMigration] failed to save libraryItem "${libraryItem.id}"`, error.message || error)
-    return false
-  })
+  return libraryItem
+    .save()
+    .then(() => true)
+    .catch((error) => {
+      Logger.error(`[absMetadataMigration] failed to save libraryItem "${libraryItem.id}"`, error.message || error)
+      return false
+    })
 }
 
 /**
- * 
- * @param {import('../../Database')} Database 
+ *
+ * @param {import('../../Database')} Database
  * @param {number} [offset=0]
  * @param {number} [totalCreated=0]
  */
@@ -83,8 +90,8 @@ async function runMigration(Database, offset = 0, totalCreated = 0) {
 }
 
 /**
- * 
- * @param {import('../../Database')} Database 
+ *
+ * @param {import('../../Database')} Database
  */
 module.exports.migrate = async (Database) => {
   Logger.info(`[absMetadataMigration] Starting metadata.json migration`)
