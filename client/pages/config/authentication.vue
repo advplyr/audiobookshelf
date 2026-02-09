@@ -122,6 +122,41 @@
           </div>
         </transition>
       </div>
+
+      <div class="w-full border border-white/10 rounded-xl p-4 my-4 bg-primary/25">
+        <div class="flex items-center">
+          <ui-checkbox v-model="enableProxyAuth" checkbox-bg="bg" />
+          <p class="text-lg pl-4">{{ $strings.HeaderProxyAuthentication }}</p>
+          <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
+            <a href="https://www.audiobookshelf.org/guides/reverse_proxy_authentication" target="_blank" class="inline-flex">
+              <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
+            </a>
+          </ui-tooltip>
+        </div>
+
+        <transition name="slide">
+          <div v-if="enableProxyAuth" class="flex flex-wrap pt-4">
+            <div class="w-full flex items-center mb-2">
+              <div class="grow">
+                <ui-text-input-with-label ref="proxyHeaderName" v-model="newAuthSettings.authProxyHeaderName" :disabled="savingSettings" :label="$strings.LabelProxyHeaderName" :placeholder="'X-Remote-User'" />
+              </div>
+              <div class="w-20 mx-1 mt-[1.375rem]">
+                <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" :disabled="!newAuthSettings.authProxyHeaderName?.trim() || testingProxyHeader" :loading="testingProxyHeader" @click="testProxyHeader">
+                  Test
+                </ui-btn>
+              </div>
+            </div>
+            <p class="text-sm text-gray-300 mb-4">
+              {{ $strings.LabelProxyHeaderNameDescription }}
+            </p>
+            <ui-text-input-with-label ref="proxyLogoutURL" v-model="newAuthSettings.authProxyLogoutURL" :disabled="savingSettings" :label="$strings.LabelProxyLogoutUrl" :placeholder="'https://proxy.example.com/logout'" class="mb-2" />
+            <p class="text-sm text-gray-300 mb-4">
+              {{ $strings.LabelProxyLogoutUrlDescription }}
+            </p>
+          </div>
+        </transition>
+      </div>
+
       <div class="w-full flex items-center justify-between p-4">
         <p v-if="enableOpenIDAuth" class="text-sm text-warning">{{ $strings.MessageAuthenticationOIDCChangesRestart }}</p>
         <ui-btn color="bg-success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
@@ -154,8 +189,10 @@ export default {
     return {
       enableLocalAuth: false,
       enableOpenIDAuth: false,
+      enableProxyAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
+      testingProxyHeader: false,
       openIdSigningAlgorithmsSupportedByIssuer: [],
       newAuthSettings: {}
     }
@@ -251,6 +288,34 @@ export default {
           this.$toast.error(errorMsg)
         })
     },
+    async testProxyHeader() {
+      if (!this.newAuthSettings.authProxyHeaderName?.trim()) {
+        this.$toast.error('Header name is required')
+        return
+      }
+
+      this.testingProxyHeader = true
+
+      try {
+        const response = await this.$axios.$get('/api/test-proxy-header', {
+          params: {
+            headerName: this.newAuthSettings.authProxyHeaderName
+          }
+        })
+
+        if (response.headerFound) {
+          this.$toast.success(`Header "${this.newAuthSettings.authProxyHeaderName}" found with value: "${response.headerValue}"`)
+        } else {
+          this.$toast.warning(`Header "${this.newAuthSettings.authProxyHeaderName}" not found in request`)
+        }
+      } catch (error) {
+        console.error('Failed to test proxy header', error)
+        const errorMsg = error.response?.data?.message || 'Failed to test proxy header'
+        this.$toast.error(errorMsg)
+      } finally {
+        this.testingProxyHeader = false
+      }
+    },
     validateOpenID() {
       let isValid = true
       if (!this.newAuthSettings.authOpenIDIssuerURL) {
@@ -323,12 +388,17 @@ export default {
       return isValid
     },
     async saveSettings() {
-      if (!this.enableLocalAuth && !this.enableOpenIDAuth) {
+      if (!this.enableLocalAuth && !this.enableOpenIDAuth && !this.enableProxyAuth) {
         this.$toast.error('Must have at least one authentication method enabled')
         return
       }
 
       if (this.enableOpenIDAuth && !this.validateOpenID()) {
+        return
+      }
+
+      if (this.enableProxyAuth && !this.newAuthSettings.authProxyHeaderName?.trim()) {
+        this.$toast.error('Authentication Header Name is required for proxy authentication')
         return
       }
 
@@ -339,6 +409,7 @@ export default {
       this.newAuthSettings.authActiveAuthMethods = []
       if (this.enableLocalAuth) this.newAuthSettings.authActiveAuthMethods.push('local')
       if (this.enableOpenIDAuth) this.newAuthSettings.authActiveAuthMethods.push('openid')
+      if (this.enableProxyAuth) this.newAuthSettings.authActiveAuthMethods.push('proxy')
 
       this.savingSettings = true
       this.$axios
@@ -366,6 +437,7 @@ export default {
       }
       this.enableLocalAuth = this.authMethods.includes('local')
       this.enableOpenIDAuth = this.authMethods.includes('openid')
+      this.enableProxyAuth = this.authMethods.includes('proxy')
       this.showCustomLoginMessage = !!this.authSettings.authLoginCustomMessage
     }
   },
