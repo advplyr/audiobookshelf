@@ -10,7 +10,7 @@
 
       <div class="grow" />
 
-      <ui-btn small color="bg-success" class="mr-4" @click.stop="writeReview">
+      <ui-btn small :color="userReview ? '' : 'bg-success'" class="mr-4" @click.stop="writeReview">
         {{ userReview ? $strings.ButtonReviewEdit : $strings.ButtonReviewWrite }}
       </ui-btn>
 

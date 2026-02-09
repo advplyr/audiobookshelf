@@ -116,6 +116,10 @@ class ReviewController {
    * @param {import('express').Response} res
    */
   async findAllForUser(req, res) {
+    if (!Database.serverSettings.enableReviews) {
+      return res.status(403).send('Review feature is disabled')
+    }
+
     try {
       const reviews = await Database.reviewModel.findAll({
         where: { userId: req.user.id },
@@ -124,10 +128,23 @@ class ReviewController {
             model: Database.libraryItemModel,
             include: [
               {
-                model: Database.bookModel
+                model: Database.bookModel,
+                include: [
+                  {
+                    model: Database.authorModel,
+                    through: { attributes: [] }
+                  },
+                  {
+                    model: Database.seriesModel,
+                    through: { attributes: ['id', 'sequence'] }
+                  }
+                ]
               },
               {
-                model: Database.podcastModel
+                model: Database.podcastModel,
+                include: {
+                  model: Database.podcastEpisodeModel
+                }
               }
             ]
           }
@@ -138,7 +155,22 @@ class ReviewController {
       res.json(reviews.map((r) => {
         const json = r.toOldJSON()
         if (r.libraryItem) {
-          json.libraryItem = r.libraryItem.toOldJSONMinified()
+          // Manually set media if missing (Sequelize hooks don't run on nested includes)
+          if (!r.libraryItem.media) {
+            if (r.libraryItem.mediaType === 'book' && r.libraryItem.book) {
+              r.libraryItem.media = r.libraryItem.book
+            } else if (r.libraryItem.mediaType === 'podcast' && r.libraryItem.podcast) {
+              r.libraryItem.media = r.libraryItem.podcast
+            }
+          }
+
+          if (r.libraryItem.media) {
+            try {
+              json.libraryItem = r.libraryItem.toOldJSONMinified()
+            } catch (err) {
+              Logger.error(`[ReviewController] Failed to minify library item ${r.libraryItem.id}`, err)
+            }
+          }
         }
         return json
       }))
@@ -156,6 +188,10 @@ class ReviewController {
    * @param {import('express').NextFunction} next
    */
   async middleware(req, res, next) {
+    if (!Database.serverSettings.enableReviews) {
+      return res.status(403).send('Review feature is disabled')
+    }
+
     // Basic library item access check
     req.libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)

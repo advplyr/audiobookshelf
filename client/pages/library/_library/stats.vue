@@ -43,7 +43,7 @@
               </div>
             </template>
           </div>
-          <div v-if="isBookLibrary && top10RatedItems.length" class="w-80 my-6 mx-auto">
+          <div v-if="isBookLibrary && enableReviews && top10RatedItems.length" class="w-80 my-6 mx-auto">
             <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTopRated }}</h1>
             <template v-for="(ab, index) in top10RatedItems">
               <div :key="index" class="w-full py-2">
@@ -188,6 +188,9 @@ export default {
     },
     isBookLibrary() {
       return this.currentLibraryMediaType === 'book'
+    },
+    enableReviews() {
+      return this.$store.getters['getServerSetting']('enableReviews')
     }
   },
   methods: {

@@ -1,6 +1,6 @@
 <template>
   <modals-modal v-model="show" name="review-modal" :width="500">
-    <div class="px-6 py-8 w-full rounded-lg bg-bg shadow-lg border border-black-300" style="max-height: 80vh">
+    <div class="px-6 py-8 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <h2 class="text-xl font-semibold mb-4">{{ title }}</h2>
       
       <div class="mb-6">
@@ -84,7 +84,7 @@ export default {
           reviewText: this.reviewText
         }
         const review = await this.$axios.$post(`/api/items/${this.libraryItem.id}/review`, payload)
-        this.$emit('review-updated', review)
+        this.$root.$emit('review-updated', review)
         this.$toast.success('Review submitted')
         this.show = false
       } catch (error) {
