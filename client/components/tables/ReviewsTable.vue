@@ -31,7 +31,12 @@
                 <p class="font-semibold text-gray-100 mr-3">{{ review.user.username }}</p>
                 <ui-star-rating :value="review.rating" readonly :size="16" />
               </div>
-              <p class="text-xs text-gray-400">{{ $formatDate(review.createdAt, dateFormat) }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-xs text-gray-400">{{ $formatDate(review.createdAt, dateFormat) }}</p>
+                <button v-if="isAdmin && review.userId !== user.id" class="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-error transition-colors" title="Delete Review" @click.stop="deleteReviewAdmin(review)">
+                  <span class="material-symbols text-base">delete</span>
+                </button>
+              </div>
             </div>
             <p v-if="review.reviewText" class="text-gray-200 whitespace-pre-wrap text-sm leading-relaxed">{{ review.reviewText }}</p>
           </div>
@@ -44,7 +49,7 @@
 <script>
 /**
  * A table component to display reviews for a specific library item.
- * Listens for global 'review-updated' events to refresh the view locally.
+ * Listens for global 'review-updated' and 'review-deleted' events to refresh the view locally.
  */
 export default {
   props: {
@@ -64,6 +69,9 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    isAdmin() {
+      return this.user.type === 'admin' || this.user.type === 'root'
     },
     userReview() {
       return this.reviews.find((r) => r.userId === this.user.id)
@@ -97,6 +105,18 @@ export default {
         review: this.userReview
       })
     },
+    async deleteReviewAdmin(review) {
+      if (!confirm(`Are you sure you want to delete ${review.user.username}'s review?`)) return
+      
+      try {
+        await this.$axios.$delete(`/api/reviews/${review.id}`)
+        this.reviews = this.reviews.filter(r => r.id !== review.id)
+        this.$toast.success('Review deleted')
+      } catch (error) {
+        console.error('Failed to delete review', error)
+        this.$toast.error('Failed to delete review')
+      }
+    },
     onReviewUpdated(review) {
       const index = this.reviews.findIndex((r) => r.id === review.id)
       if (index !== -1) {
@@ -113,9 +133,15 @@ export default {
         this.onReviewUpdated(review)
       }
     })
+    this.$root.$on('review-deleted', ({ libraryItemId, reviewId }) => {
+      if (libraryItemId === this.libraryItem.id) {
+        this.reviews = this.reviews.filter(r => r.id !== reviewId)
+      }
+    })
   },
   beforeDestroy() {
     this.$root.$off('review-updated')
+    this.$root.$off('review-deleted')
   }
 }
 </script>

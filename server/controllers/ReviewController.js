@@ -109,6 +109,40 @@ class ReviewController {
   }
 
   /**
+   * DELETE: /api/reviews/:id
+   * Delete a review by ID.
+   * Admin or the owner of the review can delete it.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async deleteById(req, res) {
+    if (!Database.serverSettings.enableReviews) {
+      return res.status(403).send('Review feature is disabled')
+    }
+
+    const { id } = req.params
+
+    try {
+      const review = await Database.reviewModel.findByPk(id)
+      if (!review) {
+        return res.sendStatus(404)
+      }
+
+      // Check if user is owner or admin
+      if (review.userId !== req.user.id && req.user.type !== 'admin' && req.user.type !== 'root') {
+        return res.status(403).send('Not authorized to delete this review')
+      }
+
+      await review.destroy()
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.error(`[ReviewController] Failed to delete review ${id}`, error)
+      res.status(500).send('Failed to delete review')
+    }
+  }
+
+  /**
    * GET: /api/me/reviews
    * Get all reviews by the current user.
    *

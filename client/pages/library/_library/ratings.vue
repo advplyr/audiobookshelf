@@ -101,9 +101,12 @@
           </div>
 
           <!-- Edit button -->
-          <div class="flex-shrink-0 w-7">
+          <div class="flex-shrink-0 w-7 flex flex-col gap-1">
             <button v-if="isReviewAuthor(review)" class="p-0.5 rounded hover:bg-white/10 text-gray-400 hover:text-gray-200" @click.stop="editReview(review)">
               <span class="material-symbols text-base">edit</span>
+            </button>
+            <button v-if="isAdmin && !isReviewAuthor(review)" class="p-0.5 rounded hover:bg-white/10 text-gray-400 hover:text-error transition-colors" title="Delete Review" @click.stop="deleteReviewAdmin(review)">
+              <span class="material-symbols text-base">delete</span>
             </button>
           </div>
         </div>
@@ -121,7 +124,7 @@
       </div>
     </div>
     
-    <modals-review-modal @review-updated="fetchReviews" />
+    <modals-review-modal @review-updated="fetchReviews" @review-deleted="fetchReviews" />
   </div>
 </template>
 
@@ -159,6 +162,9 @@ export default {
     },
     currentUser() {
       return this.$store.state.user.user
+    },
+    isAdmin() {
+      return this.currentUser.type === 'admin' || this.currentUser.type === 'root'
     },
     sortItems() {
       return [
@@ -258,6 +264,18 @@ export default {
     },
     isReviewAuthor(review) {
       return review.userId === this.currentUser.id
+    },
+    async deleteReviewAdmin(review) {
+      if (!confirm(`Are you sure you want to delete ${review.user?.username || 'this'}'s review?`)) return
+
+      try {
+        await this.$axios.$delete(`/api/reviews/${review.id}`)
+        this.fetchReviews()
+        this.$toast.success('Review deleted')
+      } catch (error) {
+        console.error('Failed to delete review', error)
+        this.$toast.error('Failed to delete review')
+      }
     },
     editReview(review) {
       this.$store.commit('globals/setReviewModal', {

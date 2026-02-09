@@ -132,6 +132,7 @@ class ApiRouter {
     this.router.get('/items/:id/reviews', ReviewController.middleware.bind(this), ReviewController.findAllForItem.bind(this))
     this.router.post('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.createUpdate.bind(this))
     this.router.delete('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.delete.bind(this))
+    this.router.delete('/reviews/:id', ReviewController.deleteById.bind(this))
 
     //
     // User Routes

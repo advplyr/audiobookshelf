@@ -23,6 +23,10 @@
       </div>
 
       <div class="flex justify-end gap-2">
+        <ui-btn v-if="selectedReviewItem?.review" color="bg-error" class="mr-auto" :loading="processingDelete" @click="deleteReview">
+          <span class="material-symbols text-base mr-1">delete</span>
+          {{ $strings.ButtonDelete }}
+        </ui-btn>
         <ui-btn @click="show = false">{{ $strings.ButtonCancel }}</ui-btn>
         <ui-btn color="bg-success" :loading="processing" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
       </div>
@@ -36,13 +40,15 @@
  * Managed via the 'globals' Vuex store.
  * 
  * @emit review-updated - Emits the new/updated review object on the root event bus.
+ * @emit review-deleted - Emits the libraryItemId of the deleted review on the root event bus.
  */
 export default {
   data() {
     return {
       rating: 0,
       reviewText: '',
-      processing: false
+      processing: false,
+      processingDelete: false
     }
   },
   watch: {
@@ -78,6 +84,22 @@ export default {
     }
   },
   methods: {
+    async deleteReview() {
+      if (!confirm('Are you sure you want to delete this review?')) return
+
+      this.processingDelete = true
+      try {
+        await this.$axios.$delete(`/api/items/${this.libraryItem.id}/review`)
+        this.$root.$emit('review-deleted', { libraryItemId: this.libraryItem.id, reviewId: this.selectedReviewItem.review.id })
+        this.$toast.success('Review deleted')
+        this.show = false
+      } catch (error) {
+        console.error('Failed to delete review', error)
+        this.$toast.error('Failed to delete review')
+      } finally {
+        this.processingDelete = false
+      }
+    },
     async submit() {
       if (!this.rating) {
         this.$toast.error('Please select a rating')
