@@ -14,7 +14,7 @@
         </div>
 
         <ui-tooltip v-if="mediaItemShare.isDownloadable" direction="bottom" :text="$strings.LabelDownload" class="absolute top-0 left-0 m-4">
-          <button aria-label="Download" class="text-gray-300 hover:text-white" @click="downloadShareItem"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
+          <button aria-label="Download" :class="downloadIconClass" @click="downloadShareItem"><span class="material-symbols text-2xl sm:text-3xl">download</span></button>
         </ui-tooltip>
       </div>
     </div>
@@ -107,6 +107,9 @@ export default {
     },
     coverHeight() {
       return this.coverWidth * this.coverAspectRatio
+    },
+    downloadIconClass() {
+      return this.coverBgIsLight ? ['text-black', 'hover:text-gray-800'] : ['text-white', 'hover:text-gray-300']
     }
   },
   methods: {
