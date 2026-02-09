@@ -1,109 +1,123 @@
 <template>
-  <div id="page-wrapper" class="bg-bg page overflow-hidden">
-    <!-- Toolbar -->
-    <div class="w-full bg-primary border-b border-black-300 px-4 py-2 flex items-center gap-4 flex-wrap z-10">
-      <div class="flex items-center gap-2 mr-4">
-        <span class="material-symbols text-2xl text-yellow-400">star</span>
-        <h1 class="text-xl font-semibold whitespace-nowrap">{{ $strings.ButtonRatings }}</h1>
-      </div>
+  <div id="page-wrapper" class="bg-bg page overflow-hidden relative">
+    <!-- Toolbar - same height as Series toolbar -->
+    <div class="w-full h-10 relative z-40">
+      <div id="ratings-toolbar" class="absolute top-0 left-0 w-full h-full flex items-center px-2 md:px-8">
+        <p class="hidden md:block text-sm">
+          {{ $formatNumber(totalReviews) }} {{ $strings.ButtonRatings }}
+        </p>
 
-      <!-- Sort Dropdown -->
-      <ui-dropdown :value="selectedSort" :items="sortItems" small outlined label-key="label" class="w-48" @input="onSortInput" />
+        <div class="grow hidden sm:inline-block" />
 
-      <!-- Filter by User -->
-      <ui-dropdown :value="selectedUserFilter" :items="userFilterItems" small outlined label-key="label" class="w-48" @input="onUserFilterInput" />
+        <!-- Sort Select -->
+        <controls-sort-select v-model="selectedSort" :descending.sync="sortDesc" :items="sortItems" class="w-36 sm:w-44 h-7.5 ml-1 sm:ml-4" @change="onSortChange" />
 
-      <!-- Filter by Rating -->
-      <ui-dropdown :value="selectedRatingFilter" :items="ratingFilterItems" small outlined label-key="label" class="w-32" @input="onRatingFilterInput" />
+        <!-- Filter by User -->
+        <div ref="userFilter" class="relative ml-1 sm:ml-4 h-7.5" v-click-outside="closeUserMenu">
+          <button type="button" class="h-full border border-gray-500 hover:border-gray-400 rounded-sm shadow-xs px-3 text-left cursor-pointer flex items-center" @click.prevent="showUserMenu = !showUserMenu">
+            <span class="block truncate text-xs" :class="selectedUserFilter ? 'text-yellow-400' : 'text-gray-200'">{{ selectedUserText }}</span>
+            <span class="material-symbols text-lg ml-1">expand_more</span>
+          </button>
+          <ul v-show="showUserMenu" class="absolute z-10 mt-1 w-44 bg-bg border border-black-200 shadow-lg max-h-60 rounded-md py-1 ring-1 ring-black/5 overflow-auto text-sm" role="menu">
+            <li class="select-none relative py-1.5 px-3 cursor-pointer hover:bg-white/5" :class="!selectedUserFilter ? 'bg-white/5 text-yellow-400' : 'text-gray-200'" @click="setUserFilter(null)">
+              {{ $strings.LabelAllUsers }}
+            </li>
+            <li v-for="u in reviewers" :key="u.id" class="select-none relative py-1.5 px-3 cursor-pointer hover:bg-white/5" :class="selectedUserFilter === u.id ? 'bg-white/5 text-yellow-400' : 'text-gray-200'" @click="setUserFilter(u.id)">
+              {{ u.username }}
+            </li>
+          </ul>
+        </div>
 
-      <!-- Search -->
-      <div class="flex-grow max-w-sm ml-auto">
-        <ui-text-input v-model="searchQuery" small :placeholder="$strings.PlaceholderSearchReviews" clearable />
+        <!-- Filter by Rating -->
+        <div ref="ratingFilter" class="relative ml-1 sm:ml-4 h-7.5" v-click-outside="closeRatingMenu">
+          <button type="button" class="h-full border border-gray-500 hover:border-gray-400 rounded-sm shadow-xs px-3 text-left cursor-pointer flex items-center" @click.prevent="showRatingMenu = !showRatingMenu">
+            <span class="block truncate text-xs" :class="selectedRatingFilter ? 'text-yellow-400' : 'text-gray-200'">{{ selectedRatingText }}</span>
+            <span class="material-symbols text-lg ml-1">expand_more</span>
+          </button>
+          <ul v-show="showRatingMenu" class="absolute z-10 mt-1 w-32 bg-bg border border-black-200 shadow-lg rounded-md py-1 ring-1 ring-black/5 overflow-auto text-sm" role="menu">
+            <li class="select-none relative py-1.5 px-3 cursor-pointer hover:bg-white/5" :class="!selectedRatingFilter ? 'bg-white/5 text-yellow-400' : 'text-gray-200'" @click="setRatingFilter(null)">
+              {{ $strings.LabelAllReviews }} ({{ totalReviews }})
+            </li>
+            <li v-for="n in 5" :key="n" class="select-none relative py-1.5 px-3 cursor-pointer hover:bg-white/5 flex items-center" :class="selectedRatingFilter === (6 - n) ? 'bg-white/5 text-yellow-400' : 'text-gray-200'" @click="setRatingFilter(6 - n)">
+              <ui-star-rating :value="6 - n" readonly :size="12" />
+              <span class="ml-1.5 text-xs text-gray-500">({{ ratingCounts[6 - n] || 0 }})</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Search -->
+        <div class="ml-1 sm:ml-4 h-7.5 w-40 sm:w-52">
+          <input v-model="searchQuery" type="text" class="w-full h-full bg-primary/60 border border-gray-500 hover:border-gray-400 rounded-sm px-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-400" :placeholder="$strings.PlaceholderSearchReviews" />
+        </div>
       </div>
     </div>
 
-    <div class="w-full h-full overflow-y-auto px-4 py-6 md:p-8 pb-32">
-      <div class="max-w-6xl mx-auto">
-        <div v-if="loading" class="flex justify-center py-20">
-          <widgets-loading-spinner />
-        </div>
+    <div class="w-full overflow-y-auto px-2 md:px-8 py-4 pb-32" style="height: calc(100% - 40px)">
+      <div v-if="loading" class="flex justify-center py-20">
+        <widgets-loading-spinner />
+      </div>
 
-        <div v-else-if="!reviews.length" class="text-center py-20 text-gray-400 italic">
-          <p class="text-xl mb-2">{{ $strings.LabelNoReviews }}</p>
-          <p v-if="!searchQuery && !selectedUserFilter && !selectedRatingFilter">{{ $strings.MessageGoRateBooks }}</p>
-        </div>
+      <div v-else-if="!filteredReviews.length" class="text-center py-20 text-gray-400 italic">
+        <p class="text-xl mb-2">{{ $strings.LabelNoReviews }}</p>
+        <p v-if="!searchQuery && !selectedUserFilter && !selectedRatingFilter">{{ $strings.MessageGoRateBooks }}</p>
+      </div>
 
-        <div v-else class="flex flex-col gap-2">
-          <!-- Table Header -->
-          <div class="hidden md:flex items-center px-4 py-2 text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-white/5">
-            <div class="w-12"></div> <!-- Cover -->
-            <div class="flex-grow px-4">{{ $strings.LabelBook }}</div>
-            <div class="w-32 px-4">{{ $strings.LabelUser }}</div>
-            <div class="w-32 px-4 text-center">{{ $strings.LabelRating }}</div>
-            <div class="w-24 text-right">{{ $strings.LabelDate }}</div>
-            <div class="w-10"></div> <!-- Actions -->
+      <div v-else class="flex flex-col gap-px">
+        <!-- Review Rows -->
+        <div v-for="review in filteredReviews" :key="review.id" class="flex items-start bg-primary/20 hover:bg-primary/40 transition-colors border-b border-white/5 py-2 px-2 md:px-4 gap-3">
+          <!-- Cover -->
+          <div class="w-10 flex-shrink-0 cursor-pointer" @click="goToItem(review.libraryItem)">
+            <covers-book-cover v-if="review.libraryItem" :library-item="review.libraryItem" :width="40" />
           </div>
 
-          <!-- Review Rows -->
-          <div v-for="review in filteredReviews" :key="review.id" class="bg-primary/20 rounded-lg hover:bg-primary/40 transition-colors border border-white/5 overflow-hidden">
-            <div class="flex items-center p-2 md:p-3 gap-4">
-              <!-- Cover -->
-              <div class="w-12 h-18 flex-shrink-0 cursor-pointer" @click="goToItem(review.libraryItem)">
-                <covers-book-cover :library-item="review.libraryItem" :width="48" />
-              </div>
-
-              <!-- Title/Author -->
-              <div class="flex-grow min-w-0">
-                <nuxt-link :to="`/item/${review.libraryItemId}`" class="font-semibold truncate block hover:underline text-gray-100">
-                  {{ getTitle(review) }}
-                </nuxt-link>
-                <p class="text-xs text-gray-400 truncate">{{ getAuthor(review) }}</p>
-              </div>
-
-              <!-- Username -->
-              <div class="hidden md:block w-32 px-4 truncate text-sm text-gray-300">
-                {{ review.user ? review.user.username : 'Unknown' }}
-              </div>
-
-              <!-- Rating -->
-              <div class="w-32 flex flex-col items-center flex-shrink-0">
-                <ui-star-rating :value="review.rating" readonly :size="16" />
-              </div>
-
-              <!-- Date (Desktop) -->
-              <div class="hidden md:block w-24 text-right text-xs text-gray-500">
-                {{ $formatDate(review.createdAt, dateFormat) }}
-              </div>
-
-              <!-- Actions -->
-              <div class="w-10 flex justify-end">
-                <ui-btn v-if="isReviewAuthor(review)" icon small flat @click.stop="editReview(review)">
-                  <span class="material-symbols text-lg">edit</span>
-                </ui-btn>
-              </div>
+          <!-- Main content -->
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <nuxt-link :to="`/item/${review.libraryItemId}`" class="text-sm font-semibold truncate hover:underline text-gray-100 leading-tight">
+                {{ getTitle(review) }}
+              </nuxt-link>
+              <span class="text-[11px] text-gray-500">by {{ getAuthor(review) }}</span>
             </div>
 
-            <!-- Review Text (if exists) -->
-            <div v-if="review.reviewText" class="px-4 md:px-16 pb-3 pt-1">
-              <div class="text-sm text-gray-300 italic bg-black/20 p-3 rounded border border-white/5 relative group">
-                <span class="line-clamp-2 group-hover:line-clamp-none transition-all duration-300 whitespace-pre-wrap">
-                  "{{ review.reviewText }}"
-                </span>
-              </div>
-            </div>
+            <!-- Review text inline -->
+            <p v-if="review.reviewText" class="text-xs text-gray-400 italic mt-0.5 line-clamp-1 hover:line-clamp-none cursor-default transition-all duration-200">
+              "{{ review.reviewText }}"
+            </p>
+          </div>
+
+          <!-- Stars -->
+          <div class="flex-shrink-0 flex items-center">
+            <ui-star-rating :value="review.rating" readonly :size="14" />
+          </div>
+
+          <!-- Username -->
+          <div class="hidden md:block flex-shrink-0 w-24 text-xs text-gray-400 truncate text-right">
+            {{ review.user ? review.user.username : 'Unknown' }}
+          </div>
+
+          <!-- Date -->
+          <div class="hidden md:block flex-shrink-0 w-20 text-[10px] text-gray-500 text-right leading-tight">
+            {{ $formatDate(review.createdAt, dateFormat) }}
+          </div>
+
+          <!-- Edit button -->
+          <div class="flex-shrink-0 w-7">
+            <button v-if="isReviewAuthor(review)" class="p-0.5 rounded hover:bg-white/10 text-gray-400 hover:text-gray-200" @click.stop="editReview(review)">
+              <span class="material-symbols text-base">edit</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- Pagination -->
-        <div v-if="totalReviews > limit" class="mt-8 flex justify-center gap-4 items-center pb-8">
-          <ui-btn small :disabled="page === 0" @click="changePage(page - 1)">
-            <span class="material-symbols">chevron_left</span>
-          </ui-btn>
-          <span class="text-sm text-gray-400">Page {{ page + 1 }} of {{ Math.ceil(totalReviews / limit) }}</span>
-          <ui-btn small :disabled="page >= Math.ceil(totalReviews / limit) - 1" @click="changePage(page + 1)">
-            <span class="material-symbols">chevron_right</span>
-          </ui-btn>
-        </div>
+      <!-- Pagination -->
+      <div v-if="totalReviews > limit" class="mt-6 flex justify-center gap-4 items-center pb-8">
+        <ui-btn small :disabled="page === 0" @click="changePage(page - 1)">
+          <span class="material-symbols">chevron_left</span>
+        </ui-btn>
+        <span class="text-sm text-gray-400">{{ page + 1 }} / {{ Math.ceil(totalReviews / limit) }}</span>
+        <ui-btn small :disabled="page >= Math.ceil(totalReviews / limit) - 1" @click="changePage(page + 1)">
+          <span class="material-symbols">chevron_right</span>
+        </ui-btn>
       </div>
     </div>
     
@@ -121,15 +135,19 @@ export default {
   data() {
     return {
       reviews: [],
+      reviewers: [],
+      ratingCounts: {},
       totalReviews: 0,
       loading: true,
       selectedSort: 'newest',
+      sortDesc: true,
       selectedUserFilter: null,
       selectedRatingFilter: null,
       searchQuery: '',
       page: 0,
       limit: 50,
-      users: []
+      showUserMenu: false,
+      showRatingMenu: false
     }
   },
   computed: {
@@ -144,25 +162,20 @@ export default {
     },
     sortItems() {
       return [
-        { value: 'newest', label: this.$strings.LabelSortNewestFirst },
-        { value: 'oldest', label: this.$strings.LabelSortOldestFirst },
-        { value: 'highest', label: this.$strings.LabelSortHighestRated },
-        { value: 'lowest', label: this.$strings.LabelSortLowestRated }
+        { value: 'newest', text: this.$strings.LabelSortNewestFirst },
+        { value: 'oldest', text: this.$strings.LabelSortOldestFirst },
+        { value: 'highest', text: this.$strings.LabelSortHighestRated },
+        { value: 'lowest', text: this.$strings.LabelSortLowestRated }
       ]
     },
-    userFilterItems() {
-      const items = [{ value: null, label: this.$strings.LabelAllUsers }]
-      this.users.forEach((u) => {
-        items.push({ value: u.id, label: u.username })
-      })
-      return items
+    selectedUserText() {
+      if (!this.selectedUserFilter) return this.$strings.LabelFilterByUser
+      const u = this.reviewers.find((r) => r.id === this.selectedUserFilter)
+      return u ? u.username : this.$strings.LabelFilterByUser
     },
-    ratingFilterItems() {
-      const items = [{ value: null, label: this.$strings.LabelAllReviews }]
-      for (let i = 5; i >= 1; i--) {
-        items.push({ value: i, label: `${i} ${i === 1 ? 'Star' : 'Stars'}` })
-      }
-      return items
+    selectedRatingText() {
+      if (!this.selectedRatingFilter) return this.$strings.LabelFilterByRating
+      return `${this.selectedRatingFilter} ★`
     },
     filteredReviews() {
       if (!this.searchQuery) return this.reviews
@@ -175,14 +188,11 @@ export default {
     }
   },
   methods: {
-    async fetchUsers() {
-      if (!this.currentUser.isAdminOrUp) return
-      try {
-        const data = await this.$axios.$get('/api/users')
-        this.users = data.users || []
-      } catch (error) {
-        console.error('Failed to fetch users', error)
-      }
+    closeUserMenu() {
+      this.showUserMenu = false
+    },
+    closeRatingMenu() {
+      this.showRatingMenu = false
     },
     async fetchReviews() {
       this.loading = true
@@ -199,8 +209,14 @@ export default {
         }
 
         const data = await this.$axios.$get(`/api/libraries/${this.libraryId}/reviews`, { params })
-        this.reviews = data.reviews
-        this.totalReviews = data.total
+        this.reviews = data.reviews || []
+        this.totalReviews = data.total || 0
+        if (data.reviewers) {
+          this.reviewers = data.reviewers
+        }
+        if (data.ratingCounts) {
+          this.ratingCounts = data.ratingCounts
+        }
       } catch (error) {
         console.error('Failed to fetch library reviews', error)
         this.$toast.error('Failed to fetch reviews')
@@ -208,20 +224,22 @@ export default {
         this.loading = false
       }
     },
-    onSortInput(val) {
+    onSortChange(val) {
       this.selectedSort = val
       this.page = 0
       this.fetchReviews()
     },
-    onUserFilterInput(val) {
+    setUserFilter(val) {
       this.selectedUserFilter = val
       this.selectedRatingFilter = null
+      this.showUserMenu = false
       this.page = 0
       this.fetchReviews()
     },
-    onRatingFilterInput(val) {
+    setRatingFilter(val) {
       this.selectedRatingFilter = val
       this.selectedUserFilter = null
+      this.showRatingMenu = false
       this.page = 0
       this.fetchReviews()
     },
@@ -249,8 +267,13 @@ export default {
     }
   },
   mounted() {
-    this.fetchUsers()
     this.fetchReviews()
   }
 }
 </script>
+
+<style>
+#ratings-toolbar {
+  box-shadow: 0px 8px 6px #111111aa;
+}
+</style>

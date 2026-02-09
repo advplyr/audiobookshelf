@@ -272,11 +272,54 @@ class ReviewController {
         return json
       })
 
+      // Collect unique reviewers for the filter dropdown
+      const allReviewers = await Database.reviewModel.findAll({
+        attributes: ['userId'],
+        include: [
+          {
+            model: Database.libraryItemModel,
+            where: { libraryId },
+            required: true,
+            attributes: []
+          },
+          {
+            model: Database.userModel,
+            attributes: ['id', 'username']
+          }
+        ],
+        group: ['review.userId']
+      })
+      const reviewers = allReviewers
+        .filter((r) => r.user)
+        .map((r) => ({ id: r.user.id, username: r.user.username }))
+        .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
+
+      // Get counts for each rating level
+      const ratingCountsResults = await Database.reviewModel.findAll({
+        attributes: ['rating', [Database.sequelize.fn('COUNT', Database.sequelize.col('review.id')), 'count']],
+        include: [
+          {
+            model: Database.libraryItemModel,
+            where: { libraryId },
+            required: true,
+            attributes: []
+          }
+        ],
+        group: ['rating']
+      })
+      const ratingCounts = {}
+      for (let i = 1; i <= 5; i++) ratingCounts[i] = 0
+      ratingCountsResults.forEach((r) => {
+        ratingCounts[r.rating] = parseInt(r.get('count'))
+      })
+
       res.json({
         reviews: results,
         total: count,
         page: pageNum,
-        limit: limitNum
+        limit: limitNum,
+        reviewers,
+        ratingCounts
       })
     } catch (error) {
       Logger.error(`[ReviewController] Failed to fetch reviews for library ${libraryId}`, error)

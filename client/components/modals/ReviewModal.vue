@@ -17,6 +17,7 @@
           rows="5"
           maxlength="5000"
           :placeholder="$strings.PlaceholderReviewWrite"
+          @keydown.enter.prevent="submit"
         ></textarea>
         <p class="text-right text-xs text-gray-400 mt-1">{{ reviewText.length }}/5000</p>
       </div>
