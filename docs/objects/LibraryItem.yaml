@@ -53,6 +53,9 @@ components:
         isInvalid:
           description: Whether the library item was scanned and no longer has media files.
           type: boolean
+        isPlaceholder:
+          description: Whether the library item is a placeholder without media files yet.
+          type: boolean
         mediaType:
           $ref: './mediaTypes/media.yaml#/components/schemas/mediaType'
     libraryItemMinified:

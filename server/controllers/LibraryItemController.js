@@ -9,7 +9,8 @@ const Database = require('../Database')
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
 const { ScanResult, AudioMimeType } = require('../utils/constants')
-const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
+const { getAudioMimeTypeFromExtname, encodeUriPath, sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
+const { getTitleIgnorePrefix } = require('../utils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
@@ -188,6 +189,9 @@ class LibraryItemController {
    */
   async updateMedia(req, res) {
     const mediaPayload = req.body
+    const originalTitle = req.libraryItem.media?.title
+    const originalPath = req.libraryItem.path
+    const wasPlaceholder = !!req.libraryItem.isPlaceholder
 
     if (mediaPayload.url) {
       await LibraryItemController.prototype.uploadCover.bind(this)(req, res, false)
@@ -238,6 +242,54 @@ class LibraryItemController {
         authorUpdateData.authorsAdded.forEach((au) => {
           Database.addAuthorToFilterData(req.libraryItem.libraryId, au.name, au.id)
         })
+        hasUpdates = true
+      }
+    }
+
+    if (
+      wasPlaceholder &&
+      typeof req.libraryItem.media?.title === 'string' &&
+      req.libraryItem.media.title &&
+      req.libraryItem.media.title !== originalTitle
+    ) {
+      const sanitizedTitle = sanitizeFilename(req.libraryItem.media.title)
+      if (!sanitizedTitle) {
+        return res.status(400).send('Invalid placeholder title')
+      }
+
+      const updatedPath = filePathToPOSIX(Path.join(Path.dirname(originalPath), sanitizedTitle))
+      if (updatedPath !== originalPath) {
+        if (await fs.pathExists(updatedPath)) {
+          return res.status(400).send('Library item already exists at that path')
+        }
+
+        const originalPathExists = await fs.pathExists(originalPath)
+        if (originalPathExists) {
+          try {
+            await fs.move(originalPath, updatedPath)
+          } catch (error) {
+            Logger.error(`[LibraryItemController] Failed to move placeholder path from "${originalPath}" to "${updatedPath}"`, error)
+            return res.status(500).send('Failed to move placeholder path')
+          }
+        } else if (global.ServerSettings.storeMetadataWithItem && !req.libraryItem.isFile) {
+          try {
+            await fs.ensureDir(updatedPath)
+          } catch (error) {
+            Logger.error(`[LibraryItemController] Failed to create placeholder path "${updatedPath}"`, error)
+            return res.status(500).send('Failed to create placeholder path')
+          }
+        }
+
+        const libraryFolder = await Database.libraryFolderModel.findByPk(req.libraryItem.libraryFolderId)
+        if (libraryFolder?.path) {
+          let relPath = updatedPath.replace(filePathToPOSIX(libraryFolder.path), '')
+          if (relPath.startsWith('/')) relPath = relPath.slice(1)
+          req.libraryItem.relPath = relPath
+        }
+
+        req.libraryItem.path = updatedPath
+        req.libraryItem.title = req.libraryItem.media.title
+        req.libraryItem.titleIgnorePrefix = getTitleIgnorePrefix(req.libraryItem.media.title)
         hasUpdates = true
       }
     }

@@ -477,3 +477,51 @@ paths:
                 $ref: '../objects/entities/Series.yaml#/components/schemas/seriesWithProgressAndRSS'
         '404':
           $ref: '#/components/responses/library404'
+  /api/libraries/{id}/series/{seriesId}/placeholders:
+    parameters:
+      - name: id
+        in: path
+        description: The ID of the library.
+        required: true
+        schema:
+          $ref: '../objects/Library.yaml#/components/schemas/libraryId'
+      - name: seriesId
+        in: path
+        description: The ID of the series.
+        required: true
+        schema:
+          $ref: '../objects/entities/Series.yaml#/components/schemas/seriesId'
+    post:
+      operationId: createSeriesPlaceholder
+      summary: Create series placeholder
+      description: Create a placeholder book item within a series for a library. If `folderId` is omitted, the server uses the library folder from an existing series item; if the series has no items, it falls back to the library's first folder.
+      tags:
+        - Libraries
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  description: The placeholder title to use.
+                  type: string
+                sequence:
+                  $ref: '../objects/entities/Series.yaml#/components/schemas/sequence'
+                folderId:
+                  description: Optional library folder to create the placeholder in.
+                  $ref: '../objects/Folder.yaml#/components/schemas/folderId'
+      responses:
+        '200':
+          description: createSeriesPlaceholder OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/library404'

@@ -15,7 +15,7 @@ describe('LibraryItem placeholder serialization', () => {
     await Database.sequelize.sync({ force: true })
   })
 
-  it('includes isPlaceholder in minified and expanded JSON', async () => {
+  it('includes isPlaceholder in default, minified, and expanded JSON', async () => {
     const library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
     const libraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: library.id })
 
@@ -39,9 +39,11 @@ describe('LibraryItem placeholder serialization', () => {
 
     const expanded = await Database.libraryItemModel.getExpandedById(libraryItem.id)
 
+    const defaultJson = expanded.toOldJSON()
     const minifiedJson = expanded.toOldJSONMinified()
     const expandedJson = expanded.toOldJSONExpanded()
 
+    expect(defaultJson).to.have.property('isPlaceholder', true)
     expect(minifiedJson).to.have.property('isPlaceholder', true)
     expect(expandedJson).to.have.property('isPlaceholder', true)
   })

@@ -43,6 +43,8 @@ paths:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series'
   /api/libraries/{id}/series/{seriesId}:
     $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series~1{seriesId}'
+  /api/libraries/{id}/series/{seriesId}/placeholders:
+    $ref: './controllers/LibraryController.yaml#/paths/~1api~1libraries~1{id}~1series~1{seriesId}~1placeholders'
   /api/notifications:
     $ref: './controllers/NotificationController.yaml#/paths/~1api~1notifications'
   /api/notificationdata:
