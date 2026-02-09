@@ -42,8 +42,13 @@
 </template>
 
 <script>
+/**
+ * A table component to display reviews for a specific library item.
+ * Listens for global 'review-updated' events to refresh the view locally.
+ */
 export default {
   props: {
+    /** The library item object to show reviews for */
     libraryItem: {
       type: Object,
       required: true

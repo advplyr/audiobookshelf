@@ -55,7 +55,9 @@ class ServerSettings {
     this.language = 'en-us'
     this.allowedOrigins = []
 
+    /** @type {boolean} If true, users can rate and review library items */
     this.enableReviews = true
+    /** @type {boolean} If true, the Ratings page link is shown in the library sidebar */
     this.showReviewsInSidebar = true
 
     this.logLevel = Logger.logLevel

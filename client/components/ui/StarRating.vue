@@ -7,16 +7,25 @@
 </template>
 
 <script>
+/**
+ * A reusable 5-star rating component.
+ * Supports read-only display and interactive rating selection.
+ * 
+ * @emit input - Emits the selected rating (1-5)
+ */
 export default {
   props: {
+    /** The current rating value (1-5) */
     value: {
       type: Number,
       default: 0
     },
+    /** If true, the rating cannot be changed */
     readonly: {
       type: Boolean,
       default: false
     },
+    /** The size of the stars in pixels */
     size: {
       type: Number,
       default: 24

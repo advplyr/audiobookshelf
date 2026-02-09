@@ -181,6 +181,110 @@ class ReviewController {
   }
 
   /**
+   * GET: /api/libraries/:id/reviews
+   * Get all reviews for items in a library.
+   * Supports sorting by newest, oldest, highest, lowest.
+   * Supports filtering by user or rating.
+   * Supports pagination with limit and page.
+   *
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async findAllForLibrary(req, res) {
+    if (!Database.serverSettings.enableReviews) {
+      return res.status(403).send('Review feature is disabled')
+    }
+
+    const libraryId = req.params.id
+    const { sort, filter, limit, page } = req.query
+
+    try {
+      const where = {}
+      const include = [
+        {
+          model: Database.userModel,
+          attributes: ['id', 'username']
+        },
+        {
+          model: Database.libraryItemModel,
+          where: { libraryId },
+          required: true,
+          include: [
+            {
+              model: Database.bookModel,
+              include: [
+                { model: Database.authorModel, through: { attributes: [] } },
+                { model: Database.seriesModel, through: { attributes: ['id', 'sequence'] } }
+              ]
+            },
+            {
+              model: Database.podcastModel,
+              include: { model: Database.podcastEpisodeModel }
+            }
+          ]
+        }
+      ]
+
+      if (filter) {
+        const [filterType, filterValue] = filter.split('.')
+        if (filterType === 'user' && filterValue) {
+          where.userId = filterValue
+        } else if (filterType === 'rating' && filterValue) {
+          where.rating = filterValue
+        }
+      }
+
+      let order = [['createdAt', 'DESC']]
+      if (sort === 'oldest') order = [['createdAt', 'ASC']]
+      else if (sort === 'highest') order = [['rating', 'DESC'], ['createdAt', 'DESC']]
+      else if (sort === 'lowest') order = [['rating', 'ASC'], ['createdAt', 'DESC']]
+
+      const limitNum = limit ? parseInt(limit) : 50
+      const pageNum = page ? parseInt(page) : 0
+      const offset = pageNum * limitNum
+
+      const { count, rows: reviews } = await Database.reviewModel.findAndCountAll({
+        where,
+        include,
+        order,
+        limit: limitNum,
+        offset
+      })
+
+      const results = reviews.map((r) => {
+        const json = r.toOldJSON()
+        if (r.libraryItem) {
+          if (!r.libraryItem.media) {
+            if (r.libraryItem.mediaType === 'book' && r.libraryItem.book) {
+              r.libraryItem.media = r.libraryItem.book
+            } else if (r.libraryItem.mediaType === 'podcast' && r.libraryItem.podcast) {
+              r.libraryItem.media = r.libraryItem.podcast
+            }
+          }
+          if (r.libraryItem.media) {
+            try {
+              json.libraryItem = r.libraryItem.toOldJSONMinified()
+            } catch (err) {
+              Logger.error(`[ReviewController] Failed to minify library item ${r.libraryItem.id}`, err)
+            }
+          }
+        }
+        return json
+      })
+
+      res.json({
+        reviews: results,
+        total: count,
+        page: pageNum,
+        limit: limitNum
+      })
+    } catch (error) {
+      Logger.error(`[ReviewController] Failed to fetch reviews for library ${libraryId}`, error)
+      res.status(500).send('Failed to fetch reviews')
+    }
+  }
+
+  /**
    * Middleware for review routes.
    *
    * @param {import('express').Request} req

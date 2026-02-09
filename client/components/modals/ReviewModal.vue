@@ -30,6 +30,12 @@
 </template>
 
 <script>
+/**
+ * A modal for writing or editing a review.
+ * Managed via the 'globals' Vuex store.
+ * 
+ * @emit review-updated - Emits the new/updated review object on the root event bus.
+ */
 export default {
   data() {
     return {
