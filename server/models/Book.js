@@ -518,6 +518,14 @@ class Book extends Model {
 
       const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
       if (existingSeries) {
+        // Update series name if casing differs (e.g., "example series" -> "Example Series")
+        if (existingSeries.name !== seriesObj.name) {
+          existingSeries.name = seriesObj.name
+          existingSeries.nameIgnorePrefix = getTitleIgnorePrefix(seriesObj.name)
+          await existingSeries.save()
+          hasUpdates = true
+          Logger.debug(`[Book] "${this.title}" Updated series name casing to "${seriesObj.name}"`)
+        }
         if (existingSeries.bookSeries.sequence !== seriesObjSequence) {
           existingSeries.bookSeries.sequence = seriesObjSequence
           await existingSeries.bookSeries.save()
