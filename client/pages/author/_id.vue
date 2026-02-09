@@ -14,6 +14,8 @@
             <button v-if="userCanUpdate" class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="editAuthor">
               <span class="material-symbols text-base">edit</span>
             </button>
+
+            <ui-btn v-if="userCanUpdate" :loading="processingPlaceholder" color="bg-primary" small @click="createAuthorPlaceholder">{{ $strings.ButtonAddPlaceholder }}</ui-btn>
           </div>
 
           <p v-if="author.description" class="text-white/60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
@@ -67,7 +69,8 @@ export default {
   data() {
     return {
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      processingPlaceholder: false
     }
   },
   computed: {
@@ -94,6 +97,25 @@ export default {
     },
     editAuthor() {
       this.$store.commit('globals/showEditAuthorModal', this.author)
+    },
+    async createAuthorPlaceholder() {
+      if (!this.author?.id || this.processingPlaceholder) return
+      this.processingPlaceholder = true
+      const payload = {
+        title: this.$strings.LabelPlaceholderDefaultTitle
+      }
+
+      try {
+        const libraryItem = await this.$axios.$post(`/api/authors/${this.author.id}/placeholders`, payload)
+        this.$toast.success(this.$strings.ToastPlaceholderCreated)
+        this.$store.commit('setBookshelfBookIds', [])
+        this.$store.commit('showEditModal', libraryItem)
+      } catch (error) {
+        console.error('Failed to create author placeholder', error)
+        this.$toast.error(this.$strings.ToastPlaceholderCreateFailed)
+      } finally {
+        this.processingPlaceholder = false
+      }
     },
     authorUpdated(author) {
       if (author.id === this.author.id) {

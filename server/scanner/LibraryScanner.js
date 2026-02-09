@@ -183,6 +183,8 @@ class LibraryScanner {
         // Podcast folder can have no episodes and still be valid
         if (libraryScan.libraryMediaType === 'podcast' && (await fs.pathExists(existingLibraryItem.path))) {
           libraryScan.addLog(LogLevel.INFO, `Library item "${existingLibraryItem.relPath}" folder exists but has no episodes`)
+        } else if (existingLibraryItem.isPlaceholder) {
+          libraryScan.addLog(LogLevel.DEBUG, `Placeholder library item "${existingLibraryItem.relPath}" was not found during scan - skipping missing check`)
         } else {
           libraryScan.addLog(LogLevel.WARN, `Library Item "${existingLibraryItem.path}" (inode: ${existingLibraryItem.ino}) is missing`)
           libraryScan.resultsMissing++
@@ -201,6 +203,21 @@ class LibraryScanner {
       } else {
         libraryItemDataFound = libraryItemDataFound.filter((lidf) => lidf !== libraryItemData)
         let libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
+        const placeholderHasMedia = existingLibraryItem.isPlaceholder && (libraryItemData.audioLibraryFiles.length || libraryItemData.ebookLibraryFiles.length)
+        if (existingLibraryItem.isPlaceholder && !placeholderHasMedia) {
+          libraryScan.addLog(LogLevel.DEBUG, `Placeholder library item "${existingLibraryItem.relPath}" has no media files - skipping rescan`)
+          if (libraryItemDataUpdated) {
+            libraryScan.resultsUpdated++
+            const libraryItem = await Database.libraryItemModel.getExpandedById(existingLibraryItem.id)
+            if (libraryItem) {
+              libraryItemsUpdated.push(libraryItem)
+            }
+          }
+          continue
+        }
+        if (placeholderHasMedia) {
+          await this.promotePlaceholder(existingLibraryItem, libraryScan)
+        }
         if (libraryItemDataUpdated || forceRescan) {
           if (forceRescan || libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
             const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
@@ -590,6 +607,11 @@ class LibraryScanner {
         if (existingLibraryItem.path === fullPath) {
           const exists = await fs.pathExists(fullPath)
           if (!exists) {
+            if (existingLibraryItem.isPlaceholder) {
+              Logger.info(`[LibraryScanner] Scanning file update group and placeholder library item was deleted "${existingLibraryItem.media.title}" - ignoring missing check`)
+              itemGroupingResults[itemDir] = ScanResult.NOTHING
+              continue
+            }
             Logger.info(`[LibraryScanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.title}" - marking as missing`)
             existingLibraryItem.isMissing = true
             await existingLibraryItem.save()
@@ -598,6 +620,15 @@ class LibraryScanner {
             itemGroupingResults[itemDir] = ScanResult.REMOVED
             continue
           }
+        }
+        if (existingLibraryItem.isPlaceholder) {
+          const placeholderHasAudio = hasAudioFiles(fileUpdateGroup, itemDir)
+          if (!placeholderHasAudio) {
+            Logger.debug(`[LibraryScanner] Placeholder library item "${existingLibraryItem.relPath}" has no audio file updates - skipping scan`)
+            itemGroupingResults[itemDir] = ScanResult.NOTHING
+            continue
+          }
+          await this.promotePlaceholder(existingLibraryItem)
         }
         // Scan library item for updates
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.title}" with id "${existingLibraryItem.id}" - scan for updates`)
@@ -638,6 +669,36 @@ class LibraryScanner {
     }
 
     return itemGroupingResults
+  }
+
+  /**
+   * Promote a placeholder item when media files are detected.
+   * @param {import('../models/LibraryItem')} existingLibraryItem
+   * @param {import('./LibraryScan')} [libraryScan]
+   * @returns {Promise<boolean>}
+   */
+  async promotePlaceholder(existingLibraryItem, libraryScan = null) {
+    if (!existingLibraryItem?.isPlaceholder) return false
+
+    existingLibraryItem.isPlaceholder = false
+    if (existingLibraryItem.isMissing) {
+      existingLibraryItem.isMissing = false
+    }
+
+    if (existingLibraryItem.changed) {
+      existingLibraryItem.changed('isPlaceholder', true)
+      if (existingLibraryItem.isMissing === false) {
+        existingLibraryItem.changed('isMissing', true)
+      }
+    }
+
+    await existingLibraryItem.save()
+
+    if (libraryScan) {
+      libraryScan.addLog(LogLevel.INFO, `Promoted placeholder library item "${existingLibraryItem.relPath}" to a real item`)
+    }
+
+    return true
   }
 }
 module.exports = new LibraryScanner()

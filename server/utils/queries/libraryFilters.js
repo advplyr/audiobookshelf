@@ -553,7 +553,8 @@ module.exports = {
           model: Database.libraryItemModel,
           attributes: [],
           where: {
-            libraryId: libraryId
+            libraryId: libraryId,
+            isPlaceholder: false
           }
         }
       })
@@ -582,6 +583,7 @@ module.exports = {
           attributes: [],
           where: {
             libraryId: libraryId,
+            isPlaceholder: false,
             updatedAt: {
               [Sequelize.Op.gt]: new Date(lastLoadedAt)
             }
@@ -636,7 +638,8 @@ module.exports = {
           model: Database.libraryItemModel,
           attributes: ['isMissing', 'isInvalid'],
           where: {
-            libraryId: libraryId
+            libraryId: libraryId,
+            isPlaceholder: false
           }
         },
         attributes: ['tags', 'genres', 'publisher', 'publishedYear', 'narrators', 'language']

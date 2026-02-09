@@ -216,6 +216,7 @@ describe('LibraryItemController', () => {
       tempPaths.push(tempRoot)
 
       const libraryFolder = await Database.libraryFolderModel.create({ path: filePathToPOSIX(tempRoot), libraryId: library.id })
+      const series = await Database.seriesModel.create({ name: 'Test Series', libraryId: library.id })
       const oldTitle = 'Old Title'
       const newTitle = 'New Title'
       const seriesDir = filePathToPOSIX(Path.join(libraryFolder.path, 'Test Series'))
@@ -223,6 +224,7 @@ describe('LibraryItemController', () => {
       await fs.ensureDir(oldPath)
 
       const book = await Database.bookModel.create({ title: oldTitle, audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      await Database.bookSeriesModel.create({ bookId: book.id, seriesId: series.id })
       const libraryItem = await Database.libraryItemModel.create({
         libraryFiles: [],
         mediaId: book.id,
@@ -321,6 +323,7 @@ describe('LibraryItemController', () => {
       tempPaths.push(tempRoot)
 
       const libraryFolder = await Database.libraryFolderModel.create({ path: filePathToPOSIX(tempRoot), libraryId: library.id })
+      const series = await Database.seriesModel.create({ name: 'Test Series', libraryId: library.id })
       const oldTitle = 'Old Title'
       const newTitle = 'New Title'
       const seriesDir = filePathToPOSIX(Path.join(libraryFolder.path, 'Test Series'))
@@ -330,6 +333,7 @@ describe('LibraryItemController', () => {
       await fs.ensureDir(newPath)
 
       const book = await Database.bookModel.create({ title: oldTitle, audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      await Database.bookSeriesModel.create({ bookId: book.id, seriesId: series.id })
       const libraryItem = await Database.libraryItemModel.create({
         libraryFiles: [],
         mediaId: book.id,
@@ -364,6 +368,13 @@ describe('LibraryItemController', () => {
 
       expect(fakeRes.status.calledWith(400)).to.be.true
       expect(fakeRes.send.calledWith('Library item already exists at that path')).to.be.true
+
+      const updatedItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+      expect(updatedItem.path).to.equal(oldPath)
+      expect(updatedItem.relPath).to.equal(`Test Series/${oldTitle}`)
+
+      const updatedBook = await Database.bookModel.findByPk(book.id)
+      expect(updatedBook.title).to.equal(oldTitle)
     })
 
     it('creates placeholder folder when metadata is stored with items and original path is missing', async () => {
@@ -373,12 +384,14 @@ describe('LibraryItemController', () => {
       tempPaths.push(tempRoot)
 
       const libraryFolder = await Database.libraryFolderModel.create({ path: filePathToPOSIX(tempRoot), libraryId: library.id })
+      const series = await Database.seriesModel.create({ name: 'Test Series', libraryId: library.id })
       const oldTitle = 'Old Title'
       const newTitle = 'New Title'
       const seriesDir = filePathToPOSIX(Path.join(libraryFolder.path, 'Test Series'))
       const oldPath = filePathToPOSIX(Path.join(seriesDir, oldTitle))
 
       const book = await Database.bookModel.create({ title: oldTitle, audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      await Database.bookSeriesModel.create({ bookId: book.id, seriesId: series.id })
       const libraryItem = await Database.libraryItemModel.create({
         libraryFiles: [],
         mediaId: book.id,
@@ -414,6 +427,135 @@ describe('LibraryItemController', () => {
       const expectedPath = filePathToPOSIX(Path.join(seriesDir, sanitizeFilename(newTitle)))
       const newPathExists = await fs.pathExists(expectedPath)
       expect(newPathExists).to.be.true
+    })
+
+    it('moves placeholder folder when series changes', async () => {
+      const library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+      const tempRoot = Path.join('/tmp', `abs-placeholder-${Date.now()}`)
+      tempPaths.push(tempRoot)
+
+      const libraryFolder = await Database.libraryFolderModel.create({ path: filePathToPOSIX(tempRoot), libraryId: library.id })
+      const oldSeries = await Database.seriesModel.create({ name: 'Series A', libraryId: library.id })
+      const newSeries = await Database.seriesModel.create({ name: 'Series B', libraryId: library.id })
+
+      const title = 'Placeholder'
+      const oldPath = filePathToPOSIX(Path.join(libraryFolder.path, 'Author A', oldSeries.name, title))
+      await fs.ensureDir(oldPath)
+
+      const book = await Database.bookModel.create({ title, audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      await Database.bookSeriesModel.create({ bookId: book.id, seriesId: oldSeries.id, sequence: '1' })
+
+      const libraryItem = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book.id,
+        mediaType: 'book',
+        libraryId: library.id,
+        libraryFolderId: libraryFolder.id,
+        path: oldPath,
+        relPath: `Author A/${oldSeries.name}/${title}`,
+        authorNamesFirstLast: 'Author A',
+        authorNamesLastFirst: 'A, Author',
+        isFile: false,
+        isPlaceholder: true
+      })
+
+      const expandedItem = await Database.libraryItemModel.getExpandedById(libraryItem.id)
+      expandedItem.saveMetadataFile = sinon.stub().resolves()
+
+      const fakeReq = {
+        query: {},
+        body: {
+          metadata: {
+            series: [{ id: newSeries.id, name: newSeries.name }]
+          }
+        },
+        libraryItem: expandedItem
+      }
+      const fakeRes = {
+        json: sinon.spy(),
+        status: sinon.stub().returnsThis(),
+        send: sinon.spy()
+      }
+
+      await LibraryItemController.updateMedia.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.json.calledOnce).to.be.true
+
+      const expectedPath = filePathToPOSIX(Path.join(libraryFolder.path, 'Author A', newSeries.name, title))
+      const oldPathExists = await fs.pathExists(oldPath)
+      const newPathExists = await fs.pathExists(expectedPath)
+      expect(oldPathExists).to.be.false
+      expect(newPathExists).to.be.true
+
+      const updatedItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+      expect(updatedItem.path).to.equal(expectedPath)
+      expect(updatedItem.relPath).to.equal(`Author A/${newSeries.name}/${title}`)
+    })
+
+    it('moves series-origin placeholder folder without inferring author directory from relPath', async () => {
+      const library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+      const tempRoot = Path.join('/tmp', `abs-placeholder-${Date.now()}`)
+      tempPaths.push(tempRoot)
+
+      const libraryFolder = await Database.libraryFolderModel.create({ path: filePathToPOSIX(tempRoot), libraryId: library.id })
+      const oldSeries = await Database.seriesModel.create({ name: 'Series A', libraryId: library.id })
+      const newSeries = await Database.seriesModel.create({ name: 'Series B', libraryId: library.id })
+
+      const title = 'Placeholder'
+      const oldPath = filePathToPOSIX(Path.join(libraryFolder.path, oldSeries.name, title))
+      await fs.ensureDir(oldPath)
+
+      const book = await Database.bookModel.create({ title, audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      await Database.bookSeriesModel.create({ bookId: book.id, seriesId: oldSeries.id, sequence: '1' })
+
+      const libraryItem = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book.id,
+        mediaType: 'book',
+        libraryId: library.id,
+        libraryFolderId: libraryFolder.id,
+        path: oldPath,
+        relPath: `${oldSeries.name}/${title}`,
+        authorNamesFirstLast: '',
+        authorNamesLastFirst: '',
+        isFile: false,
+        isPlaceholder: true
+      })
+
+      const expandedItem = await Database.libraryItemModel.getExpandedById(libraryItem.id)
+      expandedItem.saveMetadataFile = sinon.stub().resolves()
+
+      const fakeReq = {
+        query: {},
+        body: {
+          metadata: {
+            series: [{ id: newSeries.id, name: newSeries.name }]
+          }
+        },
+        libraryItem: expandedItem
+      }
+      const fakeRes = {
+        json: sinon.spy(),
+        status: sinon.stub().returnsThis(),
+        send: sinon.spy()
+      }
+
+      await LibraryItemController.updateMedia.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.json.calledOnce).to.be.true
+
+      const expectedPath = filePathToPOSIX(Path.join(libraryFolder.path, newSeries.name, title))
+      const invalidPath = filePathToPOSIX(Path.join(libraryFolder.path, oldSeries.name, newSeries.name, title))
+      const oldPathExists = await fs.pathExists(oldPath)
+      const newPathExists = await fs.pathExists(expectedPath)
+      const invalidPathExists = await fs.pathExists(invalidPath)
+      expect(oldPathExists).to.be.false
+      expect(newPathExists).to.be.true
+      expect(invalidPathExists).to.be.false
+
+      const updatedItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+      expect(updatedItem.path).to.equal(expectedPath)
+      expect(updatedItem.relPath).to.equal(`${newSeries.name}/${title}`)
     })
   })
 })

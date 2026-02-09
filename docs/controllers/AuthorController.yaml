@@ -300,3 +300,43 @@ paths:
                   - $ref: '#/components/schemas/authorUpdated'
         '404':
           $ref: '#/components/responses/author404'
+  /api/authors/{id}/placeholders:
+    parameters:
+      - name: id
+        in: path
+        description: Author ID
+        required: true
+        schema:
+          $ref: '../objects/entities/Author.yaml#/components/schemas/authorId'
+    post:
+      operationId: createAuthorPlaceholder
+      summary: Create author placeholder
+      description: Create a placeholder book item for an author. If `folderId` is omitted, the server uses the library folder from an existing author item; if the author has no items, it falls back to the library's first folder.
+      tags:
+        - Authors
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  description: The placeholder title to use.
+                  type: string
+                folderId:
+                  description: Optional library folder to create the placeholder in.
+                  $ref: '../objects/Folder.yaml#/components/schemas/folderId'
+      responses:
+        '200':
+          description: createAuthorPlaceholder OK
+          content:
+            application/json:
+              schema:
+                $ref: '../objects/LibraryItem.yaml#/components/schemas/libraryItemMinified'
+        '400':
+          description: Bad request
+        '403':
+          description: Forbidden
+        '404':
+          $ref: '#/components/responses/author404'

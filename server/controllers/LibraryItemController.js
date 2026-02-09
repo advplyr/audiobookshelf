@@ -193,6 +193,43 @@ class LibraryItemController {
     const originalPath = req.libraryItem.path
     const wasPlaceholder = !!req.libraryItem.isPlaceholder
 
+    const placeholderAuthorDirectory = (() => {
+      const authorNamesFirstLast = typeof req.libraryItem.authorNamesFirstLast === 'string' ? req.libraryItem.authorNamesFirstLast.trim() : ''
+      if (!authorNamesFirstLast) return ''
+      return sanitizeFilename(authorNamesFirstLast)
+    })()
+
+    if (wasPlaceholder && !req.libraryItem.isFile) {
+      const nextTitleRaw = typeof mediaPayload?.metadata?.title === 'string' ? mediaPayload.metadata.title : req.libraryItem.media?.title || ''
+      const nextTitle = sanitizeFilename(nextTitleRaw)
+      if (!nextTitle) {
+        return res.status(400).send('Invalid placeholder title')
+      }
+
+      let nextSeriesName = null
+      if (Array.isArray(mediaPayload?.metadata?.series) && mediaPayload.metadata.series.length) {
+        nextSeriesName = mediaPayload.metadata.series[0]?.name || null
+      } else if (Array.isArray(req.libraryItem.media?.series) && req.libraryItem.media.series.length) {
+        nextSeriesName = req.libraryItem.media.series[0]?.name || null
+      }
+
+      const libraryFolder = await Database.libraryFolderModel.findByPk(req.libraryItem.libraryFolderId)
+      if (libraryFolder?.path) {
+        const nextRelPathParts = []
+        if (placeholderAuthorDirectory) nextRelPathParts.push(placeholderAuthorDirectory)
+        if (nextSeriesName) {
+          const sanitizedNextSeriesName = sanitizeFilename(nextSeriesName)
+          if (sanitizedNextSeriesName) nextRelPathParts.push(sanitizedNextSeriesName)
+        }
+        nextRelPathParts.push(nextTitle)
+
+        const nextPath = filePathToPOSIX(Path.join(libraryFolder.path, ...nextRelPathParts))
+        if (nextPath !== originalPath && (await fs.pathExists(nextPath))) {
+          return res.status(400).send('Library item already exists at that path')
+        }
+      }
+    }
+
     if (mediaPayload.url) {
       await LibraryItemController.prototype.uploadCover.bind(this)(req, res, false)
       if (res.writableEnded || res.headersSent) return
@@ -246,18 +283,33 @@ class LibraryItemController {
       }
     }
 
-    if (
-      wasPlaceholder &&
-      typeof req.libraryItem.media?.title === 'string' &&
-      req.libraryItem.media.title &&
-      req.libraryItem.media.title !== originalTitle
-    ) {
+    const placeholderTitleUpdated = wasPlaceholder && typeof req.libraryItem.media?.title === 'string' && req.libraryItem.media.title && req.libraryItem.media.title !== originalTitle
+    const placeholderSeriesUpdated = wasPlaceholder && req.libraryItem.isBook && Array.isArray(mediaPayload.metadata?.series)
+
+    if ((placeholderTitleUpdated || placeholderSeriesUpdated) && !req.libraryItem.isFile) {
       const sanitizedTitle = sanitizeFilename(req.libraryItem.media.title)
       if (!sanitizedTitle) {
         return res.status(400).send('Invalid placeholder title')
       }
 
-      const updatedPath = filePathToPOSIX(Path.join(Path.dirname(originalPath), sanitizedTitle))
+      const libraryFolder = await Database.libraryFolderModel.findByPk(req.libraryItem.libraryFolderId)
+
+      let updatedSeriesName = null
+      if (Array.isArray(req.libraryItem.media?.series) && req.libraryItem.media.series.length) {
+        updatedSeriesName = req.libraryItem.media.series[0]?.name || null
+      } else if (Array.isArray(mediaPayload.metadata?.series) && mediaPayload.metadata.series.length) {
+        updatedSeriesName = mediaPayload.metadata.series[0]?.name || null
+      }
+
+      const nextRelPathParts = []
+      if (placeholderAuthorDirectory) nextRelPathParts.push(placeholderAuthorDirectory)
+      if (updatedSeriesName) {
+        const sanitizedUpdatedSeriesName = sanitizeFilename(updatedSeriesName)
+        if (sanitizedUpdatedSeriesName) nextRelPathParts.push(sanitizedUpdatedSeriesName)
+      }
+      nextRelPathParts.push(sanitizedTitle)
+
+      const updatedPath = libraryFolder?.path ? filePathToPOSIX(Path.join(libraryFolder.path, ...nextRelPathParts)) : filePathToPOSIX(Path.join(Path.dirname(originalPath), sanitizedTitle))
       if (updatedPath !== originalPath) {
         if (await fs.pathExists(updatedPath)) {
           return res.status(400).send('Library item already exists at that path')
@@ -280,7 +332,6 @@ class LibraryItemController {
           }
         }
 
-        const libraryFolder = await Database.libraryFolderModel.findByPk(req.libraryItem.libraryFolderId)
         if (libraryFolder?.path) {
           let relPath = updatedPath.replace(filePathToPOSIX(libraryFolder.path), '')
           if (relPath.startsWith('/')) relPath = relPath.slice(1)

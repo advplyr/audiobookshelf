@@ -408,8 +408,10 @@ module.exports = {
 
     let bookAttributes = null
 
+    const allowPlaceholderItems = filterGroup === 'series' || filterGroup === 'authors'
     const libraryItemWhere = {
-      libraryId
+      libraryId,
+      ...(allowPlaceholderItems ? {} : { isPlaceholder: false })
     }
 
     let seriesInclude = {
@@ -1079,7 +1081,8 @@ module.exports = {
         {
           model: Database.libraryItemModel,
           where: {
-            libraryId: library.id
+            libraryId: library.id,
+            isPlaceholder: false
           }
         },
         {

@@ -20,7 +20,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: {
+            isPlaceholder: false
+          }
         },
         {
           model: Database.authorModel,
@@ -54,7 +57,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: {
+            isPlaceholder: false
+          }
         },
         {
           model: Database.podcastEpisodeModel
@@ -85,7 +91,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: {
+            isPlaceholder: false
+          }
         },
         {
           model: Database.authorModel,
@@ -115,7 +124,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: {
+            isPlaceholder: false
+          }
         },
         {
           model: Database.podcastEpisodeModel
@@ -146,7 +158,10 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: {
+            isPlaceholder: false
+          }
         },
         {
           model: Database.authorModel,
