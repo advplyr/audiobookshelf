@@ -311,7 +311,7 @@ module.exports = {
    */
   async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
     const allSeries = await Database.seriesModel.findAll({
-      attributes: ['id', 'name', [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']],
+      attributes: ['id', 'name', [Sequelize.literal('(SELECT count(*) FROM bookSeries bs, libraryItems li WHERE bs.seriesId = series.id AND li.mediaId = bs.bookId AND li.mediaType = \"book\" AND li.isPlaceholder = 0)'), 'numBooks']],
       distinct: true,
       subQuery: false,
       where: seriesWhere,
@@ -395,7 +395,7 @@ module.exports = {
    * @param {boolean} isHomePage for home page shelves
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false) {
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false, includePlaceholders = false) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
@@ -408,7 +408,7 @@ module.exports = {
 
     let bookAttributes = null
 
-    const allowPlaceholderItems = filterGroup === 'series' || filterGroup === 'authors'
+    const allowPlaceholderItems = includePlaceholders || filterGroup === 'series' || filterGroup === 'authors'
     const libraryItemWhere = {
       libraryId,
       ...(allowPlaceholderItems ? {} : { isPlaceholder: false })
@@ -1268,7 +1268,7 @@ module.exports = {
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
   async getBookLibraryStats(libraryId) {
-    const [statResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, SUM(json_array_length(b.audioFiles)) AS numAudioFiles, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.libraryId = :libraryId;`, {
+    const [statResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, SUM(json_array_length(b.audioFiles)) AS numAudioFiles, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.libraryId = :libraryId AND li.isPlaceholder = 0;`, {
       replacements: {
         libraryId
       }

@@ -36,6 +36,9 @@ function createMountOptions() {
     $config: {
       routerBasePath: 'https://my.server.com'
     },
+    $strings: {
+      LabelPlaceholderComingSoon: 'Localized Coming Soon'
+    },
     $store: {
       commit: () => {},
       getters: {
@@ -163,6 +166,21 @@ describe('LazyBookCard', () => {
     cy.get('&ebookFormat').should('not.exist')
   })
 
+  it('renders placeholder styling and hides play button for placeholders', () => {
+    mountOptions.propsData.bookMount.isPlaceholder = true
+    cy.mount(LazyBookCard, mountOptions)
+
+    cy.get('&placeholderBadge').should('not.exist')
+    cy.get('#cover-area-0').should('have.class', 'placeholder-card')
+    cy.get('&placeholderPremiereRibbon').should('be.visible').and('contain.text', mountOptions.mocks.$strings.LabelPlaceholderComingSoon)
+    cy.get('&placeholderPremiereBorderOuter').should('be.visible')
+    cy.get('&placeholderPremiereBorderInner').should('be.visible')
+
+    cy.get('#book-card-0').trigger('mouseover')
+    cy.get('&playButton').should('be.hidden')
+    cy.get('&editButton').should('be.visible')
+  })
+
   it('routes to item page when clicked', () => {
     mountOptions.mocks.$router = { push: cy.stub().as('routerPush') }
     cy.mount(LazyBookCard, mountOptions)
@@ -209,6 +227,16 @@ describe('LazyBookCard', () => {
     cy.get('&titleImageNotReady').should('be.hidden')
     cy.get('&placeholderTitle').should('not.exist')
     cy.get('&placeholderAuthor').should('not.exist')
+  })
+
+  it('shows placeholder title and author when cover source is the placeholder image', () => {
+    mountOptions.mocks.$store.getters['globals/getLibraryItemCoverSrc'] = () => 'https://my.server.com/book_placeholder.jpg'
+    mountOptions.propsData.bookMount.media.coverPath = 'book_placeholder.jpg'
+    cy.mount(LazyBookCard, mountOptions)
+
+    cy.get('&titleImageNotReady').should('be.hidden')
+    cy.get('&placeholderTitle').should('be.visible')
+    cy.get('&placeholderAuthor').should('be.visible')
   })
 
   it('hides detailBottom when bookShelfView is STANDARD', () => {

@@ -123,9 +123,19 @@ class FileSystemController {
     }
 
     if (await fs.pathExists(filepath)) {
-      return res.json({
-        exists: true
+      // Allow placeholder folders to be targeted for uploads without loosening other paths.
+      const placeholderItem = await Database.libraryItemModel.findOne({
+        where: {
+          path: filepath,
+          libraryId: libraryFolder.libraryId,
+          isPlaceholder: true
+        }
       })
+      if (!placeholderItem) {
+        return res.json({
+          exists: true
+        })
+      }
     }
 
     // Check if a library item exists in a subdirectory
@@ -146,7 +156,7 @@ class FileSystemController {
         }
       })
 
-      if (libraryItem) {
+      if (libraryItem && !libraryItem.isPlaceholder) {
         return res.json({
           exists: true,
           libraryItemTitle: libraryItem.title

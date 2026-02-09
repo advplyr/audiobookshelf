@@ -40,7 +40,10 @@
           <ui-text-input-with-label v-model.trim="itemData.series" :disabled="processing" :label="$strings.LabelSeries" note="(optional)" inputClass="h-10" />
         </div>
         <div class="w-1/2 px-2">
-          <div class="w-full">
+          <div v-if="showPlaceholderSelector" class="w-full" cy-id="directoryPlaceholderSelector">
+            <ui-select-input :value="placeholderSelectionValue" :disabled="processing" :label="$strings.LabelDirectoryPlaceholder" :items="directoryPlaceholderItems" @input="onPlaceholderSelectionInput" />
+          </div>
+          <div v-else class="w-full">
             <label class="px-1 text-sm font-semibold">
               {{ $strings.LabelDirectory }}
               <em class="font-normal text-xs pl-2">(auto)</em>
@@ -95,7 +98,16 @@ export default {
     },
     mediaType: String,
     processing: Boolean,
-    provider: String
+    provider: String,
+    showPlaceholderSelector: Boolean,
+    placeholderTarget: {
+      type: String,
+      default: ''
+    },
+    placeholderItems: {
+      type: Array,
+      default: () => []
+    }
   },
   data() {
     return {
@@ -127,6 +139,27 @@ export default {
       const cleanedOutputPathParts = outputPathParts.filter(Boolean).map((part) => this.$sanitizeFilename(part))
 
       return Path.join(...cleanedOutputPathParts)
+    },
+    placeholderSelectionValue() {
+      return this.placeholderTarget || ''
+    },
+    directoryPlaceholderItems() {
+      const placeholderOptions = this.placeholderItems.map((placeholder) => {
+        const title = placeholder?.media?.metadata?.title || placeholder.title || placeholder.path || placeholder.id
+        const author = placeholder?.media?.metadata?.authorName || placeholder.authorNamesFirstLast || ''
+        return {
+          value: `id:${placeholder.id}`,
+          text: author ? `${title} (${author})` : title
+        }
+      })
+
+      return [
+        {
+          value: '',
+          text: this.directory
+        },
+        ...placeholderOptions
+      ]
     },
     isNonInteractable() {
       return this.isUploading || this.isFetchingMetadata
@@ -171,6 +204,9 @@ export default {
     },
     titleUpdated() {
       this.error = ''
+    },
+    onPlaceholderSelectionInput(value) {
+      this.$emit('placeholder-target-updated', value || '')
     },
     async fetchMetadata() {
       if (!this.itemData.title.trim().length) {

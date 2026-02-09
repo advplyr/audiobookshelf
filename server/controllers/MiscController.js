@@ -10,7 +10,10 @@ const Watcher = require('../Watcher')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
-const { sanitizeFilename } = require('../utils/fileUtils')
+const fileUtils = require('../utils/fileUtils')
+const { sanitizeFilename } = fileUtils
+const LibraryItemScanner = require('../scanner/LibraryItemScanner')
+const LibraryScanner = require('../scanner/LibraryScanner')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
@@ -43,7 +46,7 @@ class MiscController {
     }
 
     const files = Object.values(req.files)
-    let { title, author, series, folder: folderId, library: libraryId } = req.body
+    let { title, author, series, folder: folderId, library: libraryId, placeholder: placeholderTarget } = req.body
     // Validate request body
     if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
       return res.status(400).send('Invalid request body')
@@ -53,6 +56,9 @@ class MiscController {
     }
     if (!author || typeof author !== 'string') {
       author = null
+    }
+    if (!placeholderTarget || typeof placeholderTarget !== 'string') {
+      placeholderTarget = null
     }
 
     const library = await Database.libraryModel.findByIdWithFolders(libraryId)
@@ -70,13 +76,56 @@ class MiscController {
       return res.status(404).send('Folder not found')
     }
 
-    // Podcasts should only be one folder deep
-    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
-    // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
-    // before sanitizing all the directory parts to remove illegal chars and finally prepending
-    // the base folder path
-    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
-    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+    let placeholderItem = null
+    let outputDirectory = ''
+
+    if (placeholderTarget) {
+      let placeholderId = null
+      let placeholderPath = null
+
+      if (placeholderTarget.startsWith('id:')) {
+        placeholderId = placeholderTarget.slice(3)
+      } else if (Path.isAbsolute(placeholderTarget) || placeholderTarget.includes('/') || placeholderTarget.includes('\\')) {
+        placeholderPath = placeholderTarget
+      } else {
+        placeholderId = placeholderTarget
+      }
+
+      if (placeholderId) {
+        placeholderItem = await Database.libraryItemModel.findByPk(placeholderId)
+      }
+      if (!placeholderItem && placeholderPath) {
+        const normalizedPlaceholderPath = fileUtils.filePathToPOSIX(Path.normalize(placeholderPath))
+        placeholderItem = await Database.libraryItemModel.findOne({
+          where: {
+            path: normalizedPlaceholderPath,
+            libraryId: library.id,
+            isPlaceholder: true
+          }
+        })
+      }
+
+      if (!placeholderItem || !placeholderItem.isPlaceholder) {
+        Logger.error(`[MiscController] Invalid placeholder target "${placeholderTarget}" for library "${library.id}"`)
+        return res.status(404).send('Placeholder not found')
+      }
+
+      if (placeholderItem.libraryId !== library.id || placeholderItem.libraryFolderId !== folder.id) {
+        Logger.error(`[MiscController] Placeholder target "${placeholderItem.id}" does not belong to library "${library.id}" folder "${folder.id}"`)
+        return res.status(400).send('Placeholder does not belong to library folder')
+      }
+
+      outputDirectory = placeholderItem.path
+      // Placeholder uploads skip directory building and always target the placeholder folder.
+    } else {
+      // Podcasts should only be one folder deep
+      const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+      // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
+      // before sanitizing all the directory parts to remove illegal chars and finally prepending
+      // the base folder path
+      const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
+      outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+    }
 
     await fs.ensureDir(outputDirectory)
 
@@ -94,6 +143,18 @@ class MiscController {
           Logger.error('Failed to move file', path, error)
           return false
         })
+    }
+
+    if (placeholderItem) {
+      // Promote placeholder and attach files when upload targets a placeholder folder.
+      const updateDetails = {
+        libraryFolderId: folder.id,
+        relPath: placeholderItem.relPath,
+        path: outputDirectory,
+        isFile: placeholderItem.isFile
+      }
+      await LibraryScanner.promotePlaceholder(placeholderItem)
+      await LibraryItemScanner.scanLibraryItem(placeholderItem.id, updateDetails)
     }
 
     res.sendStatus(200)

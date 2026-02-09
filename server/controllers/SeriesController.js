@@ -1,6 +1,7 @@
 const Path = require('path')
 const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
+const fs = require('../libs/fsExtra')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { getTitleIgnorePrefix } = require('../utils')
@@ -128,11 +129,11 @@ class SeriesController {
     const requestedTitle = typeof req.body?.title === 'string' ? req.body.title.trim() : ''
     const placeholderTitle = requestedTitle || 'Placeholder'
     const requestedSequence = req.body?.sequence
-    const placeholderSequence =
-      typeof requestedSequence === 'string' || typeof requestedSequence === 'number' ? String(requestedSequence).trim() || null : null
+    const placeholderSequence = typeof requestedSequence === 'string' || typeof requestedSequence === 'number' ? String(requestedSequence).trim() || null : null
 
     const requestedFolderId = typeof req.body?.folderId === 'string' ? req.body.folderId.trim() : ''
     let libraryFolder = null
+    let seriesLibraryItem = null
 
     if (requestedFolderId) {
       libraryFolder = library.libraryFolders?.find((folder) => folder.id === requestedFolderId)
@@ -140,7 +141,7 @@ class SeriesController {
         return res.status(404).send('Folder not found')
       }
     } else {
-      const seriesLibraryItem = await Database.libraryItemModel.findOne({
+      seriesLibraryItem = await Database.libraryItemModel.findOne({
         where: {
           libraryId: library.id,
           mediaType: 'book'
@@ -180,7 +181,8 @@ class SeriesController {
       return res.status(400).send('Library has no folders')
     }
 
-    const outputDirectoryParts = [series.name, placeholderTitle]
+    const authorDirectory = typeof seriesLibraryItem?.authorNamesFirstLast === 'string' ? seriesLibraryItem.authorNamesFirstLast.trim() : ''
+    const outputDirectoryParts = [authorDirectory, series.name, placeholderTitle]
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = filePathToPOSIX(Path.join(...[libraryFolder.path, ...cleanedOutputDirectoryParts]))
 
@@ -191,6 +193,13 @@ class SeriesController {
     })
     if (existingLibraryItemCount) {
       return res.status(400).send('Library item already exists at that path')
+    }
+
+    try {
+      await fs.ensureDir(outputDirectory)
+    } catch (error) {
+      Logger.error(`[SeriesController] Failed to create placeholder directory "${outputDirectory}"`, error)
+      return res.status(500).send('Failed to create placeholder directory')
     }
 
     const libraryItemFolderStats = {

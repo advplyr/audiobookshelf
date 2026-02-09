@@ -618,6 +618,7 @@ class LibraryController {
       mediaType: req.library.mediaType,
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1',
+      includePlaceholders: include.includes('placeholders'),
       include: include.join(',')
     }
 

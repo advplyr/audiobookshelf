@@ -566,7 +566,18 @@ export default {
             this.entityComponentRefs[indexOf].setEntity(libraryItem)
           }
         }
+        if (this.entityName === 'series-books' && this.seriesId) {
+          const seriesIds = libraryItem.media?.metadata?.series?.map((se) => se.id) || []
+          if (!seriesIds.includes(this.seriesId)) {
+            this.resetEntities(this.currScrollTop)
+          }
+        }
       }
+    },
+    seriesBookshelfRefresh({ seriesId } = {}) {
+      if (this.entityName !== 'series-books') return
+      if (seriesId && this.seriesId && seriesId !== this.seriesId) return
+      this.resetEntities(this.currScrollTop)
     },
     routeToBookshelfIfLastIssueRemoved() {
       if (this.totalEntities === 0) {
@@ -791,6 +802,7 @@ export default {
 
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('user-settings', this.settingsUpdated)
+      this.$eventBus.$on('series-bookshelf-refresh', this.seriesBookshelfRefresh)
 
       if (this.$root.socket) {
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -822,6 +834,7 @@ export default {
 
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('user-settings', this.settingsUpdated)
+      this.$eventBus.$off('series-bookshelf-refresh', this.seriesBookshelfRefresh)
 
       if (this.$root.socket) {
         this.$root.socket.off('item_updated', this.libraryItemUpdated)

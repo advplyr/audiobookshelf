@@ -7,7 +7,7 @@
       </div>
 
       <div cy-id="seriesLengthMarker" class="absolute rounded-lg bg-black/90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
-        <p :style="{ fontSize: 0.8 + 'em' }" role="status" :aria-label="$strings.LabelNumberOfBooks">{{ books.length }}</p>
+        <p :style="{ fontSize: 0.8 + 'em' }" role="status" :aria-label="$strings.LabelNumberOfBooks">{{ seriesBooksCount }}</p>
       </div>
 
       <div cy-id="seriesProgressBar" v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1e shadow-xs max-w-full z-10 rounded-b w-full box-shadow-progressbar" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
@@ -111,6 +111,10 @@ export default {
     },
     books() {
       return this.series?.books || []
+    },
+    seriesBooksCount() {
+      if (typeof this.series?.numBooks === 'number') return this.series.numBooks
+      return this.books.filter((book) => !book.isPlaceholder).length
     },
     addedAt() {
       return this.series?.addedAt || 0

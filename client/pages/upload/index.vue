@@ -74,7 +74,20 @@
       </widgets-alert>
 
       <!-- Item Upload cards -->
-      <cards-item-upload-card v-for="item in items" :key="item.index" :ref="`itemCard-${item.index}`" :media-type="selectedLibraryMediaType" :item="item" :provider="fetchMetadata.provider" :processing="processing" @remove="removeItem(item)" />
+      <cards-item-upload-card
+        v-for="item in items"
+        :key="item.index"
+        :ref="`itemCard-${item.index}`"
+        :media-type="selectedLibraryMediaType"
+        :item="item"
+        :provider="fetchMetadata.provider"
+        :processing="processing"
+        :show-placeholder-selector="showPlaceholderTarget"
+        :placeholder-target="cleanedPlaceholderTarget"
+        :placeholder-items="placeholderItemsForSelectedFolder"
+        @remove="removeItem(item)"
+        @placeholder-target-updated="updatePlaceholderTargetForSelectedFolder"
+      />
 
       <!-- Upload/Reset btns -->
       <div v-show="items.length" class="flex justify-end pb-8 pt-4">
@@ -104,6 +117,8 @@ export default {
       selectedFolderId: null,
       processing: false,
       uploadFinished: false,
+      placeholderTargetByFolderId: {},
+      placeholdersByFolderId: {},
       fetchMetadata: {
         enabled: false,
         provider: null
@@ -175,10 +190,22 @@ export default {
     },
     uploadReady() {
       return !this.items.length && !this.ignoredFiles.length && !this.uploadFinished
+    },
+    showPlaceholderTarget() {
+      return !this.selectedLibraryIsPodcast && this.items.length > 0
+    },
+    placeholderItemsForSelectedFolder() {
+      if (!this.selectedFolderId) return []
+      return this.placeholdersByFolderId[this.selectedFolderId] || []
+    },
+    cleanedPlaceholderTarget() {
+      if (!this.selectedFolderId) return ''
+      const value = this.placeholderTargetByFolderId[this.selectedFolderId]
+      return typeof value === 'string' ? value.trim() : ''
     }
   },
   methods: {
-    libraryChanged() {
+    async libraryChanged() {
       if (!this.selectedLibrary && this.selectedFolderId) {
         this.selectedFolderId = null
       } else if (this.selectedFolderId) {
@@ -188,6 +215,7 @@ export default {
       }
       this.setDefaultFolder()
       this.setMetadataProvider()
+      await this.fetchPlaceholdersForLibrary()
     },
     setDefaultFolder() {
       if (!this.selectedFolderId && this.selectedLibrary && this.selectedLibrary.folders.length) {
@@ -208,8 +236,44 @@ export default {
       this.items = []
       this.ignoredFiles = []
       this.uploadFinished = false
+      this.placeholderTargetByFolderId = {}
       if (this.$refs.fileInput) this.$refs.fileInput.value = ''
       if (this.$refs.fileFolderInput) this.$refs.fileFolderInput.value = ''
+    },
+    async fetchPlaceholdersForLibrary() {
+      if (!this.selectedLibraryId || this.selectedLibraryIsPodcast) {
+        this.placeholdersByFolderId = {}
+        this.placeholderTargetByFolderId = {}
+        return
+      }
+
+      const placeholders = await this.$axios
+        .$get(`/api/libraries/${this.selectedLibraryId}/items?include=placeholders&limit=0`)
+        .then((data) => data.results || [])
+        .catch((error) => {
+          console.error('Failed to load placeholders', error)
+          return []
+        })
+
+      const placeholdersByFolderId = {}
+      placeholders.forEach((item) => {
+        if (!item?.isPlaceholder || !item.folderId) return
+        if (!placeholdersByFolderId[item.folderId]) placeholdersByFolderId[item.folderId] = []
+        placeholdersByFolderId[item.folderId].push(item)
+      })
+
+      const nextPlaceholderTargetByFolderId = {}
+      const folders = this.selectedLibrary?.folders || []
+      folders.forEach((folder) => {
+        nextPlaceholderTargetByFolderId[folder.id] = this.placeholderTargetByFolderId[folder.id] || ''
+      })
+
+      this.placeholdersByFolderId = placeholdersByFolderId
+      this.placeholderTargetByFolderId = nextPlaceholderTargetByFolderId
+    },
+    updatePlaceholderTargetForSelectedFolder(target) {
+      if (!this.selectedFolderId) return
+      this.$set(this.placeholderTargetByFolderId, this.selectedFolderId, target || '')
     },
     openFilePicker() {
       if (this.$refs.fileInput) this.$refs.fileInput.click()
@@ -315,6 +379,9 @@ export default {
       }
       form.set('library', this.selectedLibraryId)
       form.set('folder', this.selectedFolderId)
+      if (this.cleanedPlaceholderTarget) {
+        form.set('placeholder', this.cleanedPlaceholderTarget)
+      }
 
       var index = 0
       item.files.forEach((file) => {
@@ -380,6 +447,11 @@ export default {
       // Check if path already exists before starting upload
       //  uploading fails if path already exists
       for (const item of items) {
+        if (this.cleanedPlaceholderTarget) {
+          itemsToUpload.push(item)
+          continue
+        }
+
         const exists = await this.$axios
           .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath })
           .then((data) => {
@@ -415,6 +487,7 @@ export default {
     this.setMetadataProvider()
 
     this.setDefaultFolder()
+    this.fetchPlaceholdersForLibrary()
     // Fetch providers if not already loaded
     this.$store.dispatch('scanners/fetchProviders')
     window.addEventListener('dragenter', this.dragenter)

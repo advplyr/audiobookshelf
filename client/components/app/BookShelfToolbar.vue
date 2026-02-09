@@ -134,6 +134,13 @@ export default {
         }
       ]
 
+      if (this.userCanUpdate && this.isBookLibrary) {
+        items.push({
+          text: this.$strings.ButtonAddPlaceholder,
+          action: 'add-placeholder'
+        })
+      }
+
       if (this.userIsAdminOrUp || this.selectedSeries.rssFeed) {
         items.push({
           text: this.$strings.LabelOpenRSSFeed,
@@ -427,6 +434,12 @@ export default {
     seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
+      } else if (action === 'add-placeholder') {
+        if (this.processingSeries) {
+          console.warn('Already processing series')
+          return
+        }
+        this.createSeriesPlaceholder()
       } else if (action === 're-add-to-continue-listening') {
         if (this.processingSeries) {
           console.warn('Already processing series')
@@ -565,6 +578,25 @@ export default {
         type: 'yesNo'
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    async createSeriesPlaceholder() {
+      if (!this.seriesId) return
+      this.processingSeries = true
+      const payload = {
+        title: this.$strings.LabelPlaceholderDefaultTitle
+      }
+      try {
+        const libraryItem = await this.$axios.$post(`/api/libraries/${this.currentLibraryId}/series/${this.seriesId}/placeholders`, payload)
+        this.$toast.success(this.$strings.ToastPlaceholderCreated)
+        this.$store.commit('setBookshelfBookIds', [])
+        this.$store.commit('showEditModal', libraryItem)
+        this.$eventBus.$emit('series-bookshelf-refresh', { seriesId: this.seriesId })
+      } catch (error) {
+        console.error('Failed to create placeholder', error)
+        this.$toast.error(this.$strings.ToastPlaceholderCreateFailed)
+      } finally {
+        this.processingSeries = false
+      }
     },
     updateOrder() {
       this.saveSettings()

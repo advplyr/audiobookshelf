@@ -9,6 +9,7 @@ const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
 const User = require('../../../server/models/User')
+const fs = require('../../../server/libs/fsExtra')
 
 describe('SeriesController placeholders', () => {
   /** @type {ApiRouter} */
@@ -31,6 +32,7 @@ describe('SeriesController placeholders', () => {
     })
 
     sinon.stub(Logger, 'warn')
+    sinon.stub(fs, 'ensureDir').resolves()
 
     library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
     libraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: library.id })
@@ -76,6 +78,71 @@ describe('SeriesController placeholders', () => {
     const payload = fakeRes.json.firstCall.args[0]
     expect(payload).to.include({ mediaType: 'book', isPlaceholder: true })
     expect(payload.media.metadata.series.some((entry) => entry.id === series.id)).to.be.true
+  })
+
+  it('creates placeholder directories on disk', async () => {
+    const fakeReq = {
+      params: {
+        id: library.id,
+        seriesId: series.id
+      },
+      user,
+      body: {}
+    }
+
+    const fakeRes = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy(),
+      send: sinon.spy()
+    }
+
+    await SeriesController.createPlaceholder.bind(apiRouter)(fakeReq, fakeRes)
+
+    expect(fs.ensureDir.calledOnce).to.be.true
+    expect(fs.ensureDir.firstCall.args[0]).to.equal('/test/Test Series/Placeholder')
+  })
+
+  it('includes the author folder when creating placeholders for a series item with authors', async () => {
+    const existingBook = await Database.bookModel.create({
+      title: 'Existing Book',
+      audioFiles: [],
+      tags: [],
+      narrators: [],
+      genres: [],
+      chapters: []
+    })
+    await Database.bookSeriesModel.create({ bookId: existingBook.id, seriesId: series.id })
+    await Database.libraryItemModel.create({
+      libraryFiles: [],
+      mediaId: existingBook.id,
+      mediaType: 'book',
+      libraryId: library.id,
+      libraryFolderId: libraryFolder.id,
+      authorNamesFirstLast: 'Jane Doe',
+      authorNamesLastFirst: 'Doe, Jane'
+    })
+
+    const fakeReq = {
+      params: {
+        id: library.id,
+        seriesId: series.id
+      },
+      user,
+      body: {}
+    }
+
+    const fakeRes = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy(),
+      send: sinon.spy()
+    }
+
+    await SeriesController.createPlaceholder.bind(apiRouter)(fakeReq, fakeRes)
+
+    expect(fs.ensureDir.calledOnce).to.be.true
+    expect(fs.ensureDir.firstCall.args[0]).to.equal('/test/Jane Doe/Test Series/Placeholder')
   })
 
   it('rejects cover url payloads for placeholder creation', async () => {
@@ -215,5 +282,31 @@ describe('SeriesController placeholders', () => {
     const payload = fakeRes.json.firstCall.args[0]
     expect(payload.folderId).to.equal(libraryFolder.id)
     expect(payload.path.startsWith(libraryFolder.path)).to.be.true
+  })
+
+  it('falls back to the first library folder when the series has no items', async () => {
+    const fakeReq = {
+      params: {
+        id: library.id,
+        seriesId: series.id
+      },
+      user,
+      body: {}
+    }
+
+    const fakeRes = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy(),
+      send: sinon.spy()
+    }
+
+    await SeriesController.createPlaceholder.bind(apiRouter)(fakeReq, fakeRes)
+
+    expect(fakeRes.json.calledOnce).to.be.true
+    const payload = fakeRes.json.firstCall.args[0]
+    expect(payload.folderId).to.equal(libraryFolder.id)
+    expect(payload.path.startsWith(libraryFolder.path)).to.be.true
+    expect(payload.path).to.include('/Test Series/Placeholder')
   })
 })

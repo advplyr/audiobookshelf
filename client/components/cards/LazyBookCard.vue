@@ -1,6 +1,6 @@
 <template>
   <div ref="card" :id="`book-card-${index}`" tabindex="0" :style="{ minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }" class="absolute rounded-xs z-10 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded-sm overflow-hidden z-10 bg-primary box-shadow-book" :style="{ height: coverHeight + 'px ' }">
+    <div :id="`cover-area-${index}`" class="relative w-full top-0 left-0 rounded-sm overflow-hidden z-10 bg-primary box-shadow-book" :class="{ 'placeholder-card': isPlaceholder }" :style="{ height: coverHeight + 'px ' }">
       <!-- When cover image does not fill -->
       <div cy-id="coverBg" v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-xs bg-primary">
         <div class="absolute cover-bg" ref="coverBg" />
@@ -12,8 +12,13 @@
       <div cy-id="booksInSeries" v-else-if="booksInSeries" class="absolute rounded-lg bg-black/90 box-shadow-md z-20" :style="{ top: 0.375 + 'em', right: 0.375 + 'em', padding: `0.1em 0.25em` }" style="background-color: #cd9d49dd">
         <p :style="{ fontSize: 0.8 + 'em' }">{{ booksInSeries }}</p>
       </div>
+      <div v-if="isPlaceholder" cy-id="placeholderPremiereBorderOuter" aria-hidden="true" class="placeholder-premiere-border-outer" />
+      <div v-if="isPlaceholder" cy-id="placeholderPremiereBorderInner" aria-hidden="true" class="placeholder-premiere-border-inner" />
 
       <div class="w-full h-full absolute top-0 left-0 rounded-sm overflow-hidden z-10">
+        <div v-if="isPlaceholder" cy-id="placeholderPremiereRibbon" aria-hidden="true" class="placeholder-premiere-ribbon-wrapper">
+          <div class="placeholder-premiere-ribbon-text">{{ $strings.LabelPlaceholderComingSoon }}</div>
+        </div>
         <div cy-id="titleImageNotReady" v-show="libraryItem && !imageReady" aria-hidden="true" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: 0.5 + 'em' }">
           <p :style="{ fontSize: 0.8 + 'em' }" class="text-gray-300 text-center">{{ title }}</p>
         </div>
@@ -22,17 +27,17 @@
         <img cy-id="coverImage" v-if="libraryItem" :alt="`${displayTitle}, ${$strings.LabelCover}`" ref="cover" aria-hidden="true" :src="bookCoverSrc" class="relative w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
 
         <!-- Placeholder Cover Title & Author -->
-        <div cy-id="placeholderTitle" v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em' }">
+        <div cy-id="placeholderTitle" v-if="showPlaceholderDetails" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em' }">
           <div>
             <p cy-id="placeholderTitleText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'em' }">{{ titleCleaned }}</p>
           </div>
         </div>
-        <div cy-id="placeholderAuthor" v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em', bottom: authorBottom + 'em' }">
+        <div cy-id="placeholderAuthor" v-if="showPlaceholderDetails" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'em', bottom: authorBottom + 'em' }">
           <p cy-id="placeholderAuthorText" aria-hidden="true" class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'em' }">{{ authorCleaned }}</p>
         </div>
 
         <!-- No progress shown for podcasts (unless showing podcast episode) -->
-        <div cy-id="progressBar" v-if="!isPodcast || episodeProgress" class="absolute bottom-0 left-0 h-1e max-w-full z-20 rounded-b box-shadow-progressbar" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
+        <div cy-id="progressBar" v-if="(!isPodcast || episodeProgress) && !isPlaceholder" class="absolute bottom-0 left-0 h-1e max-w-full z-20 rounded-b box-shadow-progressbar" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: coverWidth * userProgressPercent + 'px' }"></div>
 
         <!-- Overlay is not shown if collapsing series in library -->
         <div cy-id="overlay" v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded-sm md:block" :class="overlayWrapperClasslist">
@@ -291,8 +296,14 @@ export default {
       // Only added to item object when collapseSeries is enabled
       return this.collapsedSeries?.libraryItemIds || []
     },
+    isPlaceholder() {
+      return !!this._libraryItem.isPlaceholder
+    },
     hasCover() {
       return !!this.media.coverPath
+    },
+    showPlaceholderDetails() {
+      return this.bookCoverSrc === this.placeholderUrl
     },
     squareAspectRatio() {
       return this.bookCoverAspectRatio === 1
@@ -436,7 +447,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
+      return !this.isPlaceholder && !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.ebookFormat
@@ -584,7 +595,7 @@ export default {
           text: this.isEBookOnly ? this.$strings.ButtonRemoveFromContinueReading : this.$strings.ButtonRemoveFromContinueListening
         })
       }
-      if (!this.isPodcast) {
+      if (!this.isPodcast && !this.isPlaceholder) {
         if (this.libraryItemIdStreaming && !this.isStreamingFromDifferentLibrary) {
           if (!this.isQueued) {
             items.push({
@@ -1105,3 +1116,56 @@ export default {
   }
 }
 </script>
+
+<style>
+.placeholder-card {
+  filter: grayscale(0.7);
+  opacity: 0.8;
+}
+
+.placeholder-premiere-border-outer,
+.placeholder-premiere-border-inner {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 0.125rem;
+}
+
+.placeholder-premiere-border-outer {
+  inset: 3px;
+  border: 1px solid rgba(214, 218, 224, 0.5);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.08);
+  z-index: 18;
+}
+
+.placeholder-premiere-border-inner {
+  inset: 6px;
+  border: 1px solid rgba(238, 242, 249, 0.35);
+  box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.12);
+  z-index: 18;
+}
+
+.placeholder-premiere-ribbon-wrapper {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 150%;
+  transform: translate(-50%, -50%) rotate(-32deg);
+  pointer-events: none;
+  z-index: 19;
+}
+
+.placeholder-premiere-ribbon-text {
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  font-size: 0.72em;
+  line-height: 1.8;
+  color: rgba(250, 252, 255, 0.9);
+  text-shadow: 0 0 2px rgba(221, 226, 238, 0.35), 0 1px 1px rgba(16, 20, 28, 0.45);
+  background: linear-gradient(90deg, rgba(121, 129, 145, 0.3) 0%, rgba(206, 213, 223, 0.55) 45%, rgba(244, 247, 255, 0.3) 50%, rgba(196, 201, 212, 0.5) 55%, rgba(108, 116, 132, 0.28) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(85, 94, 110, 0.4);
+  backdrop-filter: blur(0.5px);
+}
+</style>

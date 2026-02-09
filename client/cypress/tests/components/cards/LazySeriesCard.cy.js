@@ -87,6 +87,19 @@ describe('LazySeriesCard', () => {
     cy.get('&detailBottomSortLine').should('have.text', 'Added 04/17/2024')
   })
 
+  it('excludes placeholder entries from series length marker count', () => {
+    const updatedPropsData = {
+      ...propsData,
+      seriesMount: {
+        ...series,
+        books: [...series.books, { id: 4, isPlaceholder: true, media: { coverPath: 'book_placeholder.jpg' }, title: 'Upcoming Book' }]
+      }
+    }
+    cy.mount(LazySeriesCard, { propsData: updatedPropsData, stubs, mocks })
+
+    cy.get('&seriesLengthMarker').should('be.visible').and('have.text', '3')
+  })
+
   it('shows series name and hides rss feed marker on mouseover', () => {
     cy.mount(LazySeriesCard, { propsData, stubs, mocks })
     cy.get('&card').trigger('mouseover')

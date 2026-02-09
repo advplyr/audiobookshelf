@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "2.32.1",
+  "version": "2.32.2",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
@@ -34,6 +34,11 @@
   },
   "mocha": {
     "recursive": true
+  },
+  "nyc": {
+    "exclude": [
+      "server/libs/umzug/**"
+    ]
   },
   "author": "advplyr",
   "license": "GPL-3.0",

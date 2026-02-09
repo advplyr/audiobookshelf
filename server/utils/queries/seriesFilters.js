@@ -122,7 +122,7 @@ module.exports = {
     // Handle sort order
     const dir = sortDesc ? 'DESC' : 'ASC'
     if (sortBy === 'numBooks') {
-      seriesAttributes.include.push([Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks'])
+      seriesAttributes.include.push([Sequelize.literal('(SELECT count(*) FROM bookSeries bs, libraryItems li WHERE bs.seriesId = series.id AND li.mediaId = bs.bookId AND li.mediaType = "book" AND li.isPlaceholder = 0)'), 'numBooks'])
       order.push(['numBooks', dir])
     } else if (sortBy === 'addedAt') {
       order.push(['createdAt', dir])
@@ -207,6 +207,7 @@ module.exports = {
         const oldLibraryItem = libraryItem.toOldJSONMinified()
         return oldLibraryItem
       })
+      oldSeries.numBooks = oldSeries.books.filter((book) => !book.isPlaceholder).length
       allOldSeries.push(oldSeries)
     }
 

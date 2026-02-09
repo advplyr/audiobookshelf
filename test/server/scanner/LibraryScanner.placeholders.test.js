@@ -98,7 +98,7 @@ describe('LibraryScanner placeholder handling', () => {
       path: '/library/Series/Placeholder',
       relPath: 'Series/Placeholder',
       isPlaceholder: true,
-      isMissing: false,
+      isMissing: true,
       media: { title: 'Placeholder Book' },
       save: sinon.stub().resolves(),
       changed: sinon.stub()
@@ -118,6 +118,7 @@ describe('LibraryScanner placeholder handling', () => {
     const results = await LibraryScanner.scanFolderUpdates(library, folder, fileUpdateGroup)
 
     expect(placeholderItem.isPlaceholder).to.be.false
+    expect(placeholderItem.isMissing).to.be.false
     expect(placeholderItem.save.calledOnce).to.be.true
     expect(scanLibraryItemStub.calledOnce).to.be.true
     expect(results['Series/Placeholder']).to.equal(ScanResult.UPDATED)
@@ -145,7 +146,7 @@ describe('LibraryScanner placeholder handling', () => {
       path: '/library/Series/Placeholder',
       relPath: 'Series/Placeholder',
       isPlaceholder: true,
-      isMissing: false,
+      isMissing: true,
       save: sinon.stub().resolves(),
       changed: sinon.stub()
     }
@@ -162,14 +163,16 @@ describe('LibraryScanner placeholder handling', () => {
     sinon.stub(libraryFilters, 'getFilterData').resolves()
     sinon.stub(LibraryScanner, 'scanFolder').resolves([libraryItemData])
     sinon.stub(Database.libraryItemModel, 'findAll').resolves([placeholderItem])
-    sinon.stub(LibraryItemScanner, 'rescanLibraryItemMedia').resolves({ libraryItem: placeholderItem, wasUpdated: true })
+    const rescanStub = sinon.stub(LibraryItemScanner, 'rescanLibraryItemMedia').resolves({ libraryItem: placeholderItem, wasUpdated: true })
     sinon.stub(LibraryItemScanner, 'checkAuthorsAndSeriesRemovedFromBooks').resolves()
     sinon.stub(SocketAuthority, 'libraryItemsEmitter')
 
     await LibraryScanner.scanLibrary(libraryScan, false)
 
     expect(placeholderItem.isPlaceholder).to.be.false
+    expect(placeholderItem.isMissing).to.be.false
     expect(placeholderItem.save.calledOnce).to.be.true
+    expect(rescanStub.calledOnce).to.be.true
   })
 
   it('skips placeholder scans on file updates without audio', async () => {
