@@ -629,5 +629,199 @@ module.exports = {
         duration: podcast.dataValues.duration
       }
     })
+  },
+
+  /**
+   * Get SQL condition for unfinished episodes (isFinished = false OR no progress entry)
+   * @param {string} episodeAlias - Table alias for podcastEpisodes (default: 'pe')
+   * @param {boolean} excludeHidden - Whether to exclude episodes with hideFromContinueListening (default: false)
+   * @returns {string}
+   */
+  getUnfinishedEpisodeCondition(episodeAlias = 'pe', excludeHidden = false) {
+    if (excludeHidden) {
+      // Episode is unfinished if: no progress OR (progress exists with isFinished=false AND hideFromContinueListening!=true)
+      return `((SELECT count(*) FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 OR ((SELECT isFinished FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 AND (SELECT hideFromContinueListening FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) != 1))`
+    }
+    return `(SELECT isFinished FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 OR (SELECT count(*) FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0`
+  },
+
+  /**
+   * Get continue series podcast episodes
+   * Returns the next episode for podcasts that have at least 1 finished episode and at least 1 unfinished episode
+   * - Serial podcasts: oldest unfinished episode (oldest to newest)
+   * - Episodic podcasts: newest unfinished episode (latest to oldest)
+   * An episode is unfinished if: has progress with isFinished = false OR no progress entry
+   * @param {import('../../models/User')} user
+   * @param {import('../../models/Library')} library
+   * @param {number} limit
+   * @param {number} offset
+   * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
+   */
+  async getContinueSeriesPodcastEpisodes(user, library, limit, offset) {
+    if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
+
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
+    const userId = user.id
+
+    // Find qualifying podcasts: must have at least 1 finished and 1 unfinished episode (excluding hidden)
+    const unfinishedCondition = this.getUnfinishedEpisodeCondition('pe', true)
+    const { rows: podcasts, count } = await Database.podcastModel.findAndCountAll({
+      where: [
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND mp.isFinished = 1)`), {
+          [Sequelize.Op.gte]: 1
+        }),
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe WHERE pe.podcastId = podcast.id AND (${unfinishedCondition}))`), {
+          [Sequelize.Op.gte]: 1
+        }),
+        ...userPermissionPodcastWhere.podcastWhere
+      ],
+      attributes: {
+        include: [[Sequelize.literal(`(SELECT max(mp.updatedAt) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND mp.isFinished = 1)`), 'recent_progress']]
+      },
+      replacements: { userId, ...userPermissionPodcastWhere.replacements },
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: { libraryId: library.id }
+        }
+      ],
+      order: [[Sequelize.literal('recent_progress DESC')]],
+      distinct: true,
+      subQuery: false,
+      limit,
+      offset
+    })
+
+    if (podcasts.length === 0) return { libraryItems: [], count }
+
+    // Separate serial and episodic podcasts (default to episodic if type is unknown)
+    const serialPodcasts = podcasts.filter((p) => p.podcastType === 'serial')
+    const episodicPodcasts = podcasts.filter((p) => p.podcastType !== 'serial')
+
+    const unfinishedConditionSubquery = this.getUnfinishedEpisodeCondition('pe2', true)
+    const episodeMap = new Map()
+
+    // Get oldest unfinished episode for serial podcasts
+    if (serialPodcasts.length > 0) {
+      const serialPodcastIds = serialPodcasts.map((p) => p.id)
+      const [serialEpisodes] = await Database.sequelize.query(
+        `SELECT pe.id, pe.podcastId
+         FROM podcastEpisodes pe
+         INNER JOIN (
+           SELECT pe2.podcastId, MIN(pe2.publishedAt) as targetPublishedAt
+           FROM podcastEpisodes pe2
+           WHERE pe2.podcastId IN (:podcastIds) AND (${unfinishedConditionSubquery})
+           GROUP BY pe2.podcastId
+         ) AS target ON pe.podcastId = target.podcastId AND pe.publishedAt = target.targetPublishedAt
+         WHERE pe.podcastId IN (:podcastIds)
+         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND pe3.publishedAt = target.targetPublishedAt ORDER BY pe3.id ASC LIMIT 1)`,
+        {
+          replacements: { podcastIds: serialPodcastIds, userId },
+          type: Sequelize.QueryTypes.SELECT
+        }
+      )
+
+      for (const row of serialEpisodes) {
+        episodeMap.set(row.podcastId, row.id)
+      }
+    }
+
+    // Get newest unfinished episode for episodic podcasts
+    if (episodicPodcasts.length > 0) {
+      const episodicPodcastIds = episodicPodcasts.map((p) => p.id)
+      const [episodicEpisodes] = await Database.sequelize.query(
+        `SELECT pe.id, pe.podcastId
+         FROM podcastEpisodes pe
+         INNER JOIN (
+           SELECT pe2.podcastId, MAX(pe2.publishedAt) as targetPublishedAt
+           FROM podcastEpisodes pe2
+           WHERE pe2.podcastId IN (:podcastIds) AND (${unfinishedConditionSubquery})
+           GROUP BY pe2.podcastId
+         ) AS target ON pe.podcastId = target.podcastId AND pe.publishedAt = target.targetPublishedAt
+         WHERE pe.podcastId IN (:podcastIds)
+         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND pe3.publishedAt = target.targetPublishedAt ORDER BY pe3.id ASC LIMIT 1)`,
+        {
+          replacements: { podcastIds: episodicPodcastIds, userId },
+          type: Sequelize.QueryTypes.SELECT
+        }
+      )
+
+      for (const row of episodicEpisodes) {
+        episodeMap.set(row.podcastId, row.id)
+      }
+    }
+
+    if (episodeMap.size === 0) return { libraryItems: [], count }
+
+    // Fetch all episodes with progress data
+    const episodeIds = Array.from(episodeMap.values())
+    const episodes = await Database.podcastEpisodeModel.findAll({
+      where: { id: { [Sequelize.Op.in]: episodeIds } },
+      include: [
+        {
+          model: Database.mediaProgressModel,
+          where: { userId },
+          required: false,
+          attributes: ['id', 'isFinished', 'currentTime', 'updatedAt', 'hideFromContinueListening']
+        }
+      ]
+    })
+
+    // Create episode lookup map
+    const episodesById = new Map(episodes.map((e) => [e.id, e]))
+
+    // Build library items, sorted by podcast type
+    // Serial: oldest to newest (by episode publishedAt ASC)
+    // Episodic: latest to oldest (by episode publishedAt DESC)
+    // Filter out episodes with hideFromContinueListening
+    const serialItems = serialPodcasts
+      .map((podcast) => {
+        const episodeId = episodeMap.get(podcast.id)
+        const episode = episodeId ? episodesById.get(episodeId) : null
+        if (!episode) return null
+
+        // Skip if episode is hidden from continue listening
+        const progress = episode.mediaProgresses?.[0]
+        if (progress?.hideFromContinueListening) return null
+
+        const libraryItem = podcast.libraryItem
+        const podcastData = podcast
+        delete podcastData.libraryItem
+
+        libraryItem.media = podcastData
+        libraryItem.recentEpisode = episode.toOldJSON(libraryItem.id)
+        return { libraryItem, sortKey: episode.publishedAt || 0 }
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.sortKey - b.sortKey) // Oldest to newest
+
+    const episodicItems = episodicPodcasts
+      .map((podcast) => {
+        const episodeId = episodeMap.get(podcast.id)
+        const episode = episodeId ? episodesById.get(episodeId) : null
+        if (!episode) return null
+
+        // Skip if episode is hidden from continue listening
+        const progress = episode.mediaProgresses?.[0]
+        if (progress?.hideFromContinueListening) return null
+
+        const libraryItem = podcast.libraryItem
+        const podcastData = podcast
+        delete podcastData.libraryItem
+
+        libraryItem.media = podcastData
+        libraryItem.recentEpisode = episode.toOldJSON(libraryItem.id)
+        return { libraryItem, sortKey: episode.publishedAt || 0 }
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.sortKey - a.sortKey) // Latest to oldest
+
+    // Combine: serial first (oldest to newest), then episodic (latest to oldest)
+    const libraryItems = [...serialItems, ...episodicItems].map((item) => item.libraryItem)
+
+    // Count reflects total qualifying podcasts (hidden episodes already excluded in qualification query)
+    // Final filter is a safety check and shouldn't remove items
+    return { libraryItems, count }
   }
 }
