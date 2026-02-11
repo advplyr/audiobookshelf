@@ -39,6 +39,8 @@ class FeedEpisode extends Model {
     this.filePath
     /** @type {boolean} */
     this.explicit
+    /** @type {string} */
+    this.episodeCoverURL
     /** @type {UUIDV4} */
     this.feedId
     /** @type {Date} */
@@ -57,6 +59,12 @@ class FeedEpisode extends Model {
    */
   static getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisodeId = null) {
     const episodeId = existingEpisodeId || uuidv4()
+
+    let episodeCoverURL = null
+    if (episode.coverPath) {
+      episodeCoverURL = `/api/podcasts/${libraryItemExpanded.id}/episode/${episode.id}/cover`
+    }
+
     return {
       id: episodeId,
       title: episode.title,
@@ -73,6 +81,7 @@ class FeedEpisode extends Model {
       duration: episode.audioFile.duration,
       filePath: episode.audioFile.metadata.path,
       explicit: libraryItemExpanded.media.explicit,
+      episodeCoverURL,
       feedId: feed.id
     }
   }
@@ -106,7 +115,7 @@ class FeedEpisode extends Model {
       feedEpisodeObjs.push(this.getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisode?.id))
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit', 'episodeCoverURL'] })
   }
 
   /**
@@ -203,7 +212,7 @@ class FeedEpisode extends Model {
       feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(libraryItemExpanded.media, libraryItemExpanded.createdAt, feed, slug, track, useChapterTitles, i, existingEpisode?.id))
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit', 'episodeCoverURL'] })
   }
 
   /**
@@ -240,7 +249,7 @@ class FeedEpisode extends Model {
       }
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit', 'episodeCoverURL'] })
   }
 
   /**
@@ -268,7 +277,8 @@ class FeedEpisode extends Model {
         episodeType: DataTypes.STRING,
         duration: DataTypes.FLOAT,
         filePath: DataTypes.STRING,
-        explicit: DataTypes.BOOLEAN
+        explicit: DataTypes.BOOLEAN,
+        episodeCoverURL: DataTypes.STRING
       },
       {
         sequelize,
@@ -327,6 +337,9 @@ class FeedEpisode extends Model {
     })
     if (this.description) {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
+    }
+    if (this.episodeCoverURL) {
+      customElements.push({ 'itunes:image': { _attr: { href: `${hostPrefix}${this.episodeCoverURL}` } } })
     }
 
     return {
