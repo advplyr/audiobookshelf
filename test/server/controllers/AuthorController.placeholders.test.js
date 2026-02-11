@@ -32,6 +32,7 @@ describe('AuthorController placeholders', () => {
     })
 
     sinon.stub(Logger, 'warn')
+    sinon.stub(fs, 'pathExists').resolves(false)
     sinon.stub(fs, 'ensureDir').resolves()
 
     library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
@@ -166,5 +167,62 @@ describe('AuthorController placeholders', () => {
     const payload = fakeRes.json.firstCall.args[0]
     expect(payload.folderId).to.equal(secondaryLibraryFolder.id)
     expect(payload.path.startsWith(secondaryLibraryFolder.path)).to.be.true
+  })
+
+  it('removes placeholder directory when creation fails after directory is created', async () => {
+    sinon.stub(fs, 'remove').resolves()
+    fs.pathExists.resolves(false)
+    sinon.stub(Database.libraryItemModel, 'create').rejects(new Error('library item create failed'))
+
+    const fakeReq = {
+      params: {
+        id: author.id
+      },
+      author,
+      user,
+      body: {}
+    }
+
+    const fakeRes = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy(),
+      send: sinon.spy()
+    }
+
+    await AuthorController.createPlaceholder.bind(apiRouter)(fakeReq, fakeRes)
+
+    expect(fakeRes.status.calledWith(500)).to.be.true
+    expect(fakeRes.send.calledWith('Failed to create placeholder')).to.be.true
+    expect(fs.remove.calledOnce).to.be.true
+    expect(fs.remove.firstCall.args[0]).to.equal('/test/Jane Doe/Placeholder')
+  })
+
+  it('does not remove placeholder directory on rollback when it already existed', async () => {
+    sinon.stub(fs, 'remove').resolves()
+    fs.pathExists.resolves(true)
+    sinon.stub(Database.libraryItemModel, 'create').rejects(new Error('library item create failed'))
+
+    const fakeReq = {
+      params: {
+        id: author.id
+      },
+      author,
+      user,
+      body: {}
+    }
+
+    const fakeRes = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy(),
+      send: sinon.spy()
+    }
+
+    await AuthorController.createPlaceholder.bind(apiRouter)(fakeReq, fakeRes)
+
+    expect(fakeRes.status.calledWith(500)).to.be.true
+    expect(fakeRes.send.calledWith('Failed to create placeholder')).to.be.true
+    expect(fs.remove.called).to.be.false
   })
 })

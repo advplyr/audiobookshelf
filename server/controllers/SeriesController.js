@@ -195,8 +195,11 @@ class SeriesController {
       return res.status(400).send('Library item already exists at that path')
     }
 
+    let createdPlaceholderDirectory = false
     try {
+      const placeholderDirectoryExisted = await fs.pathExists(outputDirectory)
       await fs.ensureDir(outputDirectory)
+      createdPlaceholderDirectory = !placeholderDirectoryExisted
     } catch (error) {
       Logger.error(`[SeriesController] Failed to create placeholder directory "${outputDirectory}"`, error)
       return res.status(500).send('Failed to create placeholder directory')
@@ -280,6 +283,11 @@ class SeriesController {
     } catch (error) {
       Logger.error(`[SeriesController] Failed to create series placeholder`, error)
       await transaction.rollback()
+      if (createdPlaceholderDirectory) {
+        await fs.remove(outputDirectory).catch((cleanupError) => {
+          Logger.error(`[SeriesController] Failed to remove placeholder directory after rollback "${outputDirectory}"`, cleanupError)
+        })
+      }
       return res.status(500).send('Failed to create placeholder')
     }
 

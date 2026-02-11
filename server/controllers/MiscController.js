@@ -12,6 +12,7 @@ const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const fileUtils = require('../utils/fileUtils')
 const { sanitizeFilename } = fileUtils
+const globals = require('../utils/globals')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const LibraryScanner = require('../scanner/LibraryScanner')
 
@@ -146,6 +147,14 @@ class MiscController {
     }
 
     if (placeholderItem) {
+      const hasUploadMedia = files.some((file) => {
+        const ext = Path.extname(file?.name || '')
+          .slice(1)
+          .toLowerCase()
+        if (!ext) return false
+        return globals.SupportedAudioTypes.includes(ext) || globals.SupportedEbookTypes.includes(ext)
+      })
+
       // Promote placeholder and attach files when upload targets a placeholder folder.
       const updateDetails = {
         libraryFolderId: folder.id,
@@ -153,8 +162,10 @@ class MiscController {
         path: outputDirectory,
         isFile: placeholderItem.isFile
       }
-      await LibraryScanner.promotePlaceholder(placeholderItem)
-      await LibraryItemScanner.scanLibraryItem(placeholderItem.id, updateDetails)
+      if (hasUploadMedia) {
+        await LibraryScanner.promotePlaceholder(placeholderItem)
+        await LibraryItemScanner.scanLibraryItem(placeholderItem.id, updateDetails)
+      }
     }
 
     res.sendStatus(200)
