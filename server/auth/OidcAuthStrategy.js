@@ -248,7 +248,22 @@ class OidcAuthStrategy {
 
     if (!userinfo[groupClaimName]) throw new AuthError(`Group claim ${groupClaimName} not found in userinfo`, 401)
 
-    const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase())
+    const rawGroups = userinfo[groupClaimName]
+    // Normalize group claim formats across providers:
+    // - Array of strings (Keycloak, Auth0): ["admin", "user"]
+    // - Single string (some providers with one group): "admin"
+    // - Object with role keys (Zitadel): { "admin": {...}, "user": {...} }
+    let groups
+    if (Array.isArray(rawGroups)) {
+      groups = rawGroups
+    } else if (typeof rawGroups === 'string') {
+      groups = [rawGroups]
+    } else if (typeof rawGroups === 'object' && rawGroups !== null) {
+      groups = Object.keys(rawGroups)
+    } else {
+      throw new AuthError(`Group claim ${groupClaimName} has unsupported format: ${typeof rawGroups}`, 401)
+    }
+    const groupsList = groups.map((group) => group.toLowerCase())
     const rolesInOrderOfPriority = ['admin', 'user', 'guest']
     const groupMap = global.ServerSettings.authOpenIDGroupMap || {}
 

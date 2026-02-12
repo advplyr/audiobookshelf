@@ -187,6 +187,63 @@ describe('OidcAuthStrategy', function () {
       })
     })
 
+    describe('single string claim', function () {
+      it('should handle a single string group value', async function () {
+        DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
+        global.ServerSettings.authOpenIDGroupMap = {}
+
+        const user = { type: 'guest', username: 'testuser', save: sinon.stub().resolves() }
+        await strategy.setUserGroup(user, { groups: 'admin' })
+        expect(user.type).to.equal('admin')
+      })
+    })
+
+    describe('object-shaped claims (e.g. Zitadel)', function () {
+      it('should extract group names from object keys with legacy match', async function () {
+        DatabaseStub.serverSettings.authOpenIDGroupClaim = 'urn:zitadel:iam:org:project:roles'
+        global.ServerSettings.authOpenIDGroupMap = {}
+
+        const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
+        await strategy.setUserGroup(user, {
+          'urn:zitadel:iam:org:project:roles': {
+            admin: { '359584706087354371': 'website.de' },
+            user: { '359584706087354371': 'website.de' }
+          }
+        })
+        expect(user.type).to.equal('admin')
+      })
+
+      it('should extract group names from object keys with explicit mapping', async function () {
+        DatabaseStub.serverSettings.authOpenIDGroupClaim = 'urn:zitadel:iam:org:project:roles'
+        global.ServerSettings.authOpenIDGroupMap = { 'zitadel-users': 'user', 'zitadel-admins': 'admin' }
+
+        const user = { type: 'guest', username: 'testuser', save: sinon.stub().resolves() }
+        await strategy.setUserGroup(user, {
+          'urn:zitadel:iam:org:project:roles': {
+            'zitadel-users': { '123': 'example.com' }
+          }
+        })
+        expect(user.type).to.equal('user')
+      })
+
+      it('should throw when no matching group in object keys', async function () {
+        DatabaseStub.serverSettings.authOpenIDGroupClaim = 'roles'
+        global.ServerSettings.authOpenIDGroupMap = {}
+
+        const user = { type: 'user', username: 'testuser', save: sinon.stub().resolves() }
+        try {
+          await strategy.setUserGroup(user, {
+            roles: { 'some-unknown-role': { '123': 'example.com' } }
+          })
+          expect.fail('Should have thrown')
+        } catch (error) {
+          expect(error).to.be.instanceOf(AuthError)
+          expect(error.statusCode).to.equal(401)
+          expect(error.message).to.include('No valid group found')
+        }
+      })
+    })
+
     describe('missing group claim in userinfo', function () {
       it('should throw when group claim is not in userinfo', async function () {
         DatabaseStub.serverSettings.authOpenIDGroupClaim = 'groups'
