@@ -6,5 +6,8 @@ module.exports.config = {
   MetadataPath: Path.resolve('metadata'),
   FFmpegPath: '/usr/bin/ffmpeg',
   FFProbePath: '/usr/bin/ffprobe',
-  SkipBinariesCheck: false
+  SkipBinariesCheck: false,
+  // Auto-create root user during initial setup
+  // InitUserName: 'admin',
+  // InitUserPassword: 'password'
 }
