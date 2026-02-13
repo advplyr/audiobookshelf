@@ -107,7 +107,6 @@ class OidcAuthStrategy {
         this.openIdAuthSession.delete(state)
         sessionData = {
           state: state,
-          nonce: mobileSession.nonce,
           sso_redirect_uri: mobileSession.sso_redirect_uri
         }
         isMobileCallback = true
@@ -434,7 +433,9 @@ class OidcAuthStrategy {
       }
 
       // Generate nonce to bind id_token to this session (OIDC Core 3.1.2.1)
-      const nonce = OpenIDClient.generators.nonce()
+      // Nonce is only used for web flow. Mobile flow relies on PKCE for replay protection,
+      // and some IdPs don't echo the nonce in the id_token for authorization code flow.
+      const nonce = isMobileFlow ? undefined : OpenIDClient.generators.nonce()
 
       if (isMobileFlow) {
         // For mobile: store session data in the openIdAuthSession Map (keyed by state)
@@ -442,7 +443,6 @@ class OidcAuthStrategy {
         this.openIdAuthSession.set(state, {
           mobile_redirect_uri: req.query.redirect_uri,
           sso_redirect_uri: redirectUri,
-          nonce: nonce,
           created_at: Date.now()
         })
       }

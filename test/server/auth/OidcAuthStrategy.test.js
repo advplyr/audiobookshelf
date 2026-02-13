@@ -693,8 +693,8 @@ describe('OidcAuthStrategy', function () {
       sinon.stub(strategy, 'verifyUser').resolves(mockUser)
 
       // Pre-populate Map as if getAuthorizationUrl stored mobile session
+      // Note: mobile flow does not use nonce (relies on PKCE instead)
       strategy.openIdAuthSession.set('mobile-state', {
-        nonce: 'mobile-nonce',
         sso_redirect_uri: 'http://localhost/auth/openid/mobile-redirect',
         mobile_redirect_uri: 'audiobookshelf://oauth'
       })
@@ -711,9 +711,9 @@ describe('OidcAuthStrategy', function () {
       // Should delete the Map entry after use
       expect(strategy.openIdAuthSession.has('mobile-state')).to.be.false
 
-      // Should use mobile nonce and code_verifier from query
+      // Should use code_verifier from query; nonce is undefined for mobile flow
       const [, , checks] = mockClient.callback.firstCall.args
-      expect(checks.nonce).to.equal('mobile-nonce')
+      expect(checks.nonce).to.be.undefined
       expect(checks.code_verifier).to.equal('mobile-verifier')
     })
 
@@ -965,7 +965,7 @@ describe('OidcAuthStrategy', function () {
       expect(strategy.openIdAuthSession.has('mob-state')).to.be.true
       const stored = strategy.openIdAuthSession.get('mob-state')
       expect(stored.mobile_redirect_uri).to.equal('audiobookshelf://oauth')
-      expect(stored.nonce).to.equal('mock-nonce')
+      expect(stored.nonce).to.be.undefined
       expect(stored.sso_redirect_uri).to.include('/auth/openid/mobile-redirect')
     })
 
