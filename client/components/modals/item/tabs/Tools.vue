@@ -20,7 +20,7 @@
     </div>
 
     <!-- Embed Metadata -->
-    <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="hasMediaToEmbed" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsEmbedMetadata }}</p>
@@ -28,7 +28,7 @@
         </div>
         <div class="grow" />
         <div>
-          <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
+          <ui-btn v-if="!isPodcast" :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
             >{{ $strings.ButtonOpenManager }}
             <span class="material-symbols text-lg ml-2">launch</span>
           </ui-btn>
@@ -48,7 +48,7 @@
       </widgets-alert>
     </div>
 
-    <p v-if="!mediaTracks.length" class="text-lg text-center my-8">{{ $strings.MessageNoAudioTracks }}</p>
+    <p v-if="!hasMediaToEmbed" class="text-lg text-center my-8">{{ $strings.MessageNoAudioTracks }}</p>
   </div>
 </template>
 
@@ -73,6 +73,18 @@ export default {
     },
     mediaTracks() {
       return this.media.tracks || []
+    },
+    isPodcast() {
+      return (this.libraryItem?.mediaType || '') === 'podcast'
+    },
+    podcastEpisodes() {
+      return this.media.episodes || []
+    },
+    hasMediaToEmbed() {
+      if (this.isPodcast) {
+        return this.podcastEpisodes.some((ep) => ep && ep.audioFile)
+      }
+      return this.mediaTracks.length > 0
     },
     chapters() {
       return this.media.chapters || []
