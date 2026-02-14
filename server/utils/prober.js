@@ -114,6 +114,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     info.channels = stream.channels || null
     info.sample_rate = tryGrabSampleRate(stream)
     info.channel_layout = tryGrabChannelLayout(stream)
+    info.profile = stream.profile || null
   }
 
   return info
