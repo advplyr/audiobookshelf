@@ -782,7 +782,14 @@ class User extends Model {
           error: 'Library item not found',
           statusCode: 404
         }
+      } else if (libraryItem.mediaType !== 'book') {
+        Logger.error(`[User] createUpdateMediaProgress: library item ${progressPayload.libraryItemId} is not a book`)
+        return {
+          error: 'Library item is not a book',
+          statusCode: 400
+        }
       }
+
       mediaItemId = libraryItem.media.id
       mediaProgress = libraryItem.media.mediaProgresses?.[0]
     }
