@@ -47,13 +47,15 @@ class Audible {
     if (seriesPrimary) {
       series.push({
         series: seriesPrimary.name,
-        sequence: this.cleanSeriesSequence(seriesPrimary.name, seriesPrimary.position || '')
+        sequence: this.cleanSeriesSequence(seriesPrimary.name, seriesPrimary.position || ''),
+        asin: seriesPrimary.asin || null
       })
     }
     if (seriesSecondary) {
       series.push({
         series: seriesSecondary.name,
-        sequence: this.cleanSeriesSequence(seriesSecondary.name, seriesSecondary.position || '')
+        sequence: this.cleanSeriesSequence(seriesSecondary.name, seriesSecondary.position || ''),
+        asin: seriesSecondary.asin || null
       })
     }
 

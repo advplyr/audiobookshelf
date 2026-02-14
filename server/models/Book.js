@@ -524,8 +524,16 @@ class Book extends Model {
           hasUpdates = true
           Logger.debug(`[Book] "${this.title}" Updated series "${existingSeries.name}" sequence ${seriesObjSequence}`)
         }
+        // Update series ASIN if provided and not already set
+        if (seriesObj.asin && !existingSeries.audibleSeriesAsin) {
+          existingSeries.audibleSeriesAsin = seriesObj.asin
+          await existingSeries.save()
+          const SocketAuthority = require('../SocketAuthority')
+          SocketAuthority.emitter('series_updated', existingSeries.toOldJSON())
+          Logger.debug(`[Book] "${this.title}" Updated series "${existingSeries.name}" ASIN ${seriesObj.asin}`)
+        }
       } else {
-        const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
+        const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId, seriesObj.asin)
         series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
         this.series.push(series)
         seriesAdded.push(series)
@@ -553,7 +561,7 @@ class Book extends Model {
    */
   oldMetadataToJSON() {
     const authors = this.authors.map((au) => ({ id: au.id, name: au.name }))
-    const series = this.series.map((se) => ({ id: se.id, name: se.name, sequence: se.bookSeries.sequence }))
+    const series = this.series.map((se) => ({ id: se.id, name: se.name, sequence: se.bookSeries.sequence, audibleSeriesAsin: se.audibleSeriesAsin }))
     return {
       title: this.title,
       subtitle: this.subtitle,

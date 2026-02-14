@@ -303,17 +303,35 @@ class Scanner {
             Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series sequence for "${existingSeries.name}" to ${seriesMatchItem.sequence} in "${libraryItem.media.title}"`)
             hasSeriesUpdates = true
           }
+          // Update series ASIN if provided and not already set
+          if (seriesMatchItem.asin && !existingSeries.audibleSeriesAsin) {
+            existingSeries.set({ audibleSeriesAsin: seriesMatchItem.asin })
+            if (existingSeries.changed()) {
+              await existingSeries.save()
+              SocketAuthority.emitter('series_updated', existingSeries.toOldJSON())
+              Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series "${existingSeries.name}" with ASIN ${seriesMatchItem.asin}`)
+            }
+          }
         } else {
           let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
           if (!seriesItem) {
             seriesItem = await Database.seriesModel.create({
               name: seriesMatchItem.series,
               nameIgnorePrefix: getTitleIgnorePrefix(seriesMatchItem.series),
-              libraryId: libraryItem.libraryId
+              libraryId: libraryItem.libraryId,
+              audibleSeriesAsin: seriesMatchItem.asin || null
             })
             // Update filter data
             Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
             SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
+          } else if (seriesMatchItem.asin && !seriesItem.audibleSeriesAsin) {
+            // Series exists but has no ASIN, update it
+            seriesItem.set({ audibleSeriesAsin: seriesMatchItem.asin })
+            if (seriesItem.changed()) {
+              await seriesItem.save()
+              SocketAuthority.emitter('series_updated', seriesItem.toOldJSON())
+              Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series "${seriesItem.name}" with ASIN ${seriesMatchItem.asin}`)
+            }
           }
           const bookSeries = await Database.bookSeriesModel.create({
             seriesId: seriesItem.id,

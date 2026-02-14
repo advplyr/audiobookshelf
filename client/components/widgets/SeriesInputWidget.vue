@@ -56,12 +56,35 @@ export default {
       var _series = this.seriesItems.find((se) => se.id === series.id)
       if (!_series) return
 
-      this.selectedSeries = {
-        ..._series
+      // If this is an existing series (not new), fetch the full series data to get ASIN
+      if (!_series.id.startsWith('new-')) {
+        this.fetchSeriesData(_series.id).then((fullSeries) => {
+          this.selectedSeries = {
+            ..._series,
+            audibleSeriesAsin: fullSeries?.audibleSeriesAsin || ''
+          }
+          this.originalSeriesSequence = _series.sequence
+          this.showSeriesForm = true
+        })
+      } else {
+        this.selectedSeries = {
+          ..._series,
+          // Map 'asin' from match data to 'audibleSeriesAsin' for the edit form
+          audibleSeriesAsin: _series.asin || _series.audibleSeriesAsin || ''
+        }
+        this.originalSeriesSequence = _series.sequence
+        this.showSeriesForm = true
       }
-
-      this.originalSeriesSequence = _series.sequence
-      this.showSeriesForm = true
+    },
+    async fetchSeriesData(seriesId) {
+      try {
+        const libraryId = this.$store.state.libraries.currentLibraryId
+        const series = await this.$axios.$get(`/api/libraries/${libraryId}/series/${seriesId}`)
+        return series
+      } catch (error) {
+        console.error('Failed to fetch series data:', error)
+        return null
+      }
     },
     addNewSeries() {
       this.selectedSeries = {
@@ -73,7 +96,7 @@ export default {
       this.originalSeriesSequence = null
       this.showSeriesForm = true
     },
-    submitSeriesForm() {
+    submitSeriesForm(formData) {
       if (!this.selectedSeries.name) {
         this.$toast.error('Must enter a series')
         return
@@ -96,6 +119,11 @@ export default {
       var selectedSeriesCopy = { ...this.selectedSeries }
       selectedSeriesCopy.displayName = selectedSeriesCopy.sequence ? `${selectedSeriesCopy.name} #${selectedSeriesCopy.sequence}` : selectedSeriesCopy.name
 
+      // Store ASIN for later update (after book is saved and series exists)
+      if (formData?.audibleSeriesAsin !== undefined) {
+        selectedSeriesCopy.audibleSeriesAsin = formData.audibleSeriesAsin
+      }
+
       var seriesCopy = this.seriesItems.map((v) => ({ ...v }))
       if (existingSeriesIndex >= 0) {
         seriesCopy.splice(existingSeriesIndex, 1, selectedSeriesCopy)
@@ -105,7 +133,28 @@ export default {
         this.seriesItems = seriesCopy
       }
 
+      // If this is an existing series (not new), update the ASIN immediately
+      if (!this.selectedSeries.id.startsWith('new-') && formData?.audibleSeriesAsin !== undefined) {
+        this.updateSeriesAsin(this.selectedSeries.id, formData.audibleSeriesAsin)
+      }
+
       this.showSeriesForm = false
+    },
+    async updateSeriesAsin(seriesId, asin) {
+      // Skip API call if ASIN is empty - backend safeguard prevents clearing anyway,
+      // but this avoids unnecessary network requests
+      if (!asin) {
+        return
+      }
+      try {
+        await this.$axios.$patch(`/api/series/${seriesId}`, {
+          audibleSeriesAsin: asin
+        })
+        this.$toast.success(this.$strings.ToastSeriesUpdateSuccess)
+      } catch (error) {
+        console.error('Failed to update series ASIN:', error)
+        this.$toast.error(this.$strings.ToastSeriesUpdateFailed)
+      }
     }
   }
 }

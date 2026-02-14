@@ -24,3 +24,6 @@ sw.*
 .idea/*
 tailwind.compiled.css
 tailwind.config.js
+dev.sh
+docs-backend-guide.md
+docs-enhancements.md
