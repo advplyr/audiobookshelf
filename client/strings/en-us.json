@@ -712,6 +712,7 @@
   "LabelUploaderItemFetchMetadataHelp": "Automatically fetch title, author, and series",
   "LabelUseAdvancedOptions": "Use Advanced Options",
   "LabelUseChapterTrack": "Use chapter track",
+  "LabelUseLogarithmicVolume": "Natural volume scaling",
   "LabelUseFullTrack": "Use full track",
   "LabelUseZeroForUnlimited": "Use 0 for unlimited",
   "LabelUser": "User",
