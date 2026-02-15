@@ -23,6 +23,7 @@ const CoverManager = require('../managers/CoverManager')
 const LibraryScan = require('./LibraryScan')
 const OpfFileScanner = require('./OpfFileScanner')
 const NfoFileScanner = require('./NfoFileScanner')
+const DaisyFileScanner = require('./DaisyFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
 
 /**
@@ -790,6 +791,14 @@ class BookScanner {
     async opfFile() {
       if (!this.libraryItemData.metadataOpfLibraryFile) return
       await OpfFileScanner.scanBookOpfFile(this.libraryItemData.metadataOpfLibraryFile, this.bookMetadata)
+    }
+
+    /**
+     * Metadata from DAISY ncc.html file
+     */
+    async daisyFile() {
+      if (!this.libraryItemData.metadataDaisyNccLibraryFile) return
+      await DaisyFileScanner.scanBookDaisyFile(this.libraryItemData.metadataDaisyNccLibraryFile, this.bookMetadata, this.audioFiles)
     }
 
     /**

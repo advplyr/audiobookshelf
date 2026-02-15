@@ -81,6 +81,11 @@ export default {
           name: 'OPF file',
           include: true
         },
+        daisyFile: {
+          id: 'daisyFile',
+          name: 'DAISY ncc.html file',
+          include: true
+        },
         absMetadata: {
           id: 'absMetadata',
           name: 'Audiobookshelf metadata file',
