@@ -364,6 +364,14 @@ export default {
     adminMessageEvt(message) {
       this.$toast.info(message)
     },
+    backchannelLogout() {
+      console.log('[SOCKET] Backchannel logout received from identity provider')
+      this.$toast.warning(this.$strings.ToastSessionEndedByProvider, { timeout: 5000 })
+      // Use a timeout so the toast is visible before redirect
+      setTimeout(() => {
+        window.location.replace(`${this.$config.routerBasePath}/login`)
+      }, 1000)
+    },
     ereaderDevicesUpdated(data) {
       if (!data?.ereaderDevices) return
 
@@ -473,6 +481,9 @@ export default {
       this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
 
       this.socket.on('admin_message', this.adminMessageEvt)
+
+      // OIDC Back-Channel Logout
+      this.socket.on('backchannel_logout', this.backchannelLogout)
 
       // Custom metadata provider Listeners
       this.socket.on('custom_metadata_provider_added', this.customMetadataProviderAdded)

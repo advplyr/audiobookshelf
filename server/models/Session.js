@@ -18,6 +18,10 @@ class Session extends Model {
     this.userId
     /** @type {Date} */
     this.expiresAt
+    /** @type {string} */
+    this.oidcIdToken
+    /** @type {string} */
+    this.oidcSessionId
 
     // Expanded properties
 
@@ -25,8 +29,8 @@ class Session extends Model {
     this.user
   }
 
-  static async createSession(userId, ipAddress, userAgent, refreshToken, expiresAt) {
-    const session = await Session.create({ userId, ipAddress, userAgent, refreshToken, expiresAt })
+  static async createSession(userId, ipAddress, userAgent, refreshToken, expiresAt, oidcIdToken = null, oidcSessionId = null) {
+    const session = await Session.create({ userId, ipAddress, userAgent, refreshToken, expiresAt, oidcIdToken, oidcSessionId })
     return session
   }
 
@@ -66,7 +70,9 @@ class Session extends Model {
         expiresAt: {
           type: DataTypes.DATE,
           allowNull: false
-        }
+        },
+        oidcIdToken: DataTypes.TEXT,
+        oidcSessionId: DataTypes.STRING
       },
       {
         sequelize,
