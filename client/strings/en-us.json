@@ -442,6 +442,8 @@
   "LabelLimit": "Limit",
   "LabelLineSpacing": "Line spacing",
   "LabelListenAgain": "Listen Again",
+  "LabelListenAgainOrdered": "Sort listen again by finish date",
+  "LabelListenAgainOrderedHelp": "If enabled, the listen again section in the shelf view will be sorted by the finish date instead of random order.",
   "LabelLogLevelDebug": "Debug",
   "LabelLogLevelInfo": "Info",
   "LabelLogLevelWarn": "Warn",
