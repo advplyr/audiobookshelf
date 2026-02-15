@@ -543,16 +543,53 @@ class ApiRouter {
         sessionTimeListening = Number(sessionTimeListening)
       }
 
-      if (s.dayOfWeek) {
-        if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
-        listeningStats.dayOfWeek[s.dayOfWeek] += sessionTimeListening
-      }
       if (s.date && sessionTimeListening > 0) {
-        if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
-        listeningStats.days[s.date] += sessionTimeListening
+        const startDate = date.format(new Date(s.startedAt), 'YYYY-MM-DD')
+        if (startDate === s.date) {
+          // Session takes place within a single day
+          if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
+          listeningStats.days[s.date] += sessionTimeListening
 
-        if (s.date === today) {
-          listeningStats.today += sessionTimeListening
+          if (s.date === today) {
+            listeningStats.today += sessionTimeListening
+          }
+
+          if (s.dayOfWeek) {
+            if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
+            listeningStats.dayOfWeek[s.dayOfWeek] += sessionTimeListening
+          }
+        } else {
+          // Session crosses midnight, split proportionately
+          const dateParts = s.date.split('-')
+          const midnight = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]), 0, 0, 0, 0).getTime()
+          const totalDuration = s.updatedAt - s.startedAt
+          const timeAfterMidnight = (s.updatedAt - midnight) / 1000 // as seconds
+
+          let day2Listening = Math.round((timeAfterMidnight / (totalDuration / 1000)) * sessionTimeListening)
+          let day1Listening = sessionTimeListening - day2Listening
+          // Ensure day 1 isn't completely wiped out by update delays
+          const day1Minimum = Math.min(60, Math.max(0, (midnight - s.startedAt) / 1000))
+          if (sessionTimeListening - day2Listening < day1Minimum) {
+            day1Listening = day1Minimum
+            day2Listening = sessionTimeListening - day1Minimum
+          }
+
+          if (!listeningStats.days[startDate]) listeningStats.days[startDate] = 0
+          listeningStats.days[startDate] += day1Listening
+          if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
+          listeningStats.days[s.date] += day2Listening
+
+          if (s.date === today) {
+            listeningStats.today += day2Listening
+          }
+
+          if (s.dayOfWeek) {
+            const yesterdayOfWeek = date.format(new Date(s.startedAt), 'dddd')
+            if (!listeningStats.dayOfWeek[yesterdayOfWeek]) listeningStats.dayOfWeek[yesterdayOfWeek] = 0
+            listeningStats.dayOfWeek[yesterdayOfWeek] += day1Listening
+            if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
+            listeningStats.dayOfWeek[s.dayOfWeek] += day2Listening
+          }
         }
       }
       if (!listeningStats.items[s.libraryItemId]) {
