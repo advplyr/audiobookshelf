@@ -36,6 +36,10 @@ class LogManager {
     return global.ServerSettings.loggerDailyLogsToKeep || 7
   }
 
+  get loggerScannerLogsToKeep() {
+    return global.ServerSettings.loggerScannerLogsToKeep || 2
+  }
+
   async enforceDailyLogRetention() {
     while (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
       await this.removeLogFile(this.dailyLogFiles[0])
@@ -183,6 +187,38 @@ class LogManager {
    */
   getMostRecentCurrentDailyLogs() {
     return this.currentDailyLog?.logs.slice(-5000) || ''
+  }
+
+  /**
+   * Keep the most recent N scan logs in metadata/logs/scans.
+   * Where N is the server setting `loggerScannerLogsToKeep`.
+   *
+   * @param {string} [logDir]
+   */
+  async purgeOldScanLogs(logDir = this.ScanLogPath) {
+    const scanLogsToKeep = this.loggerScannerLogsToKeep
+
+    let scanFiles
+    try {
+      scanFiles = await fs.readdir(logDir)
+    } catch (error) {
+      Logger.warn(TAG, `Failed to read scan log dir "${logDir}": ${error.message}`)
+      return
+    }
+
+    const scanLogFiles = (scanFiles || []).filter((f) => Path.extname(f) === '.txt').sort()
+    if (scanLogFiles.length <= scanLogsToKeep) return
+
+    const filesToRemove = scanLogFiles.slice(0, scanLogFiles.length - scanLogsToKeep)
+    for (const file of filesToRemove) {
+      const fullPath = Path.join(logDir, file)
+      try {
+        await fs.unlink(fullPath)
+        Logger.info(TAG, `Removed scan log "${fullPath}"`)
+      } catch (error) {
+        Logger.warn(TAG, `Failed to remove scan log "${fullPath}": ${error.message}`)
+      }
+    }
   }
 }
 module.exports = LogManager
