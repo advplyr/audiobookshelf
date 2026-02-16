@@ -770,7 +770,7 @@ class LibraryController {
    *
    * Optional includes (e.g. `?include=rssfeed,progress`)
    * rssfeed: adds `rssFeed` to series object if a feed is open
-   * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
+   * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean, totalDurationListened: number }
    *
    * @param {LibraryControllerRequest} req
    * @param {Response} res - Series
