@@ -789,10 +789,15 @@ class LibraryController {
     const seriesJson = series.toOldJSON()
     if (include.includes('progress')) {
       const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.media.id)?.isFinished)
+      const totalListened = libraryItemsInSeries.reduce((acc, li) => {
+        const p = req.user.getMediaProgress(li.media.id)
+        return acc + (p?.isFinished ? (li.media.duration || 0) : (p?.currentTime || 0))
+      }, 0)
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
         libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
-        isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length
+        isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length,
+        totalDurationListened: totalListened
       }
     }
 
@@ -800,6 +805,9 @@ class LibraryController {
       const feedObj = await RssFeedManager.findFeedForEntityId(seriesJson.id)
       seriesJson.rssFeed = feedObj?.toOldJSONMinified() || null
     }
+
+    // populate total duration (same unit as libraryItem.duration)
+    seriesJson.totalDuration = await Database.seriesModel.getTotalDurationById(series.id)
 
     res.json(seriesJson)
   }

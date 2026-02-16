@@ -65,6 +65,37 @@ class Series extends Model {
     series.books = await series.getBooksExpandedWithLibraryItem()
     return series
   }
+  
+  /**
+   *
+   * @param {string} seriesId
+   * @returns {Promise<number>} total duration (same unit as libraryItem.duration)
+   */
+  static async getTotalDurationById(seriesId) {
+    const { book: bookModel, libraryItem: libraryItemModel, bookSeries: bookSeriesModel } = this.sequelize.models
+
+    // Sum durations on libraryItems for books that belong to the series.
+    // This relies on Sequelize associations existing between:
+    // libraryItem -> book, book -> bookSeries (or bookSeries as a through model).
+    const total = await libraryItemModel.sum('duration', {
+      where: { mediaType: 'book' },
+      include: [
+        {
+          model: bookModel,
+          attributes: [],
+          include: [
+            {
+              model: bookSeriesModel,
+              attributes: [],
+              where: { seriesId }
+            }
+          ]
+        }
+      ]
+    })
+
+    return Number(total) || 0
+  }
 
   /**
    *
