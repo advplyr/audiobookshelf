@@ -41,6 +41,8 @@ class LogManager {
   }
 
   async enforceDailyLogRetention() {
+    if (this.loggerDailyLogsToKeep <= 0) return
+
     while (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
       await this.removeLogFile(this.dailyLogFiles[0])
     }
@@ -197,6 +199,7 @@ class LogManager {
    */
   async purgeOldScanLogs(logDir = this.ScanLogPath) {
     const scanLogsToKeep = this.loggerScannerLogsToKeep
+    if (scanLogsToKeep <= 0) return
 
     let scanFiles
     try {
