@@ -93,6 +93,22 @@ Toggle websockets support.
 
 <img alt="NGINX Web socket" src="https://user-images.githubusercontent.com/67830747/153679106-b2a7f5b9-0702-48c6-9740-b26b401986e9.png" />
 
+Add this Custom Nginx Configuration (under "Edit Proxy Host" > settings cog):
+```nginx
+proxy_connect_timeout 86400s;
+proxy_send_timeout 86400s;
+proxy_read_timeout 86400s;
+send_timeout 86400s;
+
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Real-IP $remote_addr;
+
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection "upgrade";
+proxy_set_header Host $host;
+```
+
 ### NGINX Reverse Proxy
 
 Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
