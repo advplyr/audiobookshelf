@@ -888,28 +888,80 @@ module.exports = {
       })
     }
 
-    // Step 2: Get books not started and not in a series OR is the first book of a series not started (ordered randomly)
-    const { rows: books, count } = await Database.bookModel.findAndCountAll({
-      where: [
-        {
-          '$mediaProgresses.isFinished$': {
-            [Sequelize.Op.or]: [null, 0]
-          },
-          '$mediaProgresses.currentTime$': {
-            [Sequelize.Op.or]: [null, 0]
-          },
-          [Sequelize.Op.or]: [
-            Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
-            {
-              id: {
-                [Sequelize.Op.in]: booksFromSeriesToInclude
-              }
+    const discoverWhere = [
+      {
+        [Sequelize.Op.and]: [
+          Sequelize.where(
+            Sequelize.literal(
+              `(SELECT COUNT(*) FROM mediaProgresses mp WHERE mp.mediaItemId = book.id AND mp.userId = :userId AND (mp.isFinished = 1 OR mp.currentTime > 0))`
+            ),
+            0
+          )
+        ],
+        [Sequelize.Op.or]: [
+          Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
+          {
+            id: {
+              [Sequelize.Op.in]: booksFromSeriesToInclude
             }
-          ]
-        },
-        ...userPermissionBookWhere.bookWhere
-      ],
-      replacements: userPermissionBookWhere.replacements,
+          }
+        ]
+      },
+      ...userPermissionBookWhere.bookWhere
+    ]
+
+    const baseDiscoverInclude = [
+      {
+        model: Database.libraryItemModel,
+        where: {
+          libraryId
+        }
+      }
+    ]
+
+    // Step 2a: Count with lightweight includes only
+    const count = await Database.bookModel.count({
+      where: discoverWhere,
+      replacements: {
+        userId: user.id,
+        ...userPermissionBookWhere.replacements
+      },
+      include: baseDiscoverInclude,
+      distinct: true,
+      col: 'id',
+      subQuery: false
+    })
+
+    // Step 2b: Select random IDs with lightweight includes only
+    const randomSelection = await Database.bookModel.findAll({
+      attributes: ['id'],
+      where: discoverWhere,
+      replacements: {
+        userId: user.id,
+        ...userPermissionBookWhere.replacements
+      },
+      include: baseDiscoverInclude,
+      subQuery: false,
+      distinct: true,
+      limit,
+      order: Database.sequelize.random()
+    })
+
+    const selectedIds = randomSelection.map((b) => b.id).filter(Boolean)
+    if (!selectedIds.length) {
+      return {
+        libraryItems: [],
+        count
+      }
+    }
+
+    // Step 2c: Hydrate selected IDs with full metadata for API response
+    const books = await Database.bookModel.findAll({
+      where: {
+        id: {
+          [Sequelize.Op.in]: selectedIds
+        }
+      },
       include: [
         {
           model: Database.libraryItemModel,
@@ -917,13 +969,6 @@ module.exports = {
             libraryId
           },
           include: libraryItemIncludes
-        },
-        {
-          model: Database.mediaProgressModel,
-          where: {
-            userId: user.id
-          },
-          required: false
         },
         {
           model: Database.bookAuthorModel,
@@ -942,14 +987,14 @@ module.exports = {
           separate: true
         }
       ],
-      subQuery: false,
-      distinct: true,
-      limit,
-      order: Database.sequelize.random()
+      subQuery: false
     })
 
+    const booksById = new Map(books.map((b) => [b.id, b]))
+    const orderedBooks = selectedIds.map((id) => booksById.get(id)).filter(Boolean)
+
     // Step 3: Map books to library items
-    const libraryItems = books.map((bookExpanded) => {
+    const libraryItems = orderedBooks.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
       const book = bookExpanded
       delete book.libraryItem
@@ -1122,7 +1167,7 @@ module.exports = {
 
       libraryItem.media = book
       itemMatches.push({
-        libraryItem: libraryItem.toOldJSONExpanded()
+        libraryItem: libraryItem.toOldJSONMinified()
       })
     }
 
