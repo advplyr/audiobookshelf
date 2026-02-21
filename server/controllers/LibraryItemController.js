@@ -1158,6 +1158,133 @@ class LibraryItemController {
   }
 
   /**
+   * GET api/items/:id/comic-pages/:fileid?
+   * Get comic metadata (page list) without downloading the whole file
+   * fileid is optional - defaults to primary ebook
+   *
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async getComicPages(req, res) {
+    const ComicCacheManager = require('../managers/ComicCacheManager')
+    
+    let ebookFile = null
+    if (req.params.fileid) {
+      ebookFile = req.libraryItem.getLibraryFileWithIno(req.params.fileid)
+      if (!ebookFile?.isEBookFile) {
+        Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
+        return res.status(400).send('Invalid ebook file id')
+      }
+    } else {
+      ebookFile = req.libraryItem.media.ebookFile
+    }
+
+    if (!ebookFile) {
+      Logger.error(`[LibraryItemController] No ebookFile for library item "${req.libraryItem.media.title}"`)
+      return res.sendStatus(404)
+    }
+
+    const ext = (ebookFile.metadata?.ext || '').toLowerCase()
+    if (ext !== '.cbz' && ext !== '.cbr') {
+      Logger.error(`[LibraryItemController] File is not a comic book: ${ext}`)
+      return res.status(400).send('File is not a comic book (cbz/cbr)')
+    }
+
+    try {
+      const comicPath = ebookFile.metadata.path
+      const fileIno = ebookFile.ino
+      const { pages, numPages } = await ComicCacheManager.getComicMetadata(
+        req.libraryItem.id,
+        fileIno,
+        comicPath
+      )
+
+      res.json({
+        libraryItemId: req.libraryItem.id,
+        fileIno,
+        numPages,
+        pages: pages.map((p, i) => ({
+          page: i + 1,
+          filename: p
+        }))
+      })
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Failed to get comic pages: ${error.message}`)
+      res.status(500).send('Failed to read comic file')
+    }
+  }
+
+  /**
+   * GET api/items/:id/comic-page/:page/:fileid?
+   * Get a single comic page (extracted and cached on server)
+   * 
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async getComicPage(req, res) {
+    const ComicCacheManager = require('../managers/ComicCacheManager')
+    
+    const pageNum = parseInt(req.params.page, 10)
+    if (isNaN(pageNum) || pageNum < 1) {
+      return res.status(400).send('Invalid page number')
+    }
+
+    let ebookFile = null
+    if (req.params.fileid) {
+      ebookFile = req.libraryItem.getLibraryFileWithIno(req.params.fileid)
+      if (!ebookFile?.isEBookFile) {
+        Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
+        return res.status(400).send('Invalid ebook file id')
+      }
+    } else {
+      ebookFile = req.libraryItem.media.ebookFile
+    }
+
+    if (!ebookFile) {
+      Logger.error(`[LibraryItemController] No ebookFile for library item "${req.libraryItem.media.title}"`)
+      return res.sendStatus(404)
+    }
+
+    const ext = (ebookFile.metadata?.ext || '').toLowerCase()
+    if (ext !== '.cbz' && ext !== '.cbr') {
+      Logger.error(`[LibraryItemController] File is not a comic book: ${ext}`)
+      return res.status(400).send('File is not a comic book (cbz/cbr)')
+    }
+
+    try {
+      const comicPath = ebookFile.metadata.path
+      const fileIno = ebookFile.ino
+      const result = await ComicCacheManager.getPage(
+        req.libraryItem.id,
+        fileIno,
+        comicPath,
+        pageNum
+      )
+
+      if (!result) {
+        return res.sendStatus(404)
+      }
+
+      // Set cache headers for browser caching
+      res.set({
+        'Content-Type': result.contentType,
+        'Cache-Control': 'private, max-age=86400' // Cache for 24 hours
+      })
+
+      if (global.XAccel) {
+        const encodedURI = encodeUriPath(global.XAccel + result.path)
+        Logger.debug(`Use X-Accel to serve comic page ${encodedURI}`)
+        return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+      }
+
+      res.sendFile(result.path)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Failed to get comic page: ${error.message}`)
+      res.status(500).send('Failed to extract comic page')
+    }
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
