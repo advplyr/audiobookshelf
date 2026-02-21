@@ -1217,31 +1217,43 @@ class LibraryItemController {
   /**
    * GET api/items/:id/comic-page/:page/:fileid?
    * Get a single comic page (extracted and cached on server)
+   * Public endpoint (no auth required, like covers)
    * 
-   * @param {LibraryItemControllerRequest} req
+   * @param {Request} req
    * @param {Response} res
    */
   async getComicPage(req, res) {
     const ComicCacheManager = require('../managers/ComicCacheManager')
     
+    const libraryItemId = req.params.id
+    if (!libraryItemId) {
+      return res.sendStatus(400)
+    }
+
     const pageNum = parseInt(req.params.page, 10)
     if (isNaN(pageNum) || pageNum < 1) {
       return res.status(400).send('Invalid page number')
     }
 
+    // Fetch library item directly (no auth middleware)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItemId)
+    if (!libraryItem?.media) {
+      return res.sendStatus(404)
+    }
+
     let ebookFile = null
     if (req.params.fileid) {
-      ebookFile = req.libraryItem.getLibraryFileWithIno(req.params.fileid)
+      ebookFile = libraryItem.getLibraryFileWithIno(req.params.fileid)
       if (!ebookFile?.isEBookFile) {
         Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
         return res.status(400).send('Invalid ebook file id')
       }
     } else {
-      ebookFile = req.libraryItem.media.ebookFile
+      ebookFile = libraryItem.media.ebookFile
     }
 
     if (!ebookFile) {
-      Logger.error(`[LibraryItemController] No ebookFile for library item "${req.libraryItem.media.title}"`)
+      Logger.error(`[LibraryItemController] No ebookFile for library item "${libraryItem.media.title}"`)
       return res.sendStatus(404)
     }
 
@@ -1255,7 +1267,7 @@ class LibraryItemController {
       const comicPath = ebookFile.metadata.path
       const fileIno = ebookFile.ino
       const result = await ComicCacheManager.getPage(
-        req.libraryItem.id,
+        libraryItemId,
         fileIno,
         comicPath,
         pageNum
