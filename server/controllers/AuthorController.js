@@ -368,6 +368,11 @@ class AuthorController {
       hasUpdates = true
     }
 
+    if (authorData.name && req.author.name !== authorData.name) {
+      req.author.name = authorData.name
+      hasUpdates = true
+    }
+
     if (hasUpdates) {
       await req.author.save()
 
