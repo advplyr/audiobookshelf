@@ -22,7 +22,8 @@ export default {
       type: Number,
       default: 0
     },
-    disabled: Boolean
+    disabled: Boolean,
+    plaintext: Boolean
   },
   data() {
     return {
@@ -46,7 +47,11 @@ export default {
   methods: {
     updateText() {
       if (this.tooltip) {
-        this.tooltip.innerHTML = this.text
+        if (this.plaintext) {
+          this.tooltip.textContent = this.text
+        } else {
+          this.tooltip.innerHTML = this.text
+        }
         this.setTooltipPosition(this.tooltip)
       }
     },
@@ -58,7 +63,11 @@ export default {
       tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white text-xs rounded-sm shadow-lg max-w-xs text-center hidden sm:block'
       tooltip.style.zIndex = 100
       tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
-      tooltip.innerHTML = this.text
+      if (this.plaintext) {
+        tooltip.textContent = this.text
+      } else {
+        tooltip.innerHTML = this.text
+      }
       tooltip.addEventListener('mouseover', this.cancelHide)
       tooltip.addEventListener('mouseleave', this.hideTooltip)
 

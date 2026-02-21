@@ -338,6 +338,18 @@ export default {
             const series = this.series.find((se) => se.id == decoded)
             if (series) filterValue = series.name
           }
+        } else if (parts[0] === 'progress') {
+          const item = this.progress.find((p) => p.id == decoded)
+          if (item) filterValue = item.name
+        } else if (parts[0] === 'tracks') {
+          const item = this.tracks.find((t) => t.id == decoded)
+          if (item) filterValue = item.name
+        } else if (parts[0] === 'ebooks') {
+          const item = this.ebooks.find((e) => e.id == decoded)
+          if (item) filterValue = item.name
+        } else if (parts[0] === 'missing') {
+          const item = this.missing.find((m) => m.id == decoded)
+          if (item) filterValue = item.name
         } else {
           filterValue = decoded
         }

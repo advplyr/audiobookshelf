@@ -236,7 +236,7 @@ module.exports = {
     } else if (group === 'publishedDecades') {
       const startYear = parseInt(value)
       const endYear = parseInt(value, 10) + 9
-      mediaWhere = Sequelize.where(Sequelize.literal('CAST(`book`.`publishedYear` AS INTEGER)'), {
+      mediaWhere = Sequelize.where(Sequelize.literal('CAST(publishedYear AS INTEGER)'), {
         [Sequelize.Op.between]: [startYear, endYear]
       })
     }

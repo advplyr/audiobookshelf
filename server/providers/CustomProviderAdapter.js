@@ -89,6 +89,27 @@ class CustomProviderAdapter {
         })
         .filter((s) => s !== undefined)
     }
+    /**
+     * Validates and dedupes tags/genres array
+     * Can be comma separated string or array of strings
+     * @param {string|string[]} tagsGenres
+     * @returns {string[]}
+     */
+    const validateTagsGenresArray = (tagsGenres) => {
+      if (!tagsGenres || (typeof tagsGenres !== 'string' && !Array.isArray(tagsGenres))) return undefined
+
+      // If string, split by comma and trim each item
+      if (typeof tagsGenres === 'string') tagsGenres = tagsGenres.split(',')
+      // If array, ensure all items are strings
+      else if (!tagsGenres.every((t) => typeof t === 'string')) return undefined
+
+      // Trim and filter out empty strings
+      tagsGenres = tagsGenres.map((t) => t.trim()).filter(Boolean)
+      if (!tagsGenres.length) return undefined
+
+      // Dedup
+      return [...new Set(tagsGenres)]
+    }
 
     // re-map keys to throw out
     return matches.map((match) => {
@@ -105,8 +126,8 @@ class CustomProviderAdapter {
         cover: toStringOrUndefined(cover),
         isbn: toStringOrUndefined(isbn),
         asin: toStringOrUndefined(asin),
-        genres: Array.isArray(genres) && genres.every((g) => typeof g === 'string') ? genres : undefined,
-        tags: toStringOrUndefined(tags),
+        genres: validateTagsGenresArray(genres),
+        tags: validateTagsGenresArray(tags),
         series: validateSeriesArray(series),
         language: toStringOrUndefined(language),
         duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined

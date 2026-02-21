@@ -275,7 +275,7 @@
   "LabelBonus": "Бонус",
   "LabelBooks": "Книги",
   "LabelButtonText": "Текст кнопки",
-  "LabelByAuthor": "{0}",
+  "LabelByAuthor": "от {0}",
   "LabelChangePassword": "Изменить пароль",
   "LabelChannels": "Ленты",
   "LabelChapterCount": "{0} Главы",

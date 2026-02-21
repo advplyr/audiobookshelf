@@ -97,7 +97,10 @@ export default {
             ...playlist
           }
         })
-        .sort((a, b) => (a.isItemIncluded ? -1 : 1))
+        .sort((a, b) => {
+          if (a.isItemIncluded !== b.isItemIncluded) return a.isItemIncluded ? -1 : 1
+          return a.name.localeCompare(b.name)
+        })
     },
     isBatch() {
       return this.selectedPlaylistItems.length > 1
