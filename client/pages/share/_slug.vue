@@ -56,7 +56,8 @@ export default {
       listeningTimeSinceSync: 0,
       coverRgb: null,
       coverBgIsLight: false,
-      currentTime: 0
+      currentTime: 0,
+      currentPlaybackRate: 1
     }
   },
   computed: {
@@ -87,6 +88,10 @@ export default {
     },
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
+    },
+    useChapterTrack() {
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      return this.chapters.length ? _useChapterTrack : false
     },
     coverAspectRatio() {
       const coverAspectRatio = this.playbackSession.coverAspectRatio
@@ -133,7 +138,20 @@ export default {
     mediaSessionSeekTo(e) {
       console.log('Media session seek to', e)
       if (e.seekTime !== null && !isNaN(e.seekTime)) {
-        this.seek(e.seekTime)
+        // When "Use chapter track" is enabled and chapters exist, seekTime is
+        // relative to current chapter start. Map it back to absolute position.
+        if (this.useChapterTrack && this.currentChapter) {
+          const chapterStart = this.currentChapter.start
+          const chapterEnd = this.currentChapter.end
+          const chapterDuration = chapterEnd - chapterStart
+          // Clamp seekTime to chapter bounds to prevent seeking outside chapter
+          const clampedSeekTime = Math.max(0, Math.min(e.seekTime, chapterDuration))
+          const absoluteTime = chapterStart + clampedSeekTime
+          this.seek(absoluteTime)
+        } else {
+          // "Use chapter track" disabled or no chapters - use full-file seek
+          this.seek(e.seekTime)
+        }
       }
     },
     mediaSessionPreviousTrack() {
@@ -149,6 +167,86 @@ export default {
     updateMediaSessionPlaybackState() {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
+      }
+    },
+    /**
+     * Update MediaSession metadata when chapter changes (only if useChapterTrack is enabled).
+     * Updates the title to show chapter info and resets position state.
+     */
+    updateMediaSessionForChapter() {
+      if (!('mediaSession' in navigator) || !this.useChapterTrack || !this.currentChapter) {
+        return
+      }
+
+      const baseTitle = this.mediaItemShare.playbackSession.displayTitle || 'No title'
+      const chapterTitle = this.currentChapter.title
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: chapterTitle || baseTitle,
+        artist: this.mediaItemShare.playbackSession.displayAuthor || 'Unknown',
+        album: baseTitle,
+        artwork: [
+          {
+            src: this.coverUrl
+          }
+        ]
+      })
+
+      this.updateMediaSessionPositionState()
+    },
+    /**
+     * Update MediaSession position state.
+     * When "Use chapter track" is enabled and a chapter is active, reports
+     * duration/position relative to chapter bounds so the OS scrubber spans
+     * only the current chapter. Otherwise uses full-file duration/position.
+     */
+    updateMediaSessionPositionState() {
+      if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) {
+        return
+      }
+
+      const playbackRate = this.currentPlaybackRate || 1
+
+      if (this.useChapterTrack && this.currentChapter) {
+        // "Use chapter track" enabled - report chapter-relative values
+        const chapterStart = this.currentChapter.start
+        const chapterEnd = this.currentChapter.end
+        const chapterDuration = chapterEnd - chapterStart
+
+        let chapterPosition = this.currentTime - chapterStart
+        chapterPosition = Math.max(0, Math.min(chapterPosition, chapterDuration))
+
+        if (isNaN(chapterDuration) || chapterDuration <= 0 || isNaN(chapterPosition)) {
+          console.warn('Invalid chapter position state values, skipping update')
+          return
+        }
+
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: chapterDuration,
+            position: chapterPosition,
+            playbackRate: playbackRate
+          })
+        } catch (e) {
+          console.error('Error setting media session position state:', e)
+        }
+      } else if (this.totalDuration > 0) {
+        // "Use chapter track" disabled or no chapters - use full-file values
+        const position = Math.max(0, Math.min(this.currentTime, this.totalDuration))
+
+        if (isNaN(this.totalDuration) || isNaN(position)) {
+          return
+        }
+
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: this.totalDuration,
+            position: position,
+            playbackRate: playbackRate
+          })
+        } catch (e) {
+          console.error('Error setting media session position state:', e)
+        }
       }
     },
     setMediaSession() {
@@ -237,7 +335,10 @@ export default {
     },
     setPlaybackRate(playbackRate) {
       if (!this.localAudioPlayer || !this.hasLoaded) return
+      this.currentPlaybackRate = playbackRate
       this.localAudioPlayer.setPlaybackRate(playbackRate)
+      // Update position state with new playback rate
+      this.updateMediaSessionPositionState()
     },
     seek(time) {
       if (!this.localAudioPlayer || !this.hasLoaded) return
@@ -248,9 +349,19 @@ export default {
     setCurrentTime(time) {
       if (!this.$refs.audioPlayer) return
 
+      const previousChapterId = this.currentChapter?.id
+
       // Update UI
       this.$refs.audioPlayer.setCurrentTime(time)
       this.currentTime = time
+
+      // Update MediaSession position state (chapter-relative when useChapterTrack enabled)
+      this.updateMediaSessionPositionState()
+
+      // If chapter changed and useChapterTrack enabled, update MediaSession metadata
+      if (this.useChapterTrack && this.currentChapter?.id !== previousChapterId && this.currentChapter) {
+        this.updateMediaSessionForChapter()
+      }
     },
     setDuration() {
       if (!this.localAudioPlayer) return
