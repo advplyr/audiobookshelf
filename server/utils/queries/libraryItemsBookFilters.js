@@ -890,14 +890,12 @@ module.exports = {
 
     const discoverWhere = [
       {
-        [Sequelize.Op.and]: [
-          Sequelize.where(
-            Sequelize.literal(
-              `(SELECT COUNT(*) FROM mediaProgresses mp WHERE mp.mediaItemId = book.id AND mp.userId = :userId AND (mp.isFinished = 1 OR mp.currentTime > 0))`
-            ),
-            0
-          )
-        ],
+        '$mediaProgresses.isFinished$': {
+          [Sequelize.Op.or]: [null, 0]
+        },
+        '$mediaProgresses.currentTime$': {
+          [Sequelize.Op.or]: [null, 0]
+        },
         [Sequelize.Op.or]: [
           Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
           {
@@ -916,16 +914,20 @@ module.exports = {
         where: {
           libraryId
         }
+      },
+      {
+        model: Database.mediaProgressModel,
+        where: {
+          userId: user.id
+        },
+        required: false
       }
     ]
 
     // Step 2a: Count with lightweight includes only
     const count = await Database.bookModel.count({
       where: discoverWhere,
-      replacements: {
-        userId: user.id,
-        ...userPermissionBookWhere.replacements
-      },
+      replacements: userPermissionBookWhere.replacements,
       include: baseDiscoverInclude,
       distinct: true,
       col: 'id',
@@ -936,10 +938,7 @@ module.exports = {
     const randomSelection = await Database.bookModel.findAll({
       attributes: ['id'],
       where: discoverWhere,
-      replacements: {
-        userId: user.id,
-        ...userPermissionBookWhere.replacements
-      },
+      replacements: userPermissionBookWhere.replacements,
       include: baseDiscoverInclude,
       subQuery: false,
       distinct: true,
@@ -1167,7 +1166,7 @@ module.exports = {
 
       libraryItem.media = book
       itemMatches.push({
-        libraryItem: libraryItem.toOldJSONMinified()
+        libraryItem: libraryItem.toOldJSONExpanded()
       })
     }
 

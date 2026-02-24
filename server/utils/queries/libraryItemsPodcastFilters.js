@@ -410,7 +410,7 @@ module.exports = {
       libraryItem.media = podcast
       libraryItem.media.podcastEpisodes = []
       itemMatches.push({
-        libraryItem: libraryItem.toOldJSONMinified()
+        libraryItem: libraryItem.toOldJSONExpanded()
       })
     }
 
@@ -444,7 +444,7 @@ module.exports = {
       libraryItem.media = episode.podcast
       libraryItem.media.podcastEpisodes = []
       const oldPodcastEpisodeJson = episode.toOldJSONExpanded(libraryItem.id)
-      const libraryItemJson = libraryItem.toOldJSONMinified()
+      const libraryItemJson = libraryItem.toOldJSONExpanded()
       libraryItemJson.recentEpisode = oldPodcastEpisodeJson
       episodeMatches.push({
         libraryItem: libraryItemJson
