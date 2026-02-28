@@ -113,7 +113,7 @@
   "ButtonUploadOPMLFile": "Last opp OPML fil",
   "ButtonUserDelete": "Slett bruker {0}",
   "ButtonUserEdit": "Rediger bruker {0}",
-  "ButtonViewAll": "Vis alle",
+  "ButtonViewAll": "Vis alt",
   "ButtonYes": "Ja",
   "ErrorUploadFetchMetadataAPI": "Feil ved innhenting av metadata",
   "ErrorUploadFetchMetadataNoResults": "Kunne ikke hente metadata - forsøk å oppdatere tittel og/eller forfatter",
