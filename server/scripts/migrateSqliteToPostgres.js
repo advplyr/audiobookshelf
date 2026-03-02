@@ -132,13 +132,24 @@ async function main() {
       `SELECT table_name FROM information_schema.tables WHERE table_schema = $1 AND table_type='BASE TABLE' ORDER BY table_name`,
       [PG_SCHEMA]
     )
-    const pgTables = new Set(pgTablesRows.rows.map((row) => row.table_name))
 
-    const tablesToMigrate = sqliteTables.filter((table) => pgTables.has(table))
+    const pgTablesByLowerName = new Map(pgTablesRows.rows.map((row) => [row.table_name.toLowerCase(), row.table_name]))
+
+    const tablesToMigrate = sqliteTables
+      .map((sqliteTable) => {
+        const postgresTable = pgTablesByLowerName.get(sqliteTable.toLowerCase())
+        if (!postgresTable) return null
+        return {
+          sqliteTable,
+          postgresTable
+        }
+      })
+      .filter(Boolean)
+
     tablesToMigrate.sort((a, b) => {
-      const ai = preferredOrder.indexOf(a)
-      const bi = preferredOrder.indexOf(b)
-      if (ai === -1 && bi === -1) return a.localeCompare(b)
+      const ai = preferredOrder.findIndex((tableName) => tableName.toLowerCase() === a.sqliteTable.toLowerCase())
+      const bi = preferredOrder.findIndex((tableName) => tableName.toLowerCase() === b.sqliteTable.toLowerCase())
+      if (ai === -1 && bi === -1) return a.sqliteTable.localeCompare(b.sqliteTable)
       if (ai === -1) return 1
       if (bi === -1) return -1
       return ai - bi
@@ -148,34 +159,46 @@ async function main() {
       throw new Error('No overlapping tables found between SQLite and PostgreSQL')
     }
 
-    console.log(`[migrate] tables to migrate: ${tablesToMigrate.join(', ')}`)
+    console.log(`[migrate] tables to migrate: ${tablesToMigrate.map((table) => table.sqliteTable).join(', ')}`)
 
     const pgColumnsByTable = new Map()
-    for (const table of tablesToMigrate) {
+    for (const { postgresTable } of tablesToMigrate) {
       const columnsResult = await pg.query(
         `SELECT column_name, data_type, udt_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position`,
-        [PG_SCHEMA, table]
+        [PG_SCHEMA, postgresTable]
       )
-      const columnMap = new Map(columnsResult.rows.map((column) => [column.column_name, column]))
-      pgColumnsByTable.set(table, columnMap)
+      const columnMap = new Map(columnsResult.rows.map((column) => [column.column_name.toLowerCase(), column]))
+      pgColumnsByTable.set(postgresTable, columnMap)
     }
 
     if (!DRY_RUN) {
       await pg.query('BEGIN')
       await pg.query('SET session_replication_role = replica')
 
-      const truncateList = tablesToMigrate.map((table) => `${quoteIdent(PG_SCHEMA)}.${quoteIdent(table)}`).join(', ')
+      const truncateList = tablesToMigrate.map(({ postgresTable }) => `${quoteIdent(PG_SCHEMA)}.${quoteIdent(postgresTable)}`).join(', ')
       await pg.query(`TRUNCATE TABLE ${truncateList} RESTART IDENTITY CASCADE`)
       console.log('[migrate] truncated target tables')
     }
 
-    for (const table of tablesToMigrate) {
-      const rows = await sqliteAll(sqliteDb, `SELECT * FROM ${quoteIdent(table)}`)
-      const pgColumns = pgColumnsByTable.get(table)
-      const insertColumns = rows.length ? Object.keys(rows[0]).filter((column) => pgColumns.has(column)) : []
+    for (const { sqliteTable, postgresTable } of tablesToMigrate) {
+      const rows = await sqliteAll(sqliteDb, `SELECT * FROM ${quoteIdent(sqliteTable)}`)
+      const pgColumns = pgColumnsByTable.get(postgresTable)
+      const insertColumns = rows.length
+        ? Object.keys(rows[0])
+            .map((sqliteColumn) => {
+              const pgColumn = pgColumns.get(sqliteColumn.toLowerCase())
+              if (!pgColumn) return null
+              return {
+                sqliteColumn,
+                postgresColumn: pgColumn.column_name,
+                metadata: pgColumn
+              }
+            })
+            .filter(Boolean)
+        : []
 
       if (!rows.length || !insertColumns.length) {
-        console.log(`[migrate] ${table}: skipped (rows=${rows.length}, insertableColumns=${insertColumns.length})`)
+        console.log(`[migrate] ${sqliteTable}: skipped (rows=${rows.length}, insertableColumns=${insertColumns.length})`)
         continue
       }
 
@@ -189,19 +212,18 @@ async function main() {
           for (const row of batchRows) {
             const placeholders = []
             for (const column of insertColumns) {
-              const pgColumn = pgColumns.get(column)
-              params.push(convertValue(row[column], pgColumn))
+              params.push(convertValue(row[column.sqliteColumn], column.metadata))
               placeholders.push(`$${paramIndex++}`)
             }
             valuesSql.push(`(${placeholders.join(', ')})`)
           }
 
-          const insertSql = `INSERT INTO ${quoteIdent(PG_SCHEMA)}.${quoteIdent(table)} (${insertColumns.map(quoteIdent).join(', ')}) VALUES ${valuesSql.join(', ')}`
+          const insertSql = `INSERT INTO ${quoteIdent(PG_SCHEMA)}.${quoteIdent(postgresTable)} (${insertColumns.map((column) => quoteIdent(column.postgresColumn)).join(', ')}) VALUES ${valuesSql.join(', ')}`
           await pg.query(insertSql, params)
         }
       }
 
-      console.log(`[migrate] ${table}: ${rows.length} rows`)
+      console.log(`[migrate] ${sqliteTable}: ${rows.length} rows`)
     }
 
     if (!DRY_RUN) {
@@ -211,11 +233,11 @@ async function main() {
     }
 
     const parity = []
-    for (const table of tablesToMigrate) {
-      const sqliteCountRow = await sqliteGet(sqliteDb, `SELECT COUNT(*) AS count FROM ${quoteIdent(table)}`)
-      const pgCountResult = await pg.query(`SELECT COUNT(*)::bigint AS count FROM ${quoteIdent(PG_SCHEMA)}.${quoteIdent(table)}`)
+    for (const { sqliteTable, postgresTable } of tablesToMigrate) {
+      const sqliteCountRow = await sqliteGet(sqliteDb, `SELECT COUNT(*) AS count FROM ${quoteIdent(sqliteTable)}`)
+      const pgCountResult = await pg.query(`SELECT COUNT(*)::bigint AS count FROM ${quoteIdent(PG_SCHEMA)}.${quoteIdent(postgresTable)}`)
       parity.push({
-        table,
+        table: sqliteTable,
         sqliteCount: Number(sqliteCountRow.count || 0),
         postgresCount: Number(pgCountResult.rows[0].count || 0)
       })
