@@ -89,10 +89,22 @@ function normalizeBoolean(value) {
 function normalizeJson(value) {
   if (value === null || value === undefined || value === '') return null
   if (typeof value === 'object') return value
+
+  const textValue = String(value)
+
   try {
-    return JSON.parse(value)
+    const parsed = JSON.parse(textValue)
+    if (typeof parsed === 'string') {
+      try {
+        return JSON.parse(parsed)
+      } catch (error) {
+        return parsed
+      }
+    }
+    return parsed
   } catch (error) {
-    return value
+    // Keep non-JSON payloads as JSON string values so inserts remain valid.
+    return JSON.stringify(textValue)
   }
 }
 
