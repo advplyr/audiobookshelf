@@ -422,9 +422,11 @@ class User extends Model {
     const cachedUser = userCache.getById(userId) || userCache.getByOldId(userId)
     if (cachedUser) return cachedUser
 
+    const idMatcher = this.sequelize.getDialect() === 'postgres' ? sequelize.where(sequelize.cast(sequelize.col('user.id'), 'text'), userId) : { id: userId }
+
     const user = await this.findOne({
       where: {
-        [sequelize.Op.or]: [{ id: userId }, { 'extraData.oldUserId': userId }]
+        [sequelize.Op.or]: [idMatcher, { 'extraData.oldUserId': userId }]
       },
       include: this.sequelize.models.mediaProgress
     })
