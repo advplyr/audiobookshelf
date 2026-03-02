@@ -6,7 +6,7 @@ const authorFilters = require('./authorFilters')
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
-const { booleanLiteral, noCaseSortExpression, coalesceFunctionName, jsonArrayContainsAny, jsonArrayContainsValue, jsonArrayExpand } = require('../sqlDialectHelpers')
+const { booleanLiteral, noCaseSortExpression, coalesceFunctionName, jsonArrayContainsAny, jsonArrayContainsValue, jsonArrayExpand, safeTextToDoubleExpression, safeTextToIntegerExpression } = require('../sqlDialectHelpers')
 const countCache = new Map()
 
 module.exports = {
@@ -237,7 +237,7 @@ module.exports = {
     } else if (group === 'publishedDecades') {
       const startYear = parseInt(value)
       const endYear = parseInt(value, 10) + 9
-      mediaWhere = Sequelize.where(Sequelize.literal('CAST(publishedYear AS INTEGER)'), {
+      mediaWhere = Sequelize.where(Sequelize.literal(safeTextToIntegerExpression('publishedYear', Database.sequelize)), {
         [Sequelize.Op.between]: [startYear, endYear]
       })
     }
@@ -274,7 +274,7 @@ module.exports = {
     } else if (sortBy === 'media.duration') {
       return [['duration', dir]]
     } else if (sortBy === 'media.metadata.publishedYear') {
-      return [[Sequelize.literal('CAST(book.publishedYear AS INTEGER)'), dir]]
+      return [[Sequelize.literal(safeTextToIntegerExpression('book.publishedYear', Database.sequelize)), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       // Sort by author name last first, secondary sort by title
       return [[Sequelize.literal(noCaseSortExpression('libraryItem.authorNamesLastFirst', Database.sequelize)), dir], getTitleOrder()]
@@ -288,10 +288,8 @@ module.exports = {
       return [getTitleOrder()]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      if (Database.sequelize.getDialect() === 'postgres') {
-        return [[Sequelize.literal(`CAST("series.bookSeries"."sequence" AS DOUBLE PRECISION) ${nullDir}`)]]
-      }
-      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
+      const sequenceColumn = Database.sequelize.getDialect() === 'postgres' ? '"series.bookSeries"."sequence"' : '`series.bookSeries.sequence`'
+      return [[Sequelize.literal(`${safeTextToDoubleExpression(sequenceColumn, Database.sequelize)} ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'progress.createdAt') {
@@ -331,11 +329,7 @@ module.exports = {
         }
       ],
       order: [
-        Sequelize.literal(
-          Database.sequelize.getDialect() === 'postgres'
-            ? 'CAST("books.bookSeries"."sequence" AS DOUBLE PRECISION) ASC NULLS LAST'
-            : 'CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST'
-        )
+        Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"books.bookSeries"."sequence"' : '`books.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
       ]
     })
     const bookSeriesToInclude = []
@@ -529,11 +523,7 @@ module.exports = {
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
         sortOrder.push([
-          Sequelize.literal(
-            Database.sequelize.getDialect() === 'postgres'
-              ? 'CAST("series.bookSeries"."sequence" AS DOUBLE PRECISION) ASC NULLS LAST'
-              : 'CAST(`series.bookSeries.sequence` AS FLOAT) ASC NULLS LAST'
-          )
+          Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"series.bookSeries"."sequence"' : '`series.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
         ])
       }
     } else if (filterGroup === 'issues') {
@@ -755,11 +745,11 @@ module.exports = {
     let booksNotFinishedQuery = `SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = ${booleanLiteral(false, Database.sequelize)} OR mp.isFinished IS NULL)`
 
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
-      const castType = Database.sequelize.getDialect() === 'postgres' ? 'DOUBLE PRECISION' : 'FLOAT'
-      const maxSequenceQuery = `(SELECT CAST(max(bs.sequence) as ${castType}) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = ${booleanLiteral(true, Database.sequelize)} AND mp.userId = :userId AND bs.seriesId = series.id)`
+      const safeSequenceExpr = safeTextToDoubleExpression('bs.sequence', Database.sequelize)
+      const maxSequenceQuery = `(SELECT max(${safeSequenceExpr}) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = ${booleanLiteral(true, Database.sequelize)} AND mp.userId = :userId AND bs.seriesId = series.id)`
       includeAttributes.push([Sequelize.literal(`${maxSequenceQuery}`), 'maxSequence'])
 
-      booksNotFinishedQuery = booksNotFinishedQuery + ` AND CAST(bs.sequence as ${castType}) > ${maxSequenceQuery}`
+      booksNotFinishedQuery = booksNotFinishedQuery + ` AND ${safeSequenceExpr} > ${maxSequenceQuery}`
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -794,7 +784,7 @@ module.exports = {
         attributes: ['bookId', 'sequence'],
         separate: true,
         subQuery: false,
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        order: [[Sequelize.literal(`${safeTextToDoubleExpression('sequence', Database.sequelize)} ASC NULLS LAST`)]],
         where: {
           '$book.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, false]
@@ -907,7 +897,7 @@ module.exports = {
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere
         },
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        order: [[Sequelize.literal(`${safeTextToDoubleExpression('sequence', Database.sequelize)} ASC NULLS LAST`)]],
         limit: 1
       },
       subQuery: false,
