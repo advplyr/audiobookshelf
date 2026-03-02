@@ -9,11 +9,6 @@ const PG_SCHEMA = process.env.PG_SCHEMA || 'public'
 const BATCH_SIZE = Number(process.env.MIGRATION_BATCH_SIZE || 500)
 const DRY_RUN = String(process.env.DRY_RUN || 'false').toLowerCase() === 'true'
 
-if (!DATABASE_URL) {
-  console.error('[migrate] DATABASE_URL is required')
-  process.exit(1)
-}
-
 const preferredOrder = [
   'migrationsMeta',
   'SequelizeMeta',
@@ -75,6 +70,120 @@ function sqliteGet(db, sql, params = []) {
   })
 }
 
+async function findOverlongVarcharValues(sqliteDb, tablesToMigrate, pgColumnsByTable) {
+  const issues = []
+
+  for (const { sqliteTable, postgresTable } of tablesToMigrate) {
+    const pgColumns = pgColumnsByTable.get(postgresTable)
+    if (!pgColumns) continue
+
+    for (const column of pgColumns.values()) {
+      if (column.data_type !== 'character varying' || !column.character_maximum_length) continue
+
+      const sqliteColumn = column.column_name
+      const maxLength = Number(column.character_maximum_length)
+      const quotedTable = quoteIdent(sqliteTable)
+      const quotedColumn = quoteIdent(sqliteColumn)
+
+      try {
+        const maxLengthRow = await sqliteGet(
+          sqliteDb,
+          `SELECT MAX(LENGTH(${quotedColumn})) AS maxLength FROM ${quotedTable} WHERE ${quotedColumn} IS NOT NULL`
+        )
+        const actualMaxLength = Number(maxLengthRow?.maxLength || 0)
+        if (actualMaxLength <= maxLength) continue
+
+        const overCountRow = await sqliteGet(
+          sqliteDb,
+          `SELECT COUNT(*) AS count FROM ${quotedTable} WHERE LENGTH(${quotedColumn}) > ?`,
+          [maxLength]
+        )
+
+        issues.push({
+          sqliteTable,
+          sqliteColumn,
+          postgresTable,
+          postgresColumn: column.column_name,
+          maxLength,
+          actualMaxLength,
+          overCount: Number(overCountRow?.count || 0)
+        })
+      } catch (error) {
+        // Ignore columns missing in sqlite source table
+      }
+    }
+  }
+
+  return issues
+}
+
+function isIntegerCompatible(value) {
+  if (value === null || value === undefined) return true
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && Number.isInteger(value)
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return false
+    if (!/^-?\d+$/.test(trimmed)) return false
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed)
+  }
+
+  return false
+}
+
+async function findIntegerTypeIssues(sqliteDb, tablesToMigrate, pgColumnsByTable) {
+  const issues = []
+
+  for (const { sqliteTable, postgresTable } of tablesToMigrate) {
+    const pgColumns = pgColumnsByTable.get(postgresTable)
+    if (!pgColumns) continue
+
+    for (const column of pgColumns.values()) {
+      const dataType = column.data_type
+      if (dataType !== 'smallint' && dataType !== 'integer' && dataType !== 'bigint') continue
+
+      const sqliteColumn = column.column_name
+      const quotedTable = quoteIdent(sqliteTable)
+      const quotedColumn = quoteIdent(sqliteColumn)
+
+      let rows
+      try {
+        rows = await sqliteAll(sqliteDb, `SELECT ${quotedColumn} AS value FROM ${quotedTable} WHERE ${quotedColumn} IS NOT NULL`)
+      } catch (error) {
+        // Ignore columns missing in sqlite source table
+        continue
+      }
+
+      let badCount = 0
+      let sampleValue = null
+      for (const row of rows) {
+        if (!isIntegerCompatible(row.value)) {
+          badCount += 1
+          if (sampleValue === null) sampleValue = row.value
+        }
+      }
+
+      if (badCount > 0) {
+        issues.push({
+          sqliteTable,
+          sqliteColumn,
+          postgresTable,
+          postgresColumn: column.column_name,
+          postgresType: dataType,
+          badCount,
+          sampleValue
+        })
+      }
+    }
+  }
+
+  return issues
+}
+
 function normalizeBoolean(value) {
   if (value === null || value === undefined) return null
   if (typeof value === 'boolean') return value
@@ -88,7 +197,7 @@ function normalizeBoolean(value) {
 
 function normalizeJson(value) {
   if (value === null || value === undefined || value === '') return null
-  if (typeof value === 'object') return value
+  if (typeof value === 'object') return JSON.stringify(value)
 
   const textValue = String(value)
 
@@ -96,14 +205,14 @@ function normalizeJson(value) {
     const parsed = JSON.parse(textValue)
     if (typeof parsed === 'string') {
       try {
-        return JSON.parse(parsed)
+        return JSON.stringify(JSON.parse(parsed))
       } catch (error) {
-        return parsed
+        return JSON.stringify(parsed)
       }
     }
-    return parsed
+    return JSON.stringify(parsed)
   } catch (error) {
-    // Keep non-JSON payloads as JSON string values so inserts remain valid.
+    // Keep non-JSON payloads as JSON string values so inserts remain valid JSON.
     return JSON.stringify(textValue)
   }
 }
@@ -121,10 +230,45 @@ function convertValue(value, pgColumn) {
     return normalizeJson(value)
   }
 
+  if ((dataType === 'smallint' || dataType === 'integer' || dataType === 'bigint') && value !== null && value !== undefined) {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) {
+      return Number(value)
+    }
+  }
+
   return value
 }
 
+function getOverlongColumns(row, insertColumns) {
+  const overlong = []
+
+  for (const column of insertColumns) {
+    const maxLength = column.metadata.character_maximum_length
+    if (!maxLength) continue
+
+    const value = row[column.sqliteColumn]
+    if (value === null || value === undefined) continue
+
+    const length = String(value).length
+    if (length > maxLength) {
+      overlong.push({
+        sqliteColumn: column.sqliteColumn,
+        postgresColumn: column.postgresColumn,
+        maxLength,
+        actualLength: length
+      })
+    }
+  }
+
+  return overlong
+}
+
 async function main() {
+  if (!DATABASE_URL) {
+    throw new Error('DATABASE_URL is required')
+  }
+
   console.log(`[migrate] sqlite source: ${SQLITE_PATH}`)
   console.log(`[migrate] postgres target schema: ${PG_SCHEMA}`)
   console.log(`[migrate] dry run: ${DRY_RUN}`)
@@ -176,11 +320,36 @@ async function main() {
     const pgColumnsByTable = new Map()
     for (const { postgresTable } of tablesToMigrate) {
       const columnsResult = await pg.query(
-        `SELECT column_name, data_type, udt_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position`,
+        `SELECT column_name, data_type, udt_name, character_maximum_length FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position`,
         [PG_SCHEMA, postgresTable]
       )
       const columnMap = new Map(columnsResult.rows.map((column) => [column.column_name.toLowerCase(), column]))
       pgColumnsByTable.set(postgresTable, columnMap)
+    }
+
+    const overlongVarcharIssues = await findOverlongVarcharValues(sqliteDb, tablesToMigrate, pgColumnsByTable)
+    const integerTypeIssues = await findIntegerTypeIssues(sqliteDb, tablesToMigrate, pgColumnsByTable)
+
+    if (overlongVarcharIssues.length) {
+      console.error('[migrate] overlong source values detected for varchar columns:')
+      overlongVarcharIssues.forEach((issue) => {
+        console.error(
+          `[migrate]   ${issue.sqliteTable}.${issue.sqliteColumn} -> ${issue.postgresTable}.${issue.postgresColumn} ` +
+            `(max=${issue.maxLength}, actualMax=${issue.actualMaxLength}, overRows=${issue.overCount})`
+        )
+      })
+      throw new Error('Migration aborted to prevent truncation/data loss. Widen target column types first.')
+    }
+
+    if (integerTypeIssues.length) {
+      console.error('[migrate] non-integer source values detected for integer columns:')
+      integerTypeIssues.forEach((issue) => {
+        console.error(
+          `[migrate]   ${issue.sqliteTable}.${issue.sqliteColumn} -> ${issue.postgresTable}.${issue.postgresColumn} ` +
+            `(type=${issue.postgresType}, badRows=${issue.badCount}, sample=${JSON.stringify(issue.sampleValue)})`
+        )
+      })
+      throw new Error('Migration aborted to prevent numeric precision loss. Widen target numeric column types first.')
     }
 
     if (!DRY_RUN) {
@@ -222,16 +391,49 @@ async function main() {
           let paramIndex = 1
 
           for (const row of batchRows) {
-            const placeholders = []
-            for (const column of insertColumns) {
-              params.push(convertValue(row[column.sqliteColumn], column.metadata))
-              placeholders.push(`$${paramIndex++}`)
-            }
+              const placeholders = []
+              for (const column of insertColumns) {
+               params.push(convertValue(row[column.sqliteColumn], column.metadata))
+               placeholders.push(`$${paramIndex++}`)
+              }
             valuesSql.push(`(${placeholders.join(', ')})`)
           }
 
           const insertSql = `INSERT INTO ${quoteIdent(PG_SCHEMA)}.${quoteIdent(postgresTable)} (${insertColumns.map((column) => quoteIdent(column.postgresColumn)).join(', ')}) VALUES ${valuesSql.join(', ')}`
-          await pg.query(insertSql, params)
+
+          try {
+            await pg.query('SAVEPOINT migrate_batch')
+            await pg.query(insertSql, params)
+            await pg.query('RELEASE SAVEPOINT migrate_batch')
+          } catch (error) {
+            await pg.query('ROLLBACK TO SAVEPOINT migrate_batch')
+            console.error(`[migrate] batch insert failed for ${sqliteTable} (offset=${offset}, size=${batchRows.length}): ${error.message}`)
+
+            for (let rowIndex = 0; rowIndex < batchRows.length; rowIndex++) {
+              const row = batchRows[rowIndex]
+              const singleRowParams = insertColumns.map((column) => convertValue(row[column.sqliteColumn], column.metadata))
+              const singleRowInsertSql = `INSERT INTO ${quoteIdent(PG_SCHEMA)}.${quoteIdent(postgresTable)} (${insertColumns.map((column) => quoteIdent(column.postgresColumn)).join(', ')}) VALUES (${singleRowParams.map((_, index) => `$${index + 1}`).join(', ')})`
+
+              try {
+                await pg.query('SAVEPOINT migrate_row')
+                await pg.query(singleRowInsertSql, singleRowParams)
+                await pg.query('RELEASE SAVEPOINT migrate_row')
+              } catch (rowError) {
+                await pg.query('ROLLBACK TO SAVEPOINT migrate_row')
+                const overlongColumns = getOverlongColumns(row, insertColumns)
+                if (overlongColumns.length) {
+                  overlongColumns.forEach((column) => {
+                    console.error(
+                      `[migrate] overlong value in ${sqliteTable}.${column.sqliteColumn} -> ${postgresTable}.${column.postgresColumn} ` +
+                        `(length=${column.actualLength}, max=${column.maxLength})`
+                    )
+                  })
+                }
+
+                throw rowError
+              }
+            }
+          }
         }
       }
 
@@ -271,7 +473,18 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('[migrate] failed:', error)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('[migrate] failed:', error)
+    process.exit(1)
+  })
+}
+
+module.exports = {
+  normalizeJson,
+  isIntegerCompatible,
+  convertValue,
+  findOverlongVarcharValues,
+  findIntegerTypeIssues,
+  quoteIdent
+}

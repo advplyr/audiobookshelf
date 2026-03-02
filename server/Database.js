@@ -412,6 +412,11 @@ class Database {
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
 
+    if (this.isPostgresDialect() && !force && !this.isNew) {
+      Logger.info('[Database] Skipping sequelize.sync for existing postgres schema')
+      return Promise.resolve()
+    }
+
     return this.sequelize.sync({ force, alter: false })
   }
 

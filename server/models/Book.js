@@ -148,7 +148,7 @@ class Book extends Model {
         },
         title: DataTypes.STRING,
         titleIgnorePrefix: DataTypes.STRING,
-        subtitle: DataTypes.STRING,
+        subtitle: DataTypes.TEXT,
         publishedYear: DataTypes.STRING,
         publishedDate: DataTypes.STRING,
         publisher: DataTypes.STRING,
