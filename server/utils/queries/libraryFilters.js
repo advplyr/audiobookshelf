@@ -5,6 +5,7 @@ const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 const { createNewSortInstance } = require('../../libs/fastSort')
 const { profile } = require('../../utils/profiler')
+const { booleanLiteral, jsonArrayContainsAny } = require('../sqlDialectHelpers')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -235,13 +236,13 @@ module.exports = {
     if (userPermissionBookWhere.bookWhere.length) {
       let attrQuery = 'SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id'
       if (!user.canAccessExplicitContent) {
-        attrQuery += ' AND b.explicit = 0'
+        attrQuery += ` AND b.explicit = ${booleanLiteral(false, Database.sequelize)}`
       }
       if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
-          attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
+          attrQuery += ` AND ${jsonArrayContainsAny('b.tags', 'userTagsSelected', Database.sequelize)} = 0`
         } else {
-          attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) > 0'
+          attrQuery += ` AND ${jsonArrayContainsAny('b.tags', 'userTagsSelected', Database.sequelize)} > 0`
         }
       }
       seriesWhere.push(

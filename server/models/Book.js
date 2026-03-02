@@ -137,6 +137,8 @@ class Book extends Model {
    * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
+    const titleIndexField = sequelize.getDialect() === 'postgres' ? 'title' : { name: 'title', collate: 'NOCASE' }
+
     super.init(
       {
         id: {
@@ -171,12 +173,7 @@ class Book extends Model {
         modelName: 'book',
         indexes: [
           {
-            fields: [
-              {
-                name: 'title',
-                collate: 'NOCASE'
-              }
-            ]
+            fields: [titleIndexField]
           },
           // {
           //   fields: [{

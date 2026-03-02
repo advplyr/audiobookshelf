@@ -87,6 +87,8 @@ class Series extends Model {
    * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
+    const nameIndexField = sequelize.getDialect() === 'postgres' ? 'name' : { name: 'name', collate: 'NOCASE' }
+
     super.init(
       {
         id: {
@@ -103,12 +105,7 @@ class Series extends Model {
         modelName: 'series',
         indexes: [
           {
-            fields: [
-              {
-                name: 'name',
-                collate: 'NOCASE'
-              }
-            ]
+            fields: [nameIndexField]
           },
           // {
           //   fields: [{

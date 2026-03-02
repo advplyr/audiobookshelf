@@ -128,6 +128,8 @@ class Author extends Model {
    * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
+    const nameIndexField = sequelize.getDialect() === 'postgres' ? 'name' : { name: 'name', collate: 'NOCASE' }
+
     super.init(
       {
         id: {
@@ -146,12 +148,7 @@ class Author extends Model {
         modelName: 'author',
         indexes: [
           {
-            fields: [
-              {
-                name: 'name',
-                collate: 'NOCASE'
-              }
-            ]
+            fields: [nameIndexField]
           },
           // {
           //   fields: [{
