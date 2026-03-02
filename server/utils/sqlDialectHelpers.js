@@ -61,6 +61,20 @@ function jsonPathNumber(columnExpression, pathSegments, sequelize) {
   return `json_extract(${columnExpression}, '$.${[].concat(pathSegments).join('.')}')`
 }
 
+function safeTextToDoubleExpression(columnExpression, sequelize) {
+  if (isPostgres(sequelize)) {
+    return `CASE WHEN BTRIM(${columnExpression}) ~ '^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$' THEN BTRIM(${columnExpression})::double precision ELSE NULL END`
+  }
+  return `CAST(${columnExpression} AS FLOAT)`
+}
+
+function safeTextToIntegerExpression(columnExpression, sequelize) {
+  if (isPostgres(sequelize)) {
+    return `CASE WHEN BTRIM(${columnExpression}) ~ '^[+-]?\\d+$' THEN BTRIM(${columnExpression})::integer ELSE NULL END`
+  }
+  return `CAST(${columnExpression} AS INTEGER)`
+}
+
 module.exports = {
   getDialect,
   isPostgres,
@@ -71,5 +85,7 @@ module.exports = {
   jsonArrayContainsValue,
   jsonArrayExpand,
   jsonPathText,
-  jsonPathNumber
+  jsonPathNumber,
+  safeTextToDoubleExpression,
+  safeTextToIntegerExpression
 }

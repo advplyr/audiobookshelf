@@ -1,6 +1,7 @@
 const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
+const { safeTextToDoubleExpression } = require('../utils/sqlDialectHelpers')
 
 class Series extends Model {
   constructor(values, options) {
@@ -158,7 +159,7 @@ class Series extends Model {
           }
         }
       ],
-      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]]
+      order: [[literal(`${safeTextToDoubleExpression(this.sequelize.getDialect() === 'postgres' ? '"bookSeries"."sequence"' : '`bookSeries.sequence`', this.sequelize)} ASC NULLS LAST`)]]
     })
   }
 

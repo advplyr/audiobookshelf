@@ -8,7 +8,9 @@ const {
   jsonArrayContainsValue,
   jsonArrayExpand,
   jsonPathText,
-  jsonPathNumber
+  jsonPathNumber,
+  safeTextToDoubleExpression,
+  safeTextToIntegerExpression
 } = require('../../../server/utils/sqlDialectHelpers')
 
 const sqlite = {
@@ -54,5 +56,13 @@ describe('sqlDialectHelpers', () => {
 
     expect(jsonPathNumber('payload', ['duration'], sqlite)).to.equal("json_extract(payload, '$.duration')")
     expect(jsonPathNumber('payload', ['duration'], postgres)).to.equal("NULLIF(payload::jsonb #>> '{duration}', '')::double precision")
+  })
+
+  it('should generate safe numeric cast expressions for sequence-like text', () => {
+    expect(safeTextToDoubleExpression('sequence', sqlite)).to.equal('CAST(sequence AS FLOAT)')
+    expect(safeTextToDoubleExpression('"bookSeries"."sequence"', postgres)).to.equal("CASE WHEN BTRIM(\"bookSeries\".\"sequence\") ~ '^[+-]?(?:\\d+\\.?\\d*|\\.\\d+)$' THEN BTRIM(\"bookSeries\".\"sequence\")::double precision ELSE NULL END")
+
+    expect(safeTextToIntegerExpression('publishedYear', sqlite)).to.equal('CAST(publishedYear AS INTEGER)')
+    expect(safeTextToIntegerExpression('book.publishedYear', postgres)).to.equal("CASE WHEN BTRIM(book.publishedYear) ~ '^[+-]?\\d+$' THEN BTRIM(book.publishedYear)::integer ELSE NULL END")
   })
 })
