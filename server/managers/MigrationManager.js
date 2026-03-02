@@ -215,7 +215,7 @@ class MigrationManager {
 
   async checkOrCreateMigrationsMetaTable() {
     const queryInterface = this.sequelize.getQueryInterface()
-    let migrationsMetaTableExists = await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
+    let migrationsMetaTableExists = await this.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
 
     // If the table exists, check that the `version` and `maxVersion` rows exist
     if (migrationsMetaTableExists) {
@@ -253,6 +253,20 @@ class MigrationManager {
       })
       Logger.debug(`[MigrationManager] Created migrationsMeta table: "${MigrationManager.MIGRATIONS_META_TABLE}"`)
     }
+  }
+
+  async tableExists(tableName) {
+    const queryInterface = this.sequelize.getQueryInterface()
+    if (typeof queryInterface.tableExists === 'function') {
+      return queryInterface.tableExists(tableName)
+    }
+
+    const tables = await queryInterface.showAllTables()
+    return tables.some((table) => {
+      if (typeof table === 'string') return table === tableName
+      if (table?.tableName) return table.tableName === tableName
+      return false
+    })
   }
 
   extractVersionFromTag(tag) {
