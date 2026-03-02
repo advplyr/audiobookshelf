@@ -199,7 +199,7 @@ class MigrationManager {
   }
 
   async fetchVersionsFromDatabase() {
-    const migrationsMetaTable = `"${MigrationManager.MIGRATIONS_META_TABLE}"`
+    const migrationsMetaTable = MigrationManager.MIGRATIONS_META_TABLE
     await this.checkOrCreateMigrationsMetaTable()
 
     const [versionRow] = await this.sequelize.query(`SELECT value as version FROM ${migrationsMetaTable} WHERE key = 'version'`, {
@@ -219,7 +219,7 @@ class MigrationManager {
 
     // If the table exists, check that the `version` and `maxVersion` rows exist
     if (migrationsMetaTableExists) {
-      const [{ count }] = await this.sequelize.query(`SELECT COUNT(*) as count FROM "${MigrationManager.MIGRATIONS_META_TABLE}" WHERE key IN ('version', 'maxVersion')`, {
+      const [{ count }] = await this.sequelize.query(`SELECT COUNT(*) as count FROM ${MigrationManager.MIGRATIONS_META_TABLE} WHERE key IN ('version', 'maxVersion')`, {
         type: Sequelize.QueryTypes.SELECT
       })
       if (count < 2) {
@@ -247,7 +247,7 @@ class MigrationManager {
           allowNull: false
         }
       })
-      await this.sequelize.query(`INSERT INTO "${MigrationManager.MIGRATIONS_META_TABLE}" (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')`, {
+      await this.sequelize.query(`INSERT INTO ${MigrationManager.MIGRATIONS_META_TABLE} (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')`, {
         replacements: { version: this.isDatabaseNew ? this.serverVersion : '0.0.0' },
         type: Sequelize.QueryTypes.INSERT
       })
@@ -319,7 +319,7 @@ class MigrationManager {
 
   async updateMaxVersion() {
     try {
-      await this.sequelize.query(`UPDATE "${MigrationManager.MIGRATIONS_META_TABLE}" SET value = :maxVersion WHERE key = 'maxVersion'`, {
+      await this.sequelize.query(`UPDATE ${MigrationManager.MIGRATIONS_META_TABLE} SET value = :maxVersion WHERE key = 'maxVersion'`, {
         replacements: { maxVersion: this.serverVersion },
         type: Sequelize.QueryTypes.UPDATE
       })
@@ -331,7 +331,7 @@ class MigrationManager {
 
   async updateDatabaseVersion() {
     try {
-      await this.sequelize.query(`UPDATE "${MigrationManager.MIGRATIONS_META_TABLE}" SET value = :version WHERE key = 'version'`, {
+      await this.sequelize.query(`UPDATE ${MigrationManager.MIGRATIONS_META_TABLE} SET value = :version WHERE key = 'version'`, {
         replacements: { version: this.serverVersion },
         type: Sequelize.QueryTypes.UPDATE
       })
