@@ -202,15 +202,15 @@ class MigrationManager {
     const migrationsMetaTable = `"${MigrationManager.MIGRATIONS_META_TABLE}"`
     await this.checkOrCreateMigrationsMetaTable()
 
-    const [{ version }] = await this.sequelize.query(`SELECT value as version FROM ${migrationsMetaTable} WHERE key = 'version'`, {
+    const [versionRow] = await this.sequelize.query(`SELECT value as version FROM ${migrationsMetaTable} WHERE key = 'version'`, {
       type: Sequelize.QueryTypes.SELECT
     })
-    this.databaseVersion = version
+    this.databaseVersion = versionRow?.version
 
-    const [{ maxVersion }] = await this.sequelize.query(`SELECT value as maxVersion FROM ${migrationsMetaTable} WHERE key = 'maxVersion'`, {
+    const [maxVersionRow] = await this.sequelize.query(`SELECT value as maxVersion FROM ${migrationsMetaTable} WHERE key = 'maxVersion'`, {
       type: Sequelize.QueryTypes.SELECT
     })
-    this.maxVersion = maxVersion
+    this.maxVersion = maxVersionRow?.maxVersion || maxVersionRow?.maxversion
   }
 
   async checkOrCreateMigrationsMetaTable() {
