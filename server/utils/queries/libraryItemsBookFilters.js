@@ -288,7 +288,7 @@ module.exports = {
       return [getTitleOrder()]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      const sequenceColumn = Database.sequelize.getDialect() === 'postgres' ? '"series.bookSeries"."sequence"' : '`series.bookSeries.sequence`'
+      const sequenceColumn = Database.sequelize.getDialect() === 'postgres' ? '"series->bookSeries"."sequence"' : '`series.bookSeries.sequence`'
       return [[Sequelize.literal(`${safeTextToDoubleExpression(sequenceColumn, Database.sequelize)} ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
@@ -329,7 +329,7 @@ module.exports = {
         }
       ],
       order: [
-        Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"books.bookSeries"."sequence"' : '`books.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
+        Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"books->bookSeries"."sequence"' : '`books.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
       ]
     })
     const bookSeriesToInclude = []
@@ -523,7 +523,7 @@ module.exports = {
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
         sortOrder.push([
-          Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"series.bookSeries"."sequence"' : '`series.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
+          Sequelize.literal(`${safeTextToDoubleExpression(Database.sequelize.getDialect() === 'postgres' ? '"series->bookSeries"."sequence"' : '`series.bookSeries.sequence`', Database.sequelize)} ASC NULLS LAST`)
         ])
       }
     } else if (filterGroup === 'issues') {
