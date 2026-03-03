@@ -51,7 +51,7 @@ describe('User model', () => {
       expect(findOneStub.calledOnce).to.equal(true)
 
       const options = findOneStub.firstCall.args[0]
-      expect(options.where.attribute.val).to.equal('"extraData"#>>\'{oldUserId}\'')
+      expect(options.where.attribute.val).to.equal("extradata#>>'{oldUserId}'")
       expect(options.where.logic).to.equal('root')
     })
 

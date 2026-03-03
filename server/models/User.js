@@ -435,7 +435,7 @@ class User extends Model {
 
     const oldIdMatcher =
       this.sequelize.getDialect() === 'postgres'
-        ? sequelize.where(sequelize.literal(`"extraData"#>>'{oldUserId}'`), userId)
+        ? sequelize.where(sequelize.literal(`extradata#>>'{oldUserId}'`), userId)
         : { 'extraData.oldUserId': userId }
 
     const user = await this.findOne({
