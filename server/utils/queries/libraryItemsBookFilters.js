@@ -619,11 +619,12 @@ module.exports = {
       const fallbackLibraryItemTitle = Database.sequelize.getDialect() === 'postgres' ? '"libraryItem"."title"' : '`libraryItem`.`title`'
       const fallbackLibraryItemTitleIgnorePrefix = Database.sequelize.getDialect() === 'postgres' ? '"libraryItem"."titleIgnorePrefix"' : '`libraryItem`.`titleIgnorePrefix`'
       const fallbackFn = coalesceFunctionName(Database.sequelize)
+      const includedBookSeriesIds = bookSeriesToInclude.map((v) => Database.sequelize.escape(v.id)).join(', ')
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), ${fallbackLibraryItemTitleIgnorePrefix})`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds})), ${fallbackLibraryItemTitleIgnorePrefix})`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), ${fallbackLibraryItemTitle})`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds})), ${fallbackLibraryItemTitle})`), 'display_title'])
       }
     }
 
