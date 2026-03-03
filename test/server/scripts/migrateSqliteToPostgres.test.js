@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3')
 const {
   normalizeJson,
   isIntegerCompatible,
+  convertValue,
   findOverlongVarcharValues,
   findIntegerTypeIssues
 } = require('../../../server/scripts/migrateSqliteToPostgres')
@@ -127,5 +128,19 @@ describe('migrateSqliteToPostgres script helpers', () => {
     expect(isIntegerCompatible('10')).to.equal(true)
     expect(isIntegerCompatible(10.5)).to.equal(false)
     expect(isIntegerCompatible('10.5')).to.equal(false)
+  })
+
+  it('should coerce integer-like strings for postgres integer columns', () => {
+    expect(convertValue('42', { data_type: 'integer' })).to.equal(42)
+    expect(convertValue('-7', { data_type: 'bigint' })).to.equal(-7)
+    expect(convertValue('4.2', { data_type: 'integer' })).to.equal('4.2')
+  })
+
+  it('should always return valid json text for postgres json columns', () => {
+    const convertedObject = convertValue({ a: 1 }, { data_type: 'jsonb', udt_name: 'jsonb' })
+    const convertedMalformed = convertValue('"{"x",1}"', { data_type: 'jsonb', udt_name: 'jsonb' })
+
+    expect(JSON.parse(convertedObject)).to.deep.equal({ a: 1 })
+    expect(JSON.parse(convertedMalformed)).to.equal('"{"x",1}"')
   })
 })
