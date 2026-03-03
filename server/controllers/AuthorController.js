@@ -38,7 +38,7 @@ class AuthorController {
    * @param {Response} res
    */
   async findOne(req, res) {
-    const include = (req.query.include || '').split(',')
+    const include = (req?.query?.include || '').split(',')
 
     const authorJson = req.author.toOldJSON()
 

@@ -61,7 +61,7 @@ describe('AuthorCard', () => {
       const height = $el.height()
       const defaultHeight = 192
       const defaultWidth = defaultHeight * 0.8
-      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(width).to?.be?.closeTo(defaultWidth, 0.01)
       expect(height).to.be.closeTo(defaultHeight, 0.01)
     })
   })
