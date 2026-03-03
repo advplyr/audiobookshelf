@@ -622,8 +622,8 @@ module.exports = {
 
       // When collapsing series and sorting by title then use the series name instead of the book title
       //  for this set an attribute "display_title" to use in sorting
-      const fallbackLibraryItemTitle = Database.sequelize.getDialect() === 'postgres' ? '"libraryItem"."title"' : '`libraryItem`.`title`'
-      const fallbackLibraryItemTitleIgnorePrefix = Database.sequelize.getDialect() === 'postgres' ? '"libraryItem"."titleIgnorePrefix"' : '`libraryItem`.`titleIgnorePrefix`'
+      const fallbackLibraryItemTitle = Database.sequelize.getDialect() === 'postgres' ? 'libraryItem.title' : '`libraryItem`.`title`'
+      const fallbackLibraryItemTitleIgnorePrefix = Database.sequelize.getDialect() === 'postgres' ? 'libraryItem.titleIgnorePrefix' : '`libraryItem`.`titleIgnorePrefix`'
       const fallbackFn = coalesceFunctionName(Database.sequelize)
       const includedBookSeriesIds = bookSeriesToInclude.map((v) => Database.sequelize.escape(v.id)).join(', ')
       const collapseSeriesSubqueryByName = includedBookSeriesIds
