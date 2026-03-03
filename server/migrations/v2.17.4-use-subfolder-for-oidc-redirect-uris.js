@@ -56,15 +56,23 @@ async function down({ context: { queryInterface, logger } }) {
 }
 
 async function getServerSettings(queryInterface, logger) {
-  const result = await queryInterface.sequelize.query('SELECT value FROM settings WHERE key = "server-settings";')
+  const result = await queryInterface.sequelize.query('SELECT value FROM settings WHERE key = :settingsKey;', {
+    replacements: { settingsKey: 'server-settings' }
+  })
   if (!result[0].length) {
     logger.error('[2.17.4 migration] Server settings not found')
     throw new Error('Server settings not found')
   }
 
+  const settingsValue = result[0][0].value
+
+  if (settingsValue && typeof settingsValue === 'object') {
+    return settingsValue
+  }
+
   let serverSettings = null
   try {
-    serverSettings = JSON.parse(result[0][0].value)
+    serverSettings = JSON.parse(settingsValue)
   } catch (error) {
     logger.error('[2.17.4 migration] Error parsing server settings:', error)
     throw error
@@ -74,9 +82,10 @@ async function getServerSettings(queryInterface, logger) {
 }
 
 async function updateServerSettings(queryInterface, logger, serverSettings) {
-  await queryInterface.sequelize.query('UPDATE settings SET value = :value WHERE key = "server-settings";', {
+  await queryInterface.sequelize.query('UPDATE settings SET value = :value WHERE key = :settingsKey;', {
     replacements: {
-      value: JSON.stringify(serverSettings)
+      value: JSON.stringify(serverSettings),
+      settingsKey: 'server-settings'
     }
   })
 }
