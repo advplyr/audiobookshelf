@@ -638,7 +638,7 @@ module.exports = {
           `filterGroup=${filterGroup || 'none'} filterValue=${filterValue || 'none'} sortBy=${sortBy}`
       )
       if (!includedBookSeriesIds) {
-        Logger.warn(
+        Logger.debug(
           `[LibraryItemsBookFilters] collapse-series produced no include IDs; using library item title fallback ` +
             `(libraryId=${libraryId}, filterGroup=${filterGroup || 'none'}, filterValue=${filterValue || 'none'}, sortBy=${sortBy})`
         )
