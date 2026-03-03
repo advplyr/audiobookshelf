@@ -18,6 +18,12 @@ async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
   logger.info('[2.17.3 migration] UPGRADE BEGIN: 2.17.3-fk-constraints')
 
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info('[2.17.3 migration] Skipping sqlite-specific foreign key rewrite on non-sqlite dialect')
+    logger.info('[2.17.3 migration] UPGRADE END: 2.17.3-fk-constraints')
+    return
+  }
+
   const execQuery = queryInterface.sequelize.query.bind(queryInterface.sequelize)
 
   // Disable foreign key constraints for the next sequence of operations

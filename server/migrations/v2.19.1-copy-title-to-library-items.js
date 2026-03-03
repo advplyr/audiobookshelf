@@ -25,6 +25,12 @@ async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific migration on non-sqlite dialect`)
+    logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)
+    return
+  }
+
   await addColumn(queryInterface, logger, 'libraryItems', 'title', { type: queryInterface.sequelize.Sequelize.STRING, allowNull: true })
   await copyColumn(queryInterface, logger, 'books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
   await addTrigger(queryInterface, logger, 'books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
@@ -50,6 +56,12 @@ async function up({ context: { queryInterface, logger } }) {
 async function down({ context: { queryInterface, logger } }) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
+
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific rollback on non-sqlite dialect`)
+    logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
+    return
+  }
 
   await removeIndex(queryInterface, logger, 'libraryItems', ['libraryId', 'mediaType', 'title'])
   await removeTrigger(queryInterface, logger, 'libraryItems', 'title')
