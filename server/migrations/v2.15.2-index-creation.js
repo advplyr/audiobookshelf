@@ -41,7 +41,7 @@ async function up({ context: { queryInterface, logger } }) {
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
-  await queryInterface.removeIndex('podcastEpisodes', 'podcast_episodes_created_at')
+  await removeIndexIfExists(queryInterface, 'podcastEpisodes', 'podcast_episodes_created_at', logger)
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating index for podcastEpisode and createdAt')
@@ -78,7 +78,7 @@ async function down({ context: { queryInterface, logger } }) {
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
-  await queryInterface.removeIndex('podcastEpisodes', 'podcastEpisode_createdAt_podcastId')
+  await removeIndexIfExists(queryInterface, 'podcastEpisodes', 'podcastEpisode_createdAt_podcastId', logger)
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating original index for podcastEpisode createdAt')
@@ -91,3 +91,15 @@ async function down({ context: { queryInterface, logger } }) {
 }
 
 module.exports = { up, down }
+
+async function removeIndexIfExists(queryInterface, tableName, indexName, logger) {
+  const indexes = await queryInterface.showIndex(tableName)
+  const hasIndex = indexes.some((index) => String(index?.name || index?.indexName || '').toLowerCase() === indexName.toLowerCase())
+
+  if (!hasIndex) {
+    logger.info(`[2.15.2 migration] Index ${indexName} does not exist, skipping removeIndex`)
+    return
+  }
+
+  await queryInterface.removeIndex(tableName, indexName)
+}
