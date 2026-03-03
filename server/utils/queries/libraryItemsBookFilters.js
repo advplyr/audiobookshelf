@@ -362,26 +362,32 @@ module.exports = {
 
   async findAndCountAll(findOptions, limit, offset, useCountCache) {
     const model = Database.bookModel
-    if (useCountCache) {
-      const countCacheKey = stringifySequelizeQuery(findOptions)
-      Logger.debug(`[LibraryItemsBookFilters] countCacheKey: ${countCacheKey}`)
-      if (!countCache.has(countCacheKey)) {
-        const count = await model.count(findOptions)
-        countCache.set(countCacheKey, count)
-      }
-
-      findOptions.limit = limit || null
-      findOptions.offset = offset
-
-      const rows = await model.findAll(findOptions)
-
-      return { rows, count: countCache.get(countCacheKey) }
-    }
-
     findOptions.limit = limit || null
     findOptions.offset = offset
 
-    return await model.findAndCountAll(findOptions)
+    try {
+      if (useCountCache) {
+        const countCacheKey = stringifySequelizeQuery(findOptions)
+        Logger.debug(`[LibraryItemsBookFilters] countCacheKey: ${countCacheKey}`)
+        if (!countCache.has(countCacheKey)) {
+          const count = await model.count(findOptions)
+          countCache.set(countCacheKey, count)
+        }
+
+        const rows = await model.findAll(findOptions)
+        return { rows, count: countCache.get(countCacheKey) }
+      }
+
+      return await model.findAndCountAll(findOptions)
+    } catch (error) {
+      Logger.error(`[LibraryItemsBookFilters] findAndCountAll failed: ${error.message}`)
+      try {
+        Logger.error(`[LibraryItemsBookFilters] findAndCountAll query: ${stringifySequelizeQuery(findOptions)}`)
+      } catch (stringifyError) {
+        Logger.error(`[LibraryItemsBookFilters] failed to stringify query: ${stringifyError.message}`)
+      }
+      throw error
+    }
   },
 
   /**
@@ -620,11 +626,28 @@ module.exports = {
       const fallbackLibraryItemTitleIgnorePrefix = Database.sequelize.getDialect() === 'postgres' ? '"libraryItem"."titleIgnorePrefix"' : '`libraryItem`.`titleIgnorePrefix`'
       const fallbackFn = coalesceFunctionName(Database.sequelize)
       const includedBookSeriesIds = bookSeriesToInclude.map((v) => Database.sequelize.escape(v.id)).join(', ')
+      const collapseSeriesSubqueryByName = includedBookSeriesIds
+        ? `(SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds}))`
+        : 'NULL'
+      const collapseSeriesSubqueryByNameIgnorePrefix = includedBookSeriesIds
+        ? `(SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds}))`
+        : 'NULL'
+
+      Logger.debug(
+        `[LibraryItemsBookFilters] collapse-series computed includeIds=${bookSeriesToInclude.length} excludeBooks=${booksToExclude.length} ` +
+          `filterGroup=${filterGroup || 'none'} filterValue=${filterValue || 'none'} sortBy=${sortBy}`
+      )
+      if (!includedBookSeriesIds) {
+        Logger.warn(
+          `[LibraryItemsBookFilters] collapse-series produced no include IDs; using library item title fallback ` +
+            `(libraryId=${libraryId}, filterGroup=${filterGroup || 'none'}, filterValue=${filterValue || 'none'}, sortBy=${sortBy})`
+        )
+      }
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds})), ${fallbackLibraryItemTitleIgnorePrefix})`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}(${collapseSeriesSubqueryByNameIgnorePrefix}, ${fallbackLibraryItemTitleIgnorePrefix})`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${includedBookSeriesIds})), ${fallbackLibraryItemTitle})`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`${fallbackFn}(${collapseSeriesSubqueryByName}, ${fallbackLibraryItemTitle})`), 'display_title'])
       }
     }
 
