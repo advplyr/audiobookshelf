@@ -34,6 +34,26 @@ describe('User model', () => {
       expect(findOneStub.called).to.equal(false)
     })
 
+    it('should resolve uppercase UUID ids via primary-key lookup on postgres', async () => {
+      User.sequelize = {
+        getDialect: () => 'postgres',
+        models: {
+          mediaProgress: {}
+        }
+      }
+
+      const uppercaseUuid = 'E8E677B2-DA16-4220-AB67-443B7714CAF9'
+      const user = { id: uppercaseUuid }
+      const findByPkStub = sinon.stub(User, 'findByPk').resolves(user)
+      const findOneStub = sinon.stub(User, 'findOne').resolves(null)
+
+      const result = await User.getUserByIdOrOldId(uppercaseUuid)
+
+      expect(result).to.equal(user)
+      expect(findByPkStub.calledOnceWithExactly(uppercaseUuid, { include: User.sequelize.models.mediaProgress })).to.equal(true)
+      expect(findOneStub.called).to.equal(false)
+    })
+
     it('should query legacy oldUserId with postgres-safe JSON matcher', async () => {
       User.sequelize = {
         getDialect: () => 'postgres',

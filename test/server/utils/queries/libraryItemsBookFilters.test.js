@@ -62,7 +62,7 @@ describe('libraryItemsBookFilters postgres query safety', () => {
       booksToExclude: [],
       bookSeriesToInclude: []
     })
-    const warnStub = sinon.stub(Logger, 'warn')
+    const debugStub = sinon.stub(Logger, 'debug')
 
     await libraryItemsBookFilters.getFilteredLibraryItems('library-1', { canAccessExplicitContent: true }, 'authors', 'author-1', 'media.metadata.publishedYear', true, true, [], 20, 0)
 
@@ -71,7 +71,7 @@ describe('libraryItemsBookFilters postgres query safety', () => {
 
     expect(displayTitleExpression).to.include('COALESCE(NULL, libraryItem.title)')
     expect(displayTitleExpression).to.not.include('IN ()')
-    expect(warnStub.calledOnce).to.equal(true)
+    expect(debugStub.calledWithMatch('collapse-series produced no include IDs')).to.equal(true)
   })
 
   it('should escape collapse-series ids safely for postgres subquery', async () => {
