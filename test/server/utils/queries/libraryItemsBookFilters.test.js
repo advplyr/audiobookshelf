@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
+const Sequelize = require('sequelize')
 
 const Database = require('../../../../server/Database')
 const Logger = require('../../../../server/Logger')
@@ -129,5 +130,19 @@ describe('libraryItemsBookFilters postgres query safety', () => {
     const orderExpression = findAllOptions.order[0].val
 
     expect(orderExpression).to.include('"books->bookSeries"."sequence"')
+  })
+
+  it('should use boolean false for discover not-started media progress on postgres', async () => {
+    Database.sequelize = createSequelizeStub('postgres', modelStubs)
+    modelStubs.series.findAll.resolves([])
+    modelStubs.book.count.resolves(0)
+    modelStubs.book.findAll.resolves([])
+
+    await libraryItemsBookFilters.getDiscoverLibraryItems('library-1', { id: 'user-1', canAccessExplicitContent: true }, [], 10)
+
+    const countOptions = modelStubs.book.count.firstCall.args[0]
+    const progressFilter = countOptions.where[0]['$mediaProgresses.isFinished$']
+
+    expect(progressFilter[Sequelize.Op.or]).to.deep.equal([null, false])
   })
 })

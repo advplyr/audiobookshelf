@@ -374,19 +374,24 @@ module.exports = {
   async getLibraryItemsToDiscover(library, user, include, limit) {
     if (library.mediaType !== 'book') return { libraryItems: [], count: 0 }
 
-    const { libraryItems, count } = await libraryItemsBookFilters.getDiscoverLibraryItems(library.id, user, include, limit)
-    return {
-      libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONMinified()
-        if (li.rssFeed) {
-          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-        }
-        if (li.mediaItemShare) {
-          oldLibraryItem.mediaItemShare = li.mediaItemShare
-        }
-        return oldLibraryItem
-      }),
-      count
+    try {
+      const { libraryItems, count } = await libraryItemsBookFilters.getDiscoverLibraryItems(library.id, user, include, limit)
+      return {
+        libraryItems: libraryItems.map((li) => {
+          const oldLibraryItem = li.toOldJSONMinified()
+          if (li.rssFeed) {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+          }
+          if (li.mediaItemShare) {
+            oldLibraryItem.mediaItemShare = li.mediaItemShare
+          }
+          return oldLibraryItem
+        }),
+        count
+      }
+    } catch (error) {
+      Logger.error(`[LibraryFilters] Failed to load discover shelf for library "${library.id}"`, error)
+      return { libraryItems: [], count: 0 }
     }
   },
 
