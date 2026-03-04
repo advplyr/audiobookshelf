@@ -1179,12 +1179,21 @@ module.exports = {
       })
     }
 
-    // Search series
+    // Search series by name or Audible ASIN
     const matchName = textSearchQuery.matchExpression('name')
     const allSeries = await Database.seriesModel.findAll({
       where: {
         [Sequelize.Op.and]: [
-          Sequelize.literal(matchName),
+          {
+            [Sequelize.Op.or]: [
+              Sequelize.literal(matchName),
+              {
+                audibleSeriesAsin: {
+                  [Sequelize.Op.substring]: query
+                }
+              }
+            ]
+          },
           {
             libraryId: library.id
           }
