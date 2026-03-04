@@ -295,19 +295,18 @@ module.exports.writeFFMetadataFile = writeFFMetadataFile
  * @returns {Promise<void>} A promise that resolves if the operation is successful, rejects otherwise.
  */
 async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, progressCB = null, ffmpeg = Ffmpeg(), copyFunc = copyToExisting) {
-  const isMp4 = mimeType === 'audio/mp4'
-  const isMp3 = mimeType === 'audio/mpeg'
-
   const audioFileDir = Path.dirname(audioFilePath)
   const audioFileExt = Path.extname(audioFilePath)
   const audioFileBaseName = Path.basename(audioFilePath, audioFileExt)
   const tempFilePath = filePathToPOSIX(Path.join(audioFileDir, `${audioFileBaseName}.tmp${audioFileExt}`))
 
+  const isMp4 = mimeType === 'audio/mp4' || audioFileExt.toLowerCase() === '.m4b'
+  const isMp3 = mimeType === 'audio/mpeg'
+
   return new Promise((resolve, reject) => {
     ffmpeg.input(audioFilePath).input(metadataFilePath).outputOptions([
       '-map 0:a', // map audio stream from input file
-      '-map_metadata 1', // map metadata tags from metadata file first
-      '-map_metadata 0', // add additional metadata tags from input file
+      '-map_metadata 1', // map metadata tags from metadata file (contains all desired metadata)
       '-map_chapters 1', // map chapters from metadata file
       '-c copy' // copy streams
     ])
@@ -318,7 +317,8 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
 
     if (isMp4) {
       ffmpeg.outputOptions([
-        '-f mp4' // force output format to mp4
+        '-f mp4', // force output format to mp4
+        '-movflags use_metadata_tags' // preserve custom tags like AUDIBLE_ASIN
       ])
     } else if (isMp3) {
       ffmpeg.outputOptions([
@@ -393,6 +393,34 @@ function escapeFFMetadataValue(value) {
 }
 
 /**
+ * Computes the ALBUMSORT tag for proper series ordering.
+ * Format:
+ *   - No series: "Title" or "Title - Subtitle"
+ *   - In series: "Series Name 001 - Title" (zero-padded sequence)
+ *
+ * @param {import('../models/LibraryItem')} libraryItem
+ * @returns {string}
+ */
+function computeAlbumSort(libraryItem) {
+  const title = libraryItem.media.title || ''
+  const subtitle = libraryItem.media.subtitle
+  const series = libraryItem.media.series?.[0]
+
+  if (series?.name) {
+    // In series: "Series Name 001 - Title"
+    const sequence = series.bookSeries?.sequence || ''
+    const paddedSequence = sequence ? String(sequence).padStart(3, '0') : ''
+    return `${series.name} ${paddedSequence} - ${title}`.trim()
+  }
+
+  // Not in series: "Title" or "Title - Subtitle"
+  if (subtitle) {
+    return `${title} - ${subtitle}`
+  }
+  return title
+}
+
+/**
  * Retrieves the FFmpeg metadata object for a given library item.
  *
  * @param {import('../models/LibraryItem')} libraryItem - The library item containing the media metadata.
@@ -400,21 +428,53 @@ function escapeFFMetadataValue(value) {
  * @returns {Object} - The FFmpeg metadata object.
  */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
+  // Determine abridged/unabridged format string
+  let format = null
+  if (libraryItem.media.abridged === true) {
+    format = 'abridged'
+  } else if (libraryItem.media.abridged === false) {
+    format = 'unabridged'
+  }
+
+  // Get first series for series tags (multiple series not widely supported)
+  const primarySeries = libraryItem.media.series?.[0]
+  const seriesName = primarySeries?.name
+  const seriesSequence = primarySeries?.bookSeries?.sequence
+
   const ffmetadata = {
     title: libraryItem.media.title,
     artist: libraryItem.media.authorName,
     album_artist: libraryItem.media.authorName,
     album: (libraryItem.media.title || '') + (libraryItem.media.subtitle ? `: ${libraryItem.media.subtitle}` : ''),
     TIT3: libraryItem.media.subtitle, // mp3 only
+    subtitle: libraryItem.media.subtitle, // m4b/mp4
     genre: libraryItem.media.genres?.join('; '),
     date: libraryItem.media.publishedYear,
+    RELEASETIME: libraryItem.media.publishedDate, // Full release date YYYY-MM-DD
     comment: libraryItem.media.description,
     description: libraryItem.media.description,
     composer: (libraryItem.media.narrators || []).join(', '),
     copyright: libraryItem.media.publisher,
     publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
+    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; '),
+    asin: libraryItem.media.asin, // Lowercase for Libation compatibility
+    AUDIBLE_ASIN: libraryItem.media.asin, // Uppercase for Libation compatibility
+    ISBN: libraryItem.media.isbn,
+    LANGUAGE: libraryItem.media.language,
+    EXPLICIT: libraryItem.media.explicit ? '1' : null,
+    ITUNESADVISORY: libraryItem.media.explicit ? '1' : '2', // 1 = explicit, 2 = clean
+    FORMAT: format,
+    // Series tags (Mp3tag standard)
+    SERIES: seriesName,
+    'SERIES-PART': seriesSequence,
+    PART: seriesSequence, // Libation uses PART
+    // M4B-specific series tags
+    MOVEMENTNAME: seriesName,
+    MOVEMENT: seriesSequence,
+    SHOWMOVEMENT: seriesName ? '1' : null,
+    // Album sort for proper series ordering
+    ALBUMSORT: computeAlbumSort(libraryItem)
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
