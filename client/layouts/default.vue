@@ -143,6 +143,18 @@ export default {
     authFailed(payload) {
       console.error('[SOCKET] auth failed', payload.message)
       this.isSocketAuthenticated = false
+
+      // Retry authentication after a short delay (e.g., token might not be loaded yet)
+      // This handles race conditions where socket connects before token is available
+      setTimeout(() => {
+        if (!this.isSocketAuthenticated && this.socket?.connected) {
+          const token = this.$store.getters['user/getToken']
+          if (token) {
+            console.log('[SOCKET] Retrying authentication after auth failure')
+            this.socket.emit('auth', token)
+          }
+        }
+      }, 500)
     },
     init(payload) {
       console.log('Init Payload', payload)
