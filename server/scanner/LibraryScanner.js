@@ -14,6 +14,7 @@ const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
+const { isPostgres, jsonArrayExpand } = require('../utils/sqlDialectHelpers')
 
 class LibraryScanner {
   constructor() {
@@ -674,12 +675,16 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
+  const inodeMatchQuery = isPostgres(Database.sequelize)
+    ? `(SELECT count(*) FROM ${jsonArrayExpand('libraryFiles', Database.sequelize, { textValues: false })} WHERE json_each.value #>> '{ino}' = :inode)`
+    : `(SELECT count(*) FROM ${jsonArrayExpand('libraryFiles', Database.sequelize, { textValues: false })} WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)`
+
   const existingLibraryItem = await Database.libraryItemModel.findOneExpanded(
     [
       {
         libraryId: libraryId
       },
-      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+      sequelize.where(sequelize.literal(inodeMatchQuery), {
         [sequelize.Op.gt]: 0
       })
     ],

@@ -2,6 +2,7 @@ const Sequelize = require('sequelize')
 const Logger = require('../../Logger')
 const Database = require('../../Database')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+const { booleanLiteral, jsonArrayContainsAny, jsonArrayContainsValue, noCaseSortExpression } = require('../sqlDialectHelpers')
 
 module.exports = {
   decode(text) {
@@ -60,7 +61,7 @@ module.exports = {
     // TODO: Simplify and break-out
     let attrQuery = null
     if (['genres', 'tags', 'narrators'].includes(filterGroup)) {
-      attrQuery = `SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (SELECT count(*) FROM json_each(b.${filterGroup}) WHERE json_valid(b.${filterGroup}) AND json_each.value = :filterValue) > 0`
+      attrQuery = `SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id AND ${jsonArrayContainsValue(`b.${filterGroup}`, 'filterValue', Database.sequelize)} > 0`
       userPermissionBookWhere.replacements.filterValue = filterValue
     } else if (filterGroup === 'authors') {
       attrQuery = 'SELECT count(*) FROM books b, bookSeries bs, bookAuthors ba WHERE bs.seriesId = series.id AND bs.bookId = b.id AND ba.bookId = b.id AND ba.authorId = :filterValue'
@@ -73,18 +74,18 @@ module.exports = {
       userPermissionBookWhere.replacements.filterValue = filterValue
     } else if (filterGroup === 'progress') {
       if (filterValue === 'not-finished') {
-        attrQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = 0)'
+        attrQuery = `SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = ${booleanLiteral(false, Database.sequelize)})`
         userPermissionBookWhere.replacements.userId = user.id
       } else if (filterValue === 'finished') {
-        const progQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = 0)'
+        const progQuery = `SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = ${booleanLiteral(false, Database.sequelize)})`
         seriesWhere.push(Sequelize.where(Sequelize.literal(`(${progQuery})`), 0))
         userPermissionBookWhere.replacements.userId = user.id
       } else if (filterValue === 'not-started') {
-        const progQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished = 1 OR mp.currentTime > 0)'
+        const progQuery = `SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished = ${booleanLiteral(true, Database.sequelize)} OR mp.currentTime > 0)`
         seriesWhere.push(Sequelize.where(Sequelize.literal(`(${progQuery})`), 0))
         userPermissionBookWhere.replacements.userId = user.id
       } else if (filterValue === 'in-progress') {
-        attrQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.currentTime > 0 OR mp.ebookProgress > 0) AND mp.isFinished = 0'
+        attrQuery = `SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.currentTime > 0 OR mp.ebookProgress > 0) AND mp.isFinished = ${booleanLiteral(false, Database.sequelize)}`
         userPermissionBookWhere.replacements.userId = user.id
       }
     }
@@ -95,13 +96,13 @@ module.exports = {
       if (!attrQuery) attrQuery = 'SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id'
 
       if (!user.canAccessExplicitContent) {
-        attrQuery += ' AND b.explicit = 0'
+        attrQuery += ` AND b.explicit = ${booleanLiteral(false, Database.sequelize)}`
       }
       if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
-          attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
+          attrQuery += ` AND ${jsonArrayContainsAny('b.tags', 'userTagsSelected', Database.sequelize)} = 0`
         } else {
-          attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) > 0'
+          attrQuery += ` AND ${jsonArrayContainsAny('b.tags', 'userTagsSelected', Database.sequelize)} > 0`
         }
       }
     }
@@ -128,9 +129,9 @@ module.exports = {
       order.push(['createdAt', dir])
     } else if (sortBy === 'name') {
       if (global.ServerSettings.sortingIgnorePrefix) {
-        order.push([Sequelize.literal('nameIgnorePrefix COLLATE NOCASE'), dir])
+        order.push([Sequelize.literal(noCaseSortExpression('nameIgnorePrefix', Database.sequelize)), dir])
       } else {
-        order.push([Sequelize.literal('`series`.`name` COLLATE NOCASE'), dir])
+        order.push([Sequelize.literal(noCaseSortExpression('series.name', Database.sequelize)), dir])
       }
     } else if (sortBy === 'totalDuration') {
       seriesAttributes.include.push([Sequelize.literal('(SELECT SUM(b.duration) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND b.id = bs.bookId)'), 'totalDuration'])
