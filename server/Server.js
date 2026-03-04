@@ -387,6 +387,7 @@ class Server {
         '/library/:library/authors',
         '/library/:library/narrators',
         '/library/:library/stats',
+        '/library/:library/ratings',
         '/library/:library/series/:id?',
         '/library/:library/podcast/search',
         '/library/:library/podcast/latest',
