@@ -6,7 +6,7 @@
         <em v-if="note" class="font-normal text-xs pl-2">{{ note }}</em>
       </label>
     </slot>
-    <ui-text-input :placeholder="placeholder || label" :inputId="identifier" ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" :min="min" :show-copy="showCopy" class="w-full" :class="inputClass" :trim-whitespace="trimWhitespace" @blur="inputBlurred" />
+    <ui-text-input :placeholder="placeholder || label" :inputId="identifier" ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" :min="min" :show-copy="showCopy" :autocomplete="autocomplete" class="w-full" :class="inputClass" :trim-whitespace="trimWhitespace" @blur="inputBlurred" />
   </div>
 </template>
 
@@ -26,7 +26,8 @@ export default {
     disabled: Boolean,
     inputClass: String,
     showCopy: Boolean,
-    trimWhitespace: Boolean
+    trimWhitespace: Boolean,
+    autocomplete: String
   },
   data() {
     return {}
