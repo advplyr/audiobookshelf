@@ -31,99 +31,12 @@
         </div>
 
         <transition name="slide">
-          <div v-if="enableOpenIDAuth" class="flex flex-wrap pt-4">
-            <div class="w-full flex items-center mb-2">
-              <div class="grow">
-                <ui-text-input-with-label ref="issuerUrl" v-model="newAuthSettings.authOpenIDIssuerURL" :disabled="savingSettings" :label="'Issuer URL'" />
-              </div>
-              <div class="w-36 mx-1 mt-[1.375rem]">
-                <ui-btn class="h-[2.375rem] text-sm inline-flex items-center justify-center w-full" type="button" :padding-y="0" :padding-x="4" @click.stop="autoPopulateOIDCClick">
-                  <span class="material-symbols text-base">auto_fix_high</span>
-                  <span class="whitespace-nowrap break-keep pl-1">Auto-populate</span></ui-btn
-                >
-              </div>
-            </div>
-
-            <ui-text-input-with-label ref="authorizationUrl" v-model="newAuthSettings.authOpenIDAuthorizationURL" :disabled="savingSettings" :label="'Authorize URL'" class="mb-2" />
-
-            <ui-text-input-with-label ref="tokenUrl" v-model="newAuthSettings.authOpenIDTokenURL" :disabled="savingSettings" :label="'Token URL'" class="mb-2" />
-
-            <ui-text-input-with-label ref="userInfoUrl" v-model="newAuthSettings.authOpenIDUserInfoURL" :disabled="savingSettings" :label="'Userinfo URL'" class="mb-2" />
-
-            <ui-text-input-with-label ref="jwksUrl" v-model="newAuthSettings.authOpenIDJwksURL" :disabled="savingSettings" :label="'JWKS URL'" class="mb-2" />
-
-            <ui-text-input-with-label ref="logoutUrl" v-model="newAuthSettings.authOpenIDLogoutURL" :disabled="savingSettings" :label="'Logout URL'" class="mb-2" />
-
-            <ui-text-input-with-label ref="openidClientId" v-model="newAuthSettings.authOpenIDClientID" :disabled="savingSettings" :label="'Client ID'" class="mb-2" />
-
-            <ui-text-input-with-label ref="openidClientSecret" v-model="newAuthSettings.authOpenIDClientSecret" :disabled="savingSettings" :label="'Client Secret'" class="mb-2" />
-
-            <ui-dropdown v-if="openIdSigningAlgorithmsSupportedByIssuer.length" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :items="openIdSigningAlgorithmsSupportedByIssuer" :label="'Signing Algorithm'" :disabled="savingSettings" class="mb-2" />
-            <ui-text-input-with-label v-else ref="openidTokenSigningAlgorithm" v-model="newAuthSettings.authOpenIDTokenSigningAlgorithm" :disabled="savingSettings" :label="'Signing Algorithm'" class="mb-2" />
-
-            <ui-multi-select ref="redirectUris" v-model="newAuthSettings.authOpenIDMobileRedirectURIs" :items="newAuthSettings.authOpenIDMobileRedirectURIs" :label="$strings.LabelMobileRedirectURIs" class="mb-2" :menuDisabled="true" :disabled="savingSettings" />
-            <p class="sm:pl-4 text-sm text-gray-300 mb-2" v-html="$strings.LabelMobileRedirectURIsDescription" />
-
-            <div class="flex sm:items-center flex-col sm:flex-row pt-1 mb-2">
-              <div class="w-44">
-                <ui-dropdown v-model="newAuthSettings.authOpenIDSubfolderForRedirectURLs" small :items="subfolderOptions" :label="$strings.LabelWebRedirectURLsSubfolder" :disabled="savingSettings" />
-              </div>
-              <div class="mt-2 sm:mt-5">
-                <p class="sm:pl-4 text-sm text-gray-300">{{ $strings.LabelWebRedirectURLsDescription }}</p>
-                <p class="sm:pl-4 text-sm text-gray-300 mb-2">
-                  <code>{{ webCallbackURL }}</code>
-                  <br />
-                  <code>{{ mobileAppCallbackURL }}</code>
-                </p>
-              </div>
-            </div>
-
-            <ui-text-input-with-label ref="buttonTextInput" v-model="newAuthSettings.authOpenIDButtonText" :disabled="savingSettings" :label="$strings.LabelButtonText" class="mb-2" />
-
-            <div class="flex sm:items-center flex-col sm:flex-row pt-1 mb-2">
-              <div class="w-44">
-                <ui-dropdown v-model="newAuthSettings.authOpenIDMatchExistingBy" small :items="matchingExistingOptions" :label="$strings.LabelMatchExistingUsersBy" :disabled="savingSettings" />
-              </div>
-              <p class="sm:pl-4 text-sm text-gray-300 mt-2 sm:mt-5">{{ $strings.LabelMatchExistingUsersByDescription }}</p>
-            </div>
-
-            <div class="flex items-center py-4 px-1 w-full">
-              <ui-toggle-switch labeledBy="auto-redirect-toggle" v-model="newAuthSettings.authOpenIDAutoLaunch" :disabled="savingSettings" />
-              <p id="auto-redirect-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoLaunch }}</p>
-              <p class="pl-4 text-sm text-gray-300" v-html="$strings.LabelAutoLaunchDescription" />
-            </div>
-
-            <div class="flex items-center py-4 px-1 w-full">
-              <ui-toggle-switch labeledBy="auto-register-toggle" v-model="newAuthSettings.authOpenIDAutoRegister" :disabled="savingSettings" />
-              <p id="auto-register-toggle" class="pl-4 whitespace-nowrap">{{ $strings.LabelAutoRegister }}</p>
-              <p class="pl-4 text-sm text-gray-300">{{ $strings.LabelAutoRegisterDescription }}</p>
-            </div>
-
-            <p class="pt-6 mb-4 px-1">{{ $strings.LabelOpenIDClaims }}</p>
-
-            <div class="flex flex-col sm:flex-row mb-4">
-              <div class="w-44 min-w-44">
-                <ui-text-input-with-label ref="openidGroupClaim" v-model="newAuthSettings.authOpenIDGroupClaim" :disabled="savingSettings" :placeholder="'groups'" :label="'Group Claim'" />
-              </div>
-              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupClaimDescription"></p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row mb-4">
-              <div class="w-44 min-w-44">
-                <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
-              </div>
-              <div class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
-                <p v-html="$strings.LabelOpenIDAdvancedPermsClaimDescription"></p>
-                <pre class="text-pre-wrap mt-2"
-                  >{{ newAuthSettings.authOpenIDSamplePermissions }}
-                </pre>
-              </div>
-            </div>
+          <div v-if="enableOpenIDAuth" class="pt-4">
+            <app-oidc-settings :schema="openIDSchema" :groups="openIDGroups" :values="openIDValues" :schema-overrides="openIDSchemaOverrides" :disabled="savingSettings" :loading-actions="discovering ? ['discover'] : []" @update="onOidcSettingChange" @action="onOidcAction" />
           </div>
         </transition>
       </div>
-      <div class="w-full flex items-center justify-between p-4">
-        <p v-if="enableOpenIDAuth" class="text-sm text-warning">{{ $strings.MessageAuthenticationOIDCChangesRestart }}</p>
+      <div class="w-full flex items-center justify-end p-4">
         <ui-btn color="bg-success" :padding-x="8" small class="text-base" :loading="savingSettings" @click="saveSettings">{{ $strings.ButtonSave }}</ui-btn>
       </div>
     </app-settings-content>
@@ -156,171 +69,74 @@ export default {
       enableOpenIDAuth: false,
       showCustomLoginMessage: false,
       savingSettings: false,
-      openIdSigningAlgorithmsSupportedByIssuer: [],
-      newAuthSettings: {}
+      discovering: false,
+      openIDSchemaOverrides: {},
+      newAuthSettings: {},
+      openIDValues: {}
     }
   },
   computed: {
     authMethods() {
       return this.authSettings.authActiveAuthMethods || []
     },
-    matchingExistingOptions() {
-      return [
-        {
-          text: 'Do not match',
-          value: null
-        },
-        {
-          text: 'Match by email',
-          value: 'email'
-        },
-        {
-          text: 'Match by username',
-          value: 'username'
-        }
-      ]
+    openIDSchema() {
+      return this.authSettings.openIDSettings?.schema || []
     },
-    subfolderOptions() {
-      const options = [
-        {
-          text: 'None',
-          value: ''
-        }
-      ]
-      if (this.$config.routerBasePath) {
-        options.push({
-          text: this.$config.routerBasePath,
-          value: this.$config.routerBasePath
-        })
-      }
-      return options
-    },
-    webCallbackURL() {
-      return `https://<your.server.com>${this.newAuthSettings.authOpenIDSubfolderForRedirectURLs ? this.newAuthSettings.authOpenIDSubfolderForRedirectURLs : ''}/auth/openid/callback`
-    },
-    mobileAppCallbackURL() {
-      return `https://<your.server.com>${this.newAuthSettings.authOpenIDSubfolderForRedirectURLs ? this.newAuthSettings.authOpenIDSubfolderForRedirectURLs : ''}/auth/openid/mobile-redirect`
+    openIDGroups() {
+      return this.authSettings.openIDSettings?.groups || []
     }
   },
   methods: {
-    autoPopulateOIDCClick() {
-      if (!this.newAuthSettings.authOpenIDIssuerURL) {
+    onOidcSettingChange({ key, value }) {
+      this.$set(this.openIDValues, key, value)
+    },
+    onOidcAction(action) {
+      if (action === 'discover') {
+        this.discoverOIDC()
+      }
+    },
+    async discoverOIDC() {
+      let issuerUrl = this.openIDValues.authOpenIDIssuerURL
+      if (!issuerUrl) {
         this.$toast.error('Issuer URL required')
         return
       }
+
       // Remove trailing slash
-      let issuerUrl = this.newAuthSettings.authOpenIDIssuerURL
       if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
 
       // If the full config path is on the issuer url then remove it
       if (issuerUrl.endsWith('/.well-known/openid-configuration')) {
         issuerUrl = issuerUrl.replace('/.well-known/openid-configuration', '')
-        this.newAuthSettings.authOpenIDIssuerURL = this.newAuthSettings.authOpenIDIssuerURL.replace('/.well-known/openid-configuration', '')
+        this.$set(this.openIDValues, 'authOpenIDIssuerURL', issuerUrl)
       }
 
-      const setSupportedSigningAlgorithms = (algorithms) => {
-        if (!algorithms?.length || !Array.isArray(algorithms)) {
-          console.warn('Invalid id_token_signing_alg_values_supported from openid-configuration', algorithms)
-          this.openIdSigningAlgorithmsSupportedByIssuer = []
-          return
-        }
-        this.openIdSigningAlgorithmsSupportedByIssuer = algorithms
+      this.discovering = true
+      try {
+        const data = await this.$axios.$post('/api/auth-settings/openid/discover', { issuerUrl })
 
-        // If a signing algorithm is already selected, then keep it, when it is still supported.
-        // But if it is not supported, then select one of the supported ones.
-        let currentAlgorithm = this.newAuthSettings.authOpenIDTokenSigningAlgorithm
-        if (!algorithms.includes(currentAlgorithm)) {
-          this.newAuthSettings.authOpenIDTokenSigningAlgorithm = algorithms[0]
-        }
-      }
-
-      this.$axios
-        .$get(`/auth/openid/config?issuer=${issuerUrl}`)
-        .then((data) => {
-          if (data.issuer) this.newAuthSettings.authOpenIDIssuerURL = data.issuer
-          if (data.authorization_endpoint) this.newAuthSettings.authOpenIDAuthorizationURL = data.authorization_endpoint
-          if (data.token_endpoint) this.newAuthSettings.authOpenIDTokenURL = data.token_endpoint
-          if (data.userinfo_endpoint) this.newAuthSettings.authOpenIDUserInfoURL = data.userinfo_endpoint
-          if (data.end_session_endpoint) this.newAuthSettings.authOpenIDLogoutURL = data.end_session_endpoint
-          if (data.jwks_uri) this.newAuthSettings.authOpenIDJwksURL = data.jwks_uri
-          if (data.id_token_signing_alg_values_supported) setSupportedSigningAlgorithms(data.id_token_signing_alg_values_supported)
-        })
-        .catch((error) => {
-          console.error('Failed to receive data', error)
-          const errorMsg = error.response?.data || 'Unknown error'
-          this.$toast.error(errorMsg)
-        })
-    },
-    validateOpenID() {
-      let isValid = true
-      if (!this.newAuthSettings.authOpenIDIssuerURL) {
-        this.$toast.error('Issuer URL required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDAuthorizationURL) {
-        this.$toast.error('Authorize URL required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDTokenURL) {
-        this.$toast.error('Token URL required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDUserInfoURL) {
-        this.$toast.error('Userinfo URL required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDJwksURL) {
-        this.$toast.error('JWKS URL required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDClientID) {
-        this.$toast.error('Client ID required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDClientSecret) {
-        this.$toast.error('Client Secret required')
-        isValid = false
-      }
-      if (!this.newAuthSettings.authOpenIDTokenSigningAlgorithm) {
-        this.$toast.error('Signing Algorithm required')
-        isValid = false
-      }
-
-      function isValidRedirectURI(uri) {
-        // Check for somestring://someother/string
-        const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
-        return pattern.test(uri)
-      }
-
-      const uris = this.newAuthSettings.authOpenIDMobileRedirectURIs
-      if (uris.includes('*') && uris.length > 1) {
-        this.$toast.error('Mobile Redirect URIs: Asterisk (*) must be the only entry if used')
-        isValid = false
-      } else {
-        uris.forEach((uri) => {
-          if (uri !== '*' && !isValidRedirectURI(uri)) {
-            this.$toast.error(`Mobile Redirect URIs: Invalid URI ${uri}`)
-            isValid = false
+        // Apply discovered values
+        if (data.values) {
+          for (const [key, value] of Object.entries(data.values)) {
+            if (value !== null && value !== undefined) {
+              this.$set(this.openIDValues, key, value)
+            }
           }
-        })
-      }
+        }
 
-      function isValidClaim(claim) {
-        if (claim === '') return true
+        // Merge schema overrides (e.g., supported signing algorithms) with existing ones
+        if (data.schemaOverrides) {
+          this.openIDSchemaOverrides = { ...this.openIDSchemaOverrides, ...data.schemaOverrides }
+        }
 
-        const pattern = new RegExp('^[a-zA-Z][a-zA-Z0-9_-]*$', 'i')
-        return pattern.test(claim)
+        this.$toast.success('Provider endpoints auto-populated')
+      } catch (error) {
+        console.error('Failed to discover OIDC config', error)
+        const errorMsg = error.response?.data?.error || error.response?.data || 'Unknown error'
+        this.$toast.error(errorMsg)
+      } finally {
+        this.discovering = false
       }
-      if (!isValidClaim(this.newAuthSettings.authOpenIDGroupClaim)) {
-        this.$toast.error('Group Claim: Invalid claim name')
-        isValid = false
-      }
-      if (!isValidClaim(this.newAuthSettings.authOpenIDAdvancedPermsClaim)) {
-        this.$toast.error('Advanced Permission Claim: Invalid claim name')
-        isValid = false
-      }
-
-      return isValid
     },
     async saveSettings() {
       if (!this.enableLocalAuth && !this.enableOpenIDAuth) {
@@ -328,42 +144,63 @@ export default {
         return
       }
 
-      if (this.enableOpenIDAuth && !this.validateOpenID()) {
-        return
-      }
-
       if (!this.showCustomLoginMessage || !this.newAuthSettings.authLoginCustomMessage?.trim()) {
         this.newAuthSettings.authLoginCustomMessage = null
       }
 
-      this.newAuthSettings.authActiveAuthMethods = []
-      if (this.enableLocalAuth) this.newAuthSettings.authActiveAuthMethods.push('local')
-      if (this.enableOpenIDAuth) this.newAuthSettings.authActiveAuthMethods.push('openid')
+      const authActiveAuthMethods = []
+      if (this.enableLocalAuth) authActiveAuthMethods.push('local')
+      if (this.enableOpenIDAuth) authActiveAuthMethods.push('openid')
+
+      const payload = {
+        authLoginCustomMessage: this.newAuthSettings.authLoginCustomMessage,
+        authActiveAuthMethods,
+        openIDSettings: this.openIDValues
+      }
 
       this.savingSettings = true
-      this.$axios
-        .$patch('/api/auth-settings', this.newAuthSettings)
-        .then((data) => {
-          this.$store.commit('setServerSettings', data.serverSettings)
-          if (data.updated) {
-            this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
-          } else {
-            this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to update server settings', error)
+      try {
+        const data = await this.$axios.$patch('/api/auth-settings', payload)
+        this.$store.commit('setServerSettings', data.serverSettings)
+        if (data.updated) {
+          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
+        } else {
+          this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+        }
+      } catch (error) {
+        console.error('Failed to update server settings', error)
+        if (error.response?.data?.details) {
+          error.response.data.details.forEach((detail) => this.$toast.error(detail))
+        } else {
           this.$toast.error(this.$strings.ToastFailedToUpdate)
-        })
-        .finally(() => {
-          this.savingSettings = false
-        })
+        }
+      } finally {
+        this.savingSettings = false
+      }
     },
     init() {
       this.newAuthSettings = {
-        ...this.authSettings,
-        authOpenIDSubfolderForRedirectURLs: this.authSettings.authOpenIDSubfolderForRedirectURLs === undefined ? this.$config.routerBasePath : this.authSettings.authOpenIDSubfolderForRedirectURLs
+        authLoginCustomMessage: this.authSettings.authLoginCustomMessage,
+        authActiveAuthMethods: this.authSettings.authActiveAuthMethods
       }
+
+      // Initialize OIDC values from server response
+      const serverValues = this.authSettings.openIDSettings?.values || {}
+      this.openIDValues = {
+        ...serverValues,
+        authOpenIDSubfolderForRedirectURLs: serverValues.authOpenIDSubfolderForRedirectURLs === undefined ? this.$config.routerBasePath : serverValues.authOpenIDSubfolderForRedirectURLs
+      }
+
+      // Build subfolder dropdown options from routerBasePath
+      const basePath = this.$config.routerBasePath
+      const subfolderOptions = [{ value: '', label: 'None' }]
+      if (basePath && basePath !== '/') {
+        subfolderOptions.push({ value: basePath, label: basePath })
+      }
+      this.openIDSchemaOverrides = {
+        authOpenIDSubfolderForRedirectURLs: { options: subfolderOptions }
+      }
+
       this.enableLocalAuth = this.authMethods.includes('local')
       this.enableOpenIDAuth = this.authMethods.includes('openid')
       this.showCustomLoginMessage = !!this.authSettings.authLoginCustomMessage
