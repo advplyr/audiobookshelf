@@ -377,26 +377,33 @@ export default {
 
       const itemsToUpload = []
 
-      // Check if path already exists before starting upload
-      //  uploading fails if path already exists
+      // Check if path already exists for each file before starting upload
+      //  uploading fails if all paths already exist
       for (const item of items) {
-        const exists = await this.$axios
-          .$post(`/api/filesystem/pathexists`, { directory: item.directory, folderPath: this.selectedFolder.fullPath })
-          .then((data) => {
-            if (data.exists) {
-              if (data.libraryItemTitle) {
-                this.$toast.error(this.$getString('ToastUploaderItemExistsInSubdirectoryError', [data.libraryItemTitle]))
-              } else {
-                this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [Path.join(this.selectedFolder.fullPath, item.directory)]))
+        let filesToUpload = []
+        for (const file of item.files) {
+          const exists = await this.$axios
+            .$post(`/api/filesystem/pathexists`, { folderPath: this.selectedFolder.fullPath, directory: item.directory, fileName: file.filepath })
+            .then((data) => {
+              if (data.exists) {
+                if (data.libraryItemTitle) {
+                  this.$toast.error(this.$getString('ToastUploaderItemExistsInSubdirectoryError', [data.libraryItemTitle]))
+                } else {
+                  this.$toast.error(this.$getString('ToastUploaderFilepathExistsError', [Path.join(this.selectedFolder.fullPath, item.directory)]))
+                }
               }
-            }
-            return data.exists
-          })
-          .catch((error) => {
-            console.error('Failed to check if filepath exists', error)
-            return false
-          })
-        if (!exists) {
+              return data.exists
+            })
+            .catch((error) => {
+              console.error('Failed to check if filepath exists', error)
+              return false
+            })
+          if (!exists) {
+            filesToUpload.push(file)
+          }
+        }
+        if (filesToUpload?.length) {
+          item.files = filesToUpload
           itemsToUpload.push(item)
         }
       }
