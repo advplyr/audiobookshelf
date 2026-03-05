@@ -61,7 +61,7 @@ describe('AuthorCard', () => {
       const height = $el.height()
       const defaultHeight = 192
       const defaultWidth = defaultHeight * 0.8
-      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(width).to?.be?.closeTo(defaultWidth, 0.01)
       expect(height).to.be.closeTo(defaultHeight, 0.01)
     })
   })
@@ -89,7 +89,7 @@ describe('AuthorCard', () => {
         const defaultWidth = defaultHeight * 0.8
         expect(height).to.be.closeTo(defaultFontSize * fontSizeMultiplier * sizeMultiplier * defaultLineHeight, 0.01)
         nameBelowHeight = height
-        expect(width).to.be.closeTo(defaultWidth - px2, 0.01)
+        expect(width).to?.be?.closeTo(defaultWidth - px2, 0.01)
       })
     cy.get('&card').should(($el) => {
       const width = $el.width()
@@ -97,7 +97,7 @@ describe('AuthorCard', () => {
       const py1 = 8
       const defaultHeight = 192
       const defaultWidth = defaultHeight * 0.8
-      expect(width).to.be.closeTo(defaultWidth, 0.01)
+      expect(width).to?.be?.closeTo(defaultWidth, 0.01)
       expect(height).to.be.closeTo(defaultHeight + nameBelowHeight + py1, 0.01)
     })
   })

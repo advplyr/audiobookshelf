@@ -31,7 +31,7 @@ class SocketAuthority {
     Object.values(this.clients)
       .filter((c) => c.user)
       .forEach((client) => {
-        if (onlineUsersMap[client.user.id]) {
+        if (onlineUsersMap[client?.user?.id]) {
           onlineUsersMap[client.user.id].connections++
         } else {
           onlineUsersMap[client.user.id] = {
