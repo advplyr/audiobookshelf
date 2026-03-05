@@ -18,6 +18,10 @@ class Session extends Model {
     this.userId
     /** @type {Date} */
     this.expiresAt
+    /** @type {string} */
+    this.lastRefreshToken
+    /** @type {Date} */
+    this.lastRefreshTokenExpiresAt
 
     // Expanded properties
 
@@ -66,6 +70,14 @@ class Session extends Model {
         expiresAt: {
           type: DataTypes.DATE,
           allowNull: false
+        },
+        lastRefreshToken: {
+          type: DataTypes.STRING,
+          allowNull: true
+        },
+        lastRefreshTokenExpiresAt: {
+          type: DataTypes.DATE,
+          allowNull: true
         }
       },
       {
