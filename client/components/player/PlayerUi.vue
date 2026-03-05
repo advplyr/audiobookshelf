@@ -230,12 +230,12 @@ export default {
     increasePlaybackRate() {
       if (this.playbackRate >= 10) return
       this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.playbackRateChanged(this.playbackRate)
     },
     decreasePlaybackRate() {
       if (this.playbackRate <= 0.5) return
       this.playbackRate = Number((this.playbackRate - this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.playbackRateChanged(this.playbackRate)
     },
     playbackRateChanged(playbackRate) {
       this.setPlaybackRate(playbackRate)
@@ -247,8 +247,8 @@ export default {
       const libraryItemId = this.$store.state.streamLibraryItem?.id
       if (!libraryItemId) return
       const episodeId = this.$store.state.streamEpisodeId
-      const progressId = episodeId ? `${libraryItemId}-${episodeId}` : libraryItemId
-      this.$axios.$patch(`/api/me/progress/${progressId}`, { playbackRate }).catch((err) => {
+      const progressPath = episodeId ? `${libraryItemId}/${episodeId}` : libraryItemId
+      this.$axios.$patch(`/api/me/progress/${progressPath}`, { playbackRate }).catch((err) => {
         console.error('Failed to save playback rate to progress', err)
       })
     },
