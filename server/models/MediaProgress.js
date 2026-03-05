@@ -165,6 +165,7 @@ class MediaProgress extends Model {
       hideFromContinueListening: !!this.hideFromContinueListening,
       ebookLocation: this.ebookLocation,
       ebookProgress: this.ebookProgress,
+      playbackRate: this.extraData?.playbackRate || null,
       lastUpdate: this.updatedAt.valueOf(),
       startedAt: this.createdAt.valueOf(),
       finishedAt: this.finishedAt?.valueOf() || null
@@ -202,6 +203,11 @@ class MediaProgress extends Model {
     } else if (!isNaN(progressPayload.progress) && progressPayload.progress !== this.progress) {
       // Old model stored progress on object
       this.extraData.progress = Math.min(1, Math.max(0, progressPayload.progress))
+      this.changed('extraData', true)
+    }
+
+    if (progressPayload.playbackRate !== undefined) {
+      this.extraData.playbackRate = progressPayload.playbackRate
       this.changed('extraData', true)
     }
 
