@@ -54,7 +54,7 @@ class LibraryScan {
     return secondsToTimestamp(this.elapsed / 1000)
   }
   get logFilename() {
-    return date.format(new Date(), 'YYYY-MM-DD') + '_' + this.id + '.txt'
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss.SSS') + '_' + this.id + '.txt'
   }
   get scanResultsString() {
     const strs = []
