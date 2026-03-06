@@ -624,7 +624,9 @@ class Database {
     if (!this.libraryFilterData[libraryId]) {
       return (await this.authorModel.getByNameAndLibrary(authorName, libraryId))?.id || null
     }
-    return this.libraryFilterData[libraryId].authors.find((au) => au.name === authorName)?.id || null
+    // Case-insensitive comparison to match getByNameAndLibrary behavior
+    const authorNameLower = authorName.toLowerCase()
+    return this.libraryFilterData[libraryId].authors.find((au) => au.name.toLowerCase() === authorNameLower)?.id || null
   }
 
   /**
@@ -638,7 +640,9 @@ class Database {
     if (!this.libraryFilterData[libraryId]) {
       return (await this.seriesModel.getByNameAndLibrary(seriesName, libraryId))?.id || null
     }
-    return this.libraryFilterData[libraryId].series.find((se) => se.name === seriesName)?.id || null
+    // Case-insensitive comparison to match getByNameAndLibrary behavior
+    const seriesNameLower = seriesName.toLowerCase()
+    return this.libraryFilterData[libraryId].series.find((se) => se.name.toLowerCase() === seriesNameLower)?.id || null
   }
 
   /**
