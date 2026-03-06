@@ -106,6 +106,15 @@ module.exports = {
       }
     }
 
+    // Don't return hidden series
+    if (user.extraData.hiddenSeries) {
+      seriesWhere.push({
+        id: {
+          [Sequelize.Op.notIn]: user.extraData.hiddenSeries
+        }
+      })
+    }
+
     if (attrQuery) {
       seriesWhere.push(
         Sequelize.where(Sequelize.literal(`(${attrQuery})`), {
