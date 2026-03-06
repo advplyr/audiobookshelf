@@ -231,6 +231,11 @@ export default class LocalAudioPlayer extends EventEmitter {
   }
 
   play() {
+    // Emit pause-chapter event to stop any other chapter playing
+    if (this.ctx.$eventBus) {
+      this.ctx.$eventBus.$emit('pause-chapter')
+    }
+
     this.playWhenReady = true
     if (this.player) this.player.play()
   }
