@@ -88,10 +88,10 @@ class SearchController {
       const provider = getQueryParamAsString(query, 'provider', 'google')
       const title = getQueryParamAsString(query, 'title', '')
       const author = getQueryParamAsString(query, 'author', '')
-      const id = getQueryParamAsString(query, 'id', '', true)
+      const id = getQueryParamAsString(query, 'id', undefined)
 
       // Fetch library item
-      const libraryItem = await SearchController.fetchLibraryItem(id)
+      const libraryItem = id ? await SearchController.fetchLibraryItem(id) : null
 
       const results = await BookFinder.search(libraryItem, provider, title, author)
       res.json(results)
@@ -187,7 +187,7 @@ class SearchController {
     try {
       const query = req.query
       const asin = getQueryParamAsString(query, 'asin', '', true)
-      const region = getQueryParamAsString(req.query.region, 'us').toLowerCase()
+      const region = getQueryParamAsString(query, 'region', 'us').toLowerCase()
 
       if (!isValidASIN(asin.toUpperCase())) throw new ValidationError('asin', 'is invalid')
 

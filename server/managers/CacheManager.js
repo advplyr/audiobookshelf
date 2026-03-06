@@ -24,10 +24,15 @@ class CacheManager {
     this.ImageCachePath = Path.join(this.CachePath, 'images')
     this.ItemCachePath = Path.join(this.CachePath, 'items')
 
-    await fs.ensureDir(this.CachePath)
-    await fs.ensureDir(this.CoverCachePath)
-    await fs.ensureDir(this.ImageCachePath)
-    await fs.ensureDir(this.ItemCachePath)
+    try {
+      await fs.ensureDir(this.CachePath)
+      await fs.ensureDir(this.CoverCachePath)
+      await fs.ensureDir(this.ImageCachePath)
+      await fs.ensureDir(this.ItemCachePath)
+    } catch (error) {
+      Logger.error(`[CacheManager] Failed to create cache directories at "${this.CachePath}": ${error.message}`)
+      throw new Error(`[CacheManager] Failed to create cache directories at "${this.CachePath}"`, { cause: error })
+    }
   }
 
   async handleCoverCache(res, libraryItemId, options = {}) {

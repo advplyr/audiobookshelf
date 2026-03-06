@@ -459,7 +459,12 @@ class PlaybackSessionManager {
    * Remove all stream folders in `/metadata/streams`
    */
   async removeOrphanStreams() {
-    await fs.ensureDir(this.StreamsPath)
+    try {
+      await fs.ensureDir(this.StreamsPath)
+    } catch (error) {
+      Logger.error(`[PlaybackSessionManager] Failed to create streams directory at "${this.StreamsPath}": ${error.message}`)
+      throw new Error(`[PlaybackSessionManager] Failed to create streams directory at "${this.StreamsPath}"`, { cause: error })
+    }
     try {
       const streamsInPath = await fs.readdir(this.StreamsPath)
       for (const streamId of streamsInPath) {

@@ -14,7 +14,7 @@
         <div :key="n" class="absolute pointer-events-none left-0 h-px bg-white/10" :style="{ top: n * lineSpacing - lineSpacing / 2 + 'px', width: '360px', marginLeft: '24px' }" />
 
         <div :key="`dot-${n}`" class="absolute z-10" :style="{ left: points[n - 1].x + 'px', bottom: points[n - 1].y + 'px' }">
-          <ui-tooltip :text="last7DaysOfListening[n - 1].minutesListening" direction="top">
+          <ui-tooltip :text="last7DaysOfListening[n - 1].minutesListening" plaintext direction="top">
             <div class="h-2 w-2 bg-yellow-400 hover:bg-yellow-300 rounded-full transform duration-150 transition-transform hover:scale-125" />
           </ui-tooltip>
         </div>
@@ -186,10 +186,16 @@ export default {
     daysInARow() {
       var count = 0
       while (true) {
-        var _date = this.$addDaysToToday(count * -1)
-        var datestr = this.$formatJsDate(_date, 'yyyy-MM-dd')
+        const _date = this.$addDaysToToday(count * -1 - 1)
+        const datestr = this.$formatJsDate(_date, 'yyyy-MM-dd')
 
         if (!this.listeningStatsDays[datestr] || this.listeningStatsDays[datestr] === 0) {
+          // don't require listening today to count towards days in a row, but do count it if already listened today
+          const today = this.$formatJsDate(new Date(), 'yyyy-MM-dd')
+          if (this.listeningStatsDays[today]) {
+            count++
+          }
+
           return count
         }
         count++

@@ -259,18 +259,17 @@ class Scanner {
             SocketAuthority.emitter('author_added', author.toOldJSON())
             // Update filter data
             Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
-
-            await Database.bookAuthorModel
-              .create({
-                authorId: author.id,
-                bookId: libraryItem.media.id
-              })
-              .then(() => {
-                Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added author "${author.name}" to "${libraryItem.media.title}"`)
-                libraryItem.media.authors.push(author)
-                hasAuthorUpdates = true
-              })
           }
+          await Database.bookAuthorModel
+            .create({
+              authorId: author.id,
+              bookId: libraryItem.media.id
+            })
+            .then(() => {
+              Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added author "${author.name}" to "${libraryItem.media.title}"`)
+              libraryItem.media.authors.push(author)
+              hasAuthorUpdates = true
+            })
         }
         const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => ma.toLowerCase() === a.name.toLowerCase()))
         if (authorsRemoved.length) {

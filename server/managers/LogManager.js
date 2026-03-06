@@ -37,8 +37,13 @@ class LogManager {
   }
 
   async ensureLogDirs() {
-    await fs.ensureDir(this.DailyLogPath)
-    await fs.ensureDir(this.ScanLogPath)
+    try {
+      await fs.ensureDir(this.DailyLogPath)
+      await fs.ensureDir(this.ScanLogPath)
+    } catch (error) {
+      console.error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}": ${error.message}`)
+      throw new Error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}"`, { cause: error })
+    }
   }
 
   /**
@@ -102,20 +107,20 @@ class LogManager {
   }
 
   /**
-   * 
-   * @param {string} filename 
+   *
+   * @param {string} filename
    */
   async removeLogFile(filename) {
     const fullPath = Path.join(this.DailyLogPath, filename)
     const exists = await fs.pathExists(fullPath)
     if (!exists) {
       Logger.error(TAG, 'Invalid log dne ' + fullPath)
-      this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf !== filename)
+      this.dailyLogFiles = this.dailyLogFiles.filter((dlf) => dlf !== filename)
     } else {
       try {
         await fs.unlink(fullPath)
         Logger.info(TAG, 'Removed daily log: ' + filename)
-        this.dailyLogFiles = this.dailyLogFiles.filter(dlf => dlf !== filename)
+        this.dailyLogFiles = this.dailyLogFiles.filter((dlf) => dlf !== filename)
       } catch (error) {
         Logger.error(TAG, 'Failed to unlink log file ' + fullPath)
       }
@@ -123,8 +128,8 @@ class LogManager {
   }
 
   /**
-   * 
-   * @param {LogObject} logObj 
+   *
+   * @param {LogObject} logObj
    */
   async logToFile(logObj) {
     // Fatal crashes get logged to a separate file
@@ -152,8 +157,8 @@ class LogManager {
   }
 
   /**
-   * 
-   * @param {LogObject} logObj 
+   *
+   * @param {LogObject} logObj
    */
   async logCrashToFile(logObj) {
     const line = JSON.stringify(logObj) + '\n'
@@ -161,14 +166,14 @@ class LogManager {
     const logsDir = Path.join(global.MetadataPath, 'logs')
     await fs.ensureDir(logsDir)
     const crashLogPath = Path.join(logsDir, 'crash_logs.txt')
-    return fs.writeFile(crashLogPath, line, { flag: "a+" }).catch((error) => {
+    return fs.writeFile(crashLogPath, line, { flag: 'a+' }).catch((error) => {
       console.log('[LogManager] Appended crash log', error)
     })
   }
 
   /**
    * Most recent 5000 daily logs
-   * 
+   *
    * @returns {string}
    */
   getMostRecentCurrentDailyLogs() {

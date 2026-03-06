@@ -428,7 +428,7 @@ class BookFinder {
       }
     }
 
-    if (books.length) {
+    if (books.length && libraryItem) {
       const isAudibleProvider = provider.startsWith('audible')
       const libraryItemDurationMinutes = libraryItem?.media?.duration ? libraryItem.media.duration / 60 : null
 
