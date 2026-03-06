@@ -82,7 +82,66 @@ class CacheManager {
     readStream.pipe(res)
   }
 
-  purgeCoverCache(libraryItemId) {
+  /**
+   * @param {import('express').Response} res
+   * @param {string} libraryItemId
+   * @param {string} episodeId
+   * @param {{ format?: string, width?: number, height?: number }} options
+   * @returns {Promise<void>}
+   */
+  async handleEpisodeCoverCache(res, libraryItemId, episodeId, options = {}) {
+    const format = options.format || 'webp'
+    const width = options.width || 400
+    const height = options.height || null
+
+    res.type(`image/${format}`)
+
+    const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_episode_${episodeId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+
+    // Cache exists
+    if (await fs.pathExists(cachePath)) {
+      if (global.XAccel) {
+        const encodedURI = encodeUriPath(global.XAccel + cachePath)
+        Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+        return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+      }
+
+      const r = fs.createReadStream(cachePath)
+      const ps = new stream.PassThrough()
+      stream.pipeline(r, ps, (err) => {
+        if (err) {
+          console.log(err)
+          return res.sendStatus(500)
+        }
+      })
+      return ps.pipe(res)
+    }
+
+    const episode = await Database.podcastEpisodeModel.findByPk(episodeId)
+    if (!episode || !episode.coverPath || !(await fs.pathExists(episode.coverPath))) {
+      // Fallback to podcast cover
+      return this.handleCoverCache(res, libraryItemId, options)
+    }
+
+    const writtenFile = await resizeImage(episode.coverPath, cachePath, width, height)
+    if (!writtenFile) return res.sendStatus(500)
+
+    if (global.XAccel) {
+      const encodedURI = encodeUriPath(global.XAccel + writtenFile)
+      Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
+      return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
+    }
+
+    var readStream = fs.createReadStream(writtenFile)
+    readStream.pipe(res)
+  }
+
+  purgeCoverCache(libraryItemId, episodeId = null) {
+    if (libraryItemId && episodeId) {
+      return this.purgeEntityCache(`${libraryItemId}_episode_${episodeId}`, this.CoverCachePath)
+    } else if (!libraryItemId && episodeId) {
+      return this.purgeEntityCache(`episode_${episodeId}`, this.CoverCachePath)
+    }
     return this.purgeEntityCache(libraryItemId, this.CoverCachePath)
   }
 

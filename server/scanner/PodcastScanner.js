@@ -115,6 +115,16 @@ class PodcastScanner {
             AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(podcastEpisode, libraryScan)
             libraryScan.addLog(LogLevel.INFO, `Podcast episode "${podcastEpisode.title}" keys changed [${podcastEpisode.changed()?.join(', ')}]`)
             await podcastEpisode.save()
+
+            // Extract embedded cover art if episode doesn't have one
+            if (!podcastEpisode.coverPath && audioFile.embeddedCoverArt) {
+              const coverPath = await CoverManager.extractEpisodeCoverFromAudio(audioFile, podcastEpisode.id)
+              if (coverPath) {
+                podcastEpisode.coverPath = coverPath
+                await podcastEpisode.save()
+                libraryScan.addLog(LogLevel.DEBUG, `Extracted embedded cover for episode "${podcastEpisode.title}"`)
+              }
+            }
           }
         }
 
@@ -153,6 +163,17 @@ class PodcastScanner {
         AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(newPodcastEpisode, libraryScan)
         libraryScan.addLog(LogLevel.INFO, `New Podcast episode "${newPodcastEpisode.title}" added`)
         await newPodcastEpisode.save()
+
+        // Extract embedded cover art from new episode
+        if (newAudioFile.embeddedCoverArt) {
+          const coverPath = await CoverManager.extractEpisodeCoverFromAudio(newAudioFile, newPodcastEpisode.id)
+          if (coverPath) {
+            newPodcastEpisode.coverPath = coverPath
+            await newPodcastEpisode.save()
+            libraryScan.addLog(LogLevel.DEBUG, `Extracted embedded cover for new episode "${newPodcastEpisode.title}"`)
+          }
+        }
+
         existingPodcastEpisodes.push(newPodcastEpisode)
       }
     }
