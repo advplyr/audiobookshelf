@@ -298,6 +298,7 @@ class ApiRouter {
     this.router.delete('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
     this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
     this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
+    this.router.post('/tools/batch/update-metadata-files', ToolsController.middleware.bind(this), ToolsController.updateAllItemMetadata.bind(this))
 
     //
     // RSS Feed Routes (Admin and up)
