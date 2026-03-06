@@ -15,7 +15,7 @@
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
             <template v-for="playlist in sortedPlaylists">
-              <modals-playlists-user-playlist-item :key="playlist.id" :playlist="playlist" class="list-complete-item" @add="addToPlaylist" @remove="removeFromPlaylist" @close="show = false" />
+              <modals-playlists-user-playlist-item :key="playlist.id" :playlist="playlist" class="list-complete-item" @add-top="addToPlaylist" @add-bottom="addToPlaylist" @remove="removeFromPlaylist" @close="show = false" />
             </template>
           </transition-group>
         </div>
@@ -151,13 +151,13 @@ export default {
           this.processing = false
         })
     },
-    addToPlaylist(playlist) {
+    addToPlaylist(playlist, addToTop) {
       if (!this.selectedPlaylistItems.length) return
       this.processing = true
 
       const itemObjects = this.selectedPlaylistItems.map((pi) => ({ libraryItemId: pi.libraryItem.id, episodeId: pi.episode ? pi.episode.id : null }))
       this.$axios
-        .$post(`/api/playlists/${playlist.id}/batch/add`, { items: itemObjects })
+        .$post(`/api/playlists/${playlist.id}/batch/add`, { items: itemObjects, addToTop: addToTop })
         .then((updatedPlaylist) => {
           console.log(`Items added to playlist`, updatedPlaylist)
           this.processing = false
