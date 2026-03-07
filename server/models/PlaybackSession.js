@@ -52,16 +52,52 @@ class PlaybackSession extends Model {
     this.createdAt
   }
 
-  static async getOldPlaybackSessions(where = null) {
+  static async getOldPlaybackSessions(where = null, options = {}) {
+    const {
+      limit = null,
+      offset = null,
+      order = [['updatedAt', 'DESC']],
+      includeDevice = true
+    } = options
+
     const playbackSessions = await this.findAll({
       where,
-      include: [
-        {
-          model: this.sequelize.models.device
-        }
-      ]
+      limit,
+      offset,
+      order,
+      include: includeDevice
+        ? [
+            {
+              model: this.sequelize.models.device
+            }
+          ]
+        : undefined
     })
     return playbackSessions.map((session) => this.getOldPlaybackSession(session))
+  }
+
+  static countWithWhere(where = null) {
+    return this.count({ where })
+  }
+
+  static getPlaybackSessionsForStats(where = null) {
+    return this.findAll({
+      where,
+      order: [['updatedAt', 'DESC']],
+      attributes: [
+        'mediaItemId',
+        'mediaItemType',
+        'displayTitle',
+        'displayAuthor',
+        'timeListening',
+        'mediaMetadata',
+        'date',
+        'dayOfWeek',
+        'updatedAt',
+        'extraData'
+      ],
+      raw: true
+    })
   }
 
   static async getById(sessionId) {

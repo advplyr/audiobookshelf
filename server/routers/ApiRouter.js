@@ -527,24 +527,57 @@ class ApiRouter {
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
+  async getUserListeningSessionsPageHelper(userId, page = 0, itemsPerPage = 10, mediaItemId = null) {
+    const where = { userId }
+    if (mediaItemId) where.mediaItemId = mediaItemId
+
+    const start = page * itemsPerPage
+    const [total, sessions] = await Promise.all([
+      Database.countPlaybackSessions(where),
+      Database.getPlaybackSessions(where, {
+        limit: itemsPerPage,
+        offset: start,
+        order: [['updatedAt', 'DESC']]
+      })
+    ])
+
+    return {
+      total,
+      numPages: Math.ceil(total / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+  }
+
   async getUserItemListeningSessionsHelper(userId, mediaItemId) {
     const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
   async getUserListeningStatsHelpers(userId) {
+    const startedAt = Date.now()
     const today = date.format(new Date(), 'YYYY-MM-DD')
 
-    const listeningSessions = await this.getUserListeningSessionsHelper(userId)
+    const [listeningSessions, recentSessions] = await Promise.all([
+      Database.getPlaybackSessionsForStats({ userId }),
+      Database.getPlaybackSessions({ userId }, {
+        limit: 10,
+        offset: 0,
+        order: [['updatedAt', 'DESC']]
+      })
+    ])
+
     const listeningStats = {
       totalTime: 0,
       items: {},
       days: {},
       dayOfWeek: {},
       today: 0,
-      recentSessions: listeningSessions.slice(0, 10)
+      recentSessions
     }
     listeningSessions.forEach((s) => {
+      const libraryItemId = s.extraData?.libraryItemId || null
       let sessionTimeListening = s.timeListening
       if (typeof sessionTimeListening == 'string') {
         sessionTimeListening = Number(sessionTimeListening)
@@ -562,19 +595,27 @@ class ApiRouter {
           listeningStats.today += sessionTimeListening
         }
       }
-      if (!listeningStats.items[s.libraryItemId]) {
-        listeningStats.items[s.libraryItemId] = {
-          id: s.libraryItemId,
+      if (!libraryItemId) {
+        listeningStats.totalTime += sessionTimeListening
+        return
+      }
+
+      if (!listeningStats.items[libraryItemId]) {
+        listeningStats.items[libraryItemId] = {
+          id: libraryItemId,
           timeListening: sessionTimeListening,
           mediaMetadata: s.mediaMetadata,
-          lastUpdate: s.lastUpdate
+          lastUpdate: s.updatedAt
         }
       } else {
-        listeningStats.items[s.libraryItemId].timeListening += sessionTimeListening
+        listeningStats.items[libraryItemId].timeListening += sessionTimeListening
       }
 
       listeningStats.totalTime += sessionTimeListening
     })
+    Logger.debug(
+      `[ApiRouter] Listening stats for user "${userId}" aggregated ${listeningSessions.length} sessions in ${Date.now() - startedAt}ms`
+    )
     return listeningStats
   }
 }
