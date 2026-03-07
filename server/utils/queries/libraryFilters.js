@@ -10,6 +10,15 @@ const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 
+async function withShelfFallback(scope, fallbackValue, action) {
+  try {
+    return await action()
+  } catch (error) {
+    Logger.error(`[LibraryFilters] Failed to load ${scope}`, error)
+    return fallbackValue
+  }
+}
+
 module.exports = {
   decode(text) {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
@@ -50,22 +59,24 @@ module.exports = {
    * @returns {Promise<{ items:import('../../models/LibraryItem')[], count:number }>}
    */
   async getMediaItemsInProgress(library, user, include, limit) {
-    if (library.isBook) {
-      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'in-progress', 'progress', true, false, include, limit, 0, true)
-      return {
-        items: libraryItems.map((li) => {
-          const oldLibraryItem = li.toOldJSONMinified()
-          if (li.rssFeed) {
-            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-          }
-          if (li.mediaItemShare) {
-            oldLibraryItem.mediaItemShare = li.mediaItemShare
-          }
-          return oldLibraryItem
-        }),
-        count
+    return withShelfFallback(`in-progress shelf for library "${library.id}"`, { items: [], count: 0 }, async () => {
+      if (library.isBook) {
+        const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'in-progress', 'progress', true, false, include, limit, 0, true)
+        return {
+          items: libraryItems.map((li) => {
+            const oldLibraryItem = li.toOldJSONMinified()
+            if (li.rssFeed) {
+              oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+            }
+            if (li.mediaItemShare) {
+              oldLibraryItem.mediaItemShare = li.mediaItemShare
+            }
+            return oldLibraryItem
+          }),
+          count
+        }
       }
-    } else {
+
       const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'progress', 'in-progress', 'progress', true, limit, 0, true)
       return {
         count,
@@ -75,7 +86,7 @@ module.exports = {
           return oldLibraryItem
         })
       }
-    }
+    })
   },
 
   /**
@@ -87,25 +98,27 @@ module.exports = {
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
   async getLibraryItemsMostRecentlyAdded(library, user, include, limit) {
-    if (library.isBook) {
-      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'recent', null, 'addedAt', true, false, include, limit, 0)
-      return {
-        libraryItems: libraryItems.map((li) => {
-          const oldLibraryItem = li.toOldJSONMinified()
-          if (li.rssFeed) {
-            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-          }
-          if (li.size && !oldLibraryItem.media.size) {
-            oldLibraryItem.media.size = li.size
-          }
-          if (li.mediaItemShare) {
-            oldLibraryItem.mediaItemShare = li.mediaItemShare
-          }
-          return oldLibraryItem
-        }),
-        count
+    return withShelfFallback(`recent shelf for library "${library.id}"`, { libraryItems: [], count: 0 }, async () => {
+      if (library.isBook) {
+        const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'recent', null, 'addedAt', true, false, include, limit, 0)
+        return {
+          libraryItems: libraryItems.map((li) => {
+            const oldLibraryItem = li.toOldJSONMinified()
+            if (li.rssFeed) {
+              oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+            }
+            if (li.size && !oldLibraryItem.media.size) {
+              oldLibraryItem.media.size = li.size
+            }
+            if (li.mediaItemShare) {
+              oldLibraryItem.mediaItemShare = li.mediaItemShare
+            }
+            return oldLibraryItem
+          }),
+          count
+        }
       }
-    } else {
+
       const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredLibraryItems(library.id, user, 'recent', null, 'addedAt', true, include, limit, 0)
       return {
         libraryItems: libraryItems.map((li) => {
@@ -123,7 +136,7 @@ module.exports = {
         }),
         count
       }
-    }
+    })
   },
 
   /**
@@ -135,23 +148,25 @@ module.exports = {
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
   async getLibraryItemsContinueSeries(library, user, include, limit) {
-    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library, user, include, limit, 0)
-    return {
-      libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONMinified()
-        if (li.rssFeed) {
-          oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-        }
-        if (li.series) {
-          oldLibraryItem.media.metadata.series = li.series
-        }
-        if (li.mediaItemShare) {
-          oldLibraryItem.mediaItemShare = li.mediaItemShare
-        }
-        return oldLibraryItem
-      }),
-      count
-    }
+    return withShelfFallback(`continue-series shelf for library "${library.id}"`, { libraryItems: [], count: 0 }, async () => {
+      const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library, user, include, limit, 0)
+      return {
+        libraryItems: libraryItems.map((li) => {
+          const oldLibraryItem = li.toOldJSONMinified()
+          if (li.rssFeed) {
+            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+          }
+          if (li.series) {
+            oldLibraryItem.media.metadata.series = li.series
+          }
+          if (li.mediaItemShare) {
+            oldLibraryItem.mediaItemShare = li.mediaItemShare
+          }
+          return oldLibraryItem
+        }),
+        count
+      }
+    })
   },
 
   /**
@@ -164,22 +179,24 @@ module.exports = {
    * @returns {Promise<{ items:oldLibraryItem[], count:number }>}
    */
   async getMediaFinished(library, user, include, limit) {
-    if (library.isBook) {
-      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'finished', 'progress', true, false, include, limit, 0)
-      return {
-        items: libraryItems.map((li) => {
-          const oldLibraryItem = li.toOldJSONMinified()
-          if (li.rssFeed) {
-            oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
-          }
-          if (li.mediaItemShare) {
-            oldLibraryItem.mediaItemShare = li.mediaItemShare
-          }
-          return oldLibraryItem
-        }),
-        count
+    return withShelfFallback(`finished shelf for library "${library.id}"`, { items: [], count: 0 }, async () => {
+      if (library.isBook) {
+        const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, user, 'progress', 'finished', 'progress', true, false, include, limit, 0)
+        return {
+          items: libraryItems.map((li) => {
+            const oldLibraryItem = li.toOldJSONMinified()
+            if (li.rssFeed) {
+              oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
+            }
+            if (li.mediaItemShare) {
+              oldLibraryItem.mediaItemShare = li.mediaItemShare
+            }
+            return oldLibraryItem
+          }),
+          count
+        }
       }
-    } else {
+
       const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'progress', 'finished', 'progress', true, limit, 0)
       return {
         count,
@@ -189,7 +206,7 @@ module.exports = {
           return oldLibraryItem
         })
       }
-    }
+    })
   },
 
   /**
@@ -203,23 +220,24 @@ module.exports = {
   async getSeriesMostRecentlyAdded(library, user, include, limit) {
     if (!library.isBook) return { series: [], count: 0 }
 
-    const seriesIncludes = []
-    if (include.includes('rssfeed')) {
-      seriesIncludes.push({
-        model: Database.feedModel
-      })
-    }
-
-    const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
-
-    const seriesWhere = [
-      {
-        libraryId: library.id,
-        createdAt: {
-          [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
-        }
+    return withShelfFallback(`recent-series shelf for library "${library.id}"`, { series: [], count: 0 }, async () => {
+      const seriesIncludes = []
+      if (include.includes('rssfeed')) {
+        seriesIncludes.push({
+          model: Database.feedModel
+        })
       }
-    ]
+
+      const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
+
+      const seriesWhere = [
+        {
+          libraryId: library.id,
+          createdAt: {
+            [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
+          }
+        }
+      ]
 
     // Handle library setting to hide single book series
     // TODO: Merge with existing query
@@ -252,29 +270,29 @@ module.exports = {
       )
     }
 
-    const { rows: series, count } = await Database.seriesModel.findAndCountAll({
-      where: seriesWhere,
-      limit,
-      offset: 0,
-      distinct: true,
-      subQuery: false,
-      replacements: userPermissionBookWhere.replacements,
-      include: [
-        {
-          model: Database.bookSeriesModel,
-          include: {
-            model: Database.bookModel,
-            where: userPermissionBookWhere.bookWhere,
+      const { rows: series, count } = await Database.seriesModel.findAndCountAll({
+        where: seriesWhere,
+        limit,
+        offset: 0,
+        distinct: true,
+        subQuery: false,
+        replacements: userPermissionBookWhere.replacements,
+        include: [
+          {
+            model: Database.bookSeriesModel,
             include: {
-              model: Database.libraryItemModel
-            }
+              model: Database.bookModel,
+              where: userPermissionBookWhere.bookWhere,
+              include: {
+                model: Database.libraryItemModel
+              }
+            },
+            separate: true
           },
-          separate: true
-        },
-        ...seriesIncludes
-      ],
-      order: [['createdAt', 'DESC']]
-    })
+          ...seriesIncludes
+        ],
+        order: [['createdAt', 'DESC']]
+      })
 
     const allOldSeries = []
     for (const s of series) {
@@ -312,10 +330,11 @@ module.exports = {
       allOldSeries.push(oldSeries)
     }
 
-    return {
-      series: allOldSeries,
-      count
-    }
+      return {
+        series: allOldSeries,
+        count
+      }
+    })
   },
 
   /**
@@ -330,37 +349,39 @@ module.exports = {
   async getNewestAuthors(library, user, limit) {
     if (library.mediaType !== 'book') return { authors: [], count: 0 }
 
-    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
+    return withShelfFallback(`newest-authors shelf for library "${library.id}"`, { authors: [], count: 0 }, async () => {
+      const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
 
-    const { rows: authors, count } = await Database.authorModel.findAndCountAll({
-      where: {
-        libraryId: library.id,
-        createdAt: {
-          [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
-        }
-      },
-      replacements,
-      include: {
-        model: Database.bookModel,
-        attributes: ['id', 'tags', 'explicit'],
-        where: bookWhere,
-        required: true, // Must belong to a book
-        through: {
-          attributes: []
-        }
-      },
-      limit,
-      distinct: true,
-      order: [['createdAt', 'DESC']]
+      const { rows: authors, count } = await Database.authorModel.findAndCountAll({
+        where: {
+          libraryId: library.id,
+          createdAt: {
+            [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
+          }
+        },
+        replacements,
+        include: {
+          model: Database.bookModel,
+          attributes: ['id', 'tags', 'explicit'],
+          where: bookWhere,
+          required: true, // Must belong to a book
+          through: {
+            attributes: []
+          }
+        },
+        limit,
+        distinct: true,
+        order: [['createdAt', 'DESC']]
+      })
+
+      return {
+        authors: authors.map((au) => {
+          const numBooks = au.books.length || 0
+          return au.toOldJSONExpanded(numBooks)
+        }),
+        count
+      }
     })
-
-    return {
-      authors: authors.map((au) => {
-        const numBooks = au.books.length || 0
-        return au.toOldJSONExpanded(numBooks)
-      }),
-      count
-    }
   },
 
   /**
@@ -374,7 +395,7 @@ module.exports = {
   async getLibraryItemsToDiscover(library, user, include, limit) {
     if (library.mediaType !== 'book') return { libraryItems: [], count: 0 }
 
-    try {
+    return withShelfFallback(`discover shelf for library "${library.id}"`, { libraryItems: [], count: 0 }, async () => {
       const { libraryItems, count } = await libraryItemsBookFilters.getDiscoverLibraryItems(library.id, user, include, limit)
       return {
         libraryItems: libraryItems.map((li) => {
@@ -389,10 +410,7 @@ module.exports = {
         }),
         count
       }
-    } catch (error) {
-      Logger.error(`[LibraryFilters] Failed to load discover shelf for library "${library.id}"`, error)
-      return { libraryItems: [], count: 0 }
-    }
+    })
   },
 
   /**
@@ -405,15 +423,17 @@ module.exports = {
   async getNewestPodcastEpisodes(library, user, limit) {
     if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
 
-    const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'recent', null, 'createdAt', true, limit, 0)
-    return {
-      count,
-      libraryItems: libraryItems.map((li) => {
-        const oldLibraryItem = li.toOldJSONMinified()
-        oldLibraryItem.recentEpisode = li.recentEpisode
-        return oldLibraryItem
-      })
-    }
+    return withShelfFallback(`newest-podcast-episodes shelf for library "${library.id}"`, { libraryItems: [], count: 0 }, async () => {
+      const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, user, 'recent', null, 'createdAt', true, limit, 0)
+      return {
+        count,
+        libraryItems: libraryItems.map((li) => {
+          const oldLibraryItem = li.toOldJSONMinified()
+          oldLibraryItem.recentEpisode = li.recentEpisode
+          return oldLibraryItem
+        })
+      }
+    })
   },
 
   /**
