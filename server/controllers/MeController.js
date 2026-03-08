@@ -63,12 +63,18 @@ class MeController {
    * @param {Response} res
    */
   async getItemListeningSessions(req, res) {
-    const libraryItem = await Database.libraryItemModel.findByPk(req.params.libraryItemId)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.libraryItemId)
     const episode = await Database.podcastEpisodeModel.findByPk(req.params.episodeId)
 
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
       Logger.error(`[MeController] Media item not found for library item id "${req.params.libraryItemId}"`)
       return res.sendStatus(404)
+    }
+
+    // Check if user has access to this library item
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to access listening sessions for library item "${req.params.libraryItemId}" without access`)
+      return res.sendStatus(403)
     }
 
     const mediaItemId = episode?.id || libraryItem.mediaId
@@ -125,6 +131,13 @@ class MeController {
    * @param {Response} res
    */
   async removeMediaProgress(req, res) {
+    // Verify the media progress belongs to the current user
+    const mediaProgress = req.user.mediaProgresses.find((mp) => mp.id === req.params.id)
+    if (!mediaProgress) {
+      Logger.error(`[MeController] Media progress not found or does not belong to user "${req.user.username}"`)
+      return res.sendStatus(404)
+    }
+
     await Database.mediaProgressModel.removeById(req.params.id)
     req.user.mediaProgresses = req.user.mediaProgresses.filter((mp) => mp.id !== req.params.id)
 
@@ -192,7 +205,16 @@ class MeController {
    * @param {Response} res
    */
   async createBookmark(req, res) {
-    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
+    if (!libraryItem) {
+      return res.sendStatus(404)
+    }
+
+    // Check if user has access to this library item
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to create bookmark for library item "${req.params.id}" without access`)
+      return res.sendStatus(403)
+    }
 
     const { time, title } = req.body
     if (isNullOrNaN(time)) {
@@ -216,7 +238,16 @@ class MeController {
    * @param {Response} res
    */
   async updateBookmark(req, res) {
-    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
+    if (!libraryItem) {
+      return res.sendStatus(404)
+    }
+
+    // Check if user has access to this library item
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to update bookmark for library item "${req.params.id}" without access`)
+      return res.sendStatus(403)
+    }
 
     const { time, title } = req.body
     if (isNullOrNaN(time)) {
@@ -245,7 +276,16 @@ class MeController {
    * @param {Response} res
    */
   async removeBookmark(req, res) {
-    if (!(await Database.libraryItemModel.checkExistsById(req.params.id))) return res.sendStatus(404)
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
+    if (!libraryItem) {
+      return res.sendStatus(404)
+    }
+
+    // Check if user has access to this library item
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to remove bookmark for library item "${req.params.id}" without access`)
+      return res.sendStatus(403)
+    }
 
     const time = Number(req.params.time)
     if (isNaN(time)) {
