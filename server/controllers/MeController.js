@@ -232,10 +232,14 @@ class MeController {
    */
   async getListeningStats(req, res) {
     const startedAt = Date.now()
+    const minified = req.query.minified === '1' || req.query.minified === 'true'
     Logger.debug(`[MeController] /api/me/listening-stats user="${req.user.id}" start`)
-    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
+    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id, {
+      includeItems: !minified,
+      includeRecentSessions: !minified
+    })
     Logger.debug(
-      `[MeController] /api/me/listening-stats user="${req.user.id}" totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
+      `[MeController] /api/me/listening-stats user="${req.user.id}" minified=${minified} totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
     )
     res.json(listeningStats)
   }

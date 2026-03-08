@@ -555,27 +555,32 @@ class ApiRouter {
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
-  async getUserListeningStatsHelpers(userId) {
+  async getUserListeningStatsHelpers(userId, options = {}) {
     const startedAt = Date.now()
     const today = date.format(new Date(), 'YYYY-MM-DD')
+    const includeItems = options.includeItems !== false
+    const includeRecentSessions = options.includeRecentSessions !== false
 
-    const [listeningSessions, recentSessions] = await Promise.all([
-      Database.getPlaybackSessionsForStats({ userId }),
-      Database.getPlaybackSessions({ userId }, {
-        limit: 10,
-        offset: 0,
-        order: [['updatedAt', 'DESC']]
-      })
-    ])
+    const tasks = [Database.getPlaybackSessionsForStats({ userId })]
+    if (includeRecentSessions) {
+      tasks.push(
+        Database.getPlaybackSessions({ userId }, {
+          limit: 10,
+          offset: 0,
+          order: [['updatedAt', 'DESC']]
+        })
+      )
+    }
+    const [listeningSessions, recentSessions = []] = await Promise.all(tasks)
 
     const listeningStats = {
       totalTime: 0,
-      items: {},
       days: {},
       dayOfWeek: {},
-      today: 0,
-      recentSessions
+      today: 0
     }
+    if (includeItems) listeningStats.items = {}
+    if (includeRecentSessions) listeningStats.recentSessions = recentSessions
     listeningSessions.forEach((s) => {
       const libraryItemId = s.extraData?.libraryItemId || null
       let sessionTimeListening = s.timeListening
@@ -600,21 +605,23 @@ class ApiRouter {
         return
       }
 
-      if (!listeningStats.items[libraryItemId]) {
-        listeningStats.items[libraryItemId] = {
-          id: libraryItemId,
-          timeListening: sessionTimeListening,
-          mediaMetadata: s.mediaMetadata,
-          lastUpdate: s.updatedAt
+      if (includeItems) {
+        if (!listeningStats.items[libraryItemId]) {
+          listeningStats.items[libraryItemId] = {
+            id: libraryItemId,
+            timeListening: sessionTimeListening,
+            mediaMetadata: s.mediaMetadata,
+            lastUpdate: s.updatedAt
+          }
+        } else {
+          listeningStats.items[libraryItemId].timeListening += sessionTimeListening
         }
-      } else {
-        listeningStats.items[libraryItemId].timeListening += sessionTimeListening
       }
 
       listeningStats.totalTime += sessionTimeListening
     })
     Logger.debug(
-      `[ApiRouter] Listening stats for user "${userId}" aggregated ${listeningSessions.length} sessions in ${Date.now() - startedAt}ms`
+      `[ApiRouter] Listening stats for user "${userId}" aggregated ${listeningSessions.length} sessions in ${Date.now() - startedAt}ms includeItems=${includeItems} includeRecentSessions=${includeRecentSessions}`
     )
     return listeningStats
   }

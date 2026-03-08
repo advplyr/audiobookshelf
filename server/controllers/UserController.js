@@ -472,12 +472,16 @@ class UserController {
    */
   async getListeningStats(req, res) {
     const startedAt = Date.now()
+    const minified = req.query.minified === '1' || req.query.minified === 'true'
     Logger.debug(
       `[UserController] /api/users/${req.params.id}/listening-stats reqUser="${req.user.id}" start`
     )
-    var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
+    var listeningStats = await this.getUserListeningStatsHelpers(req.params.id, {
+      includeItems: !minified,
+      includeRecentSessions: !minified
+    })
     Logger.debug(
-      `[UserController] /api/users/${req.params.id}/listening-stats reqUser="${req.user.id}" totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
+      `[UserController] /api/users/${req.params.id}/listening-stats reqUser="${req.user.id}" minified=${minified} totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
     )
     res.json(listeningStats)
   }
