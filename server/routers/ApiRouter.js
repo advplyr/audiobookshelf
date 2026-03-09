@@ -583,10 +583,10 @@ class ApiRouter {
     if (includeRecentSessions) listeningStats.recentSessions = recentSessions
     listeningSessions.forEach((s) => {
       const libraryItemId = s.extraData?.libraryItemId || null
-      let sessionTimeListening = s.timeListening
-      if (typeof sessionTimeListening == 'string') {
-        sessionTimeListening = Number(sessionTimeListening)
-      }
+      const numericListening = Number(s.timeListening)
+      const sessionTimeListening = Number.isFinite(numericListening)
+        ? numericListening
+        : 0
 
       if (s.dayOfWeek) {
         if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0

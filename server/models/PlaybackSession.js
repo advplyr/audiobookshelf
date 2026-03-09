@@ -273,18 +273,20 @@ class PlaybackSession extends Model {
       if (!Array.isArray(findResult)) findResult = [findResult]
 
       for (const instance of findResult) {
+        const values = instance?.dataValues
+
         if (instance.mediaItemType === 'book' && instance.book !== undefined) {
           instance.mediaItem = instance.book
-          instance.dataValues.mediaItem = instance.dataValues.book
+          if (values) values.mediaItem = values.book
         } else if (instance.mediaItemType === 'podcastEpisode' && instance.podcastEpisode !== undefined) {
           instance.mediaItem = instance.podcastEpisode
-          instance.dataValues.mediaItem = instance.dataValues.podcastEpisode
+          if (values) values.mediaItem = values.podcastEpisode
         }
         // To prevent mistakes:
         delete instance.book
-        delete instance.dataValues.book
+        if (values) delete values.book
         delete instance.podcastEpisode
-        delete instance.dataValues.podcastEpisode
+        if (values) delete values.podcastEpisode
       }
     })
   }
