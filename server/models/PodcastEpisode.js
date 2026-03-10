@@ -1,5 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
+const Logger = require('../Logger')
 /**
  * @typedef ChapterObject
  * @property {number} id
@@ -85,6 +86,55 @@ class PodcastEpisode extends Model {
       podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
     } else if (rssPodcastEpisode.chapters?.length) {
       podcastEpisode.chapters = rssPodcastEpisode.chapters.map((ch) => ({ ...ch }))
+    } else {
+      const timeMarkerRegex = /\b(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\b/m
+
+      Logger.debug("Podcast didn't have chapters", rssPodcastEpisode.title)
+
+      var descriptionLines = podcastEpisode.description.split('</p>')
+      for (let i = 0; i < descriptionLines.length; i++) {
+        let line = descriptionLines[i]
+        Logger.debug('Description Line:', line)
+
+        let match = timeMarkerRegex.exec(line)
+        if (match == null) continue
+
+        Logger.debug('matches:', match)
+
+        let first = match[1]
+        let second = match[2]
+        let third = match[3]
+
+        let hours = 0
+        let minutes = 0
+        let seconds = 0
+
+        // If there's three components then we can assume its hh:mm:ss
+        if (first && second && third) {
+          hours = Number(first)
+          minutes = Number(second)
+          seconds = Number(third)
+        } else if (first && second) // otherwise assume mm:ss
+        {
+          minutes = Number(first)
+          seconds = Number(second)
+        }
+
+        let startTime = seconds + minutes * 60 + hours * 60 * 60
+        let chapter = { title: `Chapter ${i}`, id: i, start: startTime }
+
+        if (podcastEpisode.chapters.length > 0) {
+          podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = startTime
+        }
+
+        podcastEpisode.chapters.push(chapter)
+
+        Logger.debug('Added chapter', chapter)
+      }
+      if (podcastEpisode.chapters.length > 0) {
+        podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = podcastEpisode.audioFile.duration
+      }
+      Logger.debug('Chapters', podcastEpisode.chapters)
     }
 
     return this.create(podcastEpisode)
