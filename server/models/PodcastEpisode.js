@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const Logger = require('../Logger')
+const { logger } = require('sequelize/lib/utils/logger')
 /**
  * @typedef ChapterObject
  * @property {number} id
@@ -87,11 +88,15 @@ class PodcastEpisode extends Model {
     } else if (rssPodcastEpisode.chapters?.length) {
       podcastEpisode.chapters = rssPodcastEpisode.chapters.map((ch) => ({ ...ch }))
     } else {
-      const timeMarkerRegex = /\b(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\b/m
+      const timeMarkerRegex = /\b(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\b/
+      const chapterTitleRegex = /\b\d{1,2}:\d{1,2}(?::\d{1,2})?\b(.+)$/
 
-      Logger.debug("Podcast didn't have chapters", rssPodcastEpisode.title)
+      Logger.debug("Podcast episode doesn't have chapters, attempting to generate them from timestamps", rssPodcastEpisode.title)
 
+      var errorMessage = null
       var descriptionLines = podcastEpisode.description.split('</p>')
+      var chaptersToPush = []
+
       for (let i = 0; i < descriptionLines.length; i++) {
         let line = descriptionLines[i]
         Logger.debug('Description Line:', line)
@@ -99,7 +104,7 @@ class PodcastEpisode extends Model {
         let match = timeMarkerRegex.exec(line)
         if (match == null) continue
 
-        Logger.debug('matches:', match)
+        Logger.debug('Matches:', match)
 
         let first = match[1]
         let second = match[2]
@@ -118,23 +123,42 @@ class PodcastEpisode extends Model {
         {
           minutes = Number(first)
           seconds = Number(second)
+        } else {
+          // Unknown timestamp state
+          errorMessage = `Unknown timestamp format in description, line ${line}`
+          break
         }
 
         let startTime = seconds + minutes * 60 + hours * 60 * 60
-        let chapter = { title: `Chapter ${i}`, id: i, start: startTime }
+        let chapterTitleMatch = chapterTitleRegex.exec(line)
+        Logger.debug('Chapter Title Matches:', chapterTitleMatch)
+
+        if (chapterTitleMatch == null && chapterTitleMatch.length >= 2) {
+          // Unknown chapter state
+          errorMessage = `Unable to get chapter title from description, line ${line}`
+          break
+        }
+
+        let chapter = { title: chapterTitleMatch[1].trim(), id: i, start: startTime }
 
         if (podcastEpisode.chapters.length > 0) {
           podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = startTime
         }
 
-        podcastEpisode.chapters.push(chapter)
+        chaptersToPush.push(chapter)
 
         Logger.debug('Added chapter', chapter)
       }
-      if (podcastEpisode.chapters.length > 0) {
-        podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = podcastEpisode.audioFile.duration
+      if (errorMessage == null) {
+        if (podcastEpisode.chapters.length > 0) {
+          podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = podcastEpisode.audioFile.duration
+        }
+
+        podcastEpisode.chapters.push(...chaptersToPush)
+        Logger.debug(`Successfully gnerated ${podcastEpisode.chapters.length} chapters`)
+      } else {
+        logger.error(`Unable generate chapters from podcast description, error '${errorMessage}`)
       }
-      Logger.debug('Chapters', podcastEpisode.chapters)
     }
 
     return this.create(podcastEpisode)
