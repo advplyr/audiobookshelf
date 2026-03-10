@@ -4,11 +4,11 @@
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <table class="tracksTable max-w-2xl mx-auto">
         <tr>
-          <th class="text-left cursor-pointer" @click="sortNarratorsBy('name')">{{ $strings.LabelName }} {{ sortingArrow('name') }}</th>
-          <th class="text-center w-24 cursor-pointer"  @click="sortNarratorsBy('numBooks')">{{ $strings.LabelBooks }} {{ sortingArrow('numBooks') }}</th>
+          <th class="text-left cursor-pointer hover:underline" @click="sortNarratorsBy('name')">{{ $strings.LabelName }}<span class="no-underline inline-block">&nbsp;{{ sortingArrow('name') }}</span></th>
+          <th class="text-center w-24 cursor-pointer hover:underline"  @click="sortNarratorsBy('numBooks')">{{ $strings.LabelBooks }}<span class="no-underline inline-block">&nbsp;{{ sortingArrow('numBooks') }}</span></th>
           <th v-if="userCanUpdate" class="w-40"></th>
         </tr>
-        <tr v-for="narrator in sortedNarrators" :key="narrator.id">
+        <tr v-for="narrator in narrators" :key="narrator.id">
           <td>
             <nuxt-link v-if="selectedNarrator?.id !== narrator.id" :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${narrator.id}`" class="text-sm md:text-base text-gray-100 hover:underline">{{ narrator.name }}</nuxt-link>
             <form v-else @submit.prevent="saveClick">
@@ -64,8 +64,8 @@ export default {
       narrators: [],
       selectedNarrator: null,
       newNarratorName: null,
-      currentSortAttribute: '',
-      currentSortOrder: 'asc'
+      sortBy: 'name',
+      sortOrder: 'asc'
     }
   },
   computed: {
@@ -77,14 +77,6 @@ export default {
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
-    },
-    sortedNarrators() {
-      return this.narrators.sort((a,b) => {
-        let modifier = this.currentSortOrder == 'asc'? 1: -1;
-        if (a[this.currentSortAttribute] < b[this.currentSortAttribute]) return -1*modifier;
-        if (a[this.currentSortAttribute] > b[this.currentSortAttribute]) return modifier;
-        return 0;
-      })
     }
   },
   methods: {
@@ -153,8 +145,12 @@ export default {
         })
     },
     async init() {
+      await this.fetchNarrators()
+    },
+    async fetchNarrators() {
+      this.loading = true
       this.narrators = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/narrators`)
+        .$get(`/api/libraries/${this.currentLibraryId}/narrators`, {params: {sortOrder: this.sortOrder, sortBy: this.sortBy}})
         .then((response) => response.narrators)
         .catch((error) => {
           console.error('Failed to load narrators', error)
@@ -162,22 +158,22 @@ export default {
         })
       this.loading = false
     },
-    sortNarratorsBy(attribute) {
-      if (this.currentSortAttribute == attribute) {
-        if (this.currentSortOrder == 'asc') {
-          this.currentSortOrder = 'desc';
+    async sortNarratorsBy(attribute) {
+      if (this.sortBy == attribute) {
+        if (this.sortOrder == 'asc') {
+          this.sortOrder = 'desc';
         } else {
-          this.currentSortOrder = 'asc';
+          this.sortOrder = 'asc';
         }
       } else {
-        this.currentSortAttribute = attribute;
-        this.currentSortOrder = 'asc'
+        this.sortBy = attribute;
+        this.sortOrder = 'asc';
       }
-
+      await this.fetchNarrators();
     },
     sortingArrow(attribute) {
-      if (this.currentSortAttribute == attribute) {
-        return this.currentSortOrder == 'asc'? '↓' : '↑';
+      if (this.sortBy == attribute) {
+        return this.sortOrder == 'asc'? '▲' : '▼';
       } else {
         return '';
       }
