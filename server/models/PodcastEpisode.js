@@ -1,7 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const Logger = require('../Logger')
-const { logger } = require('sequelize/lib/utils/logger')
 /**
  * @typedef ChapterObject
  * @property {number} id
@@ -157,7 +156,7 @@ class PodcastEpisode extends Model {
         podcastEpisode.chapters.push(...chaptersToPush)
         Logger.debug(`Successfully gnerated ${podcastEpisode.chapters.length} chapters`)
       } else {
-        logger.error(`Unable generate chapters from podcast description, error '${errorMessage}`)
+        Logger.error(`Unable generate chapters from podcast description, error '${errorMessage}`)
       }
     }
 
