@@ -141,8 +141,8 @@ class PodcastEpisode extends Model {
 
         let chapter = { title: chapterTitleMatch[1].trim(), id: i, start: startTime }
 
-        if (podcastEpisode.chapters.length > 0) {
-          podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = startTime
+        if (chaptersToPush.length > 0) {
+          chaptersToPush[chaptersToPush.length - 1].end = startTime
         }
 
         chaptersToPush.push(chapter)
@@ -150,8 +150,8 @@ class PodcastEpisode extends Model {
         Logger.debug('Added chapter', chapter)
       }
       if (errorMessage == null) {
-        if (podcastEpisode.chapters.length > 0) {
-          podcastEpisode.chapters[podcastEpisode.chapters.length - 1].end = podcastEpisode.audioFile.duration
+        if (chaptersToPush.length > 0) {
+          chaptersToPush[chaptersToPush.length - 1].end = podcastEpisode.audioFile.duration
         }
 
         podcastEpisode.chapters.push(...chaptersToPush)
