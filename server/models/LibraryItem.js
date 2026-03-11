@@ -388,6 +388,22 @@ class LibraryItem extends Model {
       }
       Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
     } else if (library.isPodcast) {
+      start = Date.now()
+      // "Continue Series" shelf for serial podcasts
+      const continueSeriesPayload = await libraryFilters.getPodcastEpisodesContinueSeries(library, user, limit)
+      if (continueSeriesPayload.libraryItems.length) {
+        shelves.push({
+          id: 'continue-series',
+          label: 'Continue Series',
+          labelStringKey: 'LabelContinueSeries',
+          type: 'episode',
+          entities: continueSeriesPayload.libraryItems,
+          total: continueSeriesPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} episodes for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
       // "Newest Episodes" shelf
       const newestEpisodesPayload = await libraryFilters.getNewestPodcastEpisodes(library, user, limit)
       if (newestEpisodesPayload.libraryItems.length) {
