@@ -2,6 +2,7 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
+const { jsonArrayContainsAny } = require('../sqlDialectHelpers')
 
 module.exports = {
   /**
@@ -12,7 +13,7 @@ module.exports = {
   async getAllLibraryItemsWithTags(tags) {
     const libraryItems = []
     const booksWithTag = await Database.bookModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
+      where: Sequelize.where(Sequelize.literal(jsonArrayContainsAny('tags', 'tags', Database.sequelize)), {
         [Sequelize.Op.gte]: 1
       }),
       replacements: {
@@ -46,7 +47,7 @@ module.exports = {
       libraryItems.push(libraryItem)
     }
     const podcastsWithTag = await Database.podcastModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
+      where: Sequelize.where(Sequelize.literal(jsonArrayContainsAny('tags', 'tags', Database.sequelize)), {
         [Sequelize.Op.gte]: 1
       }),
       replacements: {
@@ -77,7 +78,7 @@ module.exports = {
   async getAllLibraryItemsWithGenres(genres) {
     const libraryItems = []
     const booksWithGenre = await Database.bookModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
+      where: Sequelize.where(Sequelize.literal(jsonArrayContainsAny('genres', 'genres', Database.sequelize)), {
         [Sequelize.Op.gte]: 1
       }),
       replacements: {
@@ -107,7 +108,7 @@ module.exports = {
       libraryItems.push(libraryItem)
     }
     const podcastsWithGenre = await Database.podcastModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
+      where: Sequelize.where(Sequelize.literal(jsonArrayContainsAny('genres', 'genres', Database.sequelize)), {
         [Sequelize.Op.gte]: 1
       }),
       replacements: {
@@ -138,7 +139,7 @@ module.exports = {
   async getAllLibraryItemsWithNarrators(narrators) {
     const libraryItems = []
     const booksWithGenre = await Database.bookModel.findAll({
-      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(narrators) WHERE json_valid(narrators) AND json_each.value IN (:narrators))`), {
+      where: Sequelize.where(Sequelize.literal(jsonArrayContainsAny('narrators', 'narrators', Database.sequelize)), {
         [Sequelize.Op.gte]: 1
       }),
       replacements: {

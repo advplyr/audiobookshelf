@@ -19,8 +19,12 @@ async function up({ context: { queryInterface, logger } }) {
   logger.info('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique ')
 
   // Run reindex nocase to fix potential corruption issues due to the bad sqlite extension introduced in v2.12.0
-  logger.info('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues')
-  await queryInterface.sequelize.query('REINDEX NOCASE;')
+  if (queryInterface.sequelize.getDialect() === 'sqlite') {
+    logger.info('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues')
+    await queryInterface.sequelize.query('REINDEX NOCASE;')
+  } else {
+    logger.info('[2.15.0 migration] Skipping NOCASE reindex on non-sqlite dialect')
+  }
 
   // Check if the unique index already exists
   const seriesIndexes = await queryInterface.showIndex('Series')

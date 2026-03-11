@@ -75,6 +75,18 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
   })
 
   describe('up', () => {
+    it('should skip sqlite-specific migration on non-sqlite dialect', async () => {
+      sinon.stub(queryInterface.sequelize, 'getDialect').returns('postgres')
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      const podcastsTable = await queryInterface.describeTable('podcasts')
+      const mediaProgressesTable = await queryInterface.describeTable('mediaProgresses')
+      expect(podcastsTable).to.not.have.property('numEpisodes')
+      expect(mediaProgressesTable).to.not.have.property('podcastId')
+      expect(loggerInfoStub.calledWith(sinon.match('[2.19.4 migration] skipping sqlite-specific migration on non-sqlite dialect'))).to.be.true
+    })
+
     it('should add numEpisodes column to podcasts', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 

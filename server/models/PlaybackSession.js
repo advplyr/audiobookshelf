@@ -190,7 +190,7 @@ class PlaybackSession extends Model {
         currentTime: DataTypes.FLOAT,
         serverVersion: DataTypes.STRING,
         coverPath: DataTypes.STRING,
-        timeListening: DataTypes.INTEGER,
+        timeListening: DataTypes.FLOAT,
         mediaMetadata: DataTypes.JSON,
         date: DataTypes.STRING,
         dayOfWeek: DataTypes.STRING,

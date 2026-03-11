@@ -189,6 +189,52 @@ describe('MigrationManager', () => {
       expect(loggerInfoStub.calledWith(sinon.match('Restored the original database'))).to.be.true
       expect(processExitStub.calledOnce).to.be.true
     })
+
+    it('should skip sqlite backup workflow for postgres migrations', async () => {
+      // Arrange
+      migrationManager.serverVersion = '1.2.0'
+      migrationManager.databaseVersion = '1.1.0'
+      migrationManager.maxVersion = '1.1.0'
+      migrationManager.initialized = true
+      sequelizeStub.getDialect.returns('postgres')
+
+      umzugStub.migrations.resolves([{ name: 'v1.2.0-migration.js' }])
+      umzugStub.executed.resolves([{ name: 'v1.1.0-migration.js' }])
+
+      // Act
+      await migrationManager.runMigrations()
+
+      // Assert
+      expect(umzugStub.up.calledOnce).to.be.true
+      expect(fsCopyStub.called).to.be.false
+      expect(fsRemoveStub.called).to.be.false
+    })
+  })
+
+  describe('tableExists', () => {
+    it('should use queryInterface.tableExists when available', async () => {
+      const tableExistsStub = sinon.stub().resolves(true)
+      const sequelize = sinon.createStubInstance(Sequelize)
+      sequelize.getQueryInterface.returns({ tableExists: tableExistsStub })
+      const manager = new MigrationManager(sequelize, false, configPath)
+
+      const exists = await manager.tableExists('migrationsMeta')
+
+      expect(exists).to.equal(true)
+      expect(tableExistsStub.calledOnceWithExactly('migrationsMeta')).to.equal(true)
+    })
+
+    it('should fallback to showAllTables and support object table names', async () => {
+      const sequelize = sinon.createStubInstance(Sequelize)
+      sequelize.getQueryInterface.returns({
+        showAllTables: sinon.stub().resolves([{ tableName: 'migrationsMeta' }])
+      })
+      const manager = new MigrationManager(sequelize, false, configPath)
+
+      const exists = await manager.tableExists('migrationsMeta')
+
+      expect(exists).to.equal(true)
+    })
   })
 
   describe('fetchVersionsFromDatabase', () => {
@@ -279,6 +325,20 @@ describe('MigrationManager', () => {
         // Assert
         expect(error.message).to.equal('Database query failed')
       }
+    })
+
+    it('should support lowercase maxversion alias from postgres drivers', async () => {
+      const sequelize = sinon.createStubInstance(Sequelize)
+      sequelize.query.onFirstCall().resolves([{ version: '1.1.0' }])
+      sequelize.query.onSecondCall().resolves([{ maxversion: '1.2.0' }])
+
+      const manager = new MigrationManager(sequelize, false, configPath)
+      manager.checkOrCreateMigrationsMetaTable = sinon.stub().resolves()
+
+      await manager.fetchVersionsFromDatabase()
+
+      expect(manager.databaseVersion).to.equal('1.1.0')
+      expect(manager.maxVersion).to.equal('1.2.0')
     })
   })
 

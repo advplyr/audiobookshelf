@@ -1,6 +1,7 @@
 const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
+const { safeTextToDoubleExpression } = require('../utils/sqlDialectHelpers')
 
 class Series extends Model {
   constructor(values, options) {
@@ -87,6 +88,8 @@ class Series extends Model {
    * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
+    const nameIndexField = sequelize.getDialect() === 'postgres' ? 'name' : { name: 'name', collate: 'NOCASE' }
+
     super.init(
       {
         id: {
@@ -103,12 +106,7 @@ class Series extends Model {
         modelName: 'series',
         indexes: [
           {
-            fields: [
-              {
-                name: 'name',
-                collate: 'NOCASE'
-              }
-            ]
+            fields: [nameIndexField]
           },
           // {
           //   fields: [{
@@ -161,7 +159,7 @@ class Series extends Model {
           }
         }
       ],
-      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]]
+      order: [[literal(`${safeTextToDoubleExpression(this.sequelize.getDialect() === 'postgres' ? '"bookSeries"."sequence"' : '`bookSeries.sequence`', this.sequelize)} ASC NULLS LAST`)]]
     })
   }
 
