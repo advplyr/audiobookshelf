@@ -27,6 +27,8 @@ function sanitize(html) {
 module.exports.sanitize = sanitize
 
 function stripAllTags(html, shouldDecodeEntities = true) {
+  if (typeof html !== 'string') return ''
+
   const sanitizerOptions = {
     allowedTags: [],
     disallowedTagsMode: 'discard'
