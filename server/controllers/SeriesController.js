@@ -62,17 +62,37 @@ class SeriesController {
   }
 
   /**
-   * TODO: Currently unused in the client, should check for duplicate name
+   * PATCH /api/series/:id
+   * Update series metadata (name, description, audibleSeriesAsin)
+   *
+   * TODO: should check for duplicate name
    *
    * @param {SeriesControllerRequest} req
    * @param {Response} res
    */
   async update(req, res) {
-    const keysToUpdate = ['name', 'description']
+    const keysToUpdate = ['name', 'description', 'audibleSeriesAsin']
     const payload = {}
     for (const key of keysToUpdate) {
-      if (req.body[key] !== undefined && typeof req.body[key] === 'string') {
-        payload[key] = req.body[key]
+      if (req.body[key] !== undefined) {
+        const value = req.body[key]
+
+        // audibleSeriesAsin accepts null, empty string, or string
+        // Model hook will normalize (extract from URL, uppercase) and validate
+        // SAFEGUARD: null/empty values will NOT clear an existing ASIN (prevents accidental data loss)
+        if (key === 'audibleSeriesAsin') {
+          if (value === null || value === '') {
+            // Skip adding to payload if empty - existing ASIN will be preserved
+            // To explicitly clear, user must delete/recreate series or use a special endpoint
+            continue
+          } else if (typeof value === 'string') {
+            payload[key] = value // Model hook will normalize & validate
+          } else {
+            return res.status(400).send('audibleSeriesAsin must be a string or null')
+          }
+        } else if (typeof value === 'string') {
+          payload[key] = value
+        }
       }
     }
     if (!Object.keys(payload).length) {
@@ -80,7 +100,15 @@ class SeriesController {
     }
     req.series.set(payload)
     if (req.series.changed()) {
-      await req.series.save()
+      try {
+        await req.series.save()
+      } catch (error) {
+        // Handle model-level validation errors (e.g., invalid ASIN format)
+        if (error.message?.includes('ASIN') || error.message?.includes('audibleSeriesAsin')) {
+          return res.status(400).send(error.message)
+        }
+        throw error // Re-throw unexpected errors
+      }
       SocketAuthority.emitter('series_updated', req.series.toOldJSON())
     }
     res.json(req.series.toOldJSON())
