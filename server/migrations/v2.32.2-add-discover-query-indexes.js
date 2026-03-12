@@ -14,7 +14,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
 const indexes = [
   {
     table: 'mediaProgresses',
-    name: 'media_progress_user_item_finished_time',
+    name: 'media_progresses_user_item_finished_time',
     fields: ['userId', 'mediaItemId', 'isFinished', 'currentTime']
   },
   {
