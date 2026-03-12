@@ -14,6 +14,7 @@ const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
+const OidcSettingsSchema = require('../auth/OidcSettingsSchema')
 
 /**
  * @typedef RequestUserObject
@@ -625,7 +626,16 @@ class MiscController {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
       return res.sendStatus(403)
     }
-    return res.json(Database.serverSettings.authenticationSettings)
+
+    const schema = OidcSettingsSchema.getSchema()
+    const groups = OidcSettingsSchema.getGroups()
+    const values = Database.serverSettings.openIDSettingsValues
+
+    return res.json({
+      authLoginCustomMessage: Database.serverSettings.authLoginCustomMessage,
+      authActiveAuthMethods: Database.serverSettings.authActiveAuthMethods,
+      openIDSettings: { schema, groups, values }
+    })
   }
 
   /**
@@ -648,73 +658,83 @@ class MiscController {
 
     let hasUpdates = false
 
-    const currentAuthenticationSettings = Database.serverSettings.authenticationSettings
-    const originalAuthMethods = [...currentAuthenticationSettings.authActiveAuthMethods]
+    const originalAuthMethods = [...Database.serverSettings.authActiveAuthMethods]
+    const originalLoginMessage = Database.serverSettings.authLoginCustomMessage
 
-    // TODO: Better validation of auth settings once auth settings are separated from server settings
-    for (const key in currentAuthenticationSettings) {
-      if (settingsUpdate[key] === undefined) continue
+    // 1. Update static settings (authLoginCustomMessage, authActiveAuthMethods)
+    if (settingsUpdate.authLoginCustomMessage !== undefined) {
+      const newValue = settingsUpdate.authLoginCustomMessage || null
+      if (newValue !== Database.serverSettings.authLoginCustomMessage) {
+        Database.serverSettings.authLoginCustomMessage = newValue
+        hasUpdates = true
+      }
+    }
 
-      if (key === 'authActiveAuthMethods') {
-        let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
-        if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
-          updatedAuthMethods.sort()
-          currentAuthenticationSettings[key].sort()
-          if (updatedAuthMethods.join() !== currentAuthenticationSettings[key].join()) {
-            Logger.debug(`[MiscController] Updating auth settings key "authActiveAuthMethods" from "${currentAuthenticationSettings[key].join()}" to "${updatedAuthMethods.join()}"`)
-            Database.serverSettings[key] = updatedAuthMethods
-            hasUpdates = true
-          }
-        } else {
-          Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
-        }
-      } else if (key === 'authOpenIDMobileRedirectURIs') {
-        function isValidRedirectURI(uri) {
-          if (typeof uri !== 'string') return false
-          const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
-          return pattern.test(uri)
-        }
-
-        const uris = settingsUpdate[key]
-        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidRedirectURI(uri))) {
-          Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
-          continue
-        }
-
-        // Update the URIs
-        if (Database.serverSettings[key].some((uri) => !uris.includes(uri)) || uris.some((uri) => !Database.serverSettings[key].includes(uri))) {
-          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${Database.serverSettings[key]}" to "${uris}"`)
-          Database.serverSettings[key] = uris
+    if (settingsUpdate.authActiveAuthMethods !== undefined) {
+      let updatedAuthMethods = settingsUpdate.authActiveAuthMethods?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
+      if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
+        updatedAuthMethods.sort()
+        const currentSorted = [...Database.serverSettings.authActiveAuthMethods].sort()
+        if (updatedAuthMethods.join() !== currentSorted.join()) {
+          Logger.debug(`[MiscController] Updating auth settings key "authActiveAuthMethods" from "${currentSorted.join()}" to "${updatedAuthMethods.join()}"`)
+          Database.serverSettings.authActiveAuthMethods = updatedAuthMethods
           hasUpdates = true
         }
       } else {
-        const updatedValueType = typeof settingsUpdate[key]
-        if (['authOpenIDAutoLaunch', 'authOpenIDAutoRegister'].includes(key)) {
-          if (updatedValueType !== 'boolean') {
-            Logger.warn(`[MiscController] Invalid value for ${key}. Expected boolean`)
-            continue
-          }
-        } else if (settingsUpdate[key] !== null && updatedValueType !== 'string') {
-          Logger.warn(`[MiscController] Invalid value for ${key}. Expected string or null`)
-          continue
-        }
-        let updatedValue = settingsUpdate[key]
-        if (updatedValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') updatedValue = null
-        let currentValue = currentAuthenticationSettings[key]
-        if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
+        Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
+      }
+    }
 
-        if (updatedValue !== currentValue) {
-          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
-          Database.serverSettings[key] = updatedValue
+    // Reject enabling openid without valid OIDC configuration
+    if (Database.serverSettings.authActiveAuthMethods.includes('openid') && !originalAuthMethods.includes('openid')) {
+      if (!Database.serverSettings.isOpenIDAuthSettingsValid && !settingsUpdate.openIDSettings) {
+        Logger.warn(`[MiscController] Cannot enable openid auth without valid OIDC configuration`)
+        Database.serverSettings.authActiveAuthMethods = originalAuthMethods
+        return res.status(400).json({ error: 'Cannot enable OpenID auth without valid OIDC configuration. Configure OIDC settings first.' })
+      }
+    }
+
+    // 2. Update OIDC settings via schema validation
+    if (settingsUpdate.openIDSettings && isObject(settingsUpdate.openIDSettings)) {
+      const oidcValues = settingsUpdate.openIDSettings
+      const validation = OidcSettingsSchema.validateSettings(oidcValues)
+      if (!validation.valid) {
+        // Rollback any in-memory changes made before validation
+        Database.serverSettings.authActiveAuthMethods = originalAuthMethods
+        Database.serverSettings.authLoginCustomMessage = originalLoginMessage
+        return res.status(400).json({ error: 'Invalid OIDC settings', details: validation.errors })
+      }
+
+      // Apply validated OIDC settings
+      const currentValues = Database.serverSettings.openIDSettingsValues
+      for (const key of Object.keys(currentValues)) {
+        if (oidcValues[key] === undefined) continue
+
+        const newValue = oidcValues[key]
+        const currentValue = currentValues[key]
+
+        // Deep comparison for objects/arrays
+        const newStr = JSON.stringify(newValue)
+        const curStr = JSON.stringify(currentValue)
+
+        if (newStr !== curStr) {
+          Logger.debug(`[MiscController] Updating OIDC setting "${key}"`)
+          Database.serverSettings[key] = newValue
           hasUpdates = true
         }
+      }
+
+      // Live reload OIDC strategy if settings changed (only when openid was already active,
+      // since the use/unuse block below handles the case where openid is being newly enabled)
+      if (hasUpdates && Database.serverSettings.authActiveAuthMethods.includes('openid') && originalAuthMethods.includes('openid')) {
+        this.auth.oidcAuthStrategy.reload()
       }
     }
 
     if (hasUpdates) {
       await Database.updateServerSettings()
 
-      // Use/unuse auth methods
+      // Use/unuse auth methods (this calls reload() for newly enabled/disabled openid)
       Database.serverSettings.supportedAuthMethods.forEach((authMethod) => {
         if (originalAuthMethods.includes(authMethod) && !Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
           // Auth method has been removed
@@ -732,6 +752,56 @@ class MiscController {
       updated: hasUpdates,
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
+  }
+
+  /**
+   * POST: api/auth-settings/openid/discover
+   * Discover OpenID Connect configuration from an issuer URL
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async discoverOpenIDConfig(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to discover OIDC config`)
+      return res.sendStatus(403)
+    }
+
+    const { issuerUrl } = req.body
+    if (!issuerUrl) {
+      return res.status(400).json({ error: 'issuerUrl required' })
+    }
+
+    try {
+      const config = await this.auth.oidcAuthStrategy.getIssuerConfig(issuerUrl)
+      if (config.error) {
+        return res.status(config.status).json({ error: config.error })
+      }
+
+      // Map discovery to setting values
+      const values = {
+        authOpenIDIssuerURL: config.issuer,
+        authOpenIDAuthorizationURL: config.authorization_endpoint,
+        authOpenIDTokenURL: config.token_endpoint,
+        authOpenIDUserInfoURL: config.userinfo_endpoint,
+        authOpenIDJwksURL: config.jwks_uri,
+        authOpenIDLogoutURL: config.end_session_endpoint || null,
+        authOpenIDTokenSigningAlgorithm: config.id_token_signing_alg_values_supported?.[0] || 'RS256'
+      }
+
+      const schemaOverrides = {}
+      if (config.id_token_signing_alg_values_supported?.length) {
+        schemaOverrides.authOpenIDTokenSigningAlgorithm = {
+          type: 'select',
+          options: config.id_token_signing_alg_values_supported.map((alg) => ({ value: alg, label: alg }))
+        }
+      }
+
+      res.json({ values, schemaOverrides })
+    } catch (error) {
+      Logger.error(`[MiscController] Error discovering OIDC config: ${error.message}`)
+      return res.status(500).json({ error: 'Failed to discover OIDC configuration' })
+    }
   }
 
   /**
