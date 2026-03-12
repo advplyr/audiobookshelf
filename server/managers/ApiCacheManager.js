@@ -5,6 +5,9 @@ const Database = require('../Database')
 class ApiCacheManager {
   defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: (item) => item.body.length + JSON.stringify(item.headers).length }
   defaultTtlOptions = { ttl: 30 * 60 * 1000 }
+  highChurnModels = new Set(['session', 'mediaProgress', 'playbackSession', 'device'])
+  modelsInvalidatingPersonalized = new Set(['mediaProgress'])
+  modelsInvalidatingMe = new Set(['session', 'mediaProgress', 'playbackSession', 'device'])
 
   constructor(cache = new LRUCache(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
     this.cache = cache
@@ -16,8 +19,44 @@ class ApiCacheManager {
     hooks.forEach((hook) => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
   }
 
+  getModelName(model) {
+    if (typeof model?.name === 'string') return model.name
+    if (typeof model?.model?.name === 'string') return model.model.name
+    if (typeof model?.constructor?.name === 'string' && model.constructor.name !== 'Object') return model.constructor.name
+    return 'unknown'
+  }
+
+  clearByUrlPattern(urlPattern) {
+    let removed = 0
+    for (const key of this.cache.keys()) {
+      try {
+        const parsed = JSON.parse(key)
+        if (typeof parsed?.url === 'string' && urlPattern.test(parsed.url)) {
+          if (this.cache.delete(key)) removed++
+        }
+      } catch {
+        if (this.cache.delete(key)) removed++
+      }
+    }
+    return removed
+  }
+
+  clearUserProgressSlices(modelName, hook) {
+    const removedPersonalized = this.modelsInvalidatingPersonalized.has(modelName) ? this.clearByUrlPattern(/^\/libraries\/[^/]+\/personalized/) : 0
+    const removedMe = this.modelsInvalidatingMe.has(modelName) ? this.clearByUrlPattern(/^\/me(\/|\?|$)/) : 0
+    Logger.debug(
+      `[ApiCacheManager] ${modelName}.${hook}: cleared user-progress cache slices (personalized=${removedPersonalized}, me=${removedMe})`
+    )
+  }
+
   clear(model, hook) {
-    Logger.debug(`[ApiCacheManager] ${model.constructor.name}.${hook}: Clearing cache`)
+    const modelName = this.getModelName(model)
+    if (this.highChurnModels.has(modelName)) {
+      this.clearUserProgressSlices(modelName, hook)
+      return
+    }
+
+    Logger.debug(`[ApiCacheManager] ${modelName}.${hook}: Clearing cache`)
     this.cache.clear()
   }
 
