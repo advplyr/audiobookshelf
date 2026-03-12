@@ -1,0 +1,16 @@
+[Unit]
+Description=Self-hosted audiobook server for managing and playing audiobooks
+Requires=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/conf.d/audiobookshelf
+WorkingDirectory=/var/lib/audiobookshelf
+ExecStart=/usr/bin/audiobookshelf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+User=audiobookshelf
+Group=audiobookshelf
+
+[Install]
+WantedBy=multi-user.target
