@@ -223,6 +223,32 @@ export default {
       }
       this.processing = false
     },
+    async attemptProxyAuth() {
+      this.error = null
+      this.processing = true
+
+      try {
+        const authRes = await this.$axios.$post('/auth/proxy').catch((error) => {
+          console.error('Proxy auth failed', error.response)
+          if (error.response?.data?.message) {
+            this.error = error.response.data.message
+          }
+          return false
+        })
+
+        if (authRes?.error) {
+          this.error = authRes.error
+        } else if (authRes) {
+          this.setUser(authRes)
+          return
+        }
+      } catch (error) {
+        console.error('Proxy auth error', error)
+        this.error = 'Proxy authentication failed'
+      }
+
+      this.processing = false
+    },
     checkAuth() {
       const token = localStorage.getItem('token')
       if (!token) return false
@@ -307,6 +333,11 @@ export default {
         this.login_openid = true
       } else {
         this.login_openid = false
+      }
+
+      if (authMethods.includes('proxy')) {
+        // Auto-attempt proxy authentication
+        this.attemptProxyAuth()
       }
     }
   },
