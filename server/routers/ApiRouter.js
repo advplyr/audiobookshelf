@@ -35,6 +35,7 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const ReviewController = require('../controllers/ReviewController')
 
 class ApiRouter {
   constructor(Server) {
@@ -83,6 +84,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
+    this.router.get('/libraries/:id/reviews', LibraryController.middleware.bind(this), ReviewController.findAllForLibrary.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), LibraryController.getNarrators.bind(this))
     this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.updateNarrator.bind(this))
@@ -126,6 +128,11 @@ class ApiRouter {
     this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))
     this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
     this.router.patch('/items/:id/ebook/:fileid/status', LibraryItemController.middleware.bind(this), LibraryItemController.updateEbookFileStatus.bind(this))
+
+    this.router.get('/items/:id/reviews', ReviewController.middleware.bind(this), ReviewController.findAllForItem.bind(this))
+    this.router.post('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.createUpdate.bind(this))
+    this.router.delete('/items/:id/review', ReviewController.middleware.bind(this), ReviewController.delete.bind(this))
+    this.router.delete('/reviews/:id', ReviewController.deleteById.bind(this))
 
     //
     // User Routes
@@ -188,6 +195,7 @@ class ApiRouter {
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
     this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
     this.router.post('/me/ereader-devices', MeController.updateUserEReaderDevices.bind(this))
+    this.router.get('/me/reviews', ReviewController.findAllForUser.bind(this))
 
     //
     // Backup Routes
