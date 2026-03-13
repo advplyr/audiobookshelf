@@ -753,8 +753,6 @@ export default {
         } else if (audibleChapters[audibleIdx]) {
           merged.push({ ...audibleChapters[audibleIdx], id: i })
           audibleIdx++
-        } else if (this.newChapters[i]) {
-          merged.push({ ...this.newChapters[i], id: i })
         }
       }
       this.newChapters = merged
