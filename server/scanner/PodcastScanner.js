@@ -366,7 +366,7 @@ class PodcastScanner {
    * @param {PodcastEpisode[]} podcastEpisodes Not the models for new podcasts
    * @param {import('./LibraryItemScanData')} libraryItemData
    * @param {import('./LibraryScan')} libraryScan
-   * @param {string} [existingLibraryItemId]
+   * @param {string | null} [existingLibraryItemId]
    * @returns {Promise<PodcastMetadataObject>}
    */
   async getPodcastMetadataFromScanData(podcastEpisodes, libraryItemData, libraryScan, existingLibraryItemId = null) {

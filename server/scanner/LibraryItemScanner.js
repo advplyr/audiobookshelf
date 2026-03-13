@@ -23,7 +23,7 @@ class LibraryItemScanner {
    * Scan single library item
    *
    * @param {string} libraryItemId
-   * @param {{relPath:string, path:string}} [updateLibraryItemDetails] used by watcher when item folder was renamed
+   * @param {{relPath:string, path:string, isFile: boolean}} [updateLibraryItemDetails] used by watcher when item folder was renamed
    * @returns {number} ScanResult
    */
   async scanLibraryItem(libraryItemId, updateLibraryItemDetails = null) {
@@ -139,24 +139,11 @@ class LibraryItemScanner {
       const newLibraryFile = new LibraryFile()
       // fileItem.path is the relative path
       await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
+      // TODO: BUGBUG - this is pushing the object, not a JSON string of the object like elsewhere
       libraryFiles.push(newLibraryFile)
     }
 
-    const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
-    return new LibraryItemScanData({
-      libraryFolderId: folder.id,
-      libraryId: library.id,
-      mediaType: library.mediaType,
-      ino: libraryItemStats.ino,
-      mtimeMs: libraryItemStats.mtimeMs || 0,
-      ctimeMs: libraryItemStats.ctimeMs || 0,
-      birthtimeMs: libraryItemStats.birthtimeMs || 0,
-      path: libraryItemData.path,
-      relPath: libraryItemData.relPath,
-      isFile: isSingleMediaItem,
-      mediaMetadata: libraryItemData.mediaMetadata || null,
-      libraryFiles
-    })
+    return await buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles)
   }
 
   /**
@@ -201,7 +188,7 @@ class LibraryItemScanner {
    * @param {import('../models/Library')} library
    * @param {import('../models/LibraryFolder')} folder
    * @param {boolean} isSingleMediaItem
-   * @returns {Promise<LibraryItem>} ScanResult
+   * @returns {Promise<LibraryItem | null>} ScanResult
    */
   async scanPotentialNewLibraryItem(libraryItemPath, library, folder, isSingleMediaItem) {
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, isSingleMediaItem)
@@ -219,3 +206,29 @@ class LibraryItemScanner {
   }
 }
 module.exports = new LibraryItemScanner()
+
+/**
+ * @param {{ path?: any; relPath?: any; mediaMetadata?: any; }} libraryItemData
+ * @param {import("../models/LibraryFolder")} folder
+ * @param {import("../models/Library")} library
+ * @param {boolean} isSingleMediaItem
+ * @param {LibraryFile[]} libraryFiles
+ */
+async function buildLibraryItemScanData(libraryItemData, folder, library, isSingleMediaItem, libraryFiles) {
+  const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
+  return new LibraryItemScanData({
+    libraryFolderId: folder.id,
+    libraryId: library.id,
+    mediaType: library.mediaType,
+    ino: libraryItemStats.ino,
+    deviceId: libraryItemStats.dev,
+    mtimeMs: libraryItemStats.mtimeMs || 0,
+    ctimeMs: libraryItemStats.ctimeMs || 0,
+    birthtimeMs: libraryItemStats.birthtimeMs || 0,
+    path: libraryItemData.path,
+    relPath: libraryItemData.relPath,
+    isFile: isSingleMediaItem,
+    mediaMetadata: libraryItemData.mediaMetadata || null,
+    libraryFiles
+  })
+}
