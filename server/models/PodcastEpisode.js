@@ -313,7 +313,7 @@ class PodcastEpisode extends Model {
       newChapters[newChapters.length - 1].end = audioDurationSecs
     }
 
-    Logger.info(`[PodcastEpisode] Successfully gnerated ${newChapters.length} chapters`)
+    Logger.info(`[PodcastEpisode] Successfully generated ${newChapters.length} chapters`)
 
     if (newChapters.length == 1) {
       throw new Error('Only one chapter found, treating as invalid description')
