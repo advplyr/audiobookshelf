@@ -103,6 +103,8 @@ module.exports.resizeImage = resizeImage
  */
 module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
   return new Promise(async (resolve) => {
+    const FFMPEG_PROGRESS_STALL_TIMEOUT_MS = 60000
+
     // Some podcasts fail due to user agent strings
     // See: https://github.com/advplyr/audiobookshelf/issues/3246 (requires iTMS user agent)
     // See: https://github.com/advplyr/audiobookshelf/issues/4401 (requires no iTMS user agent)
@@ -190,6 +192,31 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     ffmpeg.addOutput(podcastEpisodeDownload.targetPath)
 
+    let ffmpegProgressWatchdog = null
+    let lastFfmpegProgressAt = 0
+    let killedForNoProgress = false
+
+    const clearProgressWatchdog = () => {
+      if (ffmpegProgressWatchdog) {
+        clearTimeout(ffmpegProgressWatchdog)
+        ffmpegProgressWatchdog = null
+      }
+    }
+
+    const scheduleProgressWatchdog = () => {
+      clearProgressWatchdog()
+      ffmpegProgressWatchdog = setTimeout(() => {
+        const timeSinceLastProgressMs = Date.now() - lastFfmpegProgressAt
+        if (timeSinceLastProgressMs < FFMPEG_PROGRESS_STALL_TIMEOUT_MS) {
+          return
+        }
+
+        killedForNoProgress = true
+        Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: No ffmpeg progress for ${timeSinceLastProgressMs}ms, stopping download for "${podcastEpisodeDownload.url}"`)
+        ffmpeg.kill('SIGKILL')
+      }, FFMPEG_PROGRESS_STALL_TIMEOUT_MS)
+    }
+
     const stderrLines = []
     ffmpeg.on('stderr', (stderrLine) => {
       if (typeof stderrLine === 'string') {
@@ -198,8 +225,14 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
     ffmpeg.on('start', (cmd) => {
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Cmd: ${cmd}`)
+      lastFfmpegProgressAt = Date.now()
+      scheduleProgressWatchdog()
     })
     ffmpeg.on('error', (err) => {
+      clearProgressWatchdog()
+      if (killedForNoProgress) {
+        Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Killed after stalled progress for "${podcastEpisodeDownload.url}"`)
+      }
       Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Error ${err}`)
       if (stderrLines.length) {
         Logger.error(`Full stderr dump for episode url "${podcastEpisodeDownload.url}": ${stderrLines.join('\n')}`)
@@ -209,6 +242,9 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       })
     })
     ffmpeg.on('progress', (progress) => {
+      lastFfmpegProgressAt = Date.now()
+      scheduleProgressWatchdog()
+
       let progressPercent = 0
       if (finalSizeInBytes && progress.targetSize && !isNaN(progress.targetSize)) {
         const finalSizeInKb = Math.floor(finalSizeInBytes / 1000)
@@ -217,6 +253,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Progress estimate ${progressPercent.toFixed(0)}% (${progress?.targetSize || 'N/A'} KB) for "${podcastEpisodeDownload.url}"`)
     })
     ffmpeg.on('end', () => {
+      clearProgressWatchdog()
       Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Complete`)
       resolve({
         success: true
