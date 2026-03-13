@@ -333,5 +333,89 @@ class CoverManager {
       }
     }
   }
+
+  /**
+   * @param {string} episodeId
+   * @returns {string} directory path
+   */
+  getEpisodeCoverDirectory(episodeId) {
+    return Path.posix.join(global.MetadataPath, 'episodes', episodeId)
+  }
+
+  /**
+   * @param {string} url - Image URL to download
+   * @param {string} episodeId
+   * @returns {Promise<{error:string}|{cover:string}>}
+   */
+  async saveEpisodeCoverFromUrl(url, episodeId) {
+    try {
+      const coverDirPath = this.getEpisodeCoverDirectory(episodeId)
+      await fs.ensureDir(coverDirPath)
+
+      const temppath = Path.posix.join(coverDirPath, 'cover')
+      const success = await downloadImageFile(url, temppath)
+        .then(() => true)
+        .catch((err) => {
+          Logger.error(`[CoverManager] Download episode cover failed for "${url}"`, err)
+          return false
+        })
+
+      if (!success) {
+        return {
+          error: 'Failed to download episode cover from url'
+        }
+      }
+
+      const imgtype = await this.checkFileIsValidImage(temppath, true)
+      if (imgtype.error) {
+        return imgtype
+      }
+
+      const coverFullPath = Path.posix.join(coverDirPath, `cover.${imgtype.ext}`)
+      await fs.rename(temppath, coverFullPath)
+
+      await this.removeOldCovers(coverDirPath, '.' + imgtype.ext)
+      await CacheManager.purgeCoverCache(null, episodeId)
+
+      Logger.info(`[CoverManager] Downloaded episode cover "${coverFullPath}" from url "${url}"`)
+      return {
+        cover: coverFullPath
+      }
+    } catch (error) {
+      Logger.error(`[CoverManager] Fetch episode cover from url "${url}" failed`, error)
+      return {
+        error: 'Failed to fetch episode cover from url'
+      }
+    }
+  }
+
+  /**
+   * @param {import('../models/Book').AudioFileObject} audioFile
+   * @param {string} episodeId
+   * @returns {Promise<string|null>} returns cover path or null
+   */
+  async extractEpisodeCoverFromAudio(audioFile, episodeId) {
+    if (!audioFile?.embeddedCoverArt) return null
+
+    const coverDirPath = this.getEpisodeCoverDirectory(episodeId)
+    await fs.ensureDir(coverDirPath)
+
+    const coverFilename = audioFile.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
+    const coverFilePath = Path.join(coverDirPath, coverFilename)
+
+    const coverAlreadyExists = await fs.pathExists(coverFilePath)
+    if (coverAlreadyExists) {
+      Logger.debug(`[CoverManager] Episode cover already exists at "${coverFilePath}"`)
+      return null
+    }
+
+    const success = await extractCoverArt(audioFile.metadata.path, coverFilePath)
+    if (success) {
+      await CacheManager.purgeCoverCache(null, episodeId)
+      Logger.info(`[CoverManager] Extracted episode cover from audio file to "${coverFilePath}"`)
+      return coverFilePath
+    }
+    return null
+  }
 }
 module.exports = new CoverManager()
