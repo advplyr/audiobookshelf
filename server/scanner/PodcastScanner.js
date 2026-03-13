@@ -421,6 +421,7 @@ class PodcastScanner {
     const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
 
     const jsonObject = {
+      id: libraryItem.id,
       tags: libraryItem.media.tags || [],
       title: libraryItem.media.title,
       author: libraryItem.media.author,

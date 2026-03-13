@@ -632,6 +632,7 @@ class LibraryItem extends Model {
     let jsonObject = {}
     if (this.mediaType === 'book') {
       jsonObject = {
+        id: this.id,
         tags: mediaExpanded.tags || [],
         chapters: mediaExpanded.chapters?.map((c) => ({ ...c })) || [],
         title: mediaExpanded.title,
@@ -656,6 +657,7 @@ class LibraryItem extends Model {
       }
     } else {
       jsonObject = {
+        id: this.id,
         tags: mediaExpanded.tags || [],
         title: mediaExpanded.title,
         author: mediaExpanded.author,
@@ -705,7 +707,7 @@ class LibraryItem extends Model {
           }
         }
 
-        Logger.debug(`[LibraryItem] Saved metadata for "${this.media.title}" file to "${metadataFilePath}"`)
+        Logger.debug(`[LibraryItem] Saved metadata for "${mediaExpanded.title}" file to "${metadataFilePath}"`)
 
         return metadataLibraryFile
       })
