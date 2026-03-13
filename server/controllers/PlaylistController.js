@@ -397,9 +397,10 @@ class PlaylistController {
 
     const mediaItemsToAdd = []
     const jsonExpanded = req.playlist.toOldJSONExpanded()
+    const addToTop = req.body.addToTop === true
 
     // Setup array of playlistMediaItem records to add
-    let order = req.playlist.playlistMediaItems.length + 1
+    let order = addToTop ? 0 : (req.playlist.playlistMediaItems.length + 1)
     for (const item of req.body.items) {
       const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
 
