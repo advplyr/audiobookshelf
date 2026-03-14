@@ -393,11 +393,10 @@ module.exports = {
    * @param {number} limit
    * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
-   * @param {{ cursor?: string|null, pageMode?: string, collapseseries?: boolean }} requestOptions
+   * @param {object} browseRequestOptions Reserved for future large-library browse plumbing
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false, requestOptions = {}) {
-    collapseseries = requestOptions.collapseseries ?? collapseseries
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false, browseRequestOptions = null) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false

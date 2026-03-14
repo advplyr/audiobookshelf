@@ -141,12 +141,10 @@ module.exports = {
    * @param {string[]} include
    * @param {number} limit
    * @param {number} offset
-   * @param {{ cursor?: string|null, pageMode?: string, collapseseries?: boolean }} requestOptions
+   * @param {object} browseRequestOptions Reserved for future large-library browse plumbing
    * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset, requestOptions = {}) {
-    requestOptions.cursor = requestOptions.cursor || null
-    requestOptions.pageMode = requestOptions.pageMode || 'paged'
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset, browseRequestOptions = null) {
     const includeRSSFeed = include.includes('rssfeed')
     const includeNumEpisodesIncomplete = include.includes('numepisodesincomplete')
 
