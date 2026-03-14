@@ -2,7 +2,11 @@ function getTitleCursorKey() {
   return global.ServerSettings && global.ServerSettings.sortingIgnorePrefix ? 'titleIgnorePrefix' : 'title'
 }
 
-function getKeysetCursorKeys(sortBy) {
+function getKeysetCursorKeys(sortBy, collapseseries) {
+  if (sortBy === 'media.metadata.title' && collapseseries) {
+    return []
+  }
+
   if (sortBy === 'media.metadata.title') {
     return [getTitleCursorKey(), 'id']
   }
@@ -23,27 +27,15 @@ function getKeysetCursorKeys(sortBy) {
     return ['updatedAt', 'id']
   }
 
-  if (sortBy === 'progress') {
-    return ['mediaProgresses.updatedAt', 'id']
-  }
-
-  if (sortBy === 'progress.createdAt') {
-    return ['mediaProgresses.createdAt', 'id']
-  }
-
-  if (sortBy === 'progress.finishedAt') {
-    return ['mediaProgresses.finishedAt', 'id']
-  }
-
   return []
 }
 
-function getPaginationMode(pageMode, sortBy) {
+function getPaginationMode(pageMode, sortBy, collapseseries) {
   if (pageMode !== 'endless') {
     return 'offset'
   }
 
-  return getKeysetCursorKeys(sortBy).length ? 'keyset' : 'offset'
+  return getKeysetCursorKeys(sortBy, collapseseries).length ? 'keyset' : 'offset'
 }
 
 function getFamily({ mediaType, sortBy, filterGroup, collapseseries }) {
@@ -60,7 +52,7 @@ function getFamily({ mediaType, sortBy, filterGroup, collapseseries }) {
 
 function getLibraryBrowseStrategy({ mediaType, sortBy, filterGroup, pageMode, collapseseries } = {}) {
   const normalizedSort = sortBy || 'media.metadata.title'
-  const paginationMode = getPaginationMode(pageMode, normalizedSort)
+  const paginationMode = getPaginationMode(pageMode, normalizedSort, collapseseries)
 
   if (normalizedSort === 'random') {
     return {
@@ -79,7 +71,7 @@ function getLibraryBrowseStrategy({ mediaType, sortBy, filterGroup, pageMode, co
     countMode: paginationMode === 'keyset' ? 'deferred-exact' : 'exact-on-initial-page',
     deepScrollAllowed: paginationMode === 'keyset',
     tieBreaker: 'id',
-    cursorKeys: getKeysetCursorKeys(normalizedSort)
+    cursorKeys: getKeysetCursorKeys(normalizedSort, collapseseries)
   }
 }
 

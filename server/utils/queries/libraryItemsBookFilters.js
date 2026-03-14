@@ -353,6 +353,8 @@ module.exports = {
   getOrder(sortBy, sortDesc, collapseseries) {
     const dir = sortDesc ? 'DESC' : 'ASC'
 
+    const libraryItemIdOrder = [Sequelize.literal('libraryItem.id'), dir]
+
     const getTitleOrder = () => {
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]
@@ -362,7 +364,7 @@ module.exports = {
     }
 
     if (sortBy === 'addedAt') {
-      return [[Sequelize.literal('libraryItem.createdAt'), dir]]
+      return [[Sequelize.literal('libraryItem.createdAt'), dir], libraryItemIdOrder]
     } else if (sortBy === 'size') {
       return [[Sequelize.literal('libraryItem.size'), dir]]
     } else if (sortBy === 'birthtimeMs') {
@@ -375,15 +377,15 @@ module.exports = {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       // Sort by author name last first, secondary sort by title
-      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder()]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'media.metadata.authorName') {
       // Sort by author name first last, secondary sort by title
-      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir], getTitleOrder()]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir], getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
       }
-      return [getTitleOrder()]
+      return [getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
@@ -395,6 +397,8 @@ module.exports = {
       return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
+    } else if (sortBy === 'updatedAt') {
+      return [[Sequelize.literal('libraryItem.updatedAt'), dir], libraryItemIdOrder]
     }
     return []
   },
