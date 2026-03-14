@@ -4,6 +4,24 @@ function getPhaseName(markName) {
   return String(markName || '').split(':')[0]
 }
 
+function createBrowsePhaseTiming(profile, phaseName) {
+  if (!profile || typeof profile.mark !== 'function' || !phaseName) {
+    return null
+  }
+
+  return {
+    onStart() {
+      profile.mark(`${phaseName}:start`)
+    },
+    onFinish() {
+      profile.mark(`${phaseName}:end`)
+    },
+    onError() {
+      profile.mark(`${phaseName}:end`)
+    }
+  }
+}
+
 function createBrowseRequestProfile(context = {}) {
   const now = typeof context.now === 'function' ? context.now : () => performance.now()
   const marks = []
@@ -21,11 +39,24 @@ function createBrowseRequestProfile(context = {}) {
 }
 
 function finishBrowseRequestProfile(profile, { slowMs = 1000 } = {}) {
-  const endedAt = profile.now()
+  if (!profile || typeof profile !== 'object') {
+    return {
+      route: null,
+      libraryId: null,
+      totalMs: 0,
+      phases: {},
+      isSlow: false
+    }
+  }
+
+  const now = typeof profile.now === 'function' ? profile.now : () => performance.now()
+  const startedAt = typeof profile.startedAt === 'number' ? profile.startedAt : null
+  const marks = Array.isArray(profile.marks) ? profile.marks : []
+  const endedAt = startedAt === null ? null : now()
   const phases = {}
   const openPhases = new Map()
 
-  profile.marks.forEach((mark) => {
+  marks.forEach((mark) => {
     const phaseName = getPhaseName(mark.name)
     if (!phaseName) return
 
@@ -35,23 +66,24 @@ function finishBrowseRequestProfile(profile, { slowMs = 1000 } = {}) {
     }
 
     if (String(mark.name).endsWith(':end') && openPhases.has(phaseName)) {
-      phases[phaseName] = Math.round(mark.at - openPhases.get(phaseName))
+      phases[phaseName] = (phases[phaseName] || 0) + Math.round(mark.at - openPhases.get(phaseName))
       openPhases.delete(phaseName)
     }
   })
 
-  const totalMs = Math.round(endedAt - profile.startedAt)
+  const totalMs = endedAt === null ? 0 : Math.round(endedAt - startedAt)
 
   return {
     route: profile.route || null,
     libraryId: profile.libraryId || null,
     totalMs,
     phases,
-    isSlow: totalMs >= slowMs
+    isSlow: totalMs > 0 && totalMs >= slowMs
   }
 }
 
 module.exports = {
+  createBrowsePhaseTiming,
   createBrowseRequestProfile,
   finishBrowseRequestProfile
 }
