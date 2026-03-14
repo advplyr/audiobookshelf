@@ -28,7 +28,10 @@ describe('Migration v2.32.6-large-library-browse-indexes (sqlite)', () => {
       mediaType: { type: DataTypes.STRING, allowNull: false },
       title: { type: DataTypes.TEXT, allowNull: true },
       titleIgnorePrefix: { type: DataTypes.TEXT, allowNull: true },
-      createdAt: { type: DataTypes.DATE, allowNull: true }
+      authorNamesFirstLast: { type: DataTypes.TEXT, allowNull: true },
+      authorNamesLastFirst: { type: DataTypes.TEXT, allowNull: true },
+      createdAt: { type: DataTypes.DATE, allowNull: true },
+      updatedAt: { type: DataTypes.DATE, allowNull: true }
     })
 
     await queryInterface.createTable('mediaProgresses', {
@@ -43,7 +46,7 @@ describe('Migration v2.32.6-large-library-browse-indexes (sqlite)', () => {
     await sequelize.close()
   })
 
-  it('creates browse indexes for title and progress keyset traversal', async () => {
+  it('creates browse indexes for title, author, timestamp, and progress traversal', async () => {
     await up({ context: { queryInterface, logger: Logger } })
 
     const [[{ count: titleExactIndexCount }]] = await queryInterface.sequelize.query(
@@ -77,6 +80,41 @@ describe('Migration v2.32.6-large-library-browse-indexes (sqlite)', () => {
       normalizeWhitespace('CREATE INDEX library_items_library_media_type_created_at_id ON libraryItems (libraryId, mediaType, createdAt, id)')
     )
 
+    const [[{ sql: updatedAtIndexSql }]] = await queryInterface.sequelize.query(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_media_type_updated_at_id'"
+    )
+    expect(normalizeWhitespace(updatedAtIndexSql)).to.equal(
+      normalizeWhitespace('CREATE INDEX library_items_library_media_type_updated_at_id ON libraryItems (libraryId, mediaType, updatedAt, id)')
+    )
+
+    const [[{ sql: authorIndexSql }]] = await queryInterface.sequelize.query(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_media_type_author_names_first_last_title_id'"
+    )
+    expect(normalizeWhitespace(authorIndexSql)).to.equal(
+      normalizeWhitespace('CREATE INDEX library_items_library_media_type_author_names_first_last_title_id ON libraryItems (libraryId, mediaType, authorNamesFirstLast COLLATE NOCASE, title COLLATE NOCASE, id)')
+    )
+
+    const [[{ sql: authorIgnorePrefixIndexSql }]] = await queryInterface.sequelize.query(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_media_type_author_names_first_last_title_ignore_prefix_id'"
+    )
+    expect(normalizeWhitespace(authorIgnorePrefixIndexSql)).to.equal(
+      normalizeWhitespace('CREATE INDEX library_items_library_media_type_author_names_first_last_title_ignore_prefix_id ON libraryItems (libraryId, mediaType, authorNamesFirstLast COLLATE NOCASE, titleIgnorePrefix COLLATE NOCASE, id)')
+    )
+
+    const [[{ sql: authorLfIndexSql }]] = await queryInterface.sequelize.query(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_media_type_author_names_last_first_title_id'"
+    )
+    expect(normalizeWhitespace(authorLfIndexSql)).to.equal(
+      normalizeWhitespace('CREATE INDEX library_items_library_media_type_author_names_last_first_title_id ON libraryItems (libraryId, mediaType, authorNamesLastFirst COLLATE NOCASE, title COLLATE NOCASE, id)')
+    )
+
+    const [[{ sql: authorLfIgnorePrefixIndexSql }]] = await queryInterface.sequelize.query(
+      "SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_media_type_author_names_last_first_title_ignore_prefix_id'"
+    )
+    expect(normalizeWhitespace(authorLfIgnorePrefixIndexSql)).to.equal(
+      normalizeWhitespace('CREATE INDEX library_items_library_media_type_author_names_last_first_title_ignore_prefix_id ON libraryItems (libraryId, mediaType, authorNamesLastFirst COLLATE NOCASE, titleIgnorePrefix COLLATE NOCASE, id)')
+    )
+
     const [[{ sql: progressIndexSql }]] = await queryInterface.sequelize.query(
       "SELECT sql FROM sqlite_master WHERE type='index' AND name='media_progress_user_updated_at_id'"
     )
@@ -93,6 +131,11 @@ describe('Migration v2.32.6-large-library-browse-indexes (sqlite)', () => {
       'library_items_library_media_type_title_id',
       'library_items_library_media_type_title_ignore_prefix_id',
       'library_items_library_media_type_created_at_id',
+      'library_items_library_media_type_updated_at_id',
+      'library_items_library_media_type_author_names_first_last_title_id',
+      'library_items_library_media_type_author_names_first_last_title_ignore_prefix_id',
+      'library_items_library_media_type_author_names_last_first_title_id',
+      'library_items_library_media_type_author_names_last_first_title_ignore_prefix_id',
       'media_progress_user_updated_at_id'
     ]
 
