@@ -4,6 +4,7 @@ const fs = require('../../../server/libs/fsExtra')
 const fileUtils = require('../../../server/utils/fileUtils')
 const which = require('../../../server/libs/which')
 const path = require('path')
+const Logger = require('../../../server/Logger')
 const BinaryManager = require('../../../server/managers/BinaryManager')
 const { Binary, ffbinaries } = require('../../../server/managers/BinaryManager')
 
@@ -201,6 +202,33 @@ describe('BinaryManager', () => {
       expect(isWritableStub.calledOnce).to.be.true
       expect(downloadBinaryStub.calledOnce).to.be.true
       expect(downloadBinaryStub.calledWith(destination)).to.be.true
+    })
+  })
+
+  describe('removeBinary', () => {
+    let pathExistsStub
+    let errorStub
+
+    beforeEach(() => {
+      binaryManager = new BinaryManager()
+      pathExistsStub = sinon.stub(fs, 'pathExists').rejects(new Error('remove failed'))
+      errorStub = sinon.stub(Logger, 'error')
+    })
+
+    afterEach(() => {
+      pathExistsStub.restore()
+      errorStub.restore()
+    })
+
+    it('logs the resolved binary path when removal fails', async () => {
+      const destination = '/path/to/install'
+      const binary = { fileName: 'ffmpeg' }
+
+      await binaryManager.removeBinary(destination, binary)
+
+      expect(errorStub.calledOnce).to.be.true
+      expect(errorStub.firstCall.args[0]).to.include(path.join(destination, binary.fileName))
+      expect(errorStub.firstCall.args[1]).to.be.an('error')
     })
   })
 })
