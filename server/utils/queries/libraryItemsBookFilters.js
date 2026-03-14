@@ -11,20 +11,47 @@ const { loadBrowseCount } = require('./libraryBrowseCount')
 const { encodeBrowseCursor, decodeBrowseCursor } = require('./libraryBrowseCursor')
 const countCache = new Map()
 
-function getCursorFieldPath(key) {
+function normalizeCursorValue(key, value) {
+  if (value == null) return value
+
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst'].includes(key) && typeof value === 'string') {
+    return value.toLowerCase()
+  }
+
+  return value
+}
+
+function getQuotedCursorColumn(key) {
+  const dialect = Database.getDialect()
+  const getColumnRef = (table, column) => {
+    return dialect === 'postgres'
+      ? `"${table}"."${column}"`
+      : `\`${table}\`.\`${column}\``
+  }
+
   if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst', 'createdAt', 'updatedAt'].includes(key)) {
-    return `$libraryItem.${key}$`
+    return getColumnRef('libraryItem', key)
   }
 
   if (key === 'id') {
-    return '$libraryItem.id$'
+    return getColumnRef('libraryItem', 'id')
   }
 
   if (key.startsWith('mediaProgresses.')) {
-    return `$${key}$`
+    return key.split('.').map((segment) => `"${segment}"`).join('.')
   }
 
-  return `$${key}$`
+  return key
+}
+
+function getCursorComparisonExpression(key) {
+  const quotedColumn = getQuotedCursorColumn(key)
+
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst'].includes(key)) {
+    return Sequelize.literal(dialectHelpers.getCaseInsensitiveOrder(Database.getDialect(), quotedColumn, false))
+  }
+
+  return Sequelize.literal(quotedColumn)
 }
 
 function getCursorValue(book, key) {
@@ -38,10 +65,10 @@ function getCursorValue(book, key) {
   }
 
   if (book.libraryItem && Object.prototype.hasOwnProperty.call(book.libraryItem.dataValues || {}, key)) {
-    return book.libraryItem[key]
+    return normalizeCursorValue(key, book.libraryItem[key])
   }
 
-  return book[key] ?? null
+  return normalizeCursorValue(key, book[key] ?? null)
 }
 
 function buildBookCursorClause(cursor, cursorKeys, sortDesc) {
@@ -60,17 +87,19 @@ function buildBookCursorClause(cursor, cursorKeys, sortDesc) {
 
   const comparisonOperator = sortDesc ? Sequelize.Op.lt : Sequelize.Op.gt
   const cursorConditions = decodedCursor.keys.map((key, index) => {
-    const condition = {}
+    const condition = []
 
     for (let cursorIndex = 0; cursorIndex < index; cursorIndex++) {
-      condition[getCursorFieldPath(decodedCursor.keys[cursorIndex])] = decodedCursor.values[cursorIndex]
+      condition.push(Sequelize.where(getCursorComparisonExpression(decodedCursor.keys[cursorIndex]), normalizeCursorValue(decodedCursor.keys[cursorIndex], decodedCursor.values[cursorIndex])))
     }
 
-    condition[getCursorFieldPath(key)] = {
-      [comparisonOperator]: decodedCursor.values[index]
-    }
+    condition.push(Sequelize.where(getCursorComparisonExpression(key), {
+      [comparisonOperator]: normalizeCursorValue(key, decodedCursor.values[index])
+    }))
 
-    return condition
+    return {
+      [Sequelize.Op.and]: condition
+    }
   })
 
   return {

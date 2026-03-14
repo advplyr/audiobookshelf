@@ -5,6 +5,7 @@ const sinon = require('sinon')
 const Database = require('../../../server/Database')
 const LibraryController = require('../../../server/controllers/LibraryController')
 const libraryFilters = require('../../../server/utils/queries/libraryFilters')
+const { decodeBrowseCursor } = require('../../../server/utils/queries/libraryBrowseCursor')
 const { getLibraryBrowseStrategy } = require('../../../server/utils/queries/libraryBrowseStrategy')
 const libraryItemsBookFilters = require('../../../server/utils/queries/libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
@@ -288,6 +289,37 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('id')
     expect(countStub.calledOnce).to.equal(true)
     expect(findAndCountAllStub.called).to.equal(false)
+  })
+
+  it('encodes case-insensitive title cursor values to match the executed browse order', async () => {
+    global.ServerSettings = { sortingIgnorePrefix: true }
+
+    sinon.stub(Database.bookModel, 'count').resolves(123)
+    sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 123 })
+    sinon.stub(Database.bookModel, 'findAll').resolves([
+      { id: 'book-1', title: 'Alpha', libraryItem: { id: 'item-1', titleIgnorePrefix: 'Alpha', dataValues: { titleIgnorePrefix: 'Alpha' } } },
+      { id: 'book-2', title: 'aLPHa', libraryItem: { id: 'item-2', titleIgnorePrefix: 'aLPHa', dataValues: { titleIgnorePrefix: 'aLPHa' } } },
+      { id: 'book-3', title: 'Beta', libraryItem: { id: 'item-3', titleIgnorePrefix: 'Beta', dataValues: { titleIgnorePrefix: 'Beta' } } }
+    ])
+
+    const result = await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      false,
+      [],
+      2,
+      0,
+      false,
+      { pageMode: 'endless' }
+    )
+
+    const decodedCursor = decodeBrowseCursor(result.nextCursor)
+
+    expect(decodedCursor.values).to.deep.equal(['alpha', 'item-2'])
   })
 
   it('defaults omitted sort to deterministic title ordering for endless browse requests', async () => {
