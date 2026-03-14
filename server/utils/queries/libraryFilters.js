@@ -22,7 +22,7 @@ module.exports = {
    * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
   async getFilteredLibraryItems(libraryId, user, options) {
-    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include, mediaType } = options
+    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include, mediaType, cursor, pageMode } = options
 
     let filterValue = null
     let filterGroup = null
@@ -34,9 +34,17 @@ module.exports = {
     }
 
     if (mediaType === 'book') {
-      return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset)
+      return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, false, {
+        cursor: cursor || null,
+        pageMode: pageMode || 'paged',
+        collapseseries
+      })
     } else {
-      return libraryItemsPodcastFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset)
+      return libraryItemsPodcastFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset, {
+        cursor: cursor || null,
+        pageMode: pageMode || 'paged',
+        collapseseries
+      })
     }
   },
 

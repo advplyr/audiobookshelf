@@ -612,6 +612,12 @@ class LibraryController {
       total: undefined,
       limit: req.query.limit || 0,
       page: req.query.page || 0,
+      cursor: req.query.cursor || null,
+      pageMode: req.query.pageMode || 'paged',
+      nextCursor: null,
+      paginationMode: 'offset',
+      isCountDeferred: false,
+      countMode: 'exact-on-initial-page',
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -630,9 +636,13 @@ class LibraryController {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
       payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
     } else {
-      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
+      const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
       payload.results = libraryItems
       payload.total = count
+      payload.nextCursor = nextCursor || null
+      payload.paginationMode = paginationMode || 'offset'
+      payload.countMode = countMode || 'exact-on-initial-page'
+      payload.isCountDeferred = !!isCountDeferred
     }
 
     res.json(payload)

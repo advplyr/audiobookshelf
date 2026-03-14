@@ -293,7 +293,11 @@ class LibraryItem extends Model {
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
-    const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library.id, user, options)
+    const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await libraryFilters.getFilteredLibraryItems(library.id, user, {
+      ...options,
+      cursor: options.cursor || null,
+      pageMode: options.pageMode || 'paged'
+    })
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
     return {
@@ -323,7 +327,11 @@ class LibraryItem extends Model {
 
         return oldLibraryItem
       }),
-      count
+      count,
+      nextCursor,
+      paginationMode,
+      countMode,
+      isCountDeferred
     }
   }
 
