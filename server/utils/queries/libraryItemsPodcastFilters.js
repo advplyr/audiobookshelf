@@ -212,6 +212,7 @@ module.exports = {
       mediaType: 'podcast',
       sortBy,
       filterGroup,
+      filterValue,
       pageMode: browseRequestOptions?.pageMode,
       collapseseries: browseRequestOptions?.collapseseries
     })

@@ -774,11 +774,11 @@ module.exports = {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
-      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'progress.createdAt') {
-      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'progress.finishedAt') {
-      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
     } else if (sortBy === 'updatedAt') {
@@ -1114,6 +1114,7 @@ module.exports = {
       mediaType: 'book',
       sortBy,
       filterGroup,
+      filterValue,
       pageMode: browseRequestOptions?.pageMode,
       collapseseries
     })
@@ -1311,20 +1312,60 @@ module.exports = {
       limit: Number(window.limit) || null,
       offset: Number(window.offset) || 0
     }
+    const rowsTiming = createBrowsePhaseTiming(payload?.browseProfile, 'rows')
+    const countTiming = createBrowsePhaseTiming(payload?.browseProfile, 'count')
 
-    const metaResult = await Database.sequelize.query(buildCollapsedSeriesMetaQuery(baseQuery, payload.hideSingleBookSeries), {
+    const metaResult = await runWithBrowsePhase(countTiming, async () => Database.sequelize.query(buildCollapsedSeriesMetaQuery(baseQuery, payload.hideSingleBookSeries), {
       replacements,
       type: Database.sequelize.QueryTypes.SELECT
-    })
+    }))
     const metaRows = Array.isArray(metaResult[0]) ? metaResult[0] : metaResult
     const meta = Array.isArray(metaRows) ? metaRows[0] : metaRows
     const fallbackToPlain = Number(meta?.plainRowCount || 0) === 0 && Number(meta?.collapsedRowCount || 0) === 1
 
-    const selectedRowsResult = await Database.sequelize.query(buildCollapsedSeriesRowsQuery(baseQuery, sortContext, payload.hideSingleBookSeries, fallbackToPlain), {
-      replacements,
-      type: Database.sequelize.QueryTypes.SELECT
+    const { visibleRows, hydratedBooks } = await runWithBrowsePhase(rowsTiming, async () => {
+      const selectedRowsResult = await Database.sequelize.query(buildCollapsedSeriesRowsQuery(baseQuery, sortContext, payload.hideSingleBookSeries, fallbackToPlain), {
+        replacements,
+        type: Database.sequelize.QueryTypes.SELECT
+      })
+      const selectedRows = Array.isArray(selectedRowsResult[0]) ? selectedRowsResult[0] : selectedRowsResult
+
+      const selectedPlainBookIds = selectedRows.filter((row) => row.rowType === 'plain').map((row) => row.anchorBookId)
+      const selectedSeriesIds = selectedRows.filter((row) => row.rowType === 'collapsed').map((row) => row.subseriesId)
+      if (!selectedPlainBookIds.length && !selectedSeriesIds.length) {
+        return {
+          visibleRows: selectedRows,
+          hydratedBooks: []
+        }
+      }
+
+      const hydrateWhere = []
+      if (selectedPlainBookIds.length) {
+        hydrateWhere.push({ id: selectedPlainBookIds })
+      }
+      if (selectedSeriesIds.length) {
+        hydrateWhere.push(existsLiteral(`SELECT 1 FROM "bookSeries" collapseSeries WHERE collapseSeries."bookId" = book.id AND collapseSeries."seriesId" IN (:selectedCollapsedSeriesIds)`))
+      }
+
+      const loadedBooks = await Database.bookModel.findAll({
+        ...findOptions,
+        where: [
+          userPermissionBookWhere.bookWhere,
+          {
+            [Sequelize.Op.or]: hydrateWhere
+          }
+        ],
+        replacements: {
+          ...userPermissionBookWhere.replacements,
+          selectedCollapsedSeriesIds: selectedSeriesIds
+        }
+      })
+
+      return {
+        visibleRows: selectedRows,
+        hydratedBooks: loadedBooks
+      }
     })
-    const visibleRows = Array.isArray(selectedRowsResult[0]) ? selectedRowsResult[0] : selectedRowsResult
 
     const selectedPlainBookIds = visibleRows.filter((row) => row.rowType === 'plain').map((row) => row.anchorBookId)
     const selectedSeriesIds = visibleRows.filter((row) => row.rowType === 'collapsed').map((row) => row.subseriesId)
@@ -1334,28 +1375,6 @@ module.exports = {
         count: fallbackToPlain ? Number(meta?.rawBookCount || 0) : Number(meta?.plainRowCount || 0) + Number(meta?.collapsedRowCount || 0)
       }
     }
-
-    const hydrateWhere = []
-    if (selectedPlainBookIds.length) {
-      hydrateWhere.push({ id: selectedPlainBookIds })
-    }
-    if (selectedSeriesIds.length) {
-      hydrateWhere.push(existsLiteral(`SELECT 1 FROM "bookSeries" collapseSeries WHERE collapseSeries."bookId" = book.id AND collapseSeries."seriesId" IN (:selectedCollapsedSeriesIds)`))
-    }
-
-    const hydratedBooks = await Database.bookModel.findAll({
-      ...findOptions,
-      where: [
-        userPermissionBookWhere.bookWhere,
-        {
-          [Sequelize.Op.or]: hydrateWhere
-        }
-      ],
-      replacements: {
-        ...userPermissionBookWhere.replacements,
-        selectedCollapsedSeriesIds: selectedSeriesIds
-      }
-    })
 
     const allLibraryItems = hydratedBooks
       .map((bookExpanded) => mapCollapsedSeriesBookToLibraryItem(bookExpanded))

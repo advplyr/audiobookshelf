@@ -315,6 +315,34 @@ describe('LibraryController large-library browse contract', () => {
     })
   })
 
+  it('forwards the live browse profile into collapsed-series browse requests', async () => {
+    const getCollapsedSeriesWindowStub = sinon.stub(libraryItemsBookFilters, 'getCollapsedSeriesWindow').resolves({
+      libraryItems: [],
+      count: 0
+    })
+    sinon.stub(libraryHelpers, 'toCollapsedSeriesPayload').resolves([])
+
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '20',
+        sort: 'sequence'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1' }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    expect(getCollapsedSeriesWindowStub.firstCall.args[4].browseProfile).to.include({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: 'lib_1'
+    })
+    expect(getCollapsedSeriesWindowStub.firstCall.args[4].browseProfile.mark).to.be.a('function')
+  })
+
   it('does not run exact count work or joined findAndCountAll again on follow-up keyset chunks', async () => {
     const countStub = sinon.stub(Database.bookModel, 'count').resolves(123)
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
@@ -341,17 +369,18 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAndCountAllStub.called).to.equal(false)
   })
 
-  it('falls back to offset mode for endless progress browse because null-aware keyset is unsupported', () => {
+  it('uses keyset metadata for supported endless progress browse', () => {
     const strategy = getLibraryBrowseStrategy({
       mediaType: 'book',
       sortBy: 'progress',
       filterGroup: 'progress',
+      filterValue: 'in-progress',
       pageMode: 'endless'
     })
 
-    expect(strategy.paginationMode).to.equal('offset')
-    expect(strategy.countMode).to.equal('exact-on-initial-page')
-    expect(strategy.deepScrollAllowed).to.equal(false)
+    expect(strategy.paginationMode).to.equal('keyset')
+    expect(strategy.countMode).to.equal('deferred-exact')
+    expect(strategy.deepScrollAllowed).to.equal(true)
   })
 
   it('falls back to offset mode for collapsed-series endless title browse because the SQL sort key differs', () => {
@@ -392,6 +421,44 @@ describe('LibraryController large-library browse contract', () => {
     expect(findByPkStub.called).to.equal(false)
     expect(queryStub.calledTwice).to.equal(true)
     expect(findAllStub.called).to.equal(false)
+  })
+
+  it('records browse phases for collapsed-series browse queries when a live browse profile is present', async () => {
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).callsFake(async () => [{ rawBookCount: 1, plainRowCount: 1, collapsedRowCount: 0 }])
+    queryStub.onCall(1).callsFake(async () => [{ rowType: 'plain', anchorBookId: 'book_1', anchorLibraryItemId: 'li_1', subseriesId: null }])
+    sinon.stub(Database.bookModel, 'findAll').resolves([
+      {
+        libraryItem: {
+          id: 'li_1',
+          mediaType: 'book',
+          toOldJSONMinified() {
+            return { id: 'li_1', media: { metadata: {}, duration: 1 } }
+          }
+        },
+        series: [{ id: 'series_1', name: 'Main Series', bookSeries: { sequence: '1' } }],
+        bookAuthors: []
+      }
+    ])
+
+    const browseProfile = createBrowseRequestProfile({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: 'lib_1'
+    })
+
+    await libraryItemsBookFilters.getCollapsedSeriesWindow(
+      'lib_1',
+      'series_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true, checkCanAccessLibraryItem: () => true },
+      [],
+      { sortBy: 'sequence', sortDesc: false, hideSingleBookSeries: false, browseProfile },
+      { limit: 20, offset: 0 }
+    )
+
+    const summary = finishBrowseRequestProfile(browseProfile, { slowMs: 0 })
+
+    expect(summary.phases).to.have.property('count')
+    expect(summary.phases).to.have.property('rows')
   })
 
   it('uses bounded batch query options for collapsed-series follow-up windows', async () => {
@@ -483,6 +550,31 @@ describe('LibraryController large-library browse contract', () => {
     expect(queryStub.calledTwice).to.equal(true)
     expect(findAllStub.called).to.equal(false)
     expect(queryStub.secondCall.args[0]).to.include('filterSequenceSort')
+  })
+
+  it('does not advertise keyset metadata for podcast endless browse without cursor follow-up support', async () => {
+    sinon.stub(Database.podcastModel, 'findAndCountAll').resolves({ rows: [], count: 4 })
+    sinon.stub(libraryItemsPodcastFilters, 'getMediaGroupQuery').returns({ mediaWhere: {}, replacements: {} })
+    sinon.stub(libraryItemsPodcastFilters, 'getUserPermissionPodcastWhereQuery').returns({ podcastWhere: [], replacements: {} })
+    sinon.stub(libraryItemsPodcastFilters, 'getOrder').returns([])
+
+    const result = await libraryItemsPodcastFilters.getFilteredLibraryItems(
+      'lib_2',
+      { id: 'user_2', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      [],
+      40,
+      0,
+      { cursor: 'cursor-9', pageMode: 'endless' }
+    )
+
+    expect(result.paginationMode).to.equal('offset')
+    expect(result.deepScrollAllowed).to.equal(false)
+    expect(result.countMode).to.equal('exact-on-initial-page')
+    expect(result.nextCursor).to.equal(null)
   })
 
   it('falls back to sequence-based collapsed browse ordering for unsupported sorts', async () => {
@@ -737,7 +829,53 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('id')
   })
 
-  it('uses offset fallback for progress browse requests with null-valued sort fields', async () => {
+  it('uses keyset pagination for supported progress browse requests', async () => {
+    const countStub = sinon.stub(Database.bookModel, 'count').resolves(123)
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([
+      {
+        id: 'book-1',
+        mediaProgresses: [{ updatedAt: '2024-01-01T00:00:00.000Z' }],
+        libraryItem: { id: 'item-1', dataValues: {} }
+      },
+      {
+        id: 'book-2',
+        mediaProgresses: [{ updatedAt: '2024-01-02T00:00:00.000Z' }],
+        libraryItem: { id: 'item-2', dataValues: {} }
+      },
+      {
+        id: 'book-3',
+        mediaProgresses: [{ updatedAt: '2024-01-03T00:00:00.000Z' }],
+        libraryItem: { id: 'item-3', dataValues: {} }
+      }
+    ])
+    const findAndCountAllStub = sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 7 })
+
+    const result = await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      'progress',
+      'in-progress',
+      'progress',
+      true,
+      false,
+      [],
+      2,
+      0,
+      false,
+      { pageMode: 'endless' }
+    )
+
+    expect(result.paginationMode).to.equal('keyset')
+    expect(result.countMode).to.equal('deferred-exact')
+    expect(result.nextCursor).to.be.a('string')
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(countStub.calledOnce).to.equal(true)
+    expect(findAndCountAllStub.called).to.equal(false)
+    expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('libraryItem')
+    expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('id')
+  })
+
+  it('skips exact counts on follow-up supported progress browse chunks', async () => {
     const countStub = sinon.stub(Database.bookModel, 'count').resolves(123)
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
     const findAndCountAllStub = sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 7 })
@@ -757,11 +895,11 @@ describe('LibraryController large-library browse contract', () => {
       { cursor: 'cursor-2', pageMode: 'endless' }
     )
 
-    expect(result.paginationMode).to.equal('offset')
-    expect(result.countMode).to.equal('exact-on-initial-page')
-    expect(findAndCountAllStub.calledOnce).to.equal(true)
-    expect(findAllStub.called).to.equal(false)
+    expect(result.paginationMode).to.equal('keyset')
+    expect(result.count).to.equal(null)
+    expect(findAllStub.calledOnce).to.equal(true)
     expect(countStub.called).to.equal(false)
+    expect(findAndCountAllStub.called).to.equal(false)
   })
 
   it('builds EXISTS predicates for browse filters and permission-tag checks instead of correlated count subqueries', () => {

@@ -64,17 +64,18 @@ describe('libraryBrowseStrategy', () => {
     expect(strategy.cursorKeys).to.deep.equal(['createdAt', 'id'])
   })
 
-  it('falls back to offset pagination for progress browse because null-aware keyset is unsupported', () => {
+  it('uses keyset pagination for supported in-progress browse sorts', () => {
     const strategy = getLibraryBrowseStrategy({
       mediaType: 'book',
       sortBy: 'progress',
       filterGroup: 'progress',
+      filterValue: 'in-progress',
       pageMode: 'endless'
     })
 
     expect(strategy.family).to.equal('progress-browse')
-    expect(strategy.paginationMode).to.equal('offset')
-    expect(strategy.cursorKeys).to.deep.equal([])
+    expect(strategy.paginationMode).to.equal('keyset')
+    expect(strategy.cursorKeys).to.deep.equal(['mediaProgresses.updatedAt', 'id'])
   })
 
   it('uses keyset pagination for updated browse', () => {
@@ -120,24 +121,40 @@ describe('libraryBrowseStrategy', () => {
     expect(strategy.cursorKeys).to.deep.equal(['authorNamesLastFirst', 'title', 'id'])
   })
 
-  it('falls back to offset pagination for progress created-at browse because null-aware keyset is unsupported', () => {
+  it('uses keyset pagination for supported progress created-at browse', () => {
     const strategy = getLibraryBrowseStrategy({
       mediaType: 'book',
       sortBy: 'progress.createdAt',
       filterGroup: 'progress',
+      filterValue: 'in-progress',
       pageMode: 'endless'
     })
 
     expect(strategy.family).to.equal('progress-browse')
-    expect(strategy.paginationMode).to.equal('offset')
-    expect(strategy.cursorKeys).to.deep.equal([])
+    expect(strategy.paginationMode).to.equal('keyset')
+    expect(strategy.cursorKeys).to.deep.equal(['mediaProgresses.createdAt', 'id'])
   })
 
-  it('falls back to offset pagination for progress finished-at browse because null-aware keyset is unsupported', () => {
+  it('uses keyset pagination for supported progress finished-at browse', () => {
     const strategy = getLibraryBrowseStrategy({
       mediaType: 'book',
       sortBy: 'progress.finishedAt',
       filterGroup: 'progress',
+      filterValue: 'finished',
+      pageMode: 'endless'
+    })
+
+    expect(strategy.family).to.equal('progress-browse')
+    expect(strategy.paginationMode).to.equal('keyset')
+    expect(strategy.cursorKeys).to.deep.equal(['mediaProgresses.finishedAt', 'id'])
+  })
+
+  it('falls back to offset pagination for unsupported progress/null browse combinations', () => {
+    const strategy = getLibraryBrowseStrategy({
+      mediaType: 'book',
+      sortBy: 'progress.finishedAt',
+      filterGroup: 'progress',
+      filterValue: 'in-progress',
       pageMode: 'endless'
     })
 
@@ -205,6 +222,8 @@ describe('libraryBrowseStrategy', () => {
     })
 
     expect(strategy.family).to.equal('podcast-browse')
+    expect(strategy.paginationMode).to.equal('offset')
+    expect(strategy.deepScrollAllowed).to.equal(false)
   })
 
   it('falls back to offset for unsupported endless-scroll sorts', () => {
