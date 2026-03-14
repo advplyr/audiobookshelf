@@ -379,55 +379,49 @@ export default {
       let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
       const fullQueryString = this.getFetchQueryString(page)
 
-      const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
-        console.error('failed to fetch items', error)
-        return null
-      })
+      try {
+        const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`)
+        const results = Array.isArray(payload.results) ? payload.results : null
+        if (!results) {
+          throw new Error('Invalid browse payload: missing results array')
+        }
 
-      this.isFetchingEntities = false
-      if (this.pendingReset) {
-        this.pendingReset = false
-        this.resetEntities()
-        return
-      }
-      if (payload) {
-        try {
-          const results = Array.isArray(payload.results) ? payload.results : null
-          if (!results) {
-            throw new Error('Invalid browse payload: missing results array')
+        this.paginationMode = payload.paginationMode || this.paginationMode
+        this.nextCursor = payload.nextCursor || null
+        this.isCountDeferred = !!payload.isCountDeferred
+
+        if (this.paginationMode === 'keyset') {
+          if (this.nextCursor) {
+            this.pageCursors[page + 1] = this.nextCursor
+          } else {
+            delete this.pageCursors[page + 1]
           }
+        }
 
-          this.paginationMode = payload.paginationMode || this.paginationMode
-          this.nextCursor = payload.nextCursor || null
-          this.isCountDeferred = !!payload.isCountDeferred
+        if (!this.initialized) {
+          this.initialized = true
+          this.totalEntities = payload.total
+          this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
+          this.entities = new Array(this.totalEntities)
+        }
 
-          if (this.paginationMode === 'keyset') {
-            if (this.nextCursor) {
-              this.pageCursors[page + 1] = this.nextCursor
-            } else {
-              delete this.pageCursors[page + 1]
-            }
+        for (let i = 0; i < results.length; i++) {
+          const index = i + startIndex
+          this.entities[index] = results[i]
+          if (this.entityComponentRefs[index]) {
+            this.entityComponentRefs[index].setEntity(this.entities[index])
           }
+        }
 
-          if (!this.initialized) {
-            this.initialized = true
-            this.totalEntities = payload.total
-            this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
-            this.entities = new Array(this.totalEntities)
-          }
-
-          for (let i = 0; i < results.length; i++) {
-            const index = i + startIndex
-            this.entities[index] = results[i]
-            if (this.entityComponentRefs[index]) {
-              this.entityComponentRefs[index].setEntity(this.entities[index])
-            }
-          }
-
-          this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
-        } catch (error) {
-          console.error(`Failed to process page ${page}`, error)
-          return null
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+      } catch (error) {
+        console.error(`Failed to load page ${page}`, error)
+        throw error
+      } finally {
+        this.isFetchingEntities = false
+        if (this.pendingReset) {
+          this.pendingReset = false
+          this.resetEntities()
         }
       }
     },

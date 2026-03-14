@@ -121,7 +121,7 @@ describe('LazyBookshelf', () => {
     })
   })
 
-  it('clears progressive loading state when a keyset follow-up chunk fails', () => {
+  it('retries a failed keyset follow-up chunk after the initial load recovers', () => {
     const getStub = cy.stub()
 
     getStub.onFirstCall().resolves({
@@ -137,12 +137,28 @@ describe('LazyBookshelf', () => {
       paginationMode: 'keyset',
       isCountDeferred: true
     })
+    getStub.onThirdCall().resolves({
+      results: [{ id: 'item-2', mediaType: 'book', media: { metadata: { title: 'Beta' } } }],
+      total: 4,
+      nextCursor: null,
+      paginationMode: 'keyset',
+      isCountDeferred: true
+    })
 
     cy.spy(console, 'error').as('consoleError')
 
     mountBookshelf(getStub).then(({ wrapper }) => {
       cy.wrap(getStub).should('have.been.calledTwice')
       cy.get('@consoleError').should('have.been.called')
+      cy.wrap(null)
+        .then(() => {
+          expect(wrapper.vm.pagesLoaded[1]).to.equal(undefined)
+          return wrapper.vm.loadPage(1)
+        })
+        .then(() => {
+          expect(getStub).to.have.been.calledThrice
+          expect(wrapper.vm.entities[1].id).to.equal('item-2')
+        })
       cy.wrap(null).then(() => {
         expect(wrapper.vm.isProgressiveLoading).to.equal(false)
         expect(wrapper.vm.progressiveLoadProgress).to.equal(100)
