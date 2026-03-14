@@ -276,6 +276,9 @@ describe('LibraryController large-library browse contract', () => {
 
   it('returns only the requested collapsed-series window without loading the full series graph', async () => {
     const findByPkStub = sinon.stub(Database.seriesModel, 'findByPk').resolves({ books: [] })
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 0, plainRowCount: 0, collapsedRowCount: 0 }])
+    queryStub.onCall(1).resolves([])
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
     const req = {
       query: {
@@ -292,13 +295,15 @@ describe('LibraryController large-library browse contract', () => {
     await LibraryController.getLibraryItems(req, res)
 
     expect(findByPkStub.called).to.equal(false)
-    expect(findAllStub.calledOnce).to.equal(true)
-    expect(findAllStub.firstCall.args[0].limit).to.equal(20)
-    expect(findAllStub.firstCall.args[0].offset || 0).to.equal(0)
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.called).to.equal(false)
   })
 
   it('uses bounded batch query options for collapsed-series follow-up windows', async () => {
     const findByPkStub = sinon.stub(Database.seriesModel, 'findByPk').resolves({ books: [] })
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 0, plainRowCount: 0, collapsedRowCount: 0 }])
+    queryStub.onCall(1).resolves([])
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
     const req = {
       query: {
@@ -317,9 +322,8 @@ describe('LibraryController large-library browse contract', () => {
     await LibraryController.getLibraryItems(req, res)
 
     expect(findByPkStub.called).to.equal(false)
-    expect(findAllStub.calledOnce).to.equal(true)
-    expect(findAllStub.firstCall.args[0].limit).to.equal(20)
-    expect(findAllStub.firstCall.args[0].offset).to.equal(0)
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.called).to.equal(false)
   })
 
   it('restores collapsed-series payload fields and preserves rssfeed serialization', async () => {
@@ -367,8 +371,10 @@ describe('LibraryController large-library browse contract', () => {
   })
 
   it('uses a deterministic default collapsed-series order when sort is omitted', async () => {
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 0, plainRowCount: 0, collapsedRowCount: 0 }])
+    queryStub.onCall(1).resolves([])
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
-    sinon.stub(Database.bookModel, 'count').resolves(0)
 
     await libraryItemsBookFilters.getCollapsedSeriesWindow(
       'lib_1',
@@ -379,9 +385,9 @@ describe('LibraryController large-library browse contract', () => {
       { limit: 20, offset: 0 }
     )
 
-    expect(findAllStub.firstCall.args[0].order).to.have.length.greaterThan(0)
-    expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('bookSeries')
-    expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('sequence')
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.called).to.equal(false)
+    expect(queryStub.secondCall.args[0]).to.include('filterSequenceSort')
   })
 
   it('paginates collapsed-series browse by visible rows instead of raw books', async () => {
@@ -400,18 +406,12 @@ describe('LibraryController large-library browse contract', () => {
       bookAuthors: []
     })
 
-    const findAllStub = sinon.stub(Database.bookModel, 'findAll')
-    sinon.stub(Database.bookModel, 'count').resolves(3)
-    findAllStub.onCall(0).resolves([
-      makeBook({ libraryItemId: 'li_1', filterSequence: '1', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
-    ])
-    findAllStub.onCall(1).resolves([
-      makeBook({ libraryItemId: 'li_2', filterSequence: '2', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
-    ])
-    findAllStub.onCall(2).resolves([
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 3, plainRowCount: 1, collapsedRowCount: 1 }])
+    queryStub.onCall(1).resolves([{ rowType: 'plain', anchorBookId: 'book_3', anchorLibraryItemId: 'li_3', subseriesId: null }])
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([
       makeBook({ libraryItemId: 'li_3', filterSequence: '3' })
     ])
-    findAllStub.onCall(3).resolves([])
 
     const req = {
       query: {
@@ -429,6 +429,8 @@ describe('LibraryController large-library browse contract', () => {
     await LibraryController.getLibraryItems(req, res)
 
     const response = res.json.firstCall.args[0]
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.calledOnce).to.equal(true)
     expect(response.total).to.equal(2)
     expect(response.results).to.have.length(1)
     expect(response.results[0].id).to.equal('li_3')
@@ -451,43 +453,66 @@ describe('LibraryController large-library browse contract', () => {
       bookAuthors: []
     })
 
-    const findAllStub = sinon.stub(Database.bookModel, 'findAll')
-    sinon.stub(Database.bookModel, 'count').resolves(3)
-    findAllStub.onCall(0).resolves([
-      makeBook({ libraryItemId: 'li_1', filterSequence: '1', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
-    ])
-    findAllStub.onCall(1).resolves([
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 3, plainRowCount: 1, collapsedRowCount: 1 }])
+    queryStub.onCall(1).resolves([{ rowType: 'collapsed', anchorBookId: 'book_1', anchorLibraryItemId: 'li_1', subseriesId: 'sub_1' }])
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([
+      makeBook({ libraryItemId: 'li_1', filterSequence: '1', subseriesId: 'sub_1', subseriesName: 'Subseries 1' }),
       makeBook({ libraryItemId: 'li_2', filterSequence: '2', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
     ])
-    findAllStub.onCall(2).resolves([
-      makeBook({ libraryItemId: 'li_3', filterSequence: '3' })
-    ])
-    findAllStub.onCall(3).resolves([])
 
-    const req = {
-      query: {
-        filter: `series.${Buffer.from('series_1').toString('base64')}`,
-        collapseseries: '1',
-        limit: '1',
-        sort: 'sequence'
-      },
-      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
-      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
-    }
-    const res = { json: sinon.spy() }
+    const result = await libraryItemsBookFilters.getCollapsedSeriesWindow(
+      'lib_1',
+      'series_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      [],
+      { sortBy: 'sequence', sortDesc: false, hideSingleBookSeries: false },
+      { limit: 1, offset: 0 }
+    )
 
-    await LibraryController.getLibraryItems(req, res)
-
-    const response = res.json.firstCall.args[0]
-    expect(response.total).to.equal(2)
-    expect(response.results).to.have.length(1)
-    expect(response.results[0].collapsedSeries).to.include({
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(result.count).to.equal(2)
+    expect(result.libraryItems).to.have.length(1)
+    expect(result.libraryItems[0].collapsedSeries).to.include({
       id: 'sub_1',
-      name: 'Subseries 1',
-      numBooks: 2
+      name: 'Subseries 1'
     })
-    expect(response.results[0].collapsedSeries.libraryItemIds).to.deep.equal(['li_1', 'li_2'])
-    expect(response.results[0].collapsedSeries.seriesSequenceList).to.equal('1-2')
+    expect(result.libraryItems[0].collapsedSeries.books.map((book) => book.id)).to.deep.equal(['li_1', 'li_2'])
+  })
+
+  it('uses bounded anchor queries instead of scanning the full filtered series for each page', async () => {
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([[{ rawBookCount: 1000, plainRowCount: 400, collapsedRowCount: 200 }]])
+    queryStub.onCall(1).resolves([[{ rowType: 'plain', anchorBookId: 'book_1', anchorLibraryItemId: 'li_1', subseriesId: null }]])
+
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([
+      {
+        id: 'book_1',
+        libraryItem: {
+          id: 'li_1',
+          mediaType: 'book',
+          toOldJSONMinified() {
+            return { id: 'li_1', media: { metadata: {} } }
+          }
+        },
+        series: [{ id: 'series_1', name: 'Main Series', bookSeries: { sequence: '1' } }],
+        bookAuthors: []
+      }
+    ])
+
+    const result = await libraryItemsBookFilters.getCollapsedSeriesWindow(
+      'lib_1',
+      'series_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      [],
+      { sortBy: 'sequence', sortDesc: false, hideSingleBookSeries: false },
+      { limit: 20, offset: 40 }
+    )
+
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.callCount).to.equal(1)
+    expect(result.count).to.equal(600)
   })
 
   it('adds a deterministic libraryItem.id tie-breaker for keyset title browse with duplicate titles', async () => {
