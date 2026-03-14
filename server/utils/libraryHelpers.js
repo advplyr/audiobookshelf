@@ -91,8 +91,12 @@ function getSeriesSequenceList(collapsedSeries) {
 
 module.exports = {
   async toCollapsedSeriesPayload(libraryItems, seriesId, hideSingleBookSeries = false) {
-    const collapsedItems = collapseBookSeries(libraryItems, seriesId, hideSingleBookSeries)
-    const shapedItems = !(collapsedItems.length === 1 && collapsedItems[0].collapsedSeries) ? collapsedItems : libraryItems
+    const shapedItems = libraryItems.some((libraryItem) => libraryItem.collapsedSeries)
+      ? libraryItems
+      : (() => {
+          const collapsedItems = collapseBookSeries(libraryItems, seriesId, hideSingleBookSeries)
+          return !(collapsedItems.length === 1 && collapsedItems[0].collapsedSeries) ? collapsedItems : libraryItems
+        })()
 
     return Promise.all(
       shapedItems.map(async (libraryItem) => {

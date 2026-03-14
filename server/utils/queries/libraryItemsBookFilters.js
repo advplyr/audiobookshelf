@@ -165,10 +165,86 @@ async function loadCollapsedSeriesWindow({ findOptions, countOptions, limit, off
       limit: Number(limit) || null,
       offset: Number(offset) || 0
     }),
-    Database.bookModel.count(countOptions)
+    countOptions ? Database.bookModel.count(countOptions) : Promise.resolve(null)
   ])
 
   return { books, count }
+}
+
+function mapCollapsedSeriesBookToLibraryItem(bookExpanded) {
+  const libraryItem = bookExpanded.libraryItem
+  const book = bookExpanded
+
+  delete book.libraryItem
+  book.series = book.series || []
+  delete book.bookSeries
+
+  book.authors = book.bookAuthors?.map((ba) => ba.author) || []
+  delete book.bookAuthors
+
+  if (libraryItem.feeds?.length) {
+    libraryItem.rssFeed = libraryItem.feeds[0]
+  }
+
+  libraryItem.media = book
+  return libraryItem
+}
+
+function buildCollapsedSeriesView(libraryItems, seriesId, hideSingleBookSeries = false) {
+  const seriesEntriesById = {}
+
+  libraryItems.forEach((libraryItem) => {
+    const filteredSeries = libraryItem.media.series.find((series) => series.id === seriesId)
+    const subseries = (libraryItem.media.series || []).filter((series) => series.id !== seriesId)
+
+    subseries.forEach((series) => {
+      if (!seriesEntriesById[series.id]) {
+        seriesEntriesById[series.id] = {
+          id: series.id,
+          name: series.name,
+          nameIgnorePrefix: series.nameIgnorePrefix,
+          books: []
+        }
+      }
+
+      seriesEntriesById[series.id].books.push({
+        id: libraryItem.id,
+        filterSeriesSequence: filteredSeries?.bookSeries?.sequence
+      })
+    })
+  })
+
+  let seriesEntries = Object.values(seriesEntriesById)
+  if (hideSingleBookSeries) {
+    seriesEntries = seriesEntries.filter((series) => series.books.length > 1)
+  }
+  seriesEntries.forEach((series) => {
+    seriesEntriesById[series.id] = series
+  })
+
+  const activeSeriesEntries = seriesEntries
+  const visibleRows = []
+
+  libraryItems.forEach((libraryItem) => {
+    const firstSeriesEntries = activeSeriesEntries.filter((series) => series.books[0]?.id === libraryItem.id)
+    firstSeriesEntries.forEach((series) => {
+      visibleRows.push({ type: 'collapsed', libraryItemId: libraryItem.id, seriesId: series.id })
+    })
+
+    const isCollapsedBook = activeSeriesEntries.some((series) => series.books.some((book) => book.id === libraryItem.id))
+    if (!isCollapsedBook) {
+      visibleRows.push({ type: 'plain', libraryItemId: libraryItem.id })
+    }
+  })
+
+  if (visibleRows.length === 1 && visibleRows[0].type === 'collapsed') {
+    return {
+      visibleRows: libraryItems.map((libraryItem) => ({ type: 'plain', libraryItemId: libraryItem.id })),
+      seriesEntriesById: {}
+    }
+  }
+
+  return { visibleRows, seriesEntriesById }
 }
 
 function getNextBrowseCursor(books, limit, sortBy, sortDesc, cursorKeys) {
@@ -973,62 +1049,52 @@ module.exports = {
       subQuery: false
     }
 
-    const countOptions = {
-      where: userPermissionBookWhere.bookWhere,
-      replacements: userPermissionBookWhere.replacements,
-      include: [
-        {
-          model: Database.libraryItemModel,
-          required: true,
-          where: {
-            libraryId
-          },
-          include: libraryItemIncludes
-        },
-        {
-          model: Database.bookSeriesModel,
-          required: true,
-          where: {
-            seriesId
-          }
-        }
-      ],
-      distinct: true,
-      subQuery: false
+    const batchLimit = Math.max(Number(window.limit) || 0, 1)
+    const allLibraryItems = []
+    let rawOffset = 0
+
+    while (true) {
+      const { books } = await loadCollapsedSeriesWindow({
+        findOptions,
+        countOptions: null,
+        limit: batchLimit,
+        offset: rawOffset
+      })
+
+      if (!books.length) break
+
+      allLibraryItems.push(
+        ...books
+          .map((bookExpanded) => mapCollapsedSeriesBookToLibraryItem(bookExpanded))
+          .filter((libraryItem) => user?.checkCanAccessLibraryItem ? user.checkCanAccessLibraryItem(libraryItem) : true)
+      )
+
+      rawOffset += books.length
+      if (books.length < batchLimit) break
     }
 
-    const { books, count } = await loadCollapsedSeriesWindow({
-      findOptions,
-      countOptions,
-      limit: window.limit,
-      offset: window.offset
-    })
+    const { visibleRows, seriesEntriesById } = buildCollapsedSeriesView(allLibraryItems, seriesId, payload.hideSingleBookSeries)
+    const visibleOffset = Number(window.offset) || 0
+    const visibleLimit = Number(window.limit) || 0
+    const selectedRows = visibleLimit ? visibleRows.slice(visibleOffset, visibleOffset + visibleLimit) : visibleRows
+    const libraryItemsById = new Map(allLibraryItems.map((libraryItem) => [libraryItem.id, libraryItem]))
 
-    const libraryItems = books
-      .map((bookExpanded) => {
-        const libraryItem = bookExpanded.libraryItem
-        const book = bookExpanded
-
-        delete book.libraryItem
-
-        book.series = book.series || []
-        delete book.bookSeries
-
-        book.authors = book.bookAuthors?.map((ba) => ba.author) || []
-        delete book.bookAuthors
-
-        if (libraryItem.feeds?.length) {
-          libraryItem.rssFeed = libraryItem.feeds[0]
+    const libraryItems = selectedRows
+      .map((row) => {
+        const libraryItem = libraryItemsById.get(row.libraryItemId)
+        if (!libraryItem) return null
+        if (row.type === 'collapsed') {
+          return Object.assign(Object.create(Object.getPrototypeOf(libraryItem)), libraryItem, {
+            collapsedSeries: seriesEntriesById[row.seriesId]
+          })
         }
-
-        libraryItem.media = book
         return libraryItem
       })
-      .filter((libraryItem) => user?.checkCanAccessLibraryItem ? user.checkCanAccessLibraryItem(libraryItem) : true)
+      .filter(Boolean)
 
     return {
       libraryItems,
-      count
+      count: visibleRows.length
     }
   },
 

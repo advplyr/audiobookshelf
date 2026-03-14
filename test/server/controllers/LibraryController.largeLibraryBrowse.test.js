@@ -297,7 +297,7 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAllStub.firstCall.args[0].offset || 0).to.equal(0)
   })
 
-  it('applies the requested collapsed-series follow-up window in SQL query options', async () => {
+  it('uses bounded batch query options for collapsed-series follow-up windows', async () => {
     const findByPkStub = sinon.stub(Database.seriesModel, 'findByPk').resolves({ books: [] })
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
     const req = {
@@ -319,7 +319,7 @@ describe('LibraryController large-library browse contract', () => {
     expect(findByPkStub.called).to.equal(false)
     expect(findAllStub.calledOnce).to.equal(true)
     expect(findAllStub.firstCall.args[0].limit).to.equal(20)
-    expect(findAllStub.firstCall.args[0].offset).to.equal(20)
+    expect(findAllStub.firstCall.args[0].offset).to.equal(0)
   })
 
   it('restores collapsed-series payload fields and preserves rssfeed serialization', async () => {
@@ -382,6 +382,112 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAllStub.firstCall.args[0].order).to.have.length.greaterThan(0)
     expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('bookSeries')
     expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('sequence')
+  })
+
+  it('paginates collapsed-series browse by visible rows instead of raw books', async () => {
+    const makeBook = ({ libraryItemId, filterSequence, subseriesId = null, subseriesName = null }) => ({
+      libraryItem: {
+        id: libraryItemId,
+        mediaType: 'book',
+        toOldJSONMinified() {
+          return { id: libraryItemId, media: { metadata: {}, duration: 1 } }
+        }
+      },
+      series: [
+        { id: 'series_1', name: 'Main Series', nameIgnorePrefix: 'Main Series', bookSeries: { sequence: filterSequence } },
+        ...(subseriesId ? [{ id: subseriesId, name: subseriesName, nameIgnorePrefix: subseriesName, bookSeries: { sequence: filterSequence } }] : [])
+      ],
+      bookAuthors: []
+    })
+
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll')
+    sinon.stub(Database.bookModel, 'count').resolves(3)
+    findAllStub.onCall(0).resolves([
+      makeBook({ libraryItemId: 'li_1', filterSequence: '1', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
+    ])
+    findAllStub.onCall(1).resolves([
+      makeBook({ libraryItemId: 'li_2', filterSequence: '2', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
+    ])
+    findAllStub.onCall(2).resolves([
+      makeBook({ libraryItemId: 'li_3', filterSequence: '3' })
+    ])
+    findAllStub.onCall(3).resolves([])
+
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '1',
+        page: '1',
+        sort: 'sequence'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    const response = res.json.firstCall.args[0]
+    expect(response.total).to.equal(2)
+    expect(response.results).to.have.length(1)
+    expect(response.results[0].id).to.equal('li_3')
+    expect(response.results[0].collapsedSeries).to.equal(undefined)
+  })
+
+  it('keeps a sub-series collapsed on the first visible page instead of splitting it across raw-book windows', async () => {
+    const makeBook = ({ libraryItemId, filterSequence, subseriesId = null, subseriesName = null }) => ({
+      libraryItem: {
+        id: libraryItemId,
+        mediaType: 'book',
+        toOldJSONMinified() {
+          return { id: libraryItemId, media: { metadata: {}, duration: 1 } }
+        }
+      },
+      series: [
+        { id: 'series_1', name: 'Main Series', nameIgnorePrefix: 'Main Series', bookSeries: { sequence: filterSequence } },
+        ...(subseriesId ? [{ id: subseriesId, name: subseriesName, nameIgnorePrefix: subseriesName, bookSeries: { sequence: filterSequence } }] : [])
+      ],
+      bookAuthors: []
+    })
+
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll')
+    sinon.stub(Database.bookModel, 'count').resolves(3)
+    findAllStub.onCall(0).resolves([
+      makeBook({ libraryItemId: 'li_1', filterSequence: '1', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
+    ])
+    findAllStub.onCall(1).resolves([
+      makeBook({ libraryItemId: 'li_2', filterSequence: '2', subseriesId: 'sub_1', subseriesName: 'Subseries 1' })
+    ])
+    findAllStub.onCall(2).resolves([
+      makeBook({ libraryItemId: 'li_3', filterSequence: '3' })
+    ])
+    findAllStub.onCall(3).resolves([])
+
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '1',
+        sort: 'sequence'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    const response = res.json.firstCall.args[0]
+    expect(response.total).to.equal(2)
+    expect(response.results).to.have.length(1)
+    expect(response.results[0].collapsedSeries).to.include({
+      id: 'sub_1',
+      name: 'Subseries 1',
+      numBooks: 2
+    })
+    expect(response.results[0].collapsedSeries.libraryItemIds).to.deep.equal(['li_1', 'li_2'])
+    expect(response.results[0].collapsedSeries.seriesSequenceList).to.equal('1-2')
   })
 
   it('adds a deterministic libraryItem.id tie-breaker for keyset title browse with duplicate titles', async () => {
