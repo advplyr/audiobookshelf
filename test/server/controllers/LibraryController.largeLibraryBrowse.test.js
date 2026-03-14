@@ -290,6 +290,40 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAndCountAllStub.called).to.equal(false)
   })
 
+  it('defaults omitted sort to deterministic title ordering for endless browse requests', async () => {
+    global.ServerSettings = { sortingIgnorePrefix: true }
+
+    const countStub = sinon.stub(Database.bookModel, 'count').resolves(10)
+    const findAndCountAllStub = sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 10 })
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([
+      { id: 'book-1', title: 'Alpha', libraryItem: { id: 'item-1', titleIgnorePrefix: 'Alpha', dataValues: { titleIgnorePrefix: 'Alpha' } } }
+    ])
+
+    const result = await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      null,
+      false,
+      false,
+      [],
+      20,
+      0,
+      false,
+      { pageMode: 'endless' }
+    )
+
+    expect(result.paginationMode).to.equal('keyset')
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(findAndCountAllStub.called).to.equal(false)
+    expect(countStub.calledOnce).to.equal(true)
+    expect(findAllStub.firstCall.args[0].order).to.have.length(2)
+    expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('titleIgnorePrefix')
+    expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('libraryItem')
+    expect(findAllStub.firstCall.args[0].order[1][0].val || findAllStub.firstCall.args[0].order[1][0]).to.include('id')
+  })
+
   it('uses offset fallback for progress browse requests with null-valued sort fields', async () => {
     const countStub = sinon.stub(Database.bookModel, 'count').resolves(123)
     const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])

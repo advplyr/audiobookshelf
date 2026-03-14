@@ -504,6 +504,7 @@ module.exports = {
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
     }
+    sortBy = sortBy || 'media.metadata.title'
     if (filterGroup !== 'series' && sortBy === 'sequence') {
       sortBy = 'media.metadata.title'
     }
