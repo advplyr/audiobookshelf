@@ -917,13 +917,14 @@ module.exports = {
     }
 
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+    const collapsedSortBy = payload.sortBy || 'sequence'
     const direction = payload.sortDesc ? 'DESC' : 'ASC'
-    const sortOrder = payload.sortBy === 'sequence'
+    const sortOrder = collapsedSortBy === 'sequence'
       ? [
           [Sequelize.literal(`${dialectHelpers.getSafeSequenceCast(Database.getDialect(), '"bookSeries"."sequence"')} ${direction} NULLS LAST`)],
-          [Sequelize.literal('"libraryItem"."id"'), 'ASC']
+          ...this.getOrder('media.metadata.title', payload.sortDesc, false)
         ]
-      : this.getOrder(payload.sortBy, payload.sortDesc, false)
+      : this.getOrder(collapsedSortBy, payload.sortDesc, false)
 
     const findOptions = {
       where: userPermissionBookWhere.bookWhere,
@@ -950,6 +951,13 @@ module.exports = {
           }
         },
         {
+          model: Database.seriesModel,
+          attributes: ['id', 'name', 'nameIgnorePrefix'],
+          through: {
+            attributes: ['sequence']
+          }
+        },
+        {
           model: Database.bookAuthorModel,
           attributes: ['authorId', 'createdAt'],
           include: {
@@ -966,10 +974,28 @@ module.exports = {
     }
 
     const countOptions = {
-      ...findOptions,
-      distinct: true
+      where: userPermissionBookWhere.bookWhere,
+      replacements: userPermissionBookWhere.replacements,
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId
+          },
+          include: libraryItemIncludes
+        },
+        {
+          model: Database.bookSeriesModel,
+          required: true,
+          where: {
+            seriesId
+          }
+        }
+      ],
+      distinct: true,
+      subQuery: false
     }
-    delete countOptions.order
 
     const { books, count } = await loadCollapsedSeriesWindow({
       findOptions,
@@ -985,13 +1011,7 @@ module.exports = {
 
         delete book.libraryItem
 
-        book.series =
-          book.bookSeries?.map((bs) => {
-            const series = bs.series
-            delete bs.series
-            series.bookSeries = bs
-            return series
-          }) || []
+        book.series = book.series || []
         delete book.bookSeries
 
         book.authors = book.bookAuthors?.map((ba) => ba.author) || []

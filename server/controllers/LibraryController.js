@@ -640,7 +640,7 @@ class LibraryController {
       }
       const { libraryItems, count } = await libraryItemsBookFilters.getCollapsedSeriesWindow(req.library.id, seriesId, req.user, include, payload, collapsedSeriesWindow)
       payload.total = count
-      payload.results = await libraryHelpers.toCollapsedSeriesPayload(libraryItems, seriesId)
+      payload.results = await libraryHelpers.toCollapsedSeriesPayload(libraryItems, seriesId, req.library.settings.hideSingleBookSeries)
     } else {
       const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
       payload.results = libraryItems

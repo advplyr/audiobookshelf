@@ -9,6 +9,7 @@ const { decodeBrowseCursor } = require('../../../server/utils/queries/libraryBro
 const { getLibraryBrowseStrategy } = require('../../../server/utils/queries/libraryBrowseStrategy')
 const libraryItemsBookFilters = require('../../../server/utils/queries/libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
+const libraryHelpers = require('../../../server/utils/libraryHelpers')
 
 describe('LibraryController large-library browse contract', () => {
   const buildBookPredicateSql = (where, replacements = {}) => {
@@ -319,6 +320,68 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAllStub.calledOnce).to.equal(true)
     expect(findAllStub.firstCall.args[0].limit).to.equal(20)
     expect(findAllStub.firstCall.args[0].offset).to.equal(20)
+  })
+
+  it('restores collapsed-series payload fields and preserves rssfeed serialization', async () => {
+    const payload = await libraryHelpers.toCollapsedSeriesPayload([
+      {
+        media: {
+          series: [{ id: 'series_1', name: 'Main Series', bookSeries: { sequence: '5' } }]
+        },
+        collapsedSeries: {
+          id: 'subseries_1',
+          name: 'Subseries',
+          nameIgnorePrefix: 'Subseries',
+          books: [
+            { id: 'li_2', filterSeriesSequence: '2' },
+            { id: 'li_3', filterSeriesSequence: '3' },
+            { id: 'li_5', filterSeriesSequence: '5' }
+          ]
+        },
+        rssFeed: {
+          toOldJSONMinified: () => ({ id: 'feed_1' })
+        },
+        toOldJSONMinified() {
+          return {
+            id: 'li_1',
+            media: { metadata: {} }
+          }
+        }
+      }
+    ], 'series_1')
+
+    expect(payload[0].media.metadata.series).to.deep.equal({
+      id: 'series_1',
+      name: 'Main Series',
+      sequence: '5'
+    })
+    expect(payload[0].collapsedSeries).to.deep.equal({
+      id: 'subseries_1',
+      name: 'Subseries',
+      nameIgnorePrefix: 'Subseries',
+      libraryItemIds: ['li_2', 'li_3', 'li_5'],
+      numBooks: 3,
+      seriesSequenceList: '2-3, 5'
+    })
+    expect(payload[0].rssFeed).to.deep.equal({ id: 'feed_1' })
+  })
+
+  it('uses a deterministic default collapsed-series order when sort is omitted', async () => {
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+    sinon.stub(Database.bookModel, 'count').resolves(0)
+
+    await libraryItemsBookFilters.getCollapsedSeriesWindow(
+      'lib_1',
+      'series_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      [],
+      { sortBy: null, sortDesc: false },
+      { limit: 20, offset: 0 }
+    )
+
+    expect(findAllStub.firstCall.args[0].order).to.have.length.greaterThan(0)
+    expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('bookSeries')
+    expect(findAllStub.firstCall.args[0].order[0][0].val || findAllStub.firstCall.args[0].order[0][0]).to.include('sequence')
   })
 
   it('adds a deterministic libraryItem.id tie-breaker for keyset title browse with duplicate titles', async () => {
