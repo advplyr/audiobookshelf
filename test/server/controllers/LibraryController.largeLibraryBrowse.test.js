@@ -11,7 +11,20 @@ const libraryItemsBookFilters = require('../../../server/utils/queries/libraryIt
 const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
 
 describe('LibraryController large-library browse contract', () => {
-  const getLiteralSql = (predicate) => String(predicate?.attribute?.val || predicate?.attribute || predicate?.left?.val || predicate?.left || '')
+  const buildBookPredicateSql = (where, replacements = {}) => {
+    const query = Database.sequelize.dialect.queryGenerator.selectQuery(
+      Database.bookModel.getTableName(),
+      {
+        attributes: ['id'],
+        where: Array.isArray(where) ? where : [where],
+        replacements,
+        model: Database.bookModel
+      },
+      Database.bookModel
+    )
+
+    return query.replace(/\s+/g, ' ')
+  }
 
   beforeEach(async () => {
     global.ServerSettings = {}
@@ -386,22 +399,53 @@ describe('LibraryController large-library browse contract', () => {
   })
 
   it('builds EXISTS predicates for browse filters and permission-tag checks instead of correlated count subqueries', () => {
-    const { mediaWhere: tagWhere } = libraryItemsBookFilters.getMediaGroupQuery('tags', 'Fantasy')
-    const { mediaWhere: genreWhere } = libraryItemsBookFilters.getMediaGroupQuery('genres', 'Fantasy')
-    const { mediaWhere: narratorWhere } = libraryItemsBookFilters.getMediaGroupQuery('narrators', 'Jane Doe')
-    const { mediaWhere: trackWhere } = libraryItemsBookFilters.getMediaGroupQuery('tracks', 'multi')
-    const { mediaWhere: ebookWhere } = libraryItemsBookFilters.getMediaGroupQuery('ebooks', 'ebook')
-    const permissionWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery({
+    const positivePredicates = [
+      libraryItemsBookFilters.getMediaGroupQuery('tags', 'Fantasy'),
+      libraryItemsBookFilters.getMediaGroupQuery('genres', 'Fantasy'),
+      libraryItemsBookFilters.getMediaGroupQuery('narrators', 'Jane Doe'),
+      libraryItemsBookFilters.getMediaGroupQuery('tracks', 'multi'),
+      libraryItemsBookFilters.getMediaGroupQuery('ebooks', 'ebook')
+    ]
+    const permissionQuery = libraryItemsBookFilters.getUserPermissionBookWhereQuery({
       canAccessExplicitContent: true,
       accessAllTags: false,
       itemTagsSelected: ['Fantasy'],
       selectedTagsNotAccessible: false
-    }).bookWhere[0]
+    })
 
-    ;[tagWhere, genreWhere, narratorWhere, trackWhere, ebookWhere, permissionWhere].forEach((predicate) => {
-      const sql = getLiteralSql(predicate)
+    positivePredicates.forEach(({ mediaWhere, replacements }) => {
+      const sql = buildBookPredicateSql(mediaWhere, replacements)
       expect(sql).to.include('EXISTS')
       expect(sql).to.not.include('count(*)')
     })
+
+    const permissionSql = buildBookPredicateSql(permissionQuery.bookWhere, permissionQuery.replacements)
+    expect(permissionSql).to.include('EXISTS')
+    expect(permissionSql).to.not.include('count(*)')
+  })
+
+  it('builds NOT EXISTS predicates for negative browse filters and inaccessible-tag checks', () => {
+    const negativePredicates = [
+      libraryItemsBookFilters.getMediaGroupQuery('tracks', 'none'),
+      libraryItemsBookFilters.getMediaGroupQuery('ebooks', 'no-ebook'),
+      libraryItemsBookFilters.getMediaGroupQuery('missing', 'tags'),
+      libraryItemsBookFilters.getMediaGroupQuery('missing', 'chapters')
+    ]
+    const permissionQuery = libraryItemsBookFilters.getUserPermissionBookWhereQuery({
+      canAccessExplicitContent: true,
+      accessAllTags: false,
+      itemTagsSelected: ['Fantasy'],
+      selectedTagsNotAccessible: true
+    })
+
+    negativePredicates.forEach(({ mediaWhere, replacements }) => {
+      const sql = buildBookPredicateSql(mediaWhere, replacements)
+      expect(sql).to.include('NOT EXISTS')
+      expect(sql).to.not.include('count(*)')
+    })
+
+    const permissionSql = buildBookPredicateSql(permissionQuery.bookWhere, permissionQuery.replacements)
+    expect(permissionSql).to.include('NOT EXISTS')
+    expect(permissionSql).to.not.include('count(*)')
   })
 })
