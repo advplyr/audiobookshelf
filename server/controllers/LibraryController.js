@@ -634,6 +634,7 @@ class LibraryController {
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
+      payload.sortBy = libraryItemsBookFilters.getCollapsedSeriesBrowseSort(payload.sortBy)
       const collapsedSeriesWindow = {
         limit: Number(payload.limit) || 0,
         offset: Number(payload.offset) || 0

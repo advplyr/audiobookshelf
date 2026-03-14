@@ -172,7 +172,7 @@ async function loadCollapsedSeriesWindow({ findOptions, countOptions, limit, off
 }
 
 function getCollapsedSeriesSortContext(payload = {}) {
-  const collapsedSortBy = payload.sortBy || 'sequence'
+  const collapsedSortBy = module.exports.getCollapsedSeriesBrowseSort(payload.sortBy)
   const sortDesc = !!payload.sortDesc
   const direction = sortDesc ? 'DESC' : 'ASC'
   const titleColumn = Database.serverSettings.sortingIgnorePrefix ? 'titleIgnorePrefix' : 'title'
@@ -454,6 +454,13 @@ function getNextBrowseCursor(books, limit, sortBy, sortDesc, cursorKeys) {
 }
 
 module.exports = {
+  getCollapsedSeriesBrowseSort(sortBy) {
+    if (!sortBy || sortBy === 'sequence' || sortBy === 'media.metadata.title') {
+      return sortBy || 'sequence'
+    }
+    return 'sequence'
+  },
+
   /**
    * User permissions to restrict books for explicit content & tags
    * @param {import('../../models/User')} user

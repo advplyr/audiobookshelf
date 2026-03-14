@@ -390,6 +390,34 @@ describe('LibraryController large-library browse contract', () => {
     expect(queryStub.secondCall.args[0]).to.include('filterSequenceSort')
   })
 
+  it('falls back to sequence-based collapsed browse ordering for unsupported sorts', async () => {
+    const queryStub = sinon.stub(Database.sequelize, 'query')
+    queryStub.onCall(0).resolves([{ rawBookCount: 0, plainRowCount: 0, collapsedRowCount: 0 }])
+    queryStub.onCall(1).resolves([])
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '20',
+        sort: 'updatedAt',
+        desc: '1'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    expect(queryStub.calledTwice).to.equal(true)
+    expect(findAllStub.called).to.equal(false)
+    expect(queryStub.secondCall.args[0]).to.include('filterSequenceSort')
+    expect(queryStub.secondCall.args[0]).to.not.include('updatedAt')
+    expect(res.json.firstCall.args[0].sortBy).to.equal('sequence')
+  })
+
   it('paginates collapsed-series browse by visible rows instead of raw books', async () => {
     const makeBook = ({ libraryItemId, filterSequence, subseriesId = null, subseriesName = null }) => ({
       libraryItem: {
