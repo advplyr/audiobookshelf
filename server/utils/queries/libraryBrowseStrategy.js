@@ -60,6 +60,7 @@ function getFamily({ mediaType, sortBy, filterGroup, collapseseries }) {
 
 function getLibraryBrowseStrategy({ mediaType, sortBy, filterGroup, pageMode, collapseseries } = {}) {
   const normalizedSort = sortBy || 'media.metadata.title'
+  const paginationMode = getPaginationMode(pageMode, normalizedSort)
 
   if (normalizedSort === 'random') {
     return {
@@ -74,9 +75,9 @@ function getLibraryBrowseStrategy({ mediaType, sortBy, filterGroup, pageMode, co
 
   return {
     family: getFamily({ mediaType, sortBy: normalizedSort, filterGroup, collapseseries }),
-    paginationMode: getPaginationMode(pageMode, normalizedSort),
-    countMode: 'deferred-exact',
-    deepScrollAllowed: true,
+    paginationMode,
+    countMode: paginationMode === 'keyset' ? 'deferred-exact' : 'exact-on-initial-page',
+    deepScrollAllowed: paginationMode === 'keyset',
     tieBreaker: 'id',
     cursorKeys: getKeysetCursorKeys(normalizedSort)
   }

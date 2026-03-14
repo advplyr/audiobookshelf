@@ -6,7 +6,106 @@ const authorFilters = require('./authorFilters')
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+const { getLibraryBrowseStrategy } = require('./libraryBrowseStrategy')
+const { loadBrowseCount } = require('./libraryBrowseCount')
+const { encodeBrowseCursor, decodeBrowseCursor } = require('./libraryBrowseCursor')
 const countCache = new Map()
+
+function getCursorFieldPath(key) {
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst', 'createdAt', 'updatedAt'].includes(key)) {
+    return `$libraryItem.${key}$`
+  }
+
+  if (key === 'id') {
+    return '$libraryItem.id$'
+  }
+
+  if (key.startsWith('mediaProgresses.')) {
+    return `$${key}$`
+  }
+
+  return `$${key}$`
+}
+
+function getCursorValue(book, key) {
+  if (key === 'id') {
+    return book.libraryItem?.id || null
+  }
+
+  if (key.startsWith('mediaProgresses.')) {
+    const field = key.split('.')[1]
+    return book.mediaProgresses?.[0]?.[field] ?? null
+  }
+
+  if (book.libraryItem && Object.prototype.hasOwnProperty.call(book.libraryItem.dataValues || {}, key)) {
+    return book.libraryItem[key]
+  }
+
+  return book[key] ?? null
+}
+
+function buildBookCursorClause(cursor, cursorKeys, sortDesc) {
+  if (!cursor || !cursorKeys.length) return null
+
+  let decodedCursor
+  try {
+    decodedCursor = decodeBrowseCursor(cursor)
+  } catch (error) {
+    return null
+  }
+
+  if (decodedCursor.keys.join('|') !== cursorKeys.join('|')) {
+    throw new Error('Browse cursor keys do not match the requested sort')
+  }
+
+  const comparisonOperator = sortDesc ? Sequelize.Op.lt : Sequelize.Op.gt
+  const cursorConditions = decodedCursor.keys.map((key, index) => {
+    const condition = {}
+
+    for (let cursorIndex = 0; cursorIndex < index; cursorIndex++) {
+      condition[getCursorFieldPath(decodedCursor.keys[cursorIndex])] = decodedCursor.values[cursorIndex]
+    }
+
+    condition[getCursorFieldPath(key)] = {
+      [comparisonOperator]: decodedCursor.values[index]
+    }
+
+    return condition
+  })
+
+  return {
+    [Sequelize.Op.or]: cursorConditions
+  }
+}
+
+async function loadBookBrowseRows({ model, findOptions, limit, cursorClause }) {
+  const whereClauses = Array.isArray(findOptions.where) ? [...findOptions.where] : [findOptions.where]
+  const rowLimit = Number(limit) || null
+
+  return model.findAll({
+    ...findOptions,
+    where: cursorClause ? [...whereClauses, cursorClause] : whereClauses,
+    limit: rowLimit ? rowLimit + 1 : null
+  })
+}
+
+async function loadBookBrowseCount({ model, countOptions }) {
+  return model.count(countOptions)
+}
+
+function getNextBrowseCursor(books, limit, sortBy, sortDesc, cursorKeys) {
+  const rowLimit = Number(limit) || 0
+  if (!rowLimit || books.length <= rowLimit) return null
+
+  const lastBook = books[rowLimit - 1]
+
+  return encodeBrowseCursor({
+    sortBy,
+    desc: !!sortDesc,
+    keys: cursorKeys,
+    values: cursorKeys.map((key) => getCursorValue(lastBook, key))
+  })
+}
 
 module.exports = {
   /**
@@ -622,8 +721,53 @@ module.exports = {
       subQuery: false
     }
 
-    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+    const strategy = getLibraryBrowseStrategy({
+      mediaType: 'book',
+      sortBy,
+      filterGroup,
+      pageMode: browseRequestOptions?.pageMode,
+      collapseseries
+    })
+
+    let books = []
+    let count = 0
+    let nextCursor = null
+    let paginationMode = strategy.paginationMode
+    let countMode = strategy.countMode
+    let isCountDeferred = false
+
+    if (strategy.paginationMode === 'keyset') {
+      const countOptions = { ...findOptions }
+      delete countOptions.order
+
+      const cursorClause = buildBookCursorClause(browseRequestOptions?.cursor, strategy.cursorKeys, sortDesc)
+      const effectiveCountMode = browseRequestOptions?.cursor ? 'skip' : strategy.countMode
+      const [loadedBooks, countPayload] = await Promise.all([
+        loadBookBrowseRows({
+          model: Database.bookModel,
+          findOptions,
+          limit,
+          cursorClause
+        }),
+        loadBrowseCount({
+          mode: effectiveCountMode,
+          exactCountLoader: () => loadBookBrowseCount({ model: Database.bookModel, countOptions })
+        })
+      ])
+
+      nextCursor = getNextBrowseCursor(loadedBooks, limit, sortBy, sortDesc, strategy.cursorKeys)
+      books = Number(limit) ? loadedBooks.slice(0, Number(limit)) : loadedBooks
+      count = countPayload.total
+      countMode = effectiveCountMode === 'skip' ? 'skip' : strategy.countMode
+      isCountDeferred = countPayload.isDeferred
+    } else {
+      const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+      const result = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+      books = result.rows
+      count = result.count
+      countMode = 'exact-on-initial-page'
+      paginationMode = 'offset'
+    }
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
@@ -683,7 +827,11 @@ module.exports = {
 
     return {
       libraryItems,
-      count
+      count,
+      nextCursor,
+      paginationMode,
+      countMode,
+      isCountDeferred
     }
   },
 

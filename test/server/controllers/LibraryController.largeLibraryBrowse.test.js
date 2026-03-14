@@ -200,4 +200,30 @@ describe('LibraryController large-library browse contract', () => {
       collapseseries: false
     })
   })
+
+  it('does not run exact count work or joined findAndCountAll again on follow-up keyset chunks', async () => {
+    const countStub = sinon.stub(Database.bookModel, 'count').resolves(123)
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+    const findAndCountAllStub = sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 123 })
+
+    const result = await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      false,
+      [],
+      40,
+      0,
+      false,
+      { cursor: 'cursor-2', pageMode: 'endless' }
+    )
+
+    expect(result.count).to.equal(null)
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(countStub.called).to.equal(false)
+    expect(findAndCountAllStub.called).to.equal(false)
+  })
 })
