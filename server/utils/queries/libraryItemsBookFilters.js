@@ -195,7 +195,7 @@ function getCollapsedSeriesSortContext(payload = {}) {
 
 function buildCollapsedSeriesBaseQuery(libraryId, seriesId, userPermissionBookWhere, sortContext) {
   const queryGenerator = Database.sequelize.dialect.queryGenerator
-  const sequenceSortExpr = dialectHelpers.getSafeSequenceCast(Database.getDialect(), '"bookSeries"."sequence"')
+  const sequenceSortExpr = 'CAST("bookSeries"."sequence" AS FLOAT)'
   const plainSortExpr = `LOWER("libraryItem"."${sortContext.titleColumn}")`
   const baseOptions = {
     attributes: [
@@ -1196,7 +1196,7 @@ module.exports = {
     const direction = payload.sortDesc ? 'DESC' : 'ASC'
     const sortOrder = collapsedSortBy === 'sequence'
       ? [
-          [Sequelize.literal(`${dialectHelpers.getSafeSequenceCast(Database.getDialect(), '"bookSeries"."sequence"')} ${direction} NULLS LAST`)],
+          [Sequelize.literal(`CAST("bookSeries"."sequence" AS FLOAT) ${direction} NULLS LAST`)],
           ...this.getOrder('media.metadata.title', payload.sortDesc, false)
         ]
       : this.getOrder(collapsedSortBy, payload.sortDesc, false)

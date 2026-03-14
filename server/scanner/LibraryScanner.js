@@ -89,6 +89,10 @@ class LibraryScanner {
       const canceled = await this.scanLibrary(libraryScan, forceRescan)
       libraryScan.setComplete()
 
+      if (!canceled) {
+        Database.invalidateLibraryFilterCache(library.id)
+      }
+
       Logger.info(`[LibraryScanner] Library scan "${libraryScan.id}" ${canceled ? 'canceled after' : 'completed in'} ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}`)
 
       if (!canceled) {
@@ -431,9 +435,9 @@ class LibraryScanner {
         }
       })
 
-      // If something was updated then reset numIssues filter data for library
+      // If something was updated then invalidate derived filter data for library
       if (resetFilterData) {
-        await Database.resetLibraryIssuesFilterData(libraryId)
+        Database.invalidateLibraryFilterCache(libraryId)
       }
     }
 

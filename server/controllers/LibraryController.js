@@ -510,7 +510,11 @@ class LibraryController {
       }
       SocketAuthority.emitter('library_updated', req.library.toOldJSON(), userFilter)
 
-      await Database.resetLibraryIssuesFilterData(req.library.id)
+      if (hasFolderUpdates) {
+        Database.invalidateLibraryFilterCache(req.library.id)
+      } else {
+        await Database.resetLibraryIssuesFilterData(req.library.id)
+      }
     }
     return res.json(req.library.toOldJSON())
   }
@@ -588,9 +592,7 @@ class LibraryController {
     SocketAuthority.emitter('library_removed', libraryJson)
 
     // Remove library filter data
-    if (Database.libraryFilterData[req.library.id]) {
-      delete Database.libraryFilterData[req.library.id]
-    }
+    Database.invalidateLibraryFilterCache(req.library.id)
 
     return res.json(libraryJson)
   }
@@ -742,10 +744,7 @@ class LibraryController {
       await this.checkRemoveEmptySeries(seriesIds)
     }
 
-    // Set numIssues to 0 for library filter data
-    if (Database.libraryFilterData[req.library.id]) {
-      Database.libraryFilterData[req.library.id].numIssues = 0
-    }
+    Database.invalidateLibraryFilterCache(req.library.id)
 
     res.sendStatus(200)
   }
@@ -1287,7 +1286,7 @@ class LibraryController {
     const forceRescan = req.query.force === '1'
     await LibraryScanner.scan(req.library, forceRescan)
 
-    await Database.resetLibraryIssuesFilterData(req.library.id)
+    Database.invalidateLibraryFilterCache(req.library.id)
     Logger.info('[LibraryController] Scan complete')
   }
 

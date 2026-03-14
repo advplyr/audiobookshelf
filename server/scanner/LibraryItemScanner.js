@@ -64,6 +64,7 @@ class LibraryItemScanner {
 
     const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
     if (libraryItemDataUpdated || wasUpdated) {
+      Database.invalidateLibraryFilterCache(library.id)
       SocketAuthority.libraryItemEmitter('item_updated', expandedLibraryItem)
 
       await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
@@ -190,6 +191,7 @@ class LibraryItemScanner {
       newLibraryItem = await PodcastScanner.scanNewPodcastLibraryItem(libraryItemData, librarySettings, libraryScan)
     }
     if (newLibraryItem) {
+      Database.invalidateLibraryFilterCache(libraryItemData.libraryId)
       libraryScan.addLog(LogLevel.INFO, `Created new library item "${newLibraryItem.relPath}" with id "${newLibraryItem.id}"`)
     }
     return newLibraryItem

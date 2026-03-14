@@ -12,6 +12,20 @@ const libraryItemsPodcastFilters = require('../../../server/utils/queries/librar
 const libraryHelpers = require('../../../server/utils/libraryHelpers')
 
 describe('LibraryController large-library browse contract', () => {
+  const stubBookFilterDataRebuild = () => {
+    sinon.stub(Database.bookModel, 'count').resolves(0)
+    sinon.stub(Database.seriesModel, 'count').resolves(0)
+    sinon.stub(Database.authorModel, 'count').resolves(0)
+    sinon.stub(Database.bookModel, 'findAll').resolves([])
+    sinon.stub(Database.seriesModel, 'findAll').resolves([])
+    sinon.stub(Database.authorModel, 'findAll').resolves([])
+    sinon.stub(Database.libraryItemModel, 'count').resolves(0)
+
+    if (Database.genreModel) sinon.stub(Database.genreModel, 'findAll').resolves([])
+    if (Database.tagModel) sinon.stub(Database.tagModel, 'findAll').resolves([])
+    if (Database.narratorModel) sinon.stub(Database.narratorModel, 'findAll').resolves([])
+  }
+
   const buildBookPredicateSql = (where, replacements = {}) => {
     const query = Database.sequelize.dialect.queryGenerator.selectQuery(
       Database.bookModel.getTableName(),
@@ -718,5 +732,54 @@ describe('LibraryController large-library browse contract', () => {
     const permissionSql = buildBookPredicateSql(permissionQuery.bookWhere, permissionQuery.replacements)
     expect(permissionSql).to.include('NOT EXISTS')
     expect(permissionSql).to.not.include('count(*)')
+  })
+
+  it('returns a fresh filter cache hit without querying the database again', async () => {
+    Database.setLibraryFilterCache('lib_1', { authors: [] }, 60_000)
+    const countStub = sinon.stub(Database.bookModel, 'count')
+
+    const data = await libraryFilters.getFilterData('book', 'lib_1')
+
+    expect(data.authors).to.deep.equal([])
+    expect(countStub.called).to.equal(false)
+  })
+
+  it('rebuilds filter data after the TTL expires', async () => {
+    Database.libraryFilterData.lib_1 = { authors: [], loadedAt: 1, expiresAt: 2 }
+    stubBookFilterDataRebuild()
+
+    await libraryFilters.getFilterData('book', 'lib_1')
+
+    expect(Database.bookModel.count.called).to.equal(true)
+  })
+
+  it('invalidates filter cache when a library write path changes library content', async () => {
+    Database.setLibraryFilterCache('lib_1', { authors: [] }, 60_000)
+    sinon.stub(Database.libraryItemModel, 'findAll').resolves([
+      {
+        id: 'li_1',
+        mediaId: 'book_1',
+        media: {
+          bookAuthors: [],
+          bookSeries: []
+        }
+      }
+    ])
+
+    const req = {
+      library: { id: 'lib_1', name: 'Lib', isPodcast: false },
+      user: { isAdminOrUp: true },
+      query: {}
+    }
+    const res = { json: sinon.spy(), sendStatus: sinon.spy() }
+    const controllerContext = {
+      handleDeleteLibraryItem: sinon.stub().resolves(),
+      checkRemoveAuthorsWithNoBooks: sinon.stub().resolves(),
+      checkRemoveEmptySeries: sinon.stub().resolves()
+    }
+
+    await LibraryController.removeLibraryItemsWithIssues.call(controllerContext, req, res)
+
+    expect(Database.libraryFilterData.lib_1).to.equal(undefined)
   })
 })
