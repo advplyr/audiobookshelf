@@ -29,6 +29,7 @@ describe('LibraryController large-library browse contract', () => {
   beforeEach(async () => {
     global.ServerSettings = {}
     Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+    Database.serverSettings = { sortingIgnorePrefix: false }
     Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
     await Database.buildModels()
   })
@@ -270,6 +271,54 @@ describe('LibraryController large-library browse contract', () => {
 
     expect(strategy.paginationMode).to.equal('offset')
     expect(strategy.countMode).to.equal('exact-on-initial-page')
+  })
+
+  it('returns only the requested collapsed-series window without loading the full series graph', async () => {
+    const findByPkStub = sinon.stub(Database.seriesModel, 'findByPk').resolves({ books: [] })
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '20',
+        sort: 'sequence'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    expect(findByPkStub.called).to.equal(false)
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(findAllStub.firstCall.args[0].limit).to.equal(20)
+    expect(findAllStub.firstCall.args[0].offset || 0).to.equal(0)
+  })
+
+  it('applies the requested collapsed-series follow-up window in SQL query options', async () => {
+    const findByPkStub = sinon.stub(Database.seriesModel, 'findByPk').resolves({ books: [] })
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+    const req = {
+      query: {
+        filter: `series.${Buffer.from('series_1').toString('base64')}`,
+        collapseseries: '1',
+        limit: '20',
+        page: '1',
+        sort: 'sequence',
+        pageMode: 'paged'
+      },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false, settings: {} },
+      user: { id: 'user_1', checkCanAccessLibraryItem: () => true }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    expect(findByPkStub.called).to.equal(false)
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(findAllStub.firstCall.args[0].limit).to.equal(20)
+    expect(findAllStub.firstCall.args[0].offset).to.equal(20)
   })
 
   it('adds a deterministic libraryItem.id tie-breaker for keyset title browse with duplicate titles', async () => {

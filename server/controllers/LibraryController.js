@@ -634,7 +634,13 @@ class LibraryController {
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
-      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
+      const collapsedSeriesWindow = {
+        limit: Number(payload.limit) || 0,
+        offset: Number(payload.offset) || 0
+      }
+      const { libraryItems, count } = await libraryItemsBookFilters.getCollapsedSeriesWindow(req.library.id, seriesId, req.user, include, payload, collapsedSeriesWindow)
+      payload.total = count
+      payload.results = await libraryHelpers.toCollapsedSeriesPayload(libraryItems, seriesId)
     } else {
       const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
       payload.results = libraryItems

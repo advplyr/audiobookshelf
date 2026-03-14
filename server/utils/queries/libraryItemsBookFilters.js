@@ -158,6 +158,19 @@ async function loadBookBrowseCount({ model, countOptions }) {
   return model.count(countOptions)
 }
 
+async function loadCollapsedSeriesWindow({ findOptions, countOptions, limit, offset }) {
+  const [books, count] = await Promise.all([
+    Database.bookModel.findAll({
+      ...findOptions,
+      limit: Number(limit) || null,
+      offset: Number(offset) || 0
+    }),
+    Database.bookModel.count(countOptions)
+  ])
+
+  return { books, count }
+}
+
 function getNextBrowseCursor(books, limit, sortBy, sortDesc, cursorKeys) {
   const rowLimit = Number(limit) || 0
   if (!rowLimit || books.length <= rowLimit) return null
@@ -892,6 +905,110 @@ module.exports = {
       paginationMode,
       countMode,
       isCountDeferred
+    }
+  },
+
+  async getCollapsedSeriesWindow(libraryId, seriesId, user, include, payload, window = {}) {
+    const libraryItemIncludes = []
+    if (include.includes('rssfeed')) {
+      libraryItemIncludes.push({
+        model: Database.feedModel
+      })
+    }
+
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+    const direction = payload.sortDesc ? 'DESC' : 'ASC'
+    const sortOrder = payload.sortBy === 'sequence'
+      ? [
+          [Sequelize.literal(`${dialectHelpers.getSafeSequenceCast(Database.getDialect(), '"bookSeries"."sequence"')} ${direction} NULLS LAST`)],
+          [Sequelize.literal('"libraryItem"."id"'), 'ASC']
+        ]
+      : this.getOrder(payload.sortBy, payload.sortDesc, false)
+
+    const findOptions = {
+      where: userPermissionBookWhere.bookWhere,
+      replacements: userPermissionBookWhere.replacements,
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId
+          },
+          include: libraryItemIncludes
+        },
+        {
+          model: Database.bookSeriesModel,
+          required: true,
+          attributes: ['id', 'seriesId', 'sequence', 'createdAt'],
+          where: {
+            seriesId
+          },
+          include: {
+            model: Database.seriesModel,
+            attributes: ['id', 'name', 'nameIgnorePrefix']
+          }
+        },
+        {
+          model: Database.bookAuthorModel,
+          attributes: ['authorId', 'createdAt'],
+          include: {
+            model: Database.authorModel,
+            attributes: ['id', 'name']
+          },
+          order: [['createdAt', 'ASC']],
+          separate: true
+        }
+      ],
+      distinct: true,
+      order: sortOrder,
+      subQuery: false
+    }
+
+    const countOptions = {
+      ...findOptions,
+      distinct: true
+    }
+    delete countOptions.order
+
+    const { books, count } = await loadCollapsedSeriesWindow({
+      findOptions,
+      countOptions,
+      limit: window.limit,
+      offset: window.offset
+    })
+
+    const libraryItems = books
+      .map((bookExpanded) => {
+        const libraryItem = bookExpanded.libraryItem
+        const book = bookExpanded
+
+        delete book.libraryItem
+
+        book.series =
+          book.bookSeries?.map((bs) => {
+            const series = bs.series
+            delete bs.series
+            series.bookSeries = bs
+            return series
+          }) || []
+        delete book.bookSeries
+
+        book.authors = book.bookAuthors?.map((ba) => ba.author) || []
+        delete book.bookAuthors
+
+        if (libraryItem.feeds?.length) {
+          libraryItem.rssFeed = libraryItem.feeds[0]
+        }
+
+        libraryItem.media = book
+        return libraryItem
+      })
+      .filter((libraryItem) => user?.checkCanAccessLibraryItem ? user.checkCanAccessLibraryItem(libraryItem) : true)
+
+    return {
+      libraryItems,
+      count
     }
   },
 
