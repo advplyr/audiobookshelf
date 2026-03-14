@@ -40,4 +40,23 @@ describe('libraryBrowseCursor', () => {
       values: ['Dune']
     }))).to.throw('tie-breaker')
   })
+
+  it('rejects a cursor when the id tie-breaker value is null', () => {
+    expect(() => decodeBrowseCursor(encodeBrowseCursor({
+      sortBy: 'media.metadata.title',
+      desc: false,
+      keys: ['titleIgnorePrefix', 'id'],
+      values: ['Dune', null]
+    }))).to.throw('tie-breaker')
+  })
+
+  it('rejects a malformed cursor string with a controlled invalid-cursor error', () => {
+    expect(() => decodeBrowseCursor('%%%not-base64%%%')).to.throw('Invalid browse cursor')
+  })
+
+  it('rejects malformed cursor json with a controlled invalid-cursor error', () => {
+    const malformedJsonCursor = Buffer.from('{"sortBy":', 'utf8').toString('base64url')
+
+    expect(() => decodeBrowseCursor(malformedJsonCursor)).to.throw('Invalid browse cursor')
+  })
 })
