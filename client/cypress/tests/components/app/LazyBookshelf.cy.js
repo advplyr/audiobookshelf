@@ -165,4 +165,37 @@ describe('LazyBookshelf', () => {
       })
     })
   })
+
+  it('keeps offset fallback mode explicit and caps deep endless scroll', () => {
+    const requestUrls = []
+    const getStub = cy.stub().callsFake((url) => {
+      requestUrls.push(url)
+
+      return Promise.resolve({
+        results: [{ id: `item-${requestUrls.length}`, mediaType: 'book', media: { metadata: { title: `Item ${requestUrls.length}` } } }],
+        total: 10,
+        nextCursor: null,
+        paginationMode: 'offset',
+        deepScrollAllowed: false
+      })
+    })
+
+    mountBookshelf(getStub).then(({ wrapper }) => {
+      cy.wrap(null)
+        .then(() => wrapper.vm.loadPage(1))
+        .then(() => wrapper.vm.loadPage(2))
+        .then(() => wrapper.vm.loadPage(3))
+        .then(() => {
+          expect(wrapper.vm.paginationMode).to.equal('offset')
+          expect(wrapper.vm.deepScrollBlocked).to.equal(true)
+          expect(wrapper.vm.maxOffsetPages).to.equal(3)
+          expect(requestUrls).to.have.length(3)
+          expect(requestUrls.some((url) => url.includes('page=0'))).to.equal(true)
+          expect(requestUrls.some((url) => url.includes('page=1'))).to.equal(true)
+          expect(requestUrls.some((url) => url.includes('page=2'))).to.equal(true)
+          expect(requestUrls.some((url) => url.includes('page=3'))).to.equal(false)
+          expect(requestUrls.every((url) => !url.includes('cursor='))).to.equal(true)
+        })
+    })
+  })
 })

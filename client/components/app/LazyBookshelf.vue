@@ -51,6 +51,9 @@ export default {
       routeFullPath: null,
       initialized: false,
       paginationMode: 'offset',
+      deepScrollAllowed: true,
+      deepScrollBlocked: false,
+      maxOffsetPages: Infinity,
       nextCursor: null,
       isCountDeferred: false,
       pageCursors: {},
@@ -338,6 +341,9 @@ export default {
     },
     resetPaginationState() {
       this.paginationMode = 'offset'
+      this.deepScrollAllowed = true
+      this.deepScrollBlocked = false
+      this.maxOffsetPages = Infinity
       this.nextCursor = null
       this.isCountDeferred = false
       this.pageCursors = { 0: null }
@@ -387,6 +393,9 @@ export default {
         }
 
         this.paginationMode = payload.paginationMode || this.paginationMode
+        this.deepScrollAllowed = payload.deepScrollAllowed !== false
+        this.deepScrollBlocked = this.paginationMode === 'offset' && !this.deepScrollAllowed
+        this.maxOffsetPages = this.deepScrollBlocked ? 3 : Infinity
         this.nextCursor = payload.nextCursor || null
         this.isCountDeferred = !!payload.isCountDeferred
 
@@ -426,6 +435,10 @@ export default {
       }
     },
     loadPage(page) {
+      if (this.deepScrollBlocked && page >= this.maxOffsetPages) {
+        return Promise.resolve()
+      }
+
       if (this.pagesLoaded[page]) return this.pagesLoaded[page]
 
       if (this.paginationMode === 'keyset' && page > 0) {
