@@ -19,6 +19,10 @@ function getKeysetCursorKeys(sortBy) {
     return ['createdAt', 'id']
   }
 
+  if (sortBy === 'updatedAt') {
+    return ['updatedAt', 'id']
+  }
+
   if (sortBy === 'progress') {
     return ['mediaProgresses.updatedAt', 'id']
   }

@@ -86,8 +86,8 @@ describe('libraryBrowseStrategy', () => {
     })
 
     expect(strategy.family).to.equal('plain-browse')
-    expect(strategy.paginationMode).to.equal('offset')
-    expect(strategy.cursorKeys).to.deep.equal([])
+    expect(strategy.paginationMode).to.equal('keyset')
+    expect(strategy.cursorKeys).to.deep.equal(['updatedAt', 'id'])
   })
 
   it('uses keyset pagination for deterministic author browse', () => {
