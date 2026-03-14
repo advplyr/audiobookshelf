@@ -11,6 +11,8 @@ const libraryItemsBookFilters = require('../../../server/utils/queries/libraryIt
 const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
 
 describe('LibraryController large-library browse contract', () => {
+  const getLiteralSql = (predicate) => String(predicate?.attribute?.val || predicate?.attribute || predicate?.left?.val || predicate?.left || '')
+
   beforeEach(async () => {
     global.ServerSettings = {}
     Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
@@ -381,5 +383,25 @@ describe('LibraryController large-library browse contract', () => {
     expect(findAndCountAllStub.calledOnce).to.equal(true)
     expect(findAllStub.called).to.equal(false)
     expect(countStub.called).to.equal(false)
+  })
+
+  it('builds EXISTS predicates for browse filters and permission-tag checks instead of correlated count subqueries', () => {
+    const { mediaWhere: tagWhere } = libraryItemsBookFilters.getMediaGroupQuery('tags', 'Fantasy')
+    const { mediaWhere: genreWhere } = libraryItemsBookFilters.getMediaGroupQuery('genres', 'Fantasy')
+    const { mediaWhere: narratorWhere } = libraryItemsBookFilters.getMediaGroupQuery('narrators', 'Jane Doe')
+    const { mediaWhere: trackWhere } = libraryItemsBookFilters.getMediaGroupQuery('tracks', 'multi')
+    const { mediaWhere: ebookWhere } = libraryItemsBookFilters.getMediaGroupQuery('ebooks', 'ebook')
+    const permissionWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery({
+      canAccessExplicitContent: true,
+      accessAllTags: false,
+      itemTagsSelected: ['Fantasy'],
+      selectedTagsNotAccessible: false
+    }).bookWhere[0]
+
+    ;[tagWhere, genreWhere, narratorWhere, trackWhere, ebookWhere, permissionWhere].forEach((predicate) => {
+      const sql = getLiteralSql(predicate)
+      expect(sql).to.include('EXISTS')
+      expect(sql).to.not.include('count(*)')
+    })
   })
 })

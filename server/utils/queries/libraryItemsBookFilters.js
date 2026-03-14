@@ -11,6 +11,42 @@ const { loadBrowseCount } = require('./libraryBrowseCount')
 const { encodeBrowseCursor, decodeBrowseCursor } = require('./libraryBrowseCursor')
 const countCache = new Map()
 
+function existsLiteral(sql) {
+  return Sequelize.where(Sequelize.literal(`EXISTS (${sql})`), true)
+}
+
+function notExistsLiteral(sql) {
+  return Sequelize.where(Sequelize.literal(`NOT EXISTS (${sql})`), true)
+}
+
+function hasNamedBookValue(fieldName, replacementKey = 'filterValue') {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) AND json_each.value = :${replacementKey}`)
+}
+
+function hasAnyJsonValue(fieldName) {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName})`)
+}
+
+function hasNoJsonValue(fieldName) {
+  return notExistsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName})`)
+}
+
+function hasAtLeastTwoJsonValues(fieldName) {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) LIMIT 1 OFFSET 1`)
+}
+
+function hasExactlyOneJsonValue(fieldName) {
+  return [hasAnyJsonValue(fieldName), notExistsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) LIMIT 1 OFFSET 1`)]
+}
+
+function hasScalarValue(columnName) {
+  return existsLiteral(`SELECT 1 WHERE ${columnName} IS NOT NULL`)
+}
+
+function hasNoScalarValue(columnName) {
+  return notExistsLiteral(`SELECT 1 WHERE ${columnName} IS NOT NULL`)
+}
+
 function normalizeCursorValue(key, value) {
   if (value == null) return value
 
@@ -48,7 +84,7 @@ function getCursorComparisonExpression(key) {
   const quotedColumn = getQuotedCursorColumn(key)
 
   if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst'].includes(key)) {
-    return Sequelize.literal(dialectHelpers.getCaseInsensitiveOrder(Database.getDialect(), quotedColumn, false))
+    return Sequelize.literal(`LOWER(${quotedColumn})`)
   }
 
   return Sequelize.literal(quotedColumn)
@@ -147,21 +183,21 @@ module.exports = {
     const replacements = {}
     if (!user) return { bookWhere, replacements }
 
+    const accessAllTags = user.permissions?.accessAllTags ?? user.accessAllTags
+    const itemTagsSelected = user.permissions?.itemTagsSelected ?? user.itemTagsSelected
+    const selectedTagsNotAccessible = user.permissions?.selectedTagsNotAccessible ?? user.selectedTagsNotAccessible
+
     if (!user.canAccessExplicitContent) {
       bookWhere.push({
         explicit: false
       })
     }
-    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
-      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
-      if (user.permissions.selectedTagsNotAccessible) {
-        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
+    if (!accessAllTags && itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = itemTagsSelected
+      if (selectedTagsNotAccessible) {
+        bookWhere.push(notExistsLiteral(`SELECT 1 FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)`))
       } else {
-        bookWhere.push(
-          Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
-            [Sequelize.Op.gte]: 1
-          })
-        )
+        bookWhere.push(existsLiteral(`SELECT 1 FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)`))
       }
     }
     return {
@@ -288,7 +324,7 @@ module.exports = {
       } else if (value === 'ebook-in-progress') {
         // Filters for ebook only
         mediaWhere = [
-          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
+          hasNoJsonValue('audioFiles'),
           {
             '$mediaProgresses.ebookProgress$': {
               [Sequelize.Op.gt]: 0
@@ -301,7 +337,7 @@ module.exports = {
       } else if (value === 'ebook-finished') {
         // Filters for ebook only
         mediaWhere = [
-          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
+          hasNoJsonValue('audioFiles'),
           {
             '$mediaProgresses.isFinished$': true,
             ebookFile: {
@@ -317,9 +353,7 @@ module.exports = {
     } else if (group === 'explicit') {
       mediaWhere['explicit'] = true
     } else if (['genres', 'tags', 'narrators'].includes(group)) {
-      mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
-        [Sequelize.Op.gte]: 1
-      })
+      mediaWhere = hasNamedBookValue(group)
       replacements.filterValue = value
     } else if (group === 'publishers') {
       mediaWhere['publisher'] = value
@@ -327,23 +361,17 @@ module.exports = {
       mediaWhere['language'] = value
     } else if (group === 'tracks') {
       if (value === 'none') {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0)
+        mediaWhere = hasNoJsonValue('audioFiles')
       } else if (value === 'multi') {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), {
-          [Sequelize.Op.gt]: 1
-        })
+        mediaWhere = hasAtLeastTwoJsonValues('audioFiles')
       } else {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 1)
+        mediaWhere = hasExactlyOneJsonValue('audioFiles')
       }
     } else if (group === 'ebooks') {
       if (value === 'ebook') {
-        mediaWhere['ebookFile'] = {
-          [Sequelize.Op.not]: null
-        }
+        mediaWhere = hasScalarValue('book.ebookFile')
       } else if (value == 'no-ebook') {
-        mediaWhere['ebookFile'] = {
-          [Sequelize.Op.eq]: null
-        }
+        mediaWhere = hasNoScalarValue('book.ebookFile')
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
@@ -353,9 +381,7 @@ module.exports = {
           [Sequelize.Op.or]: [null, '']
         }
       } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value)) {
-        mediaWhere[value] = {
-          [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
-        }
+        mediaWhere = hasNoJsonValue(value)
       } else if (value === 'authors') {
         mediaWhere['$authors.id$'] = null
       } else if (value === 'series') {
