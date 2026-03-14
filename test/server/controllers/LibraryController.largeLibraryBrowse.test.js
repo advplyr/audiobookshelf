@@ -341,6 +341,7 @@ describe('LibraryController large-library browse contract', () => {
       libraryId: 'lib_1'
     })
     expect(getCollapsedSeriesWindowStub.firstCall.args[4].browseProfile.mark).to.be.a('function')
+    expect(res.json.firstCall.args[0].browseProfile).to.equal(undefined)
   })
 
   it('does not run exact count work or joined findAndCountAll again on follow-up keyset chunks', async () => {
