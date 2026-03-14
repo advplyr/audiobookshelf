@@ -2,6 +2,7 @@ const chai = require('chai')
 const expect = chai.expect
 const sinon = require('sinon')
 
+const Logger = require('../../../server/Logger')
 const {
   createBrowseRequestProfile,
   createBrowsePhaseTiming,
@@ -122,5 +123,40 @@ describe('libraryBrowseInstrumentation', () => {
     expect(originalFindOptions).to.not.have.property('benchmark')
     expect(callerLogging.calledOnceWithExactly('SELECT 1', 12)).to.equal(true)
     expect(result.phases).to.deep.equal({ rows: 40 })
+  })
+
+  it('bounds retained histogram samples and logs a compact summary instead of full arrays', async () => {
+    const loggerInfoStub = sinon.stub(Logger, 'info')
+    const wrappedQuery = profile(async () => 'ok', false, 'boundedProfilerQuery')
+
+    for (let i = 0; i < 150; i++) {
+      await wrappedQuery()
+    }
+
+    const summaryCalls = loggerInfoStub.getCalls().filter((call) => call.args[0] === '[boundedProfilerQuery] histogram summary:')
+    const lastSummary = summaryCalls[summaryCalls.length - 1].args[1]
+
+    expect(summaryCalls.length).to.equal(150)
+    expect(lastSummary.recentValues).to.have.length.at.most(100)
+    expect(lastSummary).to.not.have.property('values')
+  })
+
+  it('limits serialized findOptions logging for profiled queries', async () => {
+    const loggerInfoStub = sinon.stub(Logger, 'info')
+    const wrappedQuery = profile(async (findOptions) => {
+      findOptions.logging('SELECT 1', 5)
+      return []
+    }, true, 'loggedFindOptionsQuery')
+
+    await wrappedQuery({
+      where: {
+        ids: Array.from({ length: 500 }, (_, index) => `id-${index}`)
+      }
+    })
+
+    const findOptionsCall = loggerInfoStub.getCalls().find((call) => call.args[0] === '[loggedFindOptionsQuery] findOptions:')
+
+    expect(findOptionsCall.args[1]).to.be.a('string')
+    expect(findOptionsCall.args[1].length).to.be.lessThan(2000)
   })
 })

@@ -3,6 +3,8 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 const { profile } = require('../../utils/profiler')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+const { getLibraryBrowseStrategy } = require('./libraryBrowseStrategy')
+const { createBrowsePhaseTiming } = require('./libraryBrowseInstrumentation')
 
 const countCache = new Map()
 
@@ -206,9 +208,45 @@ module.exports = {
       subQuery: false
     }
 
-    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+    const strategy = getLibraryBrowseStrategy({
+      mediaType: 'podcast',
+      sortBy,
+      filterGroup,
+      pageMode: browseRequestOptions?.pageMode,
+      collapseseries: browseRequestOptions?.collapseseries
+    })
+    const rowsTiming = createBrowsePhaseTiming(browseRequestOptions?.browseProfile, 'rows')
+    findOptions.requestTiming = rowsTiming
 
-    const { rows: podcasts, count } = await findAndCountAll(findOptions, Database.podcastModel, limit, offset, !filterGroup && !userPermissionPodcastWhere.podcastWhere.length)
+    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+    let podcasts
+    let count
+    const loadOffsetResult = () => findAndCountAll(findOptions, Database.podcastModel, limit, offset, !filterGroup && !userPermissionPodcastWhere.podcastWhere.length)
+    try {
+      const result = process.env.QUERY_PROFILING
+        ? await loadOffsetResult()
+        : await (async () => {
+            if (rowsTiming && typeof rowsTiming.onStart === 'function') {
+              rowsTiming.onStart()
+            }
+            try {
+              const loadedResult = await loadOffsetResult()
+              if (rowsTiming && typeof rowsTiming.onFinish === 'function') {
+                rowsTiming.onFinish(loadedResult)
+              }
+              return loadedResult
+            } catch (error) {
+              if (rowsTiming && typeof rowsTiming.onError === 'function') {
+                rowsTiming.onError(error)
+              }
+              throw error
+            }
+          })()
+      podcasts = result.rows
+      count = result.count
+    } catch (error) {
+      throw error
+    }
 
     const libraryItems = podcasts.map((podcastExpanded) => {
       const libraryItem = podcastExpanded.libraryItem
@@ -237,7 +275,12 @@ module.exports = {
 
     return {
       libraryItems,
-      count
+      count,
+      nextCursor: null,
+      paginationMode: strategy.paginationMode,
+      deepScrollAllowed: strategy.deepScrollAllowed,
+      countMode: strategy.countMode,
+      isCountDeferred: false
     }
   },
 

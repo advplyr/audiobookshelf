@@ -293,14 +293,20 @@ class LibraryItem extends Model {
    */
   static async getByFilterAndSort(library, user, options) {
     let start = Date.now()
-    const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await libraryFilters.getFilteredLibraryItems(library.id, user, {
+    const browseProfile = options.browseProfile || null
+    const { libraryItems, count, nextCursor, paginationMode, deepScrollAllowed, countMode, isCountDeferred } = await libraryFilters.getFilteredLibraryItems(library.id, user, {
       ...options,
       cursor: options.cursor || null,
-      pageMode: options.pageMode || 'paged'
+      pageMode: options.pageMode || 'paged',
+      browseProfile
     })
     Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
-    return {
+    if (browseProfile && typeof browseProfile.mark === 'function') {
+      browseProfile.mark('postprocess:start')
+    }
+
+    const payload = {
       libraryItems: libraryItems.map((li) => {
         const oldLibraryItem = li.toOldJSONMinified()
         if (li.collapsedSeries) {
@@ -330,9 +336,16 @@ class LibraryItem extends Model {
       count,
       nextCursor,
       paginationMode,
+      deepScrollAllowed,
       countMode,
       isCountDeferred
     }
+
+    if (browseProfile && typeof browseProfile.mark === 'function') {
+      browseProfile.mark('postprocess:end')
+    }
+
+    return payload
   }
 
   /**

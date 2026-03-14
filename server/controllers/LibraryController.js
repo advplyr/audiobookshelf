@@ -24,6 +24,10 @@ const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 const zipHelpers = require('../utils/zipHelpers')
+const {
+  createBrowseRequestProfile,
+  finishBrowseRequestProfile
+} = require('../utils/queries/libraryBrowseInstrumentation')
 
 /**
  * @typedef RequestUserObject
@@ -618,6 +622,7 @@ class LibraryController {
       pageMode: req.query.pageMode || 'paged',
       nextCursor: null,
       paginationMode: 'offset',
+      deepScrollAllowed: false,
       isCountDeferred: false,
       countMode: 'exact-on-initial-page',
       sortBy: req.query.sort,
@@ -630,6 +635,10 @@ class LibraryController {
     }
 
     payload.offset = payload.page * payload.limit
+    const browseProfile = createBrowseRequestProfile({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: req.library.id
+    })
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
     const filterByGroup = payload.filterBy?.split('.').shift()
@@ -646,13 +655,22 @@ class LibraryController {
       payload.total = count
       payload.results = await libraryHelpers.toCollapsedSeriesPayload(libraryItems, seriesId, req.library.settings.hideSingleBookSeries)
     } else {
-      const { libraryItems, count, nextCursor, paginationMode, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
+      const { libraryItems, count, nextCursor, paginationMode, deepScrollAllowed, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, {
+        ...payload,
+        browseProfile
+      })
       payload.results = libraryItems
       payload.total = count
       payload.nextCursor = nextCursor || null
       payload.paginationMode = paginationMode || 'offset'
+      payload.deepScrollAllowed = !!deepScrollAllowed
       payload.countMode = countMode || 'exact-on-initial-page'
       payload.isCountDeferred = !!isCountDeferred
+    }
+
+    const browseSummary = finishBrowseRequestProfile(browseProfile)
+    if (browseSummary.isSlow) {
+      Logger.info('[LibraryController] Slow library browse request', browseSummary)
     }
 
     res.json(payload)

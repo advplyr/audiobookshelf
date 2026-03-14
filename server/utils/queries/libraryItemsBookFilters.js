@@ -9,6 +9,7 @@ const stringifySequelizeQuery = require('../stringifySequelizeQuery')
 const { getLibraryBrowseStrategy } = require('./libraryBrowseStrategy')
 const { loadBrowseCount } = require('./libraryBrowseCount')
 const { encodeBrowseCursor, decodeBrowseCursor } = require('./libraryBrowseCursor')
+const { createBrowsePhaseTiming } = require('./libraryBrowseInstrumentation')
 const countCache = new Map()
 
 function existsLiteral(sql) {
@@ -143,19 +144,59 @@ function buildBookCursorClause(cursor, cursorKeys, sortDesc) {
   }
 }
 
-async function loadBookBrowseRows({ model, findOptions, limit, cursorClause }) {
+function createBrowseQueryLogging(funcName, requestTiming) {
+  if (!process.env.QUERY_PROFILING) {
+    return undefined
+  }
+
+  return (sql, elapsedMs) => {
+    Logger.info(`[${funcName}] ${sql} Elapsed time: ${elapsedMs}ms`)
+    if (requestTiming && typeof requestTiming.onQuery === 'function') {
+      requestTiming.onQuery(sql, elapsedMs)
+    }
+  }
+}
+
+async function runWithBrowsePhase(requestTiming, loader) {
+  if (requestTiming && typeof requestTiming.onStart === 'function') {
+    requestTiming.onStart()
+  }
+
+  try {
+    const result = await loader()
+    if (requestTiming && typeof requestTiming.onFinish === 'function') {
+      requestTiming.onFinish(result)
+    }
+    return result
+  } catch (error) {
+    if (requestTiming && typeof requestTiming.onError === 'function') {
+      requestTiming.onError(error)
+    }
+    throw error
+  }
+}
+
+async function loadBookBrowseRows({ model, findOptions, limit, cursorClause, requestTiming = null }) {
   const whereClauses = Array.isArray(findOptions.where) ? [...findOptions.where] : [findOptions.where]
   const rowLimit = Number(limit) || null
 
   return model.findAll({
     ...findOptions,
     where: cursorClause ? [...whereClauses, cursorClause] : whereClauses,
-    limit: rowLimit ? rowLimit + 1 : null
+    limit: rowLimit ? rowLimit + 1 : null,
+    requestTiming,
+    logging: createBrowseQueryLogging('loadBookBrowseRows', requestTiming),
+    benchmark: !!process.env.QUERY_PROFILING
   })
 }
 
-async function loadBookBrowseCount({ model, countOptions }) {
-  return model.count(countOptions)
+async function loadBookBrowseCount({ model, countOptions, requestTiming = null }) {
+  return model.count({
+    ...countOptions,
+    requestTiming,
+    logging: createBrowseQueryLogging('loadBookBrowseCount', requestTiming),
+    benchmark: !!process.env.QUERY_PROFILING
+  })
 }
 
 async function loadCollapsedSeriesWindow({ findOptions, countOptions, limit, offset }) {
@@ -1082,7 +1123,10 @@ module.exports = {
     let nextCursor = null
     let paginationMode = strategy.paginationMode
     let countMode = strategy.countMode
+    let deepScrollAllowed = strategy.deepScrollAllowed
     let isCountDeferred = false
+    const rowsTiming = createBrowsePhaseTiming(browseRequestOptions?.browseProfile, 'rows')
+    const countTiming = createBrowsePhaseTiming(browseRequestOptions?.browseProfile, 'count')
 
     if (strategy.paginationMode === 'keyset') {
       const countOptions = { ...findOptions }
@@ -1091,15 +1135,22 @@ module.exports = {
       const cursorClause = buildBookCursorClause(browseRequestOptions?.cursor, strategy.cursorKeys, sortDesc)
       const effectiveCountMode = browseRequestOptions?.cursor ? 'skip' : strategy.countMode
       const [loadedBooks, countPayload] = await Promise.all([
-        loadBookBrowseRows({
-          model: Database.bookModel,
-          findOptions,
-          limit,
-          cursorClause
+        runWithBrowsePhase(rowsTiming, async () => {
+          const loadRows = process.env.QUERY_PROFILING ? profile(loadBookBrowseRows, false, 'loadBookBrowseRows') : loadBookBrowseRows
+          return loadRows({
+            model: Database.bookModel,
+            findOptions,
+            limit,
+            cursorClause,
+            requestTiming: rowsTiming
+          })
         }),
-        loadBrowseCount({
-          mode: effectiveCountMode,
-          exactCountLoader: () => loadBookBrowseCount({ model: Database.bookModel, countOptions })
+        runWithBrowsePhase(countTiming, async () => {
+          const countLoader = process.env.QUERY_PROFILING ? profile(loadBookBrowseCount, false, 'loadBookBrowseCount') : loadBookBrowseCount
+          return loadBrowseCount({
+            mode: effectiveCountMode,
+            exactCountLoader: () => countLoader({ model: Database.bookModel, countOptions, requestTiming: countTiming })
+          })
         })
       ])
 
@@ -1109,12 +1160,15 @@ module.exports = {
       countMode = effectiveCountMode === 'skip' ? 'skip' : strategy.countMode
       isCountDeferred = countPayload.isDeferred
     } else {
+      findOptions.requestTiming = rowsTiming
       const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-      const result = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+      const loadOffsetResult = () => findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+      const result = process.env.QUERY_PROFILING ? await loadOffsetResult() : await runWithBrowsePhase(rowsTiming, loadOffsetResult)
       books = result.rows
       count = result.count
       countMode = 'exact-on-initial-page'
       paginationMode = 'offset'
+      deepScrollAllowed = false
     }
 
     const libraryItems = books.map((bookExpanded) => {
@@ -1178,6 +1232,7 @@ module.exports = {
       count,
       nextCursor,
       paginationMode,
+      deepScrollAllowed,
       countMode,
       isCountDeferred
     }

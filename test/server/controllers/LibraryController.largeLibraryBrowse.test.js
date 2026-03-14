@@ -4,9 +4,11 @@ const sinon = require('sinon')
 
 const Database = require('../../../server/Database')
 const LibraryController = require('../../../server/controllers/LibraryController')
+const Logger = require('../../../server/Logger')
 const libraryFilters = require('../../../server/utils/queries/libraryFilters')
 const { decodeBrowseCursor } = require('../../../server/utils/queries/libraryBrowseCursor')
 const { getLibraryBrowseStrategy } = require('../../../server/utils/queries/libraryBrowseStrategy')
+const { createBrowseRequestProfile, finishBrowseRequestProfile } = require('../../../server/utils/queries/libraryBrowseInstrumentation')
 const libraryItemsBookFilters = require('../../../server/utils/queries/libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
 const libraryHelpers = require('../../../server/utils/libraryHelpers')
@@ -50,6 +52,7 @@ describe('LibraryController large-library browse contract', () => {
   })
 
   afterEach(async () => {
+    delete process.env.QUERY_PROFILING
     sinon.restore()
     await Database.sequelize.sync({ force: true })
   })
@@ -61,7 +64,8 @@ describe('LibraryController large-library browse contract', () => {
       nextCursor: 'cursor-2',
       paginationMode: 'keyset',
       countMode: 'deferred-exact',
-      isCountDeferred: true
+      isCountDeferred: true,
+      deepScrollAllowed: true
     })
     const req = {
       query: { limit: '40', sort: 'media.metadata.title', minified: '1', cursor: 'cursor-1', pageMode: 'endless' },
@@ -83,8 +87,85 @@ describe('LibraryController large-library browse contract', () => {
       nextCursor: 'cursor-2',
       paginationMode: 'keyset',
       isCountDeferred: true,
-      countMode: 'deferred-exact'
+      countMode: 'deferred-exact',
+      deepScrollAllowed: true
     })
+  })
+
+  it('creates a browse profile for the live items endpoint and forwards it into the browse model call', async () => {
+    const getByFilterAndSortStub = sinon.stub(Database.libraryItemModel, 'getByFilterAndSort').resolves({
+      libraryItems: [],
+      count: 0,
+      nextCursor: null,
+      paginationMode: 'offset',
+      countMode: 'exact-on-initial-page',
+      isCountDeferred: false,
+      deepScrollAllowed: false
+    })
+    const req = {
+      query: { limit: '20', sort: 'media.metadata.title', filter: 'recent', pageMode: 'endless' },
+      library: { id: 'lib_1', mediaType: 'book', isVirtual: false },
+      user: { id: 'user_1' }
+    }
+    const res = { json: sinon.spy() }
+
+    await LibraryController.getLibraryItems(req, res)
+
+    expect(getByFilterAndSortStub.firstCall.args[2].browseProfile).to.include({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: 'lib_1'
+    })
+    expect(getByFilterAndSortStub.firstCall.args[2].browseProfile.mark).to.be.a('function')
+  })
+
+  it('records browse query timings for keyset browse queries when query profiling is enabled', async () => {
+    process.env.QUERY_PROFILING = '1'
+    global.ServerSettings = { sortingIgnorePrefix: true }
+
+    const loggerInfoStub = sinon.stub(Logger, 'info')
+    const countStub = sinon.stub(Database.bookModel, 'count').callsFake(async (findOptions) => {
+      expect(findOptions.requestTiming).to.be.an('object')
+      findOptions.logging('SELECT count(*)', 14)
+      return 3
+    })
+    const findAllStub = sinon.stub(Database.bookModel, 'findAll').callsFake(async (findOptions) => {
+      expect(findOptions.requestTiming).to.be.an('object')
+      findOptions.logging('SELECT rows', 28)
+      return [
+        { id: 'book-1', title: 'Alpha', libraryItem: { id: 'item-1', titleIgnorePrefix: 'Alpha', dataValues: { titleIgnorePrefix: 'Alpha' } } },
+        { id: 'book-2', title: 'Beta', libraryItem: { id: 'item-2', titleIgnorePrefix: 'Beta', dataValues: { titleIgnorePrefix: 'Beta' } } }
+      ]
+    })
+    sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 0 })
+
+    const browseProfile = createBrowseRequestProfile({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: 'lib_1'
+    })
+
+    const result = await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      false,
+      [],
+      1,
+      0,
+      false,
+      { pageMode: 'endless', browseProfile }
+    )
+
+    const summary = finishBrowseRequestProfile(browseProfile, { slowMs: 0 })
+
+    expect(result.paginationMode).to.equal('keyset')
+    expect(findAllStub.calledOnce).to.equal(true)
+    expect(countStub.calledOnce).to.equal(true)
+    expect(summary.phases).to.have.property('rows')
+    expect(summary.phases).to.have.property('count')
+    expect(loggerInfoStub.called).to.equal(true)
   })
 
   it('defaults pageMode to paged even when a cursor is present', async () => {
@@ -783,9 +864,9 @@ describe('LibraryController large-library browse contract', () => {
     sinon.stub(Database.authorModel, 'count')
       .onFirstCall().resolves(1)
       .onSecondCall().resolves(0)
-    const genresFindAllStub = sinon.stub(Database.genreModel, 'findAll').resolves([])
-    const tagsFindAllStub = sinon.stub(Database.tagModel, 'findAll').resolves([])
-    const narratorsFindAllStub = sinon.stub(Database.narratorModel, 'findAll').resolves([])
+    const genresFindAllStub = Database.genreModel ? sinon.stub(Database.genreModel, 'findAll').resolves([]) : { called: false }
+    const tagsFindAllStub = Database.tagModel ? sinon.stub(Database.tagModel, 'findAll').resolves([]) : { called: false }
+    const narratorsFindAllStub = Database.narratorModel ? sinon.stub(Database.narratorModel, 'findAll').resolves([]) : { called: false }
     const booksFindAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
     const seriesFindAllStub = sinon.stub(Database.seriesModel, 'findAll').resolves([])
     const authorsFindAllStub = sinon.stub(Database.authorModel, 'findAll').resolves([])
