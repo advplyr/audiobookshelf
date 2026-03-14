@@ -4,6 +4,18 @@ const Logger = require('../Logger')
 
 const histograms = new Map()
 
+function createRequestScopedFindOptions(findOptions, funcName) {
+  if (!findOptions || typeof findOptions !== 'object' || Array.isArray(findOptions)) {
+    return findOptions
+  }
+
+  return {
+    ...findOptions,
+    logging: (query, time) => Logger.info(`[${funcName}] ${query} Elapsed time: ${time}ms`),
+    benchmark: true
+  }
+}
+
 function profile(asyncFunc, isFindQuery = true, funcName = asyncFunc.name) {
   if (!histograms.has(funcName)) {
     const histogram = createHistogram()
@@ -13,15 +25,15 @@ function profile(asyncFunc, isFindQuery = true, funcName = asyncFunc.name) {
   const histogram = histograms.get(funcName)
 
   return async (...args) => {
+    const requestArgs = isFindQuery ? [createRequestScopedFindOptions(args[0], funcName), ...args.slice(1)] : args
+
     if (isFindQuery) {
-      const findOptions = args[0]
+      const findOptions = requestArgs[0]
       Logger.info(`[${funcName}] findOptions:`, util.inspect(findOptions, { depth: null }))
-      findOptions.logging = (query, time) => Logger.info(`[${funcName}] ${query} Elapsed time: ${time}ms`)
-      findOptions.benchmark = true
     }
     const start = performance.now()
     try {
-      const result = await asyncFunc(...args)
+      const result = await asyncFunc(...requestArgs)
       return result
     } catch (error) {
       Logger.error(`[${funcName}] failed`)
