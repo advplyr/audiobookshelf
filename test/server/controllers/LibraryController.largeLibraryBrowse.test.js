@@ -4,7 +4,8 @@ const sinon = require('sinon')
 
 const Database = require('../../../server/Database')
 const LibraryController = require('../../../server/controllers/LibraryController')
-const libraryFilters = require('../../../server/utils/queries/libraryFilters')
+const libraryItemsBookFilters = require('../../../server/utils/queries/libraryItemsBookFilters')
+const libraryItemsPodcastFilters = require('../../../server/utils/queries/libraryItemsPodcastFilters')
 
 describe('LibraryController large-library browse contract', () => {
   beforeEach(async () => {
@@ -80,8 +81,58 @@ describe('LibraryController large-library browse contract', () => {
     })
   })
 
-  it('forwards cursor, pageMode, and collapseseries through the real browse stack', async () => {
-    const getFilteredLibraryItemsStub = sinon.stub(libraryFilters, 'getFilteredLibraryItems').resolves({
+  it('uses forwarded browse request options inside the book query helper', async () => {
+    const getOrderStub = sinon.stub(libraryItemsBookFilters, 'getOrder').returns([])
+    sinon.stub(libraryItemsBookFilters, 'getMediaGroupQuery').returns({ mediaWhere: {}, replacements: {} })
+    sinon.stub(libraryItemsBookFilters, 'getUserPermissionBookWhereQuery').returns({ bookWhere: [], replacements: {} })
+    sinon.stub(Database.bookModel, 'findAndCountAll').resolves({ rows: [], count: 0 })
+
+    await libraryItemsBookFilters.getFilteredLibraryItems(
+      'lib_1',
+      { id: 'user_1', isAdminOrUp: false, canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      false,
+      [],
+      40,
+      0,
+      false,
+      { cursor: 'cursor-1', pageMode: 'endless', collapseseries: true }
+    )
+
+    expect(getOrderStub.firstCall.args[2]).to.equal(true)
+  })
+
+  it('uses forwarded browse request options inside the podcast query helper', async () => {
+    const requestOptions = { cursor: 'cursor-9' }
+    sinon.stub(libraryItemsPodcastFilters, 'getMediaGroupQuery').returns({ mediaWhere: {}, replacements: {} })
+    sinon.stub(libraryItemsPodcastFilters, 'getUserPermissionPodcastWhereQuery').returns({ podcastWhere: [], replacements: {} })
+    sinon.stub(libraryItemsPodcastFilters, 'getOrder').returns([])
+    sinon.stub(Database.podcastModel, 'findAndCountAll').resolves({ rows: [], count: 0 })
+
+    await libraryItemsPodcastFilters.getFilteredLibraryItems(
+      'lib_2',
+      { id: 'user_2', canAccessExplicitContent: true, accessAllTags: true },
+      null,
+      null,
+      'media.metadata.title',
+      false,
+      [],
+      40,
+      0,
+      requestOptions
+    )
+
+    expect(requestOptions).to.deep.equal({
+      cursor: 'cursor-9',
+      pageMode: 'paged'
+    })
+  })
+
+  it('forwards cursor, pageMode, and collapseseries through libraryFilters into the book query helper', async () => {
+    const getFilteredLibraryItemsStub = sinon.stub(libraryItemsBookFilters, 'getFilteredLibraryItems').resolves({
       libraryItems: [],
       count: 0,
       nextCursor: 'cursor-2',
@@ -105,10 +156,42 @@ describe('LibraryController large-library browse contract', () => {
       }
     )
 
-    expect(getFilteredLibraryItemsStub.firstCall.args[2]).to.include({
+    expect(getFilteredLibraryItemsStub.firstCall.args[11]).to.deep.equal({
       cursor: 'cursor-1',
       pageMode: 'endless',
       collapseseries: true
+    })
+  })
+
+  it('forwards cursor, pageMode, and collapseseries through libraryFilters into the podcast query helper', async () => {
+    const getFilteredLibraryItemsStub = sinon.stub(libraryItemsPodcastFilters, 'getFilteredLibraryItems').resolves({
+      libraryItems: [],
+      count: 0,
+      nextCursor: 'cursor-2',
+      paginationMode: 'keyset',
+      countMode: 'deferred-exact',
+      isCountDeferred: true
+    })
+
+    await Database.libraryItemModel.getByFilterAndSort(
+      { id: 'lib_2', mediaType: 'podcast' },
+      { id: 'user_2' },
+      {
+        sortBy: 'media.metadata.title',
+        limit: 40,
+        offset: 0,
+        cursor: 'cursor-9',
+        pageMode: 'endless',
+        include: [],
+        collapseseries: false,
+        mediaType: 'podcast'
+      }
+    )
+
+    expect(getFilteredLibraryItemsStub.firstCall.args[9]).to.deep.equal({
+      cursor: 'cursor-9',
+      pageMode: 'endless',
+      collapseseries: false
     })
   })
 })
