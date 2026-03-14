@@ -1,25 +1,45 @@
-function getCursorKeys(sortBy) {
+function getTitleCursorKey() {
+  return global.ServerSettings && global.ServerSettings.sortingIgnorePrefix ? 'titleIgnorePrefix' : 'title'
+}
+
+function getKeysetCursorKeys(sortBy) {
+  if (sortBy === 'media.metadata.title') {
+    return [getTitleCursorKey(), 'id']
+  }
+
   if (sortBy === 'media.metadata.authorName') {
-    return ['authorNamesFirstLast', 'titleIgnorePrefix', 'id']
+    return ['authorNamesFirstLast', getTitleCursorKey(), 'id']
   }
 
   if (sortBy === 'media.metadata.authorNameLF') {
-    return ['authorNamesLastFirst', 'titleIgnorePrefix', 'id']
-  }
-
-  if (sortBy === 'progress') {
-    return ['mediaProgress.updatedAt', 'id']
-  }
-
-  if (sortBy === 'updatedAt') {
-    return ['updatedAt', 'id']
+    return ['authorNamesLastFirst', getTitleCursorKey(), 'id']
   }
 
   if (sortBy === 'addedAt') {
     return ['createdAt', 'id']
   }
 
-  return ['titleIgnorePrefix', 'id']
+  if (sortBy === 'progress') {
+    return ['mediaProgresses.updatedAt', 'id']
+  }
+
+  if (sortBy === 'progress.createdAt') {
+    return ['mediaProgresses.createdAt', 'id']
+  }
+
+  if (sortBy === 'progress.finishedAt') {
+    return ['mediaProgresses.finishedAt', 'id']
+  }
+
+  return []
+}
+
+function getPaginationMode(pageMode, sortBy) {
+  if (pageMode !== 'endless') {
+    return 'offset'
+  }
+
+  return getKeysetCursorKeys(sortBy).length ? 'keyset' : 'offset'
 }
 
 function getFamily({ mediaType, sortBy, filterGroup, collapseseries }) {
@@ -50,11 +70,11 @@ function getLibraryBrowseStrategy({ mediaType, sortBy, filterGroup, pageMode, co
 
   return {
     family: getFamily({ mediaType, sortBy: normalizedSort, filterGroup, collapseseries }),
-    paginationMode: pageMode === 'endless' ? 'keyset' : 'offset',
+    paginationMode: getPaginationMode(pageMode, normalizedSort),
     countMode: 'deferred-exact',
     deepScrollAllowed: true,
     tieBreaker: 'id',
-    cursorKeys: getCursorKeys(normalizedSort)
+    cursorKeys: getKeysetCursorKeys(normalizedSort)
   }
 }
 
