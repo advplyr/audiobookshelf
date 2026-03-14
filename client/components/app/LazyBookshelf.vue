@@ -50,6 +50,10 @@ export default {
     return {
       routeFullPath: null,
       initialized: false,
+      paginationMode: 'offset',
+      nextCursor: null,
+      isCountDeferred: false,
+      pageCursors: {},
       bookshelfHeight: 0,
       bookshelfWidth: 0,
       shelvesPerPage: 0,
@@ -327,6 +331,36 @@ export default {
         this.lastItemIndexSelected = -1
       }
     },
+    resetPaginationState() {
+      this.paginationMode = 'offset'
+      this.nextCursor = null
+      this.isCountDeferred = false
+      this.pageCursors = { 0: null }
+    },
+    getFetchQueryString(page = 0) {
+      const cursor = this.paginationMode === 'keyset' && page > 0 ? this.pageCursors[page] : null
+      const searchParams = new URLSearchParams()
+
+      if (this.currentSFQueryString) {
+        const currentSearchParams = new URLSearchParams(this.currentSFQueryString)
+        for (const [key, value] of currentSearchParams.entries()) {
+          searchParams.set(key, value)
+        }
+      }
+
+      searchParams.set('limit', this.booksPerFetch)
+      searchParams.set('pageMode', 'endless')
+      searchParams.set('minified', 1)
+      searchParams.set('include', 'rssfeed,numEpisodesIncomplete,share')
+
+      if (cursor) {
+        searchParams.set('cursor', cursor)
+      } else {
+        searchParams.set('page', page)
+      }
+
+      return `?${searchParams.toString()}`
+    },
     async fetchEntites(page = 0) {
       const startIndex = page * this.booksPerFetch
 
@@ -334,11 +368,11 @@ export default {
 
       if (!this.initialized) {
         this.currentSFQueryString = this.buildSearchParams()
+        this.resetPaginationState()
       }
 
       let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
-      const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete,share`
+      const fullQueryString = this.getFetchQueryString(page)
 
       const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch items', error)
@@ -352,6 +386,18 @@ export default {
         return
       }
       if (payload) {
+        this.paginationMode = payload.paginationMode || this.paginationMode
+        this.nextCursor = payload.nextCursor || null
+        this.isCountDeferred = !!payload.isCountDeferred
+
+        if (this.paginationMode === 'keyset') {
+          if (this.nextCursor) {
+            this.pageCursors[page + 1] = this.nextCursor
+          } else {
+            delete this.pageCursors[page + 1]
+          }
+        }
+
         if (!this.initialized) {
           this.initialized = true
           this.totalEntities = payload.total
@@ -371,7 +417,17 @@ export default {
       }
     },
     loadPage(page) {
-      if (!this.pagesLoaded[page]) this.pagesLoaded[page] = this.fetchEntites(page)
+      if (this.pagesLoaded[page]) return this.pagesLoaded[page]
+
+      if (this.paginationMode === 'keyset' && page > 0) {
+        this.pagesLoaded[page] = this.loadPage(page - 1).then(() => {
+          if (!this.pageCursors[page]) return Promise.resolve()
+          return this.fetchEntites(page)
+        })
+      } else {
+        this.pagesLoaded[page] = this.fetchEntites(page)
+      }
+
       return this.pagesLoaded[page]
     },
     showHideBookPlaceholder(index, show) {
@@ -413,7 +469,15 @@ export default {
       clearTimeout(this.postScrollTimeout)
       const firstPage = Math.floor(firstEntityIndex / this.booksPerFetch)
       const lastPage = Math.floor(lastEntityIndex / this.booksPerFetch)
-      Promise.all([this.loadPage(firstPage), this.loadPage(lastPage)])
+
+      // Mount whatever is cached immediately — cached cards show at once,
+      // uncached slots render as skeleton until data arrives
+      this.mountEntities(firstEntityIndex, lastEntityIndex)
+
+      // Then fetch missing pages and remount to fill in any skeleton placeholders
+      const visiblePageLoads = this.paginationMode === 'keyset' ? this.loadPage(firstPage).then(() => this.loadPage(lastPage)) : Promise.all([this.loadPage(firstPage), this.loadPage(lastPage)])
+
+      visiblePageLoads
         .then(() => this.mountEntities(firstEntityIndex, lastEntityIndex))
         .catch((error) => console.error('Failed to load page', error))
 
@@ -426,6 +490,7 @@ export default {
       }
       this.destroyEntityComponents()
       this.pagesLoaded = {}
+      this.resetPaginationState()
       this.entities = []
       this.totalShelves = 0
       this.totalEntities = 0
