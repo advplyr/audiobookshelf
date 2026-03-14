@@ -15,6 +15,10 @@ function decodeBrowseCursor(cursor) {
     throw invalidBrowseCursor()
   }
 
+  if (!decoded || typeof decoded !== 'object' || Array.isArray(decoded)) {
+    throw invalidBrowseCursor()
+  }
+
   if (!Array.isArray(decoded.keys) || !Array.isArray(decoded.values) || decoded.keys.length !== decoded.values.length) {
     throw new Error('Cursor is missing the full ordered key set')
   }

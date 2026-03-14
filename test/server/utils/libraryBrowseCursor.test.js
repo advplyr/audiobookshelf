@@ -59,4 +59,10 @@ describe('libraryBrowseCursor', () => {
 
     expect(() => decodeBrowseCursor(malformedJsonCursor)).to.throw('Invalid browse cursor')
   })
+
+  it('rejects decoded non-object json payloads with a controlled invalid-cursor error', () => {
+    const nonObjectCursor = Buffer.from('null', 'utf8').toString('base64url')
+
+    expect(() => decodeBrowseCursor(nonObjectCursor)).to.throw('Invalid browse cursor')
+  })
 })
