@@ -24,6 +24,10 @@ const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 const zipHelpers = require('../utils/zipHelpers')
+const {
+  createBrowseRequestProfile,
+  finishBrowseRequestProfile
+} = require('../utils/queries/libraryBrowseInstrumentation')
 
 /**
  * @typedef RequestUserObject
@@ -510,7 +514,11 @@ class LibraryController {
       }
       SocketAuthority.emitter('library_updated', req.library.toOldJSON(), userFilter)
 
-      await Database.resetLibraryIssuesFilterData(req.library.id)
+      if (hasFolderUpdates) {
+        Database.invalidateLibraryFilterCache(req.library.id)
+      } else {
+        await Database.resetLibraryIssuesFilterData(req.library.id)
+      }
     }
     return res.json(req.library.toOldJSON())
   }
@@ -588,9 +596,7 @@ class LibraryController {
     SocketAuthority.emitter('library_removed', libraryJson)
 
     // Remove library filter data
-    if (Database.libraryFilterData[req.library.id]) {
-      delete Database.libraryFilterData[req.library.id]
-    }
+    Database.invalidateLibraryFilterCache(req.library.id)
 
     return res.json(libraryJson)
   }
@@ -612,6 +618,13 @@ class LibraryController {
       total: undefined,
       limit: req.query.limit || 0,
       page: req.query.page || 0,
+      cursor: req.query.cursor || null,
+      pageMode: req.query.pageMode || 'paged',
+      nextCursor: null,
+      paginationMode: 'offset',
+      deepScrollAllowed: false,
+      isCountDeferred: false,
+      countMode: 'exact-on-initial-page',
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
@@ -622,17 +635,45 @@ class LibraryController {
     }
 
     payload.offset = payload.page * payload.limit
+    const browseProfile = createBrowseRequestProfile({
+      route: 'GET /api/libraries/:id/items',
+      libraryId: req.library.id
+    })
 
     // TODO: Temporary way of handling collapse sub-series. Either remove feature or handle through sql queries
     const filterByGroup = payload.filterBy?.split('.').shift()
     const filterByValue = filterByGroup ? libraryFilters.decode(payload.filterBy.replace(`${filterByGroup}.`, '')) : null
     if (filterByGroup === 'series' && filterByValue !== 'no-series' && payload.collapseseries) {
       const seriesId = libraryFilters.decode(payload.filterBy.split('.')[1])
-      payload.results = await libraryHelpers.handleCollapseSubseries(payload, seriesId, req.user, req.library)
+      payload.sortBy = libraryItemsBookFilters.getCollapsedSeriesBrowseSort(payload.sortBy)
+      const collapsedSeriesWindow = {
+        limit: Number(payload.limit) || 0,
+        offset: Number(payload.offset) || 0
+      }
+      payload.hideSingleBookSeries = !!req.library.settings.hideSingleBookSeries
+      const { libraryItems, count } = await libraryItemsBookFilters.getCollapsedSeriesWindow(req.library.id, seriesId, req.user, include, {
+        ...payload,
+        browseProfile
+      }, collapsedSeriesWindow)
+      payload.total = count
+      payload.results = await libraryHelpers.toCollapsedSeriesPayload(libraryItems, seriesId, req.library.settings.hideSingleBookSeries)
     } else {
-      const { libraryItems, count } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, payload)
+      const { libraryItems, count, nextCursor, paginationMode, deepScrollAllowed, countMode, isCountDeferred } = await Database.libraryItemModel.getByFilterAndSort(req.library, req.user, {
+        ...payload,
+        browseProfile
+      })
       payload.results = libraryItems
       payload.total = count
+      payload.nextCursor = nextCursor || null
+      payload.paginationMode = paginationMode || 'offset'
+      payload.deepScrollAllowed = !!deepScrollAllowed
+      payload.countMode = countMode || 'exact-on-initial-page'
+      payload.isCountDeferred = !!isCountDeferred
+    }
+
+    const browseSummary = finishBrowseRequestProfile(browseProfile)
+    if (browseSummary.isSlow) {
+      Logger.info('[LibraryController] Slow library browse request', browseSummary)
     }
 
     res.json(payload)
@@ -724,10 +765,7 @@ class LibraryController {
       await this.checkRemoveEmptySeries(seriesIds)
     }
 
-    // Set numIssues to 0 for library filter data
-    if (Database.libraryFilterData[req.library.id]) {
-      Database.libraryFilterData[req.library.id].numIssues = 0
-    }
+    Database.invalidateLibraryFilterCache(req.library.id)
 
     res.sendStatus(200)
   }
@@ -1269,7 +1307,7 @@ class LibraryController {
     const forceRescan = req.query.force === '1'
     await LibraryScanner.scan(req.library, forceRescan)
 
-    await Database.resetLibraryIssuesFilterData(req.library.id)
+    Database.invalidateLibraryFilterCache(req.library.id)
     Logger.info('[LibraryController] Scan complete')
   }
 

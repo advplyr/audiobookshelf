@@ -21,6 +21,7 @@ class Database {
 
     // Cached library filter data
     this.libraryFilterData = {}
+    this.libraryFilterDataTtlMs = 1000 * 60 * 30
 
     /** @type {import('./objects/settings/ServerSettings')} */
     this.serverSettings = null
@@ -581,6 +582,43 @@ class Database {
   addLanguageToFilterData(libraryId, language) {
     if (!this.libraryFilterData[libraryId] || !language || this.libraryFilterData[libraryId].languages.includes(language)) return
     this.libraryFilterData[libraryId].languages.push(language)
+  }
+
+  getLibraryFilterCache(libraryId, { includeExpired = false } = {}) {
+    const cacheEntry = this.libraryFilterData[libraryId]
+    if (!cacheEntry) return undefined
+    if (includeExpired) return cacheEntry
+
+    if (cacheEntry.expiresAt && cacheEntry.expiresAt > Date.now()) {
+      return cacheEntry
+    }
+
+    return undefined
+  }
+
+  setLibraryFilterCache(libraryId, data, ttlMs = this.libraryFilterDataTtlMs) {
+    const loadedAt = Date.now()
+    const expiresAt = loadedAt + ttlMs
+    const cacheEntry = {
+      ...data,
+      loadedAt,
+      expiresAt
+    }
+    this.libraryFilterData[libraryId] = cacheEntry
+    return cacheEntry
+  }
+
+  refreshLibraryFilterCache(libraryId, ttlMs = this.libraryFilterDataTtlMs) {
+    const cacheEntry = this.libraryFilterData[libraryId]
+    if (!cacheEntry) return undefined
+
+    cacheEntry.loadedAt = Date.now()
+    cacheEntry.expiresAt = cacheEntry.loadedAt + ttlMs
+    return cacheEntry
+  }
+
+  invalidateLibraryFilterCache(libraryId) {
+    delete this.libraryFilterData[libraryId]
   }
 
   /**

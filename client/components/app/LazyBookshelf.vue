@@ -50,11 +50,19 @@ export default {
     return {
       routeFullPath: null,
       initialized: false,
+      paginationMode: 'offset',
+      deepScrollAllowed: true,
+      deepScrollBlocked: false,
+      maxOffsetPages: Infinity,
+      nextCursor: null,
+      isCountDeferred: false,
+      pageCursors: {},
       bookshelfHeight: 0,
       bookshelfWidth: 0,
       shelvesPerPage: 0,
       entitiesPerShelf: 8,
       currentPage: 0,
+      serverTotalEntities: 0,
       totalEntities: 0,
       entities: [],
       pagesLoaded: {},
@@ -83,7 +91,12 @@ export default {
       lastTimestamp: 0,
       postScrollTimeout: null,
       currFirstEntityIndex: -1,
-      currLastEntityIndex: -1
+      currLastEntityIndex: -1,
+      initialPagesToLoad: 10,
+      maxConcurrentRequests: 3,
+      preloadThreshold: 0.6,
+      isProgressiveLoading: false,
+      progressiveLoadProgress: 0
     }
   },
   watch: {
@@ -327,6 +340,56 @@ export default {
         this.lastItemIndexSelected = -1
       }
     },
+    resetPaginationState() {
+      this.paginationMode = 'offset'
+      this.deepScrollAllowed = true
+      this.deepScrollBlocked = false
+      this.maxOffsetPages = Infinity
+      this.nextCursor = null
+      this.isCountDeferred = false
+      this.pageCursors = { 0: null }
+    },
+    updateVisibleBrowseRange(totalEntities = this.serverTotalEntities) {
+      const hasExplicitTotal = totalEntities !== null && totalEntities !== undefined
+      if (hasExplicitTotal) {
+        this.serverTotalEntities = Number(totalEntities) || 0
+      }
+
+      const visibleTotalEntities = this.deepScrollBlocked
+        ? Math.min(this.serverTotalEntities, this.maxOffsetPages * this.booksPerFetch)
+        : this.serverTotalEntities
+
+      this.totalEntities = visibleTotalEntities
+      this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
+
+      if (this.initialized) {
+        this.entities.length = this.totalEntities
+      }
+    },
+    getFetchQueryString(page = 0) {
+      const cursor = this.paginationMode === 'keyset' && page > 0 ? this.pageCursors[page] : null
+      const searchParams = new URLSearchParams()
+
+      if (this.currentSFQueryString) {
+        const currentSearchParams = new URLSearchParams(this.currentSFQueryString)
+        for (const [key, value] of currentSearchParams.entries()) {
+          searchParams.set(key, value)
+        }
+      }
+
+      searchParams.set('limit', this.booksPerFetch)
+      searchParams.set('pageMode', 'endless')
+      searchParams.set('minified', 1)
+      searchParams.set('include', 'rssfeed,numEpisodesIncomplete,share')
+
+      if (cursor) {
+        searchParams.set('cursor', cursor)
+      } else {
+        searchParams.set('page', page)
+      }
+
+      return `?${searchParams.toString()}`
+    },
     async fetchEntites(page = 0) {
       const startIndex = page * this.booksPerFetch
 
@@ -334,45 +397,137 @@ export default {
 
       if (!this.initialized) {
         this.currentSFQueryString = this.buildSearchParams()
+        this.resetPaginationState()
       }
 
       let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
-      const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete,share`
+      const fullQueryString = this.getFetchQueryString(page)
 
-      const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
-        console.error('failed to fetch items', error)
-        return null
-      })
+      try {
+        const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`)
+        const results = Array.isArray(payload.results) ? payload.results : null
+        if (!results) {
+          throw new Error('Invalid browse payload: missing results array')
+        }
 
-      this.isFetchingEntities = false
-      if (this.pendingReset) {
-        this.pendingReset = false
-        this.resetEntities()
-        return
-      }
-      if (payload) {
+        this.paginationMode = payload.paginationMode || this.paginationMode
+        this.deepScrollAllowed = payload.deepScrollAllowed !== false
+        this.deepScrollBlocked = this.paginationMode === 'offset' && !this.deepScrollAllowed
+        this.maxOffsetPages = this.deepScrollBlocked ? 3 : Infinity
+        this.nextCursor = payload.nextCursor || null
+        this.isCountDeferred = !!payload.isCountDeferred
+        this.updateVisibleBrowseRange(payload.total)
+
+        if (this.paginationMode === 'keyset') {
+          if (this.nextCursor) {
+            this.pageCursors[page + 1] = this.nextCursor
+          } else {
+            delete this.pageCursors[page + 1]
+          }
+        }
+
         if (!this.initialized) {
           this.initialized = true
-          this.totalEntities = payload.total
-          this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
           this.entities = new Array(this.totalEntities)
         }
 
-        for (let i = 0; i < payload.results.length; i++) {
+        for (let i = 0; i < results.length; i++) {
           const index = i + startIndex
-          this.entities[index] = payload.results[i]
+          this.entities[index] = results[i]
           if (this.entityComponentRefs[index]) {
             this.entityComponentRefs[index].setEntity(this.entities[index])
           }
         }
 
         this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+      } catch (error) {
+        console.error(`Failed to load page ${page}`, error)
+        throw error
+      } finally {
+        this.isFetchingEntities = false
+        if (this.pendingReset) {
+          this.pendingReset = false
+          this.resetEntities()
+        }
       }
     },
     loadPage(page) {
-      if (!this.pagesLoaded[page]) this.pagesLoaded[page] = this.fetchEntites(page)
+      if (this.deepScrollBlocked && page >= this.maxOffsetPages) {
+        return Promise.resolve()
+      }
+
+      if (this.pagesLoaded[page]) return this.pagesLoaded[page]
+
+      if (this.paginationMode === 'keyset' && page > 0) {
+        this.pagesLoaded[page] = this.loadPage(page - 1).then(() => {
+          if (!this.pageCursors[page]) return Promise.resolve()
+          return this.fetchEntites(page)
+        })
+      } else {
+        this.pagesLoaded[page] = this.fetchEntites(page)
+      }
+
+      this.pagesLoaded[page] = this.pagesLoaded[page].catch((error) => {
+        delete this.pagesLoaded[page]
+        throw error
+      })
+
       return this.pagesLoaded[page]
+    },
+    async loadPagesWithConcurrency(pages, concurrency = this.maxConcurrentRequests) {
+      if (this.paginationMode === 'keyset') {
+        let completed = 0
+        for (const page of pages) {
+          try {
+            await this.loadPage(page)
+          } catch (error) {
+            console.error(`Failed to load page ${page}:`, error)
+            break
+          } finally {
+            completed++
+            this.progressiveLoadProgress = Math.round((completed / pages.length) * 100)
+          }
+        }
+        return
+      }
+
+      const queue = [...pages]
+      const workers = Array.from({ length: Math.min(concurrency, pages.length) }, async () => {
+        while (queue.length) {
+          const page = queue.shift()
+          try {
+            await this.loadPage(page)
+          } catch (error) {
+            console.error(`Failed to load page ${page}:`, error)
+          } finally {
+            const completed = pages.length - queue.length
+            this.progressiveLoadProgress = Math.round((completed / pages.length) * 100)
+          }
+        }
+      })
+
+      await Promise.all(workers)
+    },
+    async progressiveInitialLoad() {
+      if (this.totalEntities === 0) return
+
+      const totalPages = Math.ceil(this.totalEntities / this.booksPerFetch)
+      const pagesToLoad = Math.min(this.initialPagesToLoad, totalPages)
+      if (pagesToLoad <= 1) return
+
+      this.isProgressiveLoading = true
+      this.progressiveLoadProgress = 0
+
+      const additionalPages = Array.from({ length: pagesToLoad - 1 }, (_, i) => i + 1)
+
+      try {
+        await this.loadPagesWithConcurrency(additionalPages)
+      } catch (error) {
+        console.error('Failed progressive load', error)
+      } finally {
+        this.isProgressiveLoading = false
+        this.progressiveLoadProgress = 100
+      }
     },
     showHideBookPlaceholder(index, show) {
       var el = document.getElementById(`book-${index}-placeholder`)
@@ -413,7 +568,15 @@ export default {
       clearTimeout(this.postScrollTimeout)
       const firstPage = Math.floor(firstEntityIndex / this.booksPerFetch)
       const lastPage = Math.floor(lastEntityIndex / this.booksPerFetch)
-      Promise.all([this.loadPage(firstPage), this.loadPage(lastPage)])
+
+      // Mount whatever is cached immediately — cached cards show at once,
+      // uncached slots render as skeleton until data arrives
+      this.mountEntities(firstEntityIndex, lastEntityIndex)
+
+      // Then fetch missing pages and remount to fill in any skeleton placeholders
+      const visiblePageLoads = this.paginationMode === 'keyset' ? this.loadPage(firstPage).then(() => this.loadPage(lastPage)) : Promise.all([this.loadPage(firstPage), this.loadPage(lastPage)])
+
+      visiblePageLoads
         .then(() => this.mountEntities(firstEntityIndex, lastEntityIndex))
         .catch((error) => console.error('Failed to load page', error))
 
@@ -426,8 +589,10 @@ export default {
       }
       this.destroyEntityComponents()
       this.pagesLoaded = {}
+      this.resetPaginationState()
       this.entities = []
       this.totalShelves = 0
+      this.serverTotalEntities = 0
       this.totalEntities = 0
       this.currentPage = 0
       this.isSelectionMode = false
@@ -742,13 +907,14 @@ export default {
       if (booksPerFetch !== this.booksPerFetch) {
         this.booksPerFetch = booksPerFetch
         if (this.totalEntities) {
+          this.updateVisibleBrowseRange()
           this.updatePagesLoaded()
         }
       }
 
       this.currentBookWidth = this.bookWidth
-      if (this.totalEntities) {
-        this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
+      if (this.serverTotalEntities) {
+        this.updateVisibleBrowseRange()
       }
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },
@@ -759,6 +925,7 @@ export default {
       await this.loadPage(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntities(0, lastBookIndex)
+      this.progressiveInitialLoad().catch((error) => console.error('Failed progressive load', error))
 
       // Set last scroll position for this bookshelf page
       if (this.$store.state.lastBookshelfScrollData[this.page] && window.bookshelf) {

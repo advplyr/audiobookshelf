@@ -6,9 +6,502 @@ const authorFilters = require('./authorFilters')
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+const { getLibraryBrowseStrategy } = require('./libraryBrowseStrategy')
+const { loadBrowseCount } = require('./libraryBrowseCount')
+const { encodeBrowseCursor, decodeBrowseCursor } = require('./libraryBrowseCursor')
+const { createBrowsePhaseTiming } = require('./libraryBrowseInstrumentation')
 const countCache = new Map()
 
+function existsLiteral(sql) {
+  return Sequelize.where(Sequelize.literal(`EXISTS (${sql})`), true)
+}
+
+function notExistsLiteral(sql) {
+  return Sequelize.where(Sequelize.literal(`NOT EXISTS (${sql})`), true)
+}
+
+function hasNamedBookValue(fieldName, replacementKey = 'filterValue') {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) AND json_each.value = :${replacementKey}`)
+}
+
+function hasAnyJsonValue(fieldName) {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName})`)
+}
+
+function hasNoJsonValue(fieldName) {
+  return notExistsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName})`)
+}
+
+function hasAtLeastTwoJsonValues(fieldName) {
+  return existsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) LIMIT 1 OFFSET 1`)
+}
+
+function hasExactlyOneJsonValue(fieldName) {
+  return [hasAnyJsonValue(fieldName), notExistsLiteral(`SELECT 1 FROM json_each(${fieldName}) WHERE json_valid(${fieldName}) LIMIT 1 OFFSET 1`)]
+}
+
+function hasScalarValue(columnName) {
+  return existsLiteral(`SELECT 1 WHERE ${columnName} IS NOT NULL`)
+}
+
+function hasNoScalarValue(columnName) {
+  return notExistsLiteral(`SELECT 1 WHERE ${columnName} IS NOT NULL`)
+}
+
+function normalizeCursorValue(key, value) {
+  if (value == null) return value
+
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst'].includes(key) && typeof value === 'string') {
+    return value.toLowerCase()
+  }
+
+  return value
+}
+
+function getQuotedCursorColumn(key) {
+  const dialect = Database.getDialect()
+  const getColumnRef = (table, column) => {
+    return dialect === 'postgres'
+      ? `"${table}"."${column}"`
+      : `\`${table}\`.\`${column}\``
+  }
+
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst', 'createdAt', 'updatedAt'].includes(key)) {
+    return getColumnRef('libraryItem', key)
+  }
+
+  if (key === 'id') {
+    return getColumnRef('libraryItem', 'id')
+  }
+
+  if (key.startsWith('mediaProgresses.')) {
+    return key.split('.').map((segment) => `"${segment}"`).join('.')
+  }
+
+  return key
+}
+
+function getCursorComparisonExpression(key) {
+  const quotedColumn = getQuotedCursorColumn(key)
+
+  if (['title', 'titleIgnorePrefix', 'authorNamesFirstLast', 'authorNamesLastFirst'].includes(key)) {
+    return Sequelize.literal(`LOWER(${quotedColumn})`)
+  }
+
+  return Sequelize.literal(quotedColumn)
+}
+
+function getCursorValue(book, key) {
+  if (key === 'id') {
+    return book.libraryItem?.id || null
+  }
+
+  if (key.startsWith('mediaProgresses.')) {
+    const field = key.split('.')[1]
+    return book.mediaProgresses?.[0]?.[field] ?? null
+  }
+
+  if (book.libraryItem && Object.prototype.hasOwnProperty.call(book.libraryItem.dataValues || {}, key)) {
+    return normalizeCursorValue(key, book.libraryItem[key])
+  }
+
+  return normalizeCursorValue(key, book[key] ?? null)
+}
+
+function buildBookCursorClause(cursor, cursorKeys, sortDesc) {
+  if (!cursor || !cursorKeys.length) return null
+
+  let decodedCursor
+  try {
+    decodedCursor = decodeBrowseCursor(cursor)
+  } catch (error) {
+    return null
+  }
+
+  if (decodedCursor.keys.join('|') !== cursorKeys.join('|')) {
+    throw new Error('Browse cursor keys do not match the requested sort')
+  }
+
+  const comparisonOperator = sortDesc ? Sequelize.Op.lt : Sequelize.Op.gt
+  const cursorConditions = decodedCursor.keys.map((key, index) => {
+    const condition = []
+
+    for (let cursorIndex = 0; cursorIndex < index; cursorIndex++) {
+      condition.push(Sequelize.where(getCursorComparisonExpression(decodedCursor.keys[cursorIndex]), normalizeCursorValue(decodedCursor.keys[cursorIndex], decodedCursor.values[cursorIndex])))
+    }
+
+    condition.push(Sequelize.where(getCursorComparisonExpression(key), {
+      [comparisonOperator]: normalizeCursorValue(key, decodedCursor.values[index])
+    }))
+
+    return {
+      [Sequelize.Op.and]: condition
+    }
+  })
+
+  return {
+    [Sequelize.Op.or]: cursorConditions
+  }
+}
+
+function createBrowseQueryLogging(funcName, requestTiming) {
+  if (!process.env.QUERY_PROFILING) {
+    return undefined
+  }
+
+  return (sql, elapsedMs) => {
+    Logger.info(`[${funcName}] ${sql} Elapsed time: ${elapsedMs}ms`)
+    if (requestTiming && typeof requestTiming.onQuery === 'function') {
+      requestTiming.onQuery(sql, elapsedMs)
+    }
+  }
+}
+
+async function runWithBrowsePhase(requestTiming, loader) {
+  if (requestTiming && typeof requestTiming.onStart === 'function') {
+    requestTiming.onStart()
+  }
+
+  try {
+    const result = await loader()
+    if (requestTiming && typeof requestTiming.onFinish === 'function') {
+      requestTiming.onFinish(result)
+    }
+    return result
+  } catch (error) {
+    if (requestTiming && typeof requestTiming.onError === 'function') {
+      requestTiming.onError(error)
+    }
+    throw error
+  }
+}
+
+async function loadBookBrowseRows({ model, findOptions, limit, cursorClause, requestTiming = null }) {
+  const whereClauses = Array.isArray(findOptions.where) ? [...findOptions.where] : [findOptions.where]
+  const rowLimit = Number(limit) || null
+
+  return model.findAll({
+    ...findOptions,
+    where: cursorClause ? [...whereClauses, cursorClause] : whereClauses,
+    limit: rowLimit ? rowLimit + 1 : null,
+    requestTiming,
+    logging: createBrowseQueryLogging('loadBookBrowseRows', requestTiming),
+    benchmark: !!process.env.QUERY_PROFILING
+  })
+}
+
+async function loadBookBrowseCount({ model, countOptions, requestTiming = null }) {
+  return model.count({
+    ...countOptions,
+    requestTiming,
+    logging: createBrowseQueryLogging('loadBookBrowseCount', requestTiming),
+    benchmark: !!process.env.QUERY_PROFILING
+  })
+}
+
+async function loadCollapsedSeriesWindow({ findOptions, countOptions, limit, offset }) {
+  const [books, count] = await Promise.all([
+    Database.bookModel.findAll({
+      ...findOptions,
+      limit: Number(limit) || null,
+      offset: Number(offset) || 0
+    }),
+    countOptions ? Database.bookModel.count(countOptions) : Promise.resolve(null)
+  ])
+
+  return { books, count }
+}
+
+function getCollapsedSeriesSortContext(payload = {}) {
+  const collapsedSortBy = module.exports.getCollapsedSeriesBrowseSort(payload.sortBy)
+  const sortDesc = !!payload.sortDesc
+  const direction = sortDesc ? 'DESC' : 'ASC'
+  const titleColumn = Database.serverSettings.sortingIgnorePrefix ? 'titleIgnorePrefix' : 'title'
+  const nameColumn = Database.serverSettings.sortingIgnorePrefix ? 'nameIgnorePrefix' : 'name'
+
+  return {
+    collapsedSortBy,
+    sortDesc,
+    direction,
+    titleColumn,
+    nameColumn,
+    rawBookOrder: collapsedSortBy === 'media.metadata.title'
+      ? `"plainSortValue" ${direction}, "libraryItemId" ASC`
+      : `"filterSequenceSort" ${direction} NULLS LAST, "plainSortValue" ${direction}, "libraryItemId" ASC`,
+    visibleRowOrder: collapsedSortBy === 'media.metadata.title'
+      ? `"rowSortValue" ${direction}, "anchorLibraryItemId" ASC`
+      : `"filterSequenceSort" ${direction} NULLS LAST, "rowSortValue" ${direction}, "anchorLibraryItemId" ASC`
+  }
+}
+
+function buildCollapsedSeriesBaseQuery(libraryId, seriesId, userPermissionBookWhere, sortContext) {
+  const queryGenerator = Database.sequelize.dialect.queryGenerator
+  const sequenceSortExpr = 'CAST("bookSeries"."sequence" AS FLOAT)'
+  const plainSortExpr = `LOWER("libraryItem"."${sortContext.titleColumn}")`
+  const baseOptions = {
+    attributes: [
+      ['id', 'bookId'],
+      [Sequelize.col('libraryItem.id'), 'libraryItemId'],
+      [Sequelize.col('bookSeries.sequence'), 'filterSequence'],
+      [Sequelize.literal(sequenceSortExpr), 'filterSequenceSort'],
+      [Sequelize.literal(plainSortExpr), 'plainSortValue']
+    ],
+    where: userPermissionBookWhere.bookWhere,
+    replacements: userPermissionBookWhere.replacements,
+    include: [
+      {
+        model: Database.libraryItemModel,
+        required: true,
+        attributes: [],
+        where: {
+          libraryId
+        }
+      },
+      {
+        model: Database.bookSeriesModel,
+        required: true,
+        attributes: [],
+        where: {
+          seriesId
+        }
+      }
+    ],
+    model: Database.bookModel,
+    subQuery: false
+  }
+  Database.bookModel._validateIncludedElements(baseOptions)
+
+  return queryGenerator.selectQuery(
+    Database.bookModel.getTableName(),
+    baseOptions,
+    Database.bookModel
+  ).replace(/;\s*$/, '')
+}
+
+function buildCollapsedSeriesMetaQuery(baseQuery, hideSingleBookSeries) {
+  const activeSeriesFilter = hideSingleBookSeries ? 'WHERE sm."subseriesBookCount" > 1' : ''
+
+  return `WITH filtered_books AS (${baseQuery}),
+subseries_members AS (
+  SELECT
+    fb."bookId",
+    fb."libraryItemId",
+    fb."filterSequenceSort",
+    fb."plainSortValue",
+    bs."seriesId" AS "subseriesId",
+    s.name AS "subseriesName",
+    s."nameIgnorePrefix" AS "subseriesNameIgnorePrefix",
+    COUNT(*) OVER (PARTITION BY bs."seriesId") AS "subseriesBookCount"
+  FROM filtered_books fb
+  JOIN "bookSeries" bs ON bs."bookId" = fb."bookId" AND bs."seriesId" <> :seriesId
+  JOIN series s ON s.id = bs."seriesId"
+),
+active_subseries AS (
+  SELECT DISTINCT sm."subseriesId"
+  FROM subseries_members sm
+  ${activeSeriesFilter}
+),
+plain_rows AS (
+  SELECT fb."bookId"
+  FROM filtered_books fb
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM subseries_members sm
+    JOIN active_subseries act ON act."subseriesId" = sm."subseriesId"
+    WHERE sm."bookId" = fb."bookId"
+  )
+),
+collapsed_rows AS (
+  SELECT act."subseriesId"
+  FROM active_subseries act
+)
+SELECT
+  (SELECT COUNT(*) FROM filtered_books) AS "rawBookCount",
+  (SELECT COUNT(*) FROM plain_rows) AS "plainRowCount",
+  (SELECT COUNT(*) FROM collapsed_rows) AS "collapsedRowCount"`
+}
+
+function buildCollapsedSeriesRowsQuery(baseQuery, sortContext, hideSingleBookSeries, fallbackToPlain) {
+  const activeSeriesFilter = hideSingleBookSeries ? 'WHERE sm."subseriesBookCount" > 1' : ''
+
+  if (fallbackToPlain) {
+    return `WITH filtered_books AS (${baseQuery})
+SELECT
+  'plain' AS "rowType",
+  fb."libraryItemId" AS "anchorLibraryItemId",
+  fb."bookId" AS "anchorBookId",
+  NULL AS "subseriesId"
+FROM filtered_books fb
+ORDER BY ${sortContext.rawBookOrder}
+LIMIT :limit OFFSET :offset`
+  }
+
+  return `WITH filtered_books AS (${baseQuery}),
+subseries_members AS (
+  SELECT
+    fb."bookId",
+    fb."libraryItemId",
+    fb."filterSequenceSort",
+    fb."plainSortValue",
+    bs."seriesId" AS "subseriesId",
+    s.name AS "subseriesName",
+    s."nameIgnorePrefix" AS "subseriesNameIgnorePrefix",
+    ROW_NUMBER() OVER (PARTITION BY bs."seriesId" ORDER BY ${sortContext.rawBookOrder}) AS "subseriesRank",
+    COUNT(*) OVER (PARTITION BY bs."seriesId") AS "subseriesBookCount"
+  FROM filtered_books fb
+  JOIN "bookSeries" bs ON bs."bookId" = fb."bookId" AND bs."seriesId" <> :seriesId
+  JOIN series s ON s.id = bs."seriesId"
+),
+active_subseries AS (
+  SELECT DISTINCT sm."subseriesId"
+  FROM subseries_members sm
+  ${activeSeriesFilter}
+),
+collapsed_rows AS (
+  SELECT
+    'collapsed' AS "rowType",
+    sm."libraryItemId" AS "anchorLibraryItemId",
+    sm."bookId" AS "anchorBookId",
+    sm."subseriesId",
+    sm."filterSequenceSort",
+    LOWER(sm."subseries${sortContext.nameColumn === 'nameIgnorePrefix' ? 'NameIgnorePrefix' : 'Name'}") AS "rowSortValue"
+  FROM subseries_members sm
+  WHERE sm."subseriesRank" = 1
+    AND EXISTS (SELECT 1 FROM active_subseries act WHERE act."subseriesId" = sm."subseriesId")
+),
+plain_rows AS (
+  SELECT
+    'plain' AS "rowType",
+    fb."libraryItemId" AS "anchorLibraryItemId",
+    fb."bookId" AS "anchorBookId",
+    NULL AS "subseriesId",
+    fb."filterSequenceSort",
+    fb."plainSortValue" AS "rowSortValue"
+  FROM filtered_books fb
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM subseries_members sm
+    JOIN active_subseries act ON act."subseriesId" = sm."subseriesId"
+    WHERE sm."bookId" = fb."bookId"
+  )
+)
+SELECT *
+FROM (
+  SELECT * FROM collapsed_rows
+  UNION ALL
+  SELECT * FROM plain_rows
+) visible_rows
+ORDER BY ${sortContext.visibleRowOrder}
+LIMIT :limit OFFSET :offset`
+}
+
+function mapCollapsedSeriesBookToLibraryItem(bookExpanded) {
+  const libraryItem = bookExpanded.libraryItem
+  const book = bookExpanded
+
+  delete book.libraryItem
+  book.series = book.series || []
+  delete book.bookSeries
+
+  book.authors = book.bookAuthors?.map((ba) => ba.author) || []
+  delete book.bookAuthors
+
+  if (libraryItem.feeds?.length) {
+    libraryItem.rssFeed = libraryItem.feeds[0]
+  }
+
+  libraryItem.media = book
+  return libraryItem
+}
+
+function buildCollapsedSeriesView(libraryItems, seriesId, hideSingleBookSeries = false, skipSingletonCollapseFallback = false) {
+  const seriesEntriesById = {}
+
+  libraryItems.forEach((libraryItem) => {
+    const filteredSeries = libraryItem.media.series.find((series) => series.id === seriesId)
+    const subseries = (libraryItem.media.series || []).filter((series) => series.id !== seriesId)
+
+    subseries.forEach((series) => {
+      if (!seriesEntriesById[series.id]) {
+        seriesEntriesById[series.id] = {
+          id: series.id,
+          name: series.name,
+          nameIgnorePrefix: series.nameIgnorePrefix,
+          books: []
+        }
+      }
+
+      seriesEntriesById[series.id].books.push({
+        id: libraryItem.id,
+        filterSeriesSequence: filteredSeries?.bookSeries?.sequence
+      })
+    })
+  })
+
+  let seriesEntries = Object.values(seriesEntriesById)
+  if (hideSingleBookSeries) {
+    seriesEntries = seriesEntries.filter((series) => series.books.length > 1)
+  }
+  seriesEntries.forEach((series) => {
+    seriesEntriesById[series.id] = series
+  })
+
+  const activeSeriesEntries = seriesEntries
+  const visibleRows = []
+
+  libraryItems.forEach((libraryItem) => {
+    const firstSeriesEntries = activeSeriesEntries.filter((series) => series.books[0]?.id === libraryItem.id)
+    firstSeriesEntries.forEach((series) => {
+      visibleRows.push({ type: 'collapsed', libraryItemId: libraryItem.id, seriesId: series.id })
+    })
+
+    const isCollapsedBook = activeSeriesEntries.some((series) => series.books.some((book) => book.id === libraryItem.id))
+    if (!isCollapsedBook) {
+      visibleRows.push({ type: 'plain', libraryItemId: libraryItem.id })
+    }
+  })
+
+  if (!skipSingletonCollapseFallback && visibleRows.length === 1 && visibleRows[0].type === 'collapsed') {
+    return {
+      visibleRows: libraryItems.map((libraryItem) => ({ type: 'plain', libraryItemId: libraryItem.id })),
+      seriesEntriesById: {}
+    }
+  }
+
+  return { visibleRows, seriesEntriesById }
+}
+
+function buildSelectedCollapsedSeriesEntries(libraryItems, seriesId, selectedSeriesIds, hideSingleBookSeries = false) {
+  if (!selectedSeriesIds.length) return {}
+
+  const visibleView = buildCollapsedSeriesView(libraryItems, seriesId, hideSingleBookSeries, true)
+  return Object.fromEntries(
+    Object.entries(visibleView.seriesEntriesById).filter(([selectedSeriesId]) => selectedSeriesIds.includes(selectedSeriesId))
+  )
+}
+
+function getNextBrowseCursor(books, limit, sortBy, sortDesc, cursorKeys) {
+  const rowLimit = Number(limit) || 0
+  if (!rowLimit || books.length <= rowLimit) return null
+
+  const lastBook = books[rowLimit - 1]
+
+  return encodeBrowseCursor({
+    sortBy,
+    desc: !!sortDesc,
+    keys: cursorKeys,
+    values: cursorKeys.map((key) => getCursorValue(lastBook, key))
+  })
+}
+
 module.exports = {
+  getCollapsedSeriesBrowseSort(sortBy) {
+    if (!sortBy || sortBy === 'sequence' || sortBy === 'media.metadata.title') {
+      return sortBy || 'sequence'
+    }
+    return 'sequence'
+  },
+
   /**
    * User permissions to restrict books for explicit content & tags
    * @param {import('../../models/User')} user
@@ -19,21 +512,21 @@ module.exports = {
     const replacements = {}
     if (!user) return { bookWhere, replacements }
 
+    const accessAllTags = user.permissions?.accessAllTags ?? user.accessAllTags
+    const itemTagsSelected = user.permissions?.itemTagsSelected ?? user.itemTagsSelected
+    const selectedTagsNotAccessible = user.permissions?.selectedTagsNotAccessible ?? user.selectedTagsNotAccessible
+
     if (!user.canAccessExplicitContent) {
       bookWhere.push({
         explicit: false
       })
     }
-    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
-      replacements['userTagsSelected'] = user.permissions.itemTagsSelected
-      if (user.permissions.selectedTagsNotAccessible) {
-        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
+    if (!accessAllTags && itemTagsSelected?.length) {
+      replacements['userTagsSelected'] = itemTagsSelected
+      if (selectedTagsNotAccessible) {
+        bookWhere.push(notExistsLiteral(`SELECT 1 FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)`))
       } else {
-        bookWhere.push(
-          Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
-            [Sequelize.Op.gte]: 1
-          })
-        )
+        bookWhere.push(existsLiteral(`SELECT 1 FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)`))
       }
     }
     return {
@@ -160,7 +653,7 @@ module.exports = {
       } else if (value === 'ebook-in-progress') {
         // Filters for ebook only
         mediaWhere = [
-          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
+          hasNoJsonValue('audioFiles'),
           {
             '$mediaProgresses.ebookProgress$': {
               [Sequelize.Op.gt]: 0
@@ -173,7 +666,7 @@ module.exports = {
       } else if (value === 'ebook-finished') {
         // Filters for ebook only
         mediaWhere = [
-          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
+          hasNoJsonValue('audioFiles'),
           {
             '$mediaProgresses.isFinished$': true,
             ebookFile: {
@@ -189,9 +682,7 @@ module.exports = {
     } else if (group === 'explicit') {
       mediaWhere['explicit'] = true
     } else if (['genres', 'tags', 'narrators'].includes(group)) {
-      mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
-        [Sequelize.Op.gte]: 1
-      })
+      mediaWhere = hasNamedBookValue(group)
       replacements.filterValue = value
     } else if (group === 'publishers') {
       mediaWhere['publisher'] = value
@@ -199,23 +690,17 @@ module.exports = {
       mediaWhere['language'] = value
     } else if (group === 'tracks') {
       if (value === 'none') {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0)
+        mediaWhere = hasNoJsonValue('audioFiles')
       } else if (value === 'multi') {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), {
-          [Sequelize.Op.gt]: 1
-        })
+        mediaWhere = hasAtLeastTwoJsonValues('audioFiles')
       } else {
-        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 1)
+        mediaWhere = hasExactlyOneJsonValue('audioFiles')
       }
     } else if (group === 'ebooks') {
       if (value === 'ebook') {
-        mediaWhere['ebookFile'] = {
-          [Sequelize.Op.not]: null
-        }
+        mediaWhere = hasScalarValue('book.ebookFile')
       } else if (value == 'no-ebook') {
-        mediaWhere['ebookFile'] = {
-          [Sequelize.Op.eq]: null
-        }
+        mediaWhere = hasNoScalarValue('book.ebookFile')
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
@@ -225,9 +710,7 @@ module.exports = {
           [Sequelize.Op.or]: [null, '']
         }
       } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value)) {
-        mediaWhere[value] = {
-          [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
-        }
+        mediaWhere = hasNoJsonValue(value)
       } else if (value === 'authors') {
         mediaWhere['$authors.id$'] = null
       } else if (value === 'series') {
@@ -254,6 +737,8 @@ module.exports = {
   getOrder(sortBy, sortDesc, collapseseries) {
     const dir = sortDesc ? 'DESC' : 'ASC'
 
+    const libraryItemIdOrder = [Sequelize.literal('libraryItem.id'), dir]
+
     const getTitleOrder = () => {
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]
@@ -263,7 +748,7 @@ module.exports = {
     }
 
     if (sortBy === 'addedAt') {
-      return [[Sequelize.literal('libraryItem.createdAt'), dir]]
+      return [[Sequelize.literal('libraryItem.createdAt'), dir], libraryItemIdOrder]
     } else if (sortBy === 'size') {
       return [[Sequelize.literal('libraryItem.size'), dir]]
     } else if (sortBy === 'birthtimeMs') {
@@ -276,26 +761,28 @@ module.exports = {
       return [[Sequelize.literal(`CAST(\`book\`.\`publishedYear\` AS INTEGER)`), dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
       // Sort by author name last first, secondary sort by title
-      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder()]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesLastFirst` COLLATE NOCASE'), dir], getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'media.metadata.authorName') {
       // Sort by author name first last, secondary sort by title
-      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir], getTitleOrder()]
+      return [[Sequelize.literal('`libraryItem`.`authorNamesFirstLast` COLLATE NOCASE'), dir], getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
       }
-      return [getTitleOrder()]
+      return [getTitleOrder(), libraryItemIdOrder]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
-      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'progress.createdAt') {
-      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'progress.finishedAt') {
-      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)], libraryItemIdOrder]
     } else if (sortBy === 'random') {
       return [Database.sequelize.random()]
+    } else if (sortBy === 'updatedAt') {
+      return [[Sequelize.literal('libraryItem.updatedAt'), dir], libraryItemIdOrder]
     }
     return []
   },
@@ -393,13 +880,15 @@ module.exports = {
    * @param {number} limit
    * @param {number} offset
    * @param {boolean} isHomePage for home page shelves
+   * @param {object} browseRequestOptions Reserved for future large-library browse plumbing
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false) {
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false, browseRequestOptions = null) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
     }
+    sortBy = sortBy || 'media.metadata.title'
     if (filterGroup !== 'series' && sortBy === 'sequence') {
       sortBy = 'media.metadata.title'
     }
@@ -621,8 +1110,67 @@ module.exports = {
       subQuery: false
     }
 
-    const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
-    const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+    const strategy = getLibraryBrowseStrategy({
+      mediaType: 'book',
+      sortBy,
+      filterGroup,
+      filterValue,
+      pageMode: browseRequestOptions?.pageMode,
+      collapseseries
+    })
+
+    let books = []
+    let count = 0
+    let nextCursor = null
+    let paginationMode = strategy.paginationMode
+    let countMode = strategy.countMode
+    let deepScrollAllowed = strategy.deepScrollAllowed
+    let isCountDeferred = false
+    const rowsTiming = createBrowsePhaseTiming(browseRequestOptions?.browseProfile, 'rows')
+    const countTiming = createBrowsePhaseTiming(browseRequestOptions?.browseProfile, 'count')
+
+    if (strategy.paginationMode === 'keyset') {
+      const countOptions = { ...findOptions }
+      delete countOptions.order
+
+      const cursorClause = buildBookCursorClause(browseRequestOptions?.cursor, strategy.cursorKeys, sortDesc)
+      const effectiveCountMode = browseRequestOptions?.cursor ? 'skip' : strategy.countMode
+      const [loadedBooks, countPayload] = await Promise.all([
+        runWithBrowsePhase(rowsTiming, async () => {
+          const loadRows = process.env.QUERY_PROFILING ? profile(loadBookBrowseRows, false, 'loadBookBrowseRows') : loadBookBrowseRows
+          return loadRows({
+            model: Database.bookModel,
+            findOptions,
+            limit,
+            cursorClause,
+            requestTiming: rowsTiming
+          })
+        }),
+        runWithBrowsePhase(countTiming, async () => {
+          const countLoader = process.env.QUERY_PROFILING ? profile(loadBookBrowseCount, false, 'loadBookBrowseCount') : loadBookBrowseCount
+          return loadBrowseCount({
+            mode: effectiveCountMode,
+            exactCountLoader: () => countLoader({ model: Database.bookModel, countOptions, requestTiming: countTiming })
+          })
+        })
+      ])
+
+      nextCursor = getNextBrowseCursor(loadedBooks, limit, sortBy, sortDesc, strategy.cursorKeys)
+      books = Number(limit) ? loadedBooks.slice(0, Number(limit)) : loadedBooks
+      count = countPayload.total
+      countMode = effectiveCountMode === 'skip' ? 'skip' : strategy.countMode
+      isCountDeferred = countPayload.isDeferred
+    } else {
+      findOptions.requestTiming = rowsTiming
+      const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
+      const loadOffsetResult = () => findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
+      const result = process.env.QUERY_PROFILING ? await loadOffsetResult() : await runWithBrowsePhase(rowsTiming, loadOffsetResult)
+      books = result.rows
+      count = result.count
+      countMode = 'exact-on-initial-page'
+      paginationMode = 'offset'
+      deepScrollAllowed = false
+    }
 
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem
@@ -682,7 +1230,172 @@ module.exports = {
 
     return {
       libraryItems,
-      count
+      count,
+      nextCursor,
+      paginationMode,
+      deepScrollAllowed,
+      countMode,
+      isCountDeferred
+    }
+  },
+
+  async getCollapsedSeriesWindow(libraryId, seriesId, user, include, payload, window = {}) {
+    const libraryItemIncludes = []
+    if (include.includes('rssfeed')) {
+      libraryItemIncludes.push({
+        model: Database.feedModel
+      })
+    }
+
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+    const collapsedSortBy = payload.sortBy || 'sequence'
+    const direction = payload.sortDesc ? 'DESC' : 'ASC'
+    const sortOrder = collapsedSortBy === 'sequence'
+      ? [
+          [Sequelize.literal(`CAST("bookSeries"."sequence" AS FLOAT) ${direction} NULLS LAST`)],
+          ...this.getOrder('media.metadata.title', payload.sortDesc, false)
+        ]
+      : this.getOrder(collapsedSortBy, payload.sortDesc, false)
+
+    const findOptions = {
+      where: userPermissionBookWhere.bookWhere,
+      replacements: userPermissionBookWhere.replacements,
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId
+          },
+          include: libraryItemIncludes
+        },
+        {
+          model: Database.bookSeriesModel,
+          required: true,
+          attributes: ['id', 'seriesId', 'sequence', 'createdAt'],
+          where: {
+            seriesId
+          },
+          include: {
+            model: Database.seriesModel,
+            attributes: ['id', 'name', 'nameIgnorePrefix']
+          }
+        },
+        {
+          model: Database.seriesModel,
+          attributes: ['id', 'name', 'nameIgnorePrefix'],
+          through: {
+            attributes: ['sequence']
+          }
+        },
+        {
+          model: Database.bookAuthorModel,
+          attributes: ['authorId', 'createdAt'],
+          include: {
+            model: Database.authorModel,
+            attributes: ['id', 'name']
+          },
+          order: [['createdAt', 'ASC']],
+          separate: true
+        }
+      ],
+      distinct: true,
+      order: sortOrder,
+      subQuery: false
+    }
+
+    const sortContext = getCollapsedSeriesSortContext(payload)
+    const baseQuery = buildCollapsedSeriesBaseQuery(libraryId, seriesId, userPermissionBookWhere, sortContext)
+    const replacements = {
+      ...userPermissionBookWhere.replacements,
+      seriesId,
+      limit: Number(window.limit) || null,
+      offset: Number(window.offset) || 0
+    }
+    const rowsTiming = createBrowsePhaseTiming(payload?.browseProfile, 'rows')
+    const countTiming = createBrowsePhaseTiming(payload?.browseProfile, 'count')
+
+    const metaResult = await runWithBrowsePhase(countTiming, async () => Database.sequelize.query(buildCollapsedSeriesMetaQuery(baseQuery, payload.hideSingleBookSeries), {
+      replacements,
+      type: Database.sequelize.QueryTypes.SELECT
+    }))
+    const metaRows = Array.isArray(metaResult[0]) ? metaResult[0] : metaResult
+    const meta = Array.isArray(metaRows) ? metaRows[0] : metaRows
+    const fallbackToPlain = Number(meta?.plainRowCount || 0) === 0 && Number(meta?.collapsedRowCount || 0) === 1
+
+    const { visibleRows, hydratedBooks } = await runWithBrowsePhase(rowsTiming, async () => {
+      const selectedRowsResult = await Database.sequelize.query(buildCollapsedSeriesRowsQuery(baseQuery, sortContext, payload.hideSingleBookSeries, fallbackToPlain), {
+        replacements,
+        type: Database.sequelize.QueryTypes.SELECT
+      })
+      const selectedRows = Array.isArray(selectedRowsResult[0]) ? selectedRowsResult[0] : selectedRowsResult
+
+      const selectedPlainBookIds = selectedRows.filter((row) => row.rowType === 'plain').map((row) => row.anchorBookId)
+      const selectedSeriesIds = selectedRows.filter((row) => row.rowType === 'collapsed').map((row) => row.subseriesId)
+      if (!selectedPlainBookIds.length && !selectedSeriesIds.length) {
+        return {
+          visibleRows: selectedRows,
+          hydratedBooks: []
+        }
+      }
+
+      const hydrateWhere = []
+      if (selectedPlainBookIds.length) {
+        hydrateWhere.push({ id: selectedPlainBookIds })
+      }
+      if (selectedSeriesIds.length) {
+        hydrateWhere.push(existsLiteral(`SELECT 1 FROM "bookSeries" collapseSeries WHERE collapseSeries."bookId" = book.id AND collapseSeries."seriesId" IN (:selectedCollapsedSeriesIds)`))
+      }
+
+      const loadedBooks = await Database.bookModel.findAll({
+        ...findOptions,
+        where: [
+          userPermissionBookWhere.bookWhere,
+          {
+            [Sequelize.Op.or]: hydrateWhere
+          }
+        ],
+        replacements: {
+          ...userPermissionBookWhere.replacements,
+          selectedCollapsedSeriesIds: selectedSeriesIds
+        }
+      })
+
+      return {
+        visibleRows: selectedRows,
+        hydratedBooks: loadedBooks
+      }
+    })
+
+    const selectedPlainBookIds = visibleRows.filter((row) => row.rowType === 'plain').map((row) => row.anchorBookId)
+    const selectedSeriesIds = visibleRows.filter((row) => row.rowType === 'collapsed').map((row) => row.subseriesId)
+    if (!selectedPlainBookIds.length && !selectedSeriesIds.length) {
+      return {
+        libraryItems: [],
+        count: fallbackToPlain ? Number(meta?.rawBookCount || 0) : Number(meta?.plainRowCount || 0) + Number(meta?.collapsedRowCount || 0)
+      }
+    }
+
+    const allLibraryItems = hydratedBooks
+      .map((bookExpanded) => mapCollapsedSeriesBookToLibraryItem(bookExpanded))
+      .filter((libraryItem) => user?.checkCanAccessLibraryItem ? user.checkCanAccessLibraryItem(libraryItem) : true)
+    const selectedSeriesEntries = buildSelectedCollapsedSeriesEntries(allLibraryItems, seriesId, selectedSeriesIds, payload.hideSingleBookSeries)
+    const libraryItemsById = new Map(allLibraryItems.map((libraryItem) => [libraryItem.id, libraryItem]))
+
+    const libraryItems = visibleRows.map((row) => {
+      const libraryItem = libraryItemsById.get(row.anchorLibraryItemId)
+      if (!libraryItem) return null
+      if (row.rowType === 'collapsed') {
+        return Object.assign(Object.create(Object.getPrototypeOf(libraryItem)), libraryItem, {
+          collapsedSeries: selectedSeriesEntries[row.subseriesId]
+        })
+      }
+      return libraryItem
+    }).filter(Boolean)
+
+    return {
+      libraryItems,
+      count: fallbackToPlain ? Number(meta?.rawBookCount || 0) : Number(meta?.plainRowCount || 0) + Number(meta?.collapsedRowCount || 0)
     }
   },
 

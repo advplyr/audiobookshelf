@@ -22,7 +22,7 @@ module.exports = {
    * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
   async getFilteredLibraryItems(libraryId, user, options) {
-    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include, mediaType } = options
+    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include, mediaType, cursor, pageMode, browseProfile } = options
 
     let filterValue = null
     let filterGroup = null
@@ -34,9 +34,19 @@ module.exports = {
     }
 
     if (mediaType === 'book') {
-      return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset)
+      return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, false, {
+        cursor: cursor || null,
+        pageMode: pageMode || 'paged',
+        collapseseries,
+        ...(browseProfile ? { browseProfile } : {})
+      })
     } else {
-      return libraryItemsPodcastFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset)
+      return libraryItemsPodcastFilters.getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset, {
+        cursor: cursor || null,
+        pageMode: pageMode || 'paged',
+        collapseseries,
+        ...(browseProfile ? { browseProfile } : {})
+      })
     }
   },
 
@@ -442,16 +452,13 @@ module.exports = {
    * @returns {Promise<object>}
    */
   async getFilterData(mediaType, libraryId) {
-    const cachedFilterData = Database.libraryFilterData[libraryId]
-    if (cachedFilterData) {
-      const cacheElapsed = Date.now() - cachedFilterData.loadedAt
-      // Cache library filters for 30 mins
-      // TODO: Keep cached filter data up-to-date on updates
-      if (cacheElapsed < 1000 * 60 * 30) {
-        return cachedFilterData
-      }
+    const cachedFilterData = Database.getLibraryFilterCache(libraryId, { includeExpired: true })
+    const freshFilterData = Database.getLibraryFilterCache(libraryId)
+    if (freshFilterData) {
+      return freshFilterData
     }
     const start = Date.now() // Temp for checking load times
+    const lastLoadedAt = cachedFilterData?.loadedAt || 0
 
     const data = {
       authors: [],
@@ -469,9 +476,14 @@ module.exports = {
       numIssues: 0
     }
 
-    const lastLoadedAt = cachedFilterData ? cachedFilterData.loadedAt : 0
-
-    if (mediaType === 'podcast') {
+    // Virtual ebook libraries get content from external API, so filter data is minimal
+    if (mediaType === 'ebook') {
+      // For ebook libraries, filter data will be populated from the external API
+      // Return empty filter data for now - can be enhanced to cache API-provided filters
+      Database.setLibraryFilterCache(libraryId, data)
+      Logger.debug(`Loaded empty filterdata for ebook library in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      return Database.libraryFilterData[libraryId]
+    } else if (mediaType === 'podcast') {
       // Check how many podcasts are in library to determine if we need to load all of the data
       // This is done to handle the edge case of podcasts having been deleted and not having
       // an updatedAt timestamp to trigger a reload of the filter data
@@ -486,12 +498,7 @@ module.exports = {
         }
       })
 
-      // To reduce the cold-start load time, first check if any podcasts
-      // have an "updatedAt" timestamp since the last time the filter
-      // data was loaded. If so, we can skip loading all of the data.
-      // Because many items could change, just check the count of items instead
-      // of actually loading the data twice
-      const changedPodcasts = await podcastModelCount({
+      const changedPodcasts = cachedFilterData ? await podcastModelCount({
         include: {
           model: Database.libraryItemModel,
           attributes: [],
@@ -508,20 +515,13 @@ module.exports = {
           }
         },
         limit: 1
-      })
+      }) : 1
 
-      if (changedPodcasts === 0) {
-        // If nothing has changed, check if the number of podcasts in
-        // library is still the same as prior check before updating cache creation time
-
-        if (podcastCountFromDatabase === Database.libraryFilterData[libraryId]?.podcastCount) {
-          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-          Database.libraryFilterData[libraryId].loadedAt = Date.now()
-          return cachedFilterData
-        }
+      if (cachedFilterData && changedPodcasts === 0 && podcastCountFromDatabase === cachedFilterData.podcastCount) {
+        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        return Database.refreshLibraryFilterCache(libraryId)
       }
 
-      // Something has changed in the podcasts table, so reload all of the filter data for library
       const findAll = process.env.QUERY_PROFILING ? profile(Database.podcastModel.findAll.bind(Database.podcastModel)) : Database.podcastModel.findAll.bind(Database.podcastModel)
       const podcasts = await findAll({
         include: {
@@ -548,81 +548,40 @@ module.exports = {
       // Set podcast count for later comparison
       data.podcastCount = podcastCountFromDatabase
     } else {
-      const bookCountFromDatabase = await Database.bookModel.count({
-        include: {
-          model: Database.libraryItemModel,
-          attributes: [],
-          where: {
-            libraryId: libraryId
-          }
-        }
-      })
+      const [bookCountFromDatabase, seriesCountFromDatabase, authorCountFromDatabase, changedBooks, changedSeries, changedAuthors] = await Promise.all([
+        Database.bookModel.count({
+          include: { model: Database.libraryItemModel, attributes: [], where: { libraryId } }
+        }),
+        Database.seriesModel.count({ where: { libraryId } }),
+        Database.authorModel.count({ where: { libraryId } }),
+        cachedFilterData ? Database.bookModel.count({
+          include: {
+            model: Database.libraryItemModel,
+            attributes: [],
+            where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } }
+          },
+          where: { updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1),
+        cachedFilterData ? Database.seriesModel.count({
+          where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1),
+        cachedFilterData ? Database.authorModel.count({
+          where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1)
+      ])
 
-      const seriesCountFromDatabase = await Database.seriesModel.count({
-        where: {
-          libraryId: libraryId
-        }
-      })
-
-      const authorCountFromDatabase = await Database.authorModel.count({
-        where: {
-          libraryId: libraryId
-        }
-      })
-
-      // To reduce the cold-start load time, first check if any library items, series,
-      // or authors have an "updatedAt" timestamp since the last time the filter
-      // data was loaded. If so, we can skip loading all of the data.
-      // Because many items could change, just check the count of items instead
-      // of actually loading the data twice
-
-      const changedBooks = await Database.bookModel.count({
-        include: {
-          model: Database.libraryItemModel,
-          attributes: [],
-          where: {
-            libraryId: libraryId,
-            updatedAt: {
-              [Sequelize.Op.gt]: new Date(lastLoadedAt)
-            }
-          }
-        },
-        where: {
-          updatedAt: {
-            [Sequelize.Op.gt]: new Date(lastLoadedAt)
-          }
-        },
-        limit: 1
-      })
-
-      const changedSeries = await Database.seriesModel.count({
-        where: {
-          libraryId: libraryId,
-          updatedAt: {
-            [Sequelize.Op.gt]: new Date(lastLoadedAt)
-          }
-        },
-        limit: 1
-      })
-
-      const changedAuthors = await Database.authorModel.count({
-        where: {
-          libraryId: libraryId,
-          updatedAt: {
-            [Sequelize.Op.gt]: new Date(lastLoadedAt)
-          }
-        },
-        limit: 1
-      })
-
-      if (changedBooks + changedSeries + changedAuthors === 0) {
-        // If nothing has changed, check if the number of authors, series, and books
-        // matches the prior check before updating cache creation time
-        if (bookCountFromDatabase === Database.libraryFilterData[libraryId]?.bookCount && seriesCountFromDatabase === Database.libraryFilterData[libraryId]?.seriesCount && authorCountFromDatabase === Database.libraryFilterData[libraryId].authorCount) {
-          Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
-          Database.libraryFilterData[libraryId].loadedAt = Date.now()
-          return cachedFilterData
-        }
+      if (
+        cachedFilterData &&
+        changedBooks + changedSeries + changedAuthors === 0 &&
+        bookCountFromDatabase === cachedFilterData.bookCount &&
+        seriesCountFromDatabase === cachedFilterData.seriesCount &&
+        authorCountFromDatabase === cachedFilterData.authorCount
+      ) {
+        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        return Database.refreshLibraryFilterCache(libraryId)
       }
 
       // Store the counts for later comparison
@@ -686,10 +645,9 @@ module.exports = {
     data.publishers = naturalSort([...data.publishers]).asc()
     data.publishedDecades = naturalSort([...data.publishedDecades]).asc()
     data.languages = naturalSort([...data.languages]).asc()
-    data.loadedAt = Date.now()
-    Database.libraryFilterData[libraryId] = data
+    Database.setLibraryFilterCache(libraryId, data)
 
     Logger.debug(`Loaded filterdata in ${((Date.now() - start) / 1000).toFixed(2)}s`)
-    return data
+    return Database.libraryFilterData[libraryId]
   }
 }
