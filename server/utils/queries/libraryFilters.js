@@ -450,11 +450,13 @@ module.exports = {
    * @returns {Promise<object>}
    */
   async getFilterData(mediaType, libraryId) {
+    const cachedFilterData = Database.getLibraryFilterCache(libraryId, { includeExpired: true })
     const freshFilterData = Database.getLibraryFilterCache(libraryId)
     if (freshFilterData) {
       return freshFilterData
     }
     const start = Date.now() // Temp for checking load times
+    const lastLoadedAt = cachedFilterData?.loadedAt || 0
 
     const data = {
       authors: [],
@@ -494,6 +496,30 @@ module.exports = {
         }
       })
 
+      const changedPodcasts = cachedFilterData ? await podcastModelCount({
+        include: {
+          model: Database.libraryItemModel,
+          attributes: [],
+          where: {
+            libraryId: libraryId,
+            updatedAt: {
+              [Sequelize.Op.gt]: new Date(lastLoadedAt)
+            }
+          }
+        },
+        where: {
+          updatedAt: {
+            [Sequelize.Op.gt]: new Date(lastLoadedAt)
+          }
+        },
+        limit: 1
+      }) : 1
+
+      if (cachedFilterData && changedPodcasts === 0 && podcastCountFromDatabase === cachedFilterData.podcastCount) {
+        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        return Database.refreshLibraryFilterCache(libraryId)
+      }
+
       const findAll = process.env.QUERY_PROFILING ? profile(Database.podcastModel.findAll.bind(Database.podcastModel)) : Database.podcastModel.findAll.bind(Database.podcastModel)
       const podcasts = await findAll({
         include: {
@@ -520,13 +546,41 @@ module.exports = {
       // Set podcast count for later comparison
       data.podcastCount = podcastCountFromDatabase
     } else {
-      const [bookCountFromDatabase, seriesCountFromDatabase, authorCountFromDatabase] = await Promise.all([
+      const [bookCountFromDatabase, seriesCountFromDatabase, authorCountFromDatabase, changedBooks, changedSeries, changedAuthors] = await Promise.all([
         Database.bookModel.count({
           include: { model: Database.libraryItemModel, attributes: [], where: { libraryId } }
         }),
         Database.seriesModel.count({ where: { libraryId } }),
-        Database.authorModel.count({ where: { libraryId } })
+        Database.authorModel.count({ where: { libraryId } }),
+        cachedFilterData ? Database.bookModel.count({
+          include: {
+            model: Database.libraryItemModel,
+            attributes: [],
+            where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } }
+          },
+          where: { updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1),
+        cachedFilterData ? Database.seriesModel.count({
+          where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1),
+        cachedFilterData ? Database.authorModel.count({
+          where: { libraryId, updatedAt: { [Sequelize.Op.gt]: new Date(lastLoadedAt) } },
+          limit: 1
+        }) : Promise.resolve(1)
       ])
+
+      if (
+        cachedFilterData &&
+        changedBooks + changedSeries + changedAuthors === 0 &&
+        bookCountFromDatabase === cachedFilterData.bookCount &&
+        seriesCountFromDatabase === cachedFilterData.seriesCount &&
+        authorCountFromDatabase === cachedFilterData.authorCount
+      ) {
+        Logger.debug(`Filter data for ${libraryId} has not changed, returning cached data and updating cache time after ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        return Database.refreshLibraryFilterCache(libraryId)
+      }
 
       // Store the counts for later comparison
       data.bookCount = bookCountFromDatabase

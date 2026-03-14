@@ -593,7 +593,6 @@ class Database {
       return cacheEntry
     }
 
-    delete this.libraryFilterData[libraryId]
     return undefined
   }
 
@@ -606,6 +605,15 @@ class Database {
       expiresAt
     }
     this.libraryFilterData[libraryId] = cacheEntry
+    return cacheEntry
+  }
+
+  refreshLibraryFilterCache(libraryId, ttlMs = this.libraryFilterDataTtlMs) {
+    const cacheEntry = this.libraryFilterData[libraryId]
+    if (!cacheEntry) return undefined
+
+    cacheEntry.loadedAt = Date.now()
+    cacheEntry.expiresAt = cacheEntry.loadedAt + ttlMs
     return cacheEntry
   }
 

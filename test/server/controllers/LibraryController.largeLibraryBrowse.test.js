@@ -753,6 +753,56 @@ describe('LibraryController large-library browse contract', () => {
     expect(Database.bookModel.count.called).to.equal(true)
   })
 
+  it('refreshes an expired cache entry without rebuilding when cheap change checks show no changes', async () => {
+    const clock = sinon.useFakeTimers({ now: 10_000 })
+    Database.libraryFilterData.lib_1 = {
+      authors: [{ id: 'au_1', name: 'Author 1' }],
+      genres: [],
+      tags: [],
+      series: [{ id: 'se_1', name: 'Series 1' }],
+      narrators: [],
+      languages: [],
+      publishers: [],
+      publishedDecades: [],
+      bookCount: 3,
+      seriesCount: 1,
+      authorCount: 1,
+      podcastCount: 0,
+      ebookCount: 0,
+      numIssues: 0,
+      loadedAt: 1_000,
+      expiresAt: 2_000
+    }
+
+    sinon.stub(Database.bookModel, 'count')
+      .onFirstCall().resolves(3)
+      .onSecondCall().resolves(0)
+    sinon.stub(Database.seriesModel, 'count')
+      .onFirstCall().resolves(1)
+      .onSecondCall().resolves(0)
+    sinon.stub(Database.authorModel, 'count')
+      .onFirstCall().resolves(1)
+      .onSecondCall().resolves(0)
+    const genresFindAllStub = sinon.stub(Database.genreModel, 'findAll').resolves([])
+    const tagsFindAllStub = sinon.stub(Database.tagModel, 'findAll').resolves([])
+    const narratorsFindAllStub = sinon.stub(Database.narratorModel, 'findAll').resolves([])
+    const booksFindAllStub = sinon.stub(Database.bookModel, 'findAll').resolves([])
+    const seriesFindAllStub = sinon.stub(Database.seriesModel, 'findAll').resolves([])
+    const authorsFindAllStub = sinon.stub(Database.authorModel, 'findAll').resolves([])
+
+    const data = await libraryFilters.getFilterData('book', 'lib_1')
+
+    expect(data.authors).to.deep.equal([{ id: 'au_1', name: 'Author 1' }])
+    expect(genresFindAllStub.called).to.equal(false)
+    expect(tagsFindAllStub.called).to.equal(false)
+    expect(narratorsFindAllStub.called).to.equal(false)
+    expect(booksFindAllStub.called).to.equal(false)
+    expect(seriesFindAllStub.called).to.equal(false)
+    expect(authorsFindAllStub.called).to.equal(false)
+    expect(Database.libraryFilterData.lib_1.loadedAt).to.equal(clock.now)
+    expect(Database.libraryFilterData.lib_1.expiresAt).to.equal(clock.now + Database.libraryFilterDataTtlMs)
+  })
+
   it('invalidates filter cache when a library write path changes library content', async () => {
     Database.setLibraryFilterCache('lib_1', { authors: [] }, 60_000)
     sinon.stub(Database.libraryItemModel, 'findAll').resolves([
