@@ -62,6 +62,7 @@ export default {
       shelvesPerPage: 0,
       entitiesPerShelf: 8,
       currentPage: 0,
+      serverTotalEntities: 0,
       totalEntities: 0,
       entities: [],
       pagesLoaded: {},
@@ -348,6 +349,20 @@ export default {
       this.isCountDeferred = false
       this.pageCursors = { 0: null }
     },
+    updateVisibleBrowseRange(totalEntities = this.serverTotalEntities) {
+      this.serverTotalEntities = Number(totalEntities) || 0
+
+      const visibleTotalEntities = this.deepScrollBlocked
+        ? Math.min(this.serverTotalEntities, this.maxOffsetPages * this.booksPerFetch)
+        : this.serverTotalEntities
+
+      this.totalEntities = visibleTotalEntities
+      this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
+
+      if (this.initialized) {
+        this.entities.length = this.totalEntities
+      }
+    },
     getFetchQueryString(page = 0) {
       const cursor = this.paginationMode === 'keyset' && page > 0 ? this.pageCursors[page] : null
       const searchParams = new URLSearchParams()
@@ -398,6 +413,7 @@ export default {
         this.maxOffsetPages = this.deepScrollBlocked ? 3 : Infinity
         this.nextCursor = payload.nextCursor || null
         this.isCountDeferred = !!payload.isCountDeferred
+        this.updateVisibleBrowseRange(payload.total)
 
         if (this.paginationMode === 'keyset') {
           if (this.nextCursor) {
@@ -409,8 +425,6 @@ export default {
 
         if (!this.initialized) {
           this.initialized = true
-          this.totalEntities = payload.total
-          this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
           this.entities = new Array(this.totalEntities)
         }
 
@@ -575,6 +589,7 @@ export default {
       this.resetPaginationState()
       this.entities = []
       this.totalShelves = 0
+      this.serverTotalEntities = 0
       this.totalEntities = 0
       this.currentPage = 0
       this.isSelectionMode = false
@@ -889,13 +904,14 @@ export default {
       if (booksPerFetch !== this.booksPerFetch) {
         this.booksPerFetch = booksPerFetch
         if (this.totalEntities) {
+          this.updateVisibleBrowseRange()
           this.updatePagesLoaded()
         }
       }
 
       this.currentBookWidth = this.bookWidth
-      if (this.totalEntities) {
-        this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
+      if (this.serverTotalEntities) {
+        this.updateVisibleBrowseRange()
       }
       return entitiesPerShelfBefore < this.entitiesPerShelf // Books per shelf has changed
     },

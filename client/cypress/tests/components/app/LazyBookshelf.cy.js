@@ -189,6 +189,8 @@ describe('LazyBookshelf', () => {
           expect(wrapper.vm.paginationMode).to.equal('offset')
           expect(wrapper.vm.deepScrollBlocked).to.equal(true)
           expect(wrapper.vm.maxOffsetPages).to.equal(3)
+          expect(wrapper.vm.totalEntities).to.equal(3)
+          expect(wrapper.vm.totalShelves).to.equal(3)
           expect(requestUrls).to.have.length(3)
           expect(requestUrls.some((url) => url.includes('page=0'))).to.equal(true)
           expect(requestUrls.some((url) => url.includes('page=1'))).to.equal(true)
@@ -197,5 +199,9 @@ describe('LazyBookshelf', () => {
           expect(requestUrls.every((url) => !url.includes('cursor='))).to.equal(true)
         })
     })
+
+    cy.get('[id^="shelf-"]').should('have.length', 3)
+    cy.get('#shelf-2').should('exist')
+    cy.get('#shelf-3').should('not.exist')
   })
 })
