@@ -350,7 +350,10 @@ export default {
       this.pageCursors = { 0: null }
     },
     updateVisibleBrowseRange(totalEntities = this.serverTotalEntities) {
-      this.serverTotalEntities = Number(totalEntities) || 0
+      const hasExplicitTotal = totalEntities !== null && totalEntities !== undefined
+      if (hasExplicitTotal) {
+        this.serverTotalEntities = Number(totalEntities) || 0
+      }
 
       const visibleTotalEntities = this.deepScrollBlocked
         ? Math.min(this.serverTotalEntities, this.maxOffsetPages * this.booksPerFetch)

@@ -166,6 +166,44 @@ describe('LazyBookshelf', () => {
     })
   })
 
+  it('preserves visible totals when keyset follow-up responses omit total', () => {
+    const requestUrls = []
+    const getStub = cy.stub().callsFake((url) => {
+      requestUrls.push(url)
+
+      if (requestUrls.length === 1) {
+        return Promise.resolve({
+          results: [{ id: 'item-1', mediaType: 'book', media: { metadata: { title: 'Alpha' } } }],
+          total: 4,
+          nextCursor: 'cursor-1',
+          paginationMode: 'keyset',
+          isCountDeferred: true
+        })
+      }
+
+      return Promise.resolve({
+        results: [{ id: 'item-2', mediaType: 'book', media: { metadata: { title: 'Beta' } } }],
+        total: null,
+        nextCursor: null,
+        paginationMode: 'keyset',
+        isCountDeferred: true
+      })
+    })
+
+    mountBookshelf(getStub, { initialPagesToLoad: 1 }).then(({ wrapper }) => {
+      cy.wrap(null)
+        .then(() => wrapper.vm.loadPage(1))
+        .then(() => {
+          expect(wrapper.vm.serverTotalEntities).to.equal(4)
+          expect(wrapper.vm.totalEntities).to.equal(4)
+          expect(wrapper.vm.totalShelves).to.equal(4)
+          expect(wrapper.vm.entities).to.have.length(4)
+        })
+    })
+
+    cy.get('[id^="shelf-"]').should('have.length', 4)
+  })
+
   it('keeps offset fallback mode explicit and caps deep endless scroll', () => {
     const requestUrls = []
     const getStub = cy.stub().callsFake((url) => {
