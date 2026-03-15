@@ -1,6 +1,10 @@
-const uuidv4 = require("uuid").v4
+const uuidv4 = require('uuid').v4
+const { stripAllTags } = require('../utils/htmlSanitizer')
 
 class DeviceInfo {
+  /** @type {string[]} Fields to sanitize when loading from stored data */
+  static stringFields = ['deviceId', 'clientVersion', 'manufacturer', 'model', 'sdkVersion', 'clientName', 'deviceName']
+
   constructor(deviceInfo = null) {
     this.id = null
     this.userId = null
@@ -31,7 +35,7 @@ class DeviceInfo {
   construct(deviceInfo) {
     for (const key in deviceInfo) {
       if (deviceInfo[key] !== undefined && this[key] !== undefined) {
-        this[key] = deviceInfo[key]
+        this[key] = DeviceInfo.stringFields.includes(key) ? stripAllTags(deviceInfo[key]) : deviceInfo[key]
       }
     }
   }
@@ -63,7 +67,8 @@ class DeviceInfo {
   }
 
   get deviceDescription() {
-    if (this.model) { // Set from mobile apps
+    if (this.model) {
+      // Set from mobile apps
       if (this.sdkVersion) return `${this.model} SDK ${this.sdkVersion} / v${this.clientVersion}`
       return `${this.model} / v${this.clientVersion}`
     }
@@ -72,18 +77,7 @@ class DeviceInfo {
 
   // When client doesn't send a device id
   getTempDeviceId() {
-    const keys = [
-      this.userId,
-      this.browserName,
-      this.browserVersion,
-      this.osName,
-      this.osVersion,
-      this.clientVersion,
-      this.manufacturer,
-      this.model,
-      this.sdkVersion,
-      this.ipAddress
-    ].map(k => k || '')
+    const keys = [this.userId, this.browserName, this.browserVersion, this.osName, this.osVersion, this.clientVersion, this.manufacturer, this.model, this.sdkVersion, this.ipAddress].map((k) => k || '')
     return 'temp-' + Buffer.from(keys.join('-'), 'utf-8').toString('base64')
   }
 
@@ -99,12 +93,12 @@ class DeviceInfo {
     this.osVersion = ua?.os.version || null
     this.deviceType = ua?.device.type || null
 
-    this.clientVersion = clientDeviceInfo?.clientVersion || serverVersion
-    this.manufacturer = clientDeviceInfo?.manufacturer || null
-    this.model = clientDeviceInfo?.model || null
-    this.sdkVersion = clientDeviceInfo?.sdkVersion || null
+    this.clientVersion = stripAllTags(clientDeviceInfo?.clientVersion) || serverVersion
+    this.manufacturer = stripAllTags(clientDeviceInfo?.manufacturer) || null
+    this.model = stripAllTags(clientDeviceInfo?.model) || null
+    this.sdkVersion = stripAllTags(clientDeviceInfo?.sdkVersion) || null
 
-    this.clientName = clientDeviceInfo?.clientName || null
+    this.clientName = stripAllTags(clientDeviceInfo?.clientName) || null
     if (this.sdkVersion) {
       if (!this.clientName) this.clientName = 'Abs Android'
       this.deviceName = `${this.manufacturer || 'Unknown'} ${this.model || ''}`

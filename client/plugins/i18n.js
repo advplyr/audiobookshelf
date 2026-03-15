@@ -6,6 +6,7 @@ const defaultCode = 'en-us'
 
 const languageCodeMap = {
   ar: { label: 'عربي', dateFnsLocale: 'ar' },
+  be: { label: 'Беларуская', dateFnsLocale: 'be' },
   bg: { label: 'Български', dateFnsLocale: 'bg' },
   bn: { label: 'বাংলা', dateFnsLocale: 'bn' },
   ca: { label: 'Català', dateFnsLocale: 'ca' },
@@ -28,6 +29,7 @@ const languageCodeMap = {
   pl: { label: 'Polski', dateFnsLocale: 'pl' },
   'pt-br': { label: 'Português (Brasil)', dateFnsLocale: 'ptBR' },
   ru: { label: 'Русский', dateFnsLocale: 'ru' },
+  sk: { label: 'Slovenčina', dateFnsLocale: 'sk' },
   sl: { label: 'Slovenščina', dateFnsLocale: 'sl' },
   sv: { label: 'Svenska', dateFnsLocale: 'sv' },
   tr: { label: 'Türkçe', dateFnsLocale: 'tr' },
@@ -48,6 +50,7 @@ const podcastSearchRegionMap = {
   au: { label: 'Australia' },
   br: { label: 'Brasil' },
   be: { label: 'België / Belgique / Belgien' },
+  by: { label: 'Беларусь' },
   cz: { label: 'Česko' },
   dk: { label: 'Danmark' },
   de: { label: 'Deutschland' },
@@ -67,6 +70,7 @@ const podcastSearchRegionMap = {
   pt: { label: 'Portugal' },
   ru: { label: 'Россия' },
   ch: { label: 'Schweiz / Suisse / Svizzera' },
+  sk: { label: 'Slovensko' },
   se: { label: 'Sverige' },
   vn: { label: 'Việt Nam' },
   ua: { label: 'Україна' },
