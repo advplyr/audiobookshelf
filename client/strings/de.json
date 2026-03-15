@@ -331,7 +331,7 @@
   "LabelEmail": "E-Mail",
   "LabelEmailSettingsFromAddress": "Sender",
   "LabelEmailSettingsRejectUnauthorized": "Nicht autorisierte Zertifikate ablehnen",
-  "LabelEmailSettingsRejectUnauthorizedHelp": "Durch das Deaktivieren der SSL-Zertifikatsüberprüfung kann deine Verbindung Sicherheitsrisiken wie Man-in-the-Middle-Angriffen ausgesetzt sein. Deaktiviere diese Option nur, wenn due die Auswirkungen verstehst und dem E-Mail-Server vertraust, mit dem eine Verbindung hergestellt wird.",
+  "LabelEmailSettingsRejectUnauthorizedHelp": "Durch das Deaktivieren der SSL-Zertifikatsüberprüfung kann deine Verbindung Sicherheitsrisiken wie Man-in-the-Middle-Angriffen ausgesetzt sein. Deaktiviere diese Option nur, wenn du die Auswirkungen verstehst und dem E-Mail-Server vertraust, mit dem eine Verbindung hergestellt wird.",
   "LabelEmailSettingsSecure": "Sicher",
   "LabelEmailSettingsSecureHelp": "Wenn an, verwendet die Verbindung TLS, wenn du eine Verbindung zum Server herstellst. Bei „aus“ wird TLS verwendet, wenn der Server die STARTTLS-Erweiterung unterstützt. In den meisten Fällen solltest du diesen Wert auf „an“ schalten, wenn du eine Verbindung zu Port 465 herstellst. Für Port 587 oder 25 behalte den Wert „aus“ bei. (von nodemailer.com/smtp/#authentication)",
   "LabelEmailSettingsTestAddress": "Test-Adresse",
