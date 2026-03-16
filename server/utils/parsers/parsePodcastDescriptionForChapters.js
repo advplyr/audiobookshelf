@@ -1,3 +1,4 @@
+const sanitizeHtml = require('../../libs/sanitizeHtml')
 const Logger = require('../../Logger')
 
 /**
@@ -27,13 +28,16 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
 
   const timestampRegex = /\b(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\b/
   const chapterTitleRegex = /\b\d{1,2}:\d{1,2}(?::\d{1,2})?\b(?:\s+|\))(.+)$/
-  const descriptionLineSplitRegex = /\<\s*\/\s*p\s*\>|\<\s*br\s*\s*\/\>|\n/
+
+  // Split on "</p>", "<br />", "\n", </li>
+  const descriptionLineSplitRegex = /\<\s*\/\s*p\s*\>|\<\s*br\s*\/\>|\n|\<\s*\/\s*li\s*\>/
 
   var descriptionLines = podcastDescription.split(descriptionLineSplitRegex)
   var newChapters = []
 
   for (let i = 0; i < descriptionLines.length; i++) {
-    let line = descriptionLines[i]
+    // Strip all HTML tags out
+    let line = sanitizeHtml(descriptionLines[i], { allowedTags: [] })
 
     let match = timestampRegex.exec(line)
     if (match == null) continue
@@ -85,7 +89,7 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
     newChapters[newChapters.length - 1].end = audioDurationSecs
   }
 
-  Logger.info(`[PodcastEpisode] Successfully generated ${newChapters.length} chapters`)
+  Logger.info(`Successfully generated ${newChapters.length} chapters`)
 
   if (newChapters.length == 1) {
     throw new Error('Only one chapter found, treating as invalid description')

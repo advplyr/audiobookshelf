@@ -1,5 +1,4 @@
 const chai = require('chai')
-const PodcastEpisode = require('../../../../server/models/PodcastEpisode')
 const expect = chai.expect
 const parsePodcastDescriptionForChapters = require('../../../../server/utils/parsers/parsePodcastDescriptionForChapters')
 
@@ -68,6 +67,19 @@ describe('parsePodcastDescriptionForChapters', () => {
         { title: 'Chapter 6', id: 6, start: 2116, end: 2492 },
         { title: 'Chapter 7', id: 7, start: 2492, end: 2803 },
         { title: 'Chapter 8', id: 8, start: 2803, end: 3060 }
+      ]
+    },
+    {
+      testName: 'Should handle html lists and chapters with html tags in the title',
+      description: '<p>Introduction</p><p><br /></p><p><br /></p>Chapters<ul><li><strong>00:00:00</strong> Intro</li><li><strong>00:03:55</strong> Chapter 1</li><li><strong>00:09:52</strong> Chapter 2    </li><li><strong>00:16:11</strong> Chapter 3</li><li><strong>00:20:03</strong> Chapter 4</li><li><strong>00:24:08</strong> Chapter 5</li>',
+      audioDuration: 4000,
+      expectedChapters: [
+        { title: 'Intro', id: 1, start: 0, end: 235 },
+        { title: 'Chapter 1', id: 2, start: 235, end: 592 },
+        { title: 'Chapter 2', id: 3, start: 592, end: 971 },
+        { title: 'Chapter 3', id: 4, start: 971, end: 1203 },
+        { title: 'Chapter 4', id: 5, start: 1203, end: 1448 },
+        { title: 'Chapter 5', id: 6, start: 1448, end: 4000 }
       ]
     }
   ]
