@@ -33,6 +33,7 @@ const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
+const TtsController = require('../controllers/TtsController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
 
@@ -334,6 +335,12 @@ class ApiRouter {
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
     this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
     this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
+
+    //
+    // TTS Routes (Admin and up)
+    //
+    this.router.post('/tts/synthesize', TtsController.middleware.bind(this), TtsController.synthesize.bind(this))
+    this.router.get('/tts/voices', TtsController.middleware.bind(this), TtsController.getVoices.bind(this))
 
     //
     // Misc Routes
