@@ -106,7 +106,11 @@ module.exports = {
     let mediaWhere = {}
     const replacements = {}
 
-    if (group === 'progress') {
+    if (group === 'favorite') {
+      mediaWhere['$libraryItem.userFavorites.userId$'] = {
+        [Sequelize.Op.not]: null
+      }
+    } else if (group === 'progress') {
       if (value === 'not-finished') {
         mediaWhere['$mediaProgresses.isFinished$'] = {
           [Sequelize.Op.or]: [null, false]
@@ -531,6 +535,15 @@ module.exports = {
       libraryItemWhere['createdAt'] = {
         [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       }
+    } else if (filterGroup === 'favorite' && user) {
+      libraryItemIncludes.push({
+        model: Database.userFavoriteModel,
+        attributes: ['userId'],
+        where: {
+          userId: user.id
+        },
+        required: true
+      })
     }
 
     // When sorting by progress but not filtering by progress, include media progresses

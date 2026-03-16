@@ -52,7 +52,11 @@ module.exports = {
     let mediaWhere = {}
     const replacements = {}
 
-    if (['genres', 'tags'].includes(group)) {
+    if (group === 'favorite') {
+      mediaWhere['$libraryItem.userFavorites.userId$'] = {
+        [Sequelize.Op.not]: null
+      }
+    } else if (['genres', 'tags'].includes(group)) {
       mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
         [Sequelize.Op.gte]: 1
       })
@@ -172,6 +176,15 @@ module.exports = {
       libraryItemWhere['createdAt'] = {
         [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       }
+    } else if (filterGroup === 'favorite' && user) {
+      libraryItemIncludes.push({
+        model: Database.userFavoriteModel,
+        attributes: ['userId'],
+        where: {
+          userId: user.id
+        },
+        required: true
+      })
     }
 
     const podcastIncludes = []

@@ -5,6 +5,7 @@ export const state = () => ({
     orderBy: 'media.metadata.title',
     orderDesc: false,
     filterBy: 'all',
+    podcastLatestOnlyFavorites: false,
     playbackRate: 1,
     playbackRateIncrementDecrement: 0.1,
     bookshelfCoverSize: 120,
@@ -37,6 +38,9 @@ export const getters = {
         return li.libraryItemId == libraryItemId
       })
     },
+  getIsLibraryItemFavorite: (state) => (libraryItemId) => {
+    return state.user?.favorites?.includes(libraryItemId) || false
+  },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user?.bookmarks) return []
     return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
