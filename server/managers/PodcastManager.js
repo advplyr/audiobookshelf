@@ -204,7 +204,7 @@ class PodcastManager {
       return false
     }
 
-    const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
+    const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, libraryItem.media.autoGenerateChapters, audioFile)
 
     libraryItem.libraryFiles.push(libraryFile.toJSON())
     // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
