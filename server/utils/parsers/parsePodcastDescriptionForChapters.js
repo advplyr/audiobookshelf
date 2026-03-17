@@ -26,6 +26,12 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
     throw new Error('Audio duration must not be null')
   }
 
+  Logger.info('Description!', podcastDescription)
+
+  // This number is arbitrary, but there have been examples where descriptions of the chapter are on the same line as the chapter title
+  // This results in a unpleasant UX where the chapter is very long, it's also possible that an overly long chapter title is the result of a parsing failure
+  const maxChapterTitleLength = 200
+
   const timestampRegex = /\b(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\b/
   const chapterTitleRegex = /\b\d{1,2}:\d{1,2}(?::\d{1,2})?\b(?:\s+|\))(.+)$/
 
@@ -77,7 +83,12 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
       throw new Error(`Unable to get chapter title from description, line ${line}`)
     }
 
-    let chapter = { title: chapterTitleMatch[1].trim(), id: newChapters.length + 1, start: startTime }
+    let chapterTitle = chapterTitleMatch[1].trim()
+    if (chapterTitle.length > maxChapterTitleLength) {
+      throw new Error(`Chapter title too long, possible parsing falure, line ${line}`)
+    }
+
+    let chapter = { title: chapterTitle, id: newChapters.length + 1, start: startTime }
 
     if (newChapters.length > 0) {
       newChapters[newChapters.length - 1].end = startTime

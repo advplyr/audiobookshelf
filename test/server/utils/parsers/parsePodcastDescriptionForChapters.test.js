@@ -20,6 +20,7 @@ describe('parsePodcastDescriptionForChapters', () => {
       ]
     },
     {
+      // Example: https://podcasts.apple.com/us/podcast/giant-bombcast-931-bleepbloop-remote/id274450056?i=1000754550540
       testName: 'Should handle descriptions using html line breaks',
       description: '<br>Introduction text paragraph 1<br /><br>Introduction text paragraph 2<br /><br />0:00:00 Chapter 1<br />0:17:05 Chapter 2<br />0:33:58 Chapter 3<br />0:40:35 Chapter 4<br />Unrelated outro line<br />',
       audioDuration: 2700,
@@ -31,6 +32,7 @@ describe('parsePodcastDescriptionForChapters', () => {
       ]
     },
     {
+      // Example: https://podcasts.apple.com/us/podcast/xboxs-big-helix-reveal-witcher-4-path-tracing-crimson/id1596728253?i=1000755411491
       testName: 'Should handle descriptions using unix new lines',
       description: `Introduction text paragraph 1
         Introduction text paragraph 2
@@ -49,8 +51,7 @@ describe('parsePodcastDescriptionForChapters', () => {
     },
     {
       testName: 'Should handle descriptions with no timestamps',
-      description: `Introduction text paragraph 1
-        Introduction text paragraph 2`,
+      description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit quisque faucibus ex sapien vitae pellentesque sem placerat in id cursus mi pretium tellus duis convallis tempus leo eu aenean sed diam urna tempor pulvinar vivamus fringilla lacus nec metus bibendum egestas.',
       audioDuration: 2700,
       expectedChapters: []
     },
@@ -70,6 +71,7 @@ describe('parsePodcastDescriptionForChapters', () => {
       ]
     },
     {
+      // Example here: https://podcasts.apple.com/gb/podcast/daniel-priestley-plumbers-will-earn-more-than-lawyers/id1291423644?i=1000755513967
       testName: 'Should handle html lists and chapters with html tags in the title',
       description: '<p>Introduction</p><p><br /></p><p><br /></p>Chapters<ul><li><strong>00:00:00</strong> Intro</li><li><strong>00:03:55</strong> Chapter 1</li><li><strong>00:09:52</strong> Chapter 2    </li><li><strong>00:16:11</strong> Chapter 3</li><li><strong>00:20:03</strong> Chapter 4</li><li><strong>00:24:08</strong> Chapter 5</li>',
       audioDuration: 4000,
@@ -132,6 +134,13 @@ describe('parsePodcastDescriptionForChapters', () => {
       description: '<p>Introduction text paragraph 1</p><p>Introduction text paragraph 2</p><p>00:48 Chatper 1  </p><p>00:30:00</p>',
       audioDuration: 3600,
       expectedError: 'Unable to get chapter title from description'
+    },
+    {
+      // Example here: https://podcasts.apple.com/us/podcast/is-your-personal-finance-indecision-costing-you-plus/id1256091892?i=1000636624926
+      testName: 'Should throw if chapter is too long',
+      description: '<p>01:19 Chapter 1</p><p>10:00 Chapter 2: Lorem ipsum dolor sit amet consectetur adipiscing elit quisque faucibus ex sapien vitae pellentesque sem placerat in id cursus mi pretium tellus duis convallis tempus leo eu aenean sed diam urna tempor pulvinar vivamus fringilla></p>',
+      audioDuration: 3600,
+      expectedError: 'Chapter title too long, possible parsing falure'
     }
   ]
   testCasesTestingFailure.forEach(function (testCase) {
