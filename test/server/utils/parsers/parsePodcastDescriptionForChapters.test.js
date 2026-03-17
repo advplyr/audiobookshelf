@@ -1,8 +1,21 @@
 const chai = require('chai')
 const expect = chai.expect
 const parsePodcastDescriptionForChapters = require('../../../../server/utils/parsers/parsePodcastDescriptionForChapters')
+const sinon = require('sinon')
+const Logger = require('../../../../server/Logger')
 
 describe('parsePodcastDescriptionForChapters', () => {
+  it("should early out if description doens't contain timestamps", () => {
+    let loggerDebugStub = sinon.stub(Logger, 'debug')
+    let description = '<p>Introduction text paragraph 1</p><p>Introduction text paragraph 2</p>'
+    let chapters = parsePodcastDescriptionForChapters.parse(description, 1000)
+
+    expect(chapters).to.be.empty
+    expect(loggerDebugStub.calledWith('No timestamps found in description, bailing out early')).to.be.true
+
+    sinon.restore()
+  })
+
   var testCasesTestingSuccess = [
     {
       testName: 'Should handle descriptions using html paragraphs',

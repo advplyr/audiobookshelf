@@ -91,8 +91,12 @@ class PodcastEpisode extends Model {
       Logger.debug("[PodcastEpisode] New episode doesn't have chapters, attempting to generate them from timestamps", rssPodcastEpisode.title)
       try {
         podcastEpisode.chapters = parsePodcastDescriptionForChapters.parse(podcastEpisode.description, podcastEpisode.audioFile.duration)
+
+        if (podcastEpisode.chapters.length > 0) {
+          Logger.info(`[PodcastEpisode] Successfully generated ${podcastEpisode.chapters.length} chapters`)
+        }
       } catch (error) {
-        Logger.error(`[PodcastEpisode] createFromRssPodcastEpisode: Failed to auto generate chapters for "${podcastEpisode.title}"`, error)
+        Logger.error(`[PodcastEpisode] createFromRssPodcastEpisode: Failed to generate chapters for "${podcastEpisode.title}"`, error)
       }
     }
 

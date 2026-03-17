@@ -36,6 +36,12 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
   // Split on "</p>", "<br />", "\n", </li>
   const descriptionLineSplitRegex = /\<\s*\/\s*p\s*\>|\<\s*br\s*\/\>|\n|\<\s*\/\s*li\s*\>/
 
+  // Early out if there aren't any timestamps in the entire description
+  if (timestampRegex.exec(podcastDescription) == null) {
+    Logger.debug('No timestamps found in description, bailing out early')
+    return []
+  }
+
   var descriptionLines = podcastDescription.split(descriptionLineSplitRegex)
   var newChapters = []
 
@@ -97,8 +103,6 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
   if (newChapters.length > 0) {
     newChapters[newChapters.length - 1].end = audioDurationSecs
   }
-
-  Logger.info(`Successfully generated ${newChapters.length} chapters`)
 
   if (newChapters.length == 1) {
     throw new Error('Only one chapter found, treating as invalid description')
