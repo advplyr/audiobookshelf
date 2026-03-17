@@ -106,7 +106,7 @@
               class="absolute text-yellow-400 left-0 z-10 cursor-pointer hover:scale-110 transform duration-150"
               :style="{ padding: 0.375 + 'em', bottom: ebookFormat ? '1.25em' : '0px' }"
               @click.stop.prevent="toggleFavorite">
-          <span class="material-symbols fill" aria-hidden="true" :style="{ fontSize: 1.5 + 'em' }">star</span>
+          <span class="material-symbols fill" aria-hidden="true" :style="{ fontSize: 1.5 + 'em', textShadow: '0 0 3px black' }">star</span>
         </div>
 
         <!-- Series sequence -->
