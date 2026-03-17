@@ -58,10 +58,9 @@ class PodcastEpisode extends Model {
    *
    * @param {import('../utils/podcastUtils').RssPodcastEpisode} rssPodcastEpisode
    * @param {string} podcastId
-   * @param {boolean} autoGenerateChapters
    * @param {import('../objects/files/AudioFile')} audioFile
    */
-  static async createFromRssPodcastEpisode(rssPodcastEpisode, podcastId, autoGenerateChapters, audioFile) {
+  static async createFromRssPodcastEpisode(rssPodcastEpisode, podcastId, audioFile) {
     const podcastEpisode = {
       index: null,
       season: rssPodcastEpisode.season,
@@ -88,8 +87,8 @@ class PodcastEpisode extends Model {
       podcastEpisode.chapters = audioFile.chapters.map((ch) => ({ ...ch }))
     } else if (rssPodcastEpisode.chapters?.length) {
       podcastEpisode.chapters = rssPodcastEpisode.chapters.map((ch) => ({ ...ch }))
-    } else if (autoGenerateChapters) {
-      Logger.info("[PodcastEpisode] New episode doesn't have chapters, attempting to generate them from timestamps", rssPodcastEpisode.title)
+    } else {
+      Logger.debug("[PodcastEpisode] New episode doesn't have chapters, attempting to generate them from timestamps", rssPodcastEpisode.title)
       try {
         podcastEpisode.chapters = parsePodcastDescriptionForChapters.parse(podcastEpisode.description, podcastEpisode.audioFile.duration)
       } catch (error) {

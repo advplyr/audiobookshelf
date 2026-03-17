@@ -26,8 +26,6 @@ module.exports.parse = (podcastDescription, audioDurationSecs) => {
     throw new Error('Audio duration must not be null')
   }
 
-  Logger.info('Description!', podcastDescription)
-
   // This number is arbitrary, but there have been examples where descriptions of the chapter are on the same line as the chapter title
   // This results in a unpleasant UX where the chapter is very long, it's also possible that an overly long chapter title is the result of a parsing failure
   const maxChapterTitleLength = 200

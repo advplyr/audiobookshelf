@@ -53,8 +53,6 @@ class Podcast extends Model {
     this.maxEpisodesToKeep
     /** @type {number} */
     this.maxNewEpisodesToDownload
-    /** @type {boolean} */
-    this.autoGenerateChapters
     /** @type {string} */
     this.coverPath
     /** @type {string[]} */
@@ -108,7 +106,6 @@ class Podcast extends Model {
         explicit: !!payload.metadata.explicit,
         autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
         autoDownloadSchedule: autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule,
-        autoGenerateChapters: !!payload.autoGenerateChapters,
         lastEpisodeCheck: new Date(),
         maxEpisodesToKeep: 0,
         maxNewEpisodesToDownload: 3,
@@ -148,7 +145,6 @@ class Podcast extends Model {
         autoDownloadEpisodes: DataTypes.BOOLEAN,
         autoDownloadSchedule: DataTypes.STRING,
         lastEpisodeCheck: DataTypes.DATE,
-        autoGenerateChapters: DataTypes.BOOLEAN,
         maxEpisodesToKeep: DataTypes.INTEGER,
         maxNewEpisodesToDownload: DataTypes.INTEGER,
         coverPath: DataTypes.STRING,
@@ -275,10 +271,6 @@ class Podcast extends Model {
     }
     if (typeof payload.autoDownloadSchedule === 'string' && payload.autoDownloadSchedule !== this.autoDownloadSchedule) {
       this.autoDownloadSchedule = payload.autoDownloadSchedule
-      hasUpdates = true
-    }
-    if (payload.autoGenerateChapters !== undefined && payload.autoGenerateChapters !== this.autoGenerateChapters) {
-      this.autoGenerateChapters = !!payload.autoGenerateChapters
       hasUpdates = true
     }
     if (typeof payload.lastEpisodeCheck === 'number' && payload.lastEpisodeCheck !== this.lastEpisodeCheck?.valueOf()) {
@@ -449,7 +441,6 @@ class Podcast extends Model {
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
-      autoGenerateChapters: this.autoGenerateChapters,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
     }
@@ -466,7 +457,6 @@ class Podcast extends Model {
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
-      autoGenerateChapters: this.autoGenerateChapters,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
       size: this.size
@@ -491,7 +481,6 @@ class Podcast extends Model {
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
-      autoGenerateChapters: this.autoGenerateChapters,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
       size: this.size
