@@ -14,6 +14,16 @@
               <ui-text-input-with-label ref="sequenceInput" v-model="selectedSeries.sequence" :label="$strings.LabelSequence" />
             </div>
           </div>
+          <div class="flex mt-2">
+            <div class="grow p-1">
+              <div class="flex items-center">
+                <ui-asin-input ref="asinInput" v-model="seriesAsin" :label="$strings.LabelSeriesAsin" :extracted-message="$strings.MessageAsinExtractedFromUrl" :valid-message="$strings.MessageValidAsinFormat" :invalid-message="$strings.MessageInvalidAsin" class="flex-grow" />
+                <ui-tooltip :text="$strings.MessageAsinCheck" direction="top" class="ml-2 mt-5">
+                  <span class="material-symbols text-gray-400 hover:text-white cursor-help" style="font-size: 1.1rem">help</span>
+                </ui-tooltip>
+              </div>
+            </div>
+          </div>
           <div v-if="error" class="text-error text-sm mt-2 p-1">{{ error }}</div>
           <div class="flex justify-end mt-2 p-1">
             <ui-btn type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
@@ -45,7 +55,8 @@ export default {
     return {
       el: null,
       content: null,
-      error: null
+      error: null,
+      seriesAsin: ''
     }
   },
   watch: {
@@ -54,6 +65,21 @@ export default {
         this.$nextTick(this.setShow)
       } else {
         this.setHide()
+      }
+    },
+    selectedSeries: {
+      handler(newVal) {
+        if (!this.show) return
+        this.seriesAsin = newVal?.audibleSeriesAsin || ''
+      },
+      deep: true
+    },
+    // Watch for series name changes to auto-populate ASIN when selecting existing series
+    'selectedSeries.name': {
+      async handler(newName) {
+        if (!this.show || !newName || !this.isNewSeries) return
+        // Check if this matches an existing series in the library
+        await this.fetchSeriesAsinByName(newName)
       }
     }
   },
@@ -75,6 +101,22 @@ export default {
     seriesNameInputHandler() {
       if (this.$refs.sequenceInput) {
         this.$refs.sequenceInput.setFocus()
+      }
+    },
+    async fetchSeriesAsinByName(seriesName) {
+      try {
+        const libraryId = this.$store.state.libraries.currentLibraryId
+        const series = this.$store.state.libraries.filterData?.series || []
+        const matchingSeries = series.find((se) => se.name.toLowerCase() === seriesName.toLowerCase())
+        if (!matchingSeries) return
+
+        // Fetch full series data to get ASIN
+        const fullSeries = await this.$axios.$get(`/api/libraries/${libraryId}/series/${matchingSeries.id}`)
+        if (fullSeries?.audibleSeriesAsin) {
+          this.seriesAsin = fullSeries.audibleSeriesAsin
+        }
+      } catch (error) {
+        console.error('Failed to fetch series ASIN:', error)
       }
     },
     setInputFocus() {
@@ -102,7 +144,18 @@ export default {
         return
       }
 
-      this.$emit('submit')
+      // Validate ASIN format if provided
+      if (this.seriesAsin && this.seriesAsin.trim()) {
+        const asin = this.seriesAsin.trim().toUpperCase()
+        if (!/^[A-Z0-9]{10}$/.test(asin)) {
+          this.error = this.$strings.MessageInvalidAsin
+          return
+        }
+        this.seriesAsin = asin
+      }
+
+      // Pass ASIN along with submit
+      this.$emit('submit', { audibleSeriesAsin: this.seriesAsin || null })
     },
     clickClose() {
       this.show = false
@@ -114,6 +167,9 @@ export default {
     },
     setShow() {
       this.error = null
+      // Load existing ASIN from the series if it exists
+      this.seriesAsin = this.selectedSeries?.audibleSeriesAsin || ''
+
       if (!this.el || !this.content) {
         this.init()
       }

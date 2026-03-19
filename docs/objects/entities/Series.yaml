@@ -14,6 +14,12 @@ components:
       type: string
       nullable: true
       example: The Sword of Truth is a series of twenty one epic fantasy novels written by Terry Goodkind.
+    audibleSeriesAsin:
+      description: The Audible ASIN (Amazon Standard Identification Number) for this series. Used for metadata lookups. Will be null if not set.
+      type: string
+      nullable: true
+      pattern: '^[A-Z0-9]{10}$'
+      example: B08G9PRS1K
     sequence:
       description: The position in the series the book is.
       type: string
@@ -45,6 +51,8 @@ components:
           $ref: '#/components/schemas/seriesName'
         description:
           $ref: '#/components/schemas/seriesDescription'
+        audibleSeriesAsin:
+          $ref: '#/components/schemas/audibleSeriesAsin'
         addedAt:
           $ref: '../../schemas.yaml#/components/schemas/addedAt'
         updatedAt:
@@ -73,6 +81,10 @@ components:
           $ref: '#/components/schemas/seriesId'
         name:
           $ref: '#/components/schemas/seriesName'
+        description:
+          $ref: '#/components/schemas/seriesDescription'
+        audibleSeriesAsin:
+          $ref: '#/components/schemas/audibleSeriesAsin'
         addedAt:
           $ref: '../../schemas.yaml#/components/schemas/addedAt'
         nameIgnorePrefix:

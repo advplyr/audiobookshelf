@@ -544,7 +544,8 @@ export default {
                 id: `new-${Math.floor(Math.random() * 10000)}`,
                 displayName: se.sequence ? `${se.series} #${se.sequence}` : se.series,
                 name: se.series,
-                sequence: se.sequence || ''
+                sequence: se.sequence || '',
+                asin: se.asin || null
               }
             })
           }
@@ -580,7 +581,9 @@ export default {
                 seriesPayload.push({
                   id: seriesItem.id,
                   name: seriesItem.name,
-                  sequence: seriesItem.sequence
+                  sequence: seriesItem.sequence,
+                  // Support both 'asin' (from provider) and 'audibleSeriesAsin' (from edit form)
+                  asin: seriesItem.asin || seriesItem.audibleSeriesAsin || null
                 })
               )
               updatePayload.metadata.series = seriesPayload

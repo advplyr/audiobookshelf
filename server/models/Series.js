@@ -2,6 +2,37 @@ const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
 
+/**
+ * Normalize and validate Audible Series ASIN.
+ * - null/undefined/empty → null
+ * - Extracts ASIN from Audible series URLs
+ * - Validates 10 alphanumeric chars
+ * - Uppercases
+ *
+ * @param {*} value
+ * @returns {string|null} Normalized ASIN or null
+ * @throws {Error} If value is invalid format
+ */
+function normalizeAudibleSeriesAsin(value) {
+  if (value == null) return null
+  if (typeof value !== 'string') {
+    throw new Error('audibleSeriesAsin must be a string or null')
+  }
+
+  const raw = value.trim()
+  if (!raw) return null
+
+  // Extract ASIN from Audible series URL if provided
+  // e.g., https://www.audible.com/series/Harry-Potter/B0182NWM9I or /series/B0182NWM9I
+  const urlMatch = raw.match(/\/series\/(?:[^/]+\/)?([A-Z0-9]{10})(?:[/?#]|$)/i)
+  const candidate = (urlMatch ? urlMatch[1] : raw).toUpperCase()
+
+  if (!/^[A-Z0-9]{10}$/.test(candidate)) {
+    throw new Error('Invalid ASIN format. Must be exactly 10 alphanumeric characters.')
+  }
+  return candidate
+}
+
 class Series extends Model {
   constructor(values, options) {
     super(values, options)
@@ -14,6 +45,8 @@ class Series extends Model {
     this.nameIgnorePrefix
     /** @type {string} */
     this.description
+    /** @type {string} */
+    this.audibleSeriesAsin
     /** @type {UUIDV4} */
     this.libraryId
     /** @type {Date} */
@@ -70,15 +103,26 @@ class Series extends Model {
    *
    * @param {string} seriesName
    * @param {string} libraryId
+   * @param {string} [asin] - Optional Audible series ASIN
    * @returns {Promise<Series>}
    */
-  static async findOrCreateByNameAndLibrary(seriesName, libraryId) {
+  static async findOrCreateByNameAndLibrary(seriesName, libraryId, asin = null) {
     const series = await this.getByNameAndLibrary(seriesName, libraryId)
-    if (series) return series
+    if (series) {
+      // Update ASIN if provided and not already set
+      if (asin && !series.audibleSeriesAsin) {
+        series.audibleSeriesAsin = asin
+        await series.save()
+        const SocketAuthority = require('../SocketAuthority')
+        SocketAuthority.emitter('series_updated', series.toOldJSON())
+      }
+      return series
+    }
     return this.create({
       name: seriesName,
       nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
-      libraryId
+      libraryId,
+      audibleSeriesAsin: asin || null
     })
   }
 
@@ -96,7 +140,8 @@ class Series extends Model {
         },
         name: DataTypes.STRING,
         nameIgnorePrefix: DataTypes.STRING,
-        description: DataTypes.TEXT
+        description: DataTypes.TEXT,
+        audibleSeriesAsin: DataTypes.STRING
       },
       {
         sequelize,
@@ -128,6 +173,14 @@ class Series extends Model {
         ]
       }
     )
+
+    // Hook to normalize/validate audibleSeriesAsin before save
+    // This ensures ALL routes get the same validation
+    Series.beforeValidate((series) => {
+      if (series.changed('audibleSeriesAsin')) {
+        series.audibleSeriesAsin = normalizeAudibleSeriesAsin(series.audibleSeriesAsin)
+      }
+    })
 
     const { library } = sequelize.models
     library.hasMany(Series, {
@@ -171,6 +224,7 @@ class Series extends Model {
       name: this.name,
       nameIgnorePrefix: getTitlePrefixAtEnd(this.name),
       description: this.description,
+      audibleSeriesAsin: this.audibleSeriesAsin,
       addedAt: this.createdAt.valueOf(),
       updatedAt: this.updatedAt.valueOf(),
       libraryId: this.libraryId
@@ -187,3 +241,4 @@ class Series extends Model {
 }
 
 module.exports = Series
+module.exports.normalizeAudibleSeriesAsin = normalizeAudibleSeriesAsin
