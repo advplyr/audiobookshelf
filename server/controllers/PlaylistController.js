@@ -2,6 +2,7 @@ const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 /**
  * @typedef RequestUserObject
@@ -29,7 +30,8 @@ class PlaylistController {
     const reqBody = req.body || {}
 
     // Validation
-    if (!reqBody.name || !reqBody.libraryId) {
+    const nameCleaned = htmlSanitizer.stripAllTags(reqBody.name)
+    if (!nameCleaned || !reqBody.libraryId) {
       return res.status(400).send('Invalid playlist data')
     }
     if (reqBody.description && typeof reqBody.description !== 'string') {
@@ -84,7 +86,7 @@ class PlaylistController {
         {
           libraryId: reqBody.libraryId,
           userId: req.user.id,
-          name: reqBody.name,
+          name: nameCleaned,
           description: reqBody.description || null
         },
         { transaction }
@@ -174,7 +176,11 @@ class PlaylistController {
     }
 
     const playlistUpdatePayload = {}
-    if (reqBody.name) playlistUpdatePayload.name = reqBody.name
+
+    const nameCleaned = htmlSanitizer.stripAllTags(reqBody.name)
+    if (nameCleaned) {
+      playlistUpdatePayload.name = nameCleaned
+    }
     if (reqBody.description) playlistUpdatePayload.description = reqBody.description
 
     // Update name and description

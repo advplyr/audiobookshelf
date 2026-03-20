@@ -3,6 +3,7 @@ const Sequelize = require('sequelize')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 
@@ -31,8 +32,10 @@ class CollectionController {
   async create(req, res) {
     const reqBody = req.body || {}
 
+    const nameCleaned = htmlSanitizer.stripAllTags(reqBody.name)
+
     // Validation
-    if (!reqBody.name || !reqBody.libraryId) {
+    if (!nameCleaned || !reqBody.libraryId) {
       return res.status(400).send('Invalid collection data')
     }
     if (reqBody.description && typeof reqBody.description !== 'string') {
@@ -65,7 +68,7 @@ class CollectionController {
       newCollection = await Database.collectionModel.create(
         {
           libraryId: reqBody.libraryId,
-          name: reqBody.name,
+          name: nameCleaned,
           description: reqBody.description || null
         },
         { transaction }
@@ -145,9 +148,12 @@ class CollectionController {
       collectionUpdatePayload.description = req.body.description
       wasUpdated = true
     }
-    if (req.body.name !== undefined && req.body.name !== req.collection.name) {
-      collectionUpdatePayload.name = req.body.name
-      wasUpdated = true
+    if (req.body.name !== undefined && typeof req.body.name === 'string') {
+      const nameCleaned = htmlSanitizer.stripAllTags(req.body.name)
+      if (nameCleaned !== req.collection.name) {
+        collectionUpdatePayload.name = nameCleaned
+        wasUpdated = true
+      }
     }
 
     if (wasUpdated) {

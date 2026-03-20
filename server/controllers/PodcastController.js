@@ -412,6 +412,12 @@ class PodcastController {
             Logger.debug(`[PodcastController] Sanitized description from "${req.body[key]}" to "${sanitizedDescription}"`)
             req.body[key] = sanitizedDescription
           }
+        } else if (key === 'subtitle' && req.body[key]) {
+          const sanitizedSubtitle = htmlSanitizer.sanitize(req.body[key])
+          if (sanitizedSubtitle !== req.body[key]) {
+            Logger.debug(`[PodcastController] Sanitized subtitle from "${req.body[key]}" to "${sanitizedSubtitle}"`)
+            req.body[key] = sanitizedSubtitle
+          }
         }
 
         updatePayload[key] = req.body[key]

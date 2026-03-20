@@ -234,6 +234,13 @@ class TokenManager {
       }
 
       const user = await Database.userModel.getUserById(apiKey.userId)
+
+      if (!user?.isActive) {
+        // deny login
+        done(null, null)
+        return
+      }
+
       done(null, user)
     } else {
       // JWT based authentication
