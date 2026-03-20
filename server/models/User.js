@@ -677,6 +677,7 @@ class User extends Model {
     if (minimal) {
       delete json.mediaProgress
       delete json.bookmarks
+      delete json.favorites
     }
     return json
   }

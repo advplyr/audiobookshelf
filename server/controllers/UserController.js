@@ -32,7 +32,7 @@ class UserController {
 
     const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
-    // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
+    // Minimal toJSONForBrowser does not include mediaProgress, bookmarks and favorites
     const allUsers = await Database.userModel.findAll()
     const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
 
