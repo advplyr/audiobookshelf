@@ -1,30 +1,12 @@
 const Database = require('../Database')
 
-async function getPodcastEpisodesWithLibraryItems(episodeIds) {
-  if (!episodeIds.length) return []
-
-  return Database.podcastEpisodeModel.findAll({
-    where: {
-      id: episodeIds
-    },
-    include: [
-      {
-        model: Database.podcastModel,
-        include: [
-          {
-            model: Database.libraryItemModel
-          }
-        ]
-      }
-    ]
-  })
-}
-
 async function resolvePlaylistRequestItems(items, libraryId) {
+  // Get lists of items, episodes, and books to simplify later operations
   const libraryItemIds = Array.from(new Set(items.map((i) => i.libraryItemId).filter((i) => i)))
   const episodeIds = Array.from(new Set(items.map((i) => i.episodeId).filter((i) => i)))
   const bookLibraryItemIds = Array.from(new Set(items.filter((i) => !i.episodeId).map((i) => i.libraryItemId)))
 
+  // Load library items for later mapping to episodes and books.
   const libraryItems = await Database.libraryItemModel.findAll({
     attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
     where: {
@@ -49,17 +31,30 @@ async function resolvePlaylistRequestItems(items, libraryId) {
   const bookLibraryItemsById = new Map(bookLibraryItems.map((libraryItem) => [libraryItem.id, libraryItem]))
 
   // For podcast adds, load only the requested episodes plus their owning podcast/library item.
-  // The old expanded library-item query pulled every episode for the podcast, which is what blew up memory.
-  const podcastEpisodes = await getPodcastEpisodesWithLibraryItems(episodeIds)
-  if (podcastEpisodes.length !== episodeIds.length) {
-    return null
-  }
+  const podcastEpisodes = episodeIds.length
+    ? await Database.podcastEpisodeModel.findAll({
+        where: {
+          id: episodeIds
+        },
+        include: [
+          {
+            model: Database.podcastModel,
+            include: [
+              {
+                model: Database.libraryItemModel
+              }
+            ]
+          }
+        ]
+      })
+    : []
   const podcastEpisodesById = new Map(podcastEpisodes.map((episode) => [episode.id, episode]))
 
   return items.map((item) => {
     const libraryItem = libraryItemsById.get(item.libraryItemId)
     if (!libraryItem) return null
 
+    // If this is an episode item, create the object with owning library item
     if (item.episodeId) {
       const episode = podcastEpisodesById.get(item.episodeId)
       if (libraryItem.mediaType !== 'podcast' || !episode?.podcast?.libraryItem || episode.podcast.libraryItem.id !== item.libraryItemId) {
@@ -82,6 +77,7 @@ async function resolvePlaylistRequestItems(items, libraryId) {
       }
     }
 
+    // If not a podcast, this is a book
     const expandedBookLibraryItem = bookLibraryItemsById.get(item.libraryItemId)
     if (libraryItem.mediaType !== 'book' || !expandedBookLibraryItem) {
       return null
@@ -100,6 +96,5 @@ async function resolvePlaylistRequestItems(items, libraryId) {
 }
 
 module.exports = {
-  getPodcastEpisodesWithLibraryItems,
   resolvePlaylistRequestItems
 }
