@@ -513,5 +513,87 @@ class MeController {
     const data = await userStats.getStatsForYear(req.user.id, year)
     res.json(data)
   }
+  /**
+   * POST: /api/me/follows/series/:id
+   * Follow a series
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async followSeries(req, res) {
+    const series = await Database.seriesModel.findByPk(req.params.id)
+    if (!series) {
+      Logger.error(`[MeController] followSeries: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const existing = await Database.userSeriesFollowModel.findOne({
+      where: { userId: req.user.id, seriesId: series.id }
+    })
+    if (!existing) {
+      await Database.userSeriesFollowModel.create({
+        userId: req.user.id,
+        seriesId: series.id
+      })
+      Database.userModel.seriesFollowChanged(req.user.id)
+    }
+
+    const seriesFollowing = await Database.userSeriesFollowModel.getFollowedSeriesIdsForUser(req.user.id)
+    SocketAuthority.clientEmitter(req.user.id, 'user_series_follows_updated', { seriesFollowing })
+
+    res.sendStatus(200)
+  }
+
+  /**
+   * DELETE: /api/me/follows/series/:id
+   * Unfollow a series
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async unfollowSeries(req, res) {
+    const deleted = await Database.userSeriesFollowModel.destroy({
+      where: { userId: req.user.id, seriesId: req.params.id }
+    })
+    if (!deleted) {
+      return res.sendStatus(404)
+    }
+
+    Database.userModel.seriesFollowChanged(req.user.id)
+
+    const seriesFollowing = await Database.userSeriesFollowModel.getFollowedSeriesIdsForUser(req.user.id)
+    SocketAuthority.clientEmitter(req.user.id, 'user_series_follows_updated', { seriesFollowing })
+
+    res.sendStatus(200)
+  }
+
+  /**
+   * GET: /api/me/follows
+   * Get all follows for the current user
+   * Optional query param: ?type=series
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getFollows(req, res) {
+    const type = req.query.type
+    const result = {}
+
+    if (!type || type === 'series') {
+      const seriesFollows = await Database.userSeriesFollowModel.findAll({
+        where: { userId: req.user.id },
+        include: { model: Database.seriesModel, attributes: ['id', 'name', 'libraryId'] },
+        order: [['createdAt', 'DESC']]
+      })
+      result.series = seriesFollows.map((sf) => ({
+        seriesId: sf.seriesId,
+        seriesName: sf.series?.name || null,
+        libraryId: sf.series?.libraryId || null,
+        createdAt: sf.createdAt.valueOf()
+      }))
+    }
+
+    res.json(result)
+  }
 }
 module.exports = new MeController()

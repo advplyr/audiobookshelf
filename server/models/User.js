@@ -357,7 +357,7 @@ class User extends Model {
           [sequelize.Op.like]: username
         }
       },
-      include: this.sequelize.models.mediaProgress
+      include: [this.sequelize.models.mediaProgress, this.sequelize.models.userSeriesFollow]
     })
 
     if (user) userCache.set(user)
@@ -382,7 +382,7 @@ class User extends Model {
           [sequelize.Op.like]: email
         }
       },
-      include: this.sequelize.models.mediaProgress
+      include: [this.sequelize.models.mediaProgress, this.sequelize.models.userSeriesFollow]
     })
 
     if (user) userCache.set(user)
@@ -402,7 +402,7 @@ class User extends Model {
     if (cachedUser) return cachedUser
 
     const user = await this.findByPk(userId, {
-      include: this.sequelize.models.mediaProgress
+      include: [this.sequelize.models.mediaProgress, this.sequelize.models.userSeriesFollow]
     })
 
     if (user) userCache.set(user)
@@ -426,7 +426,7 @@ class User extends Model {
       where: {
         [sequelize.Op.or]: [{ id: userId }, { 'extraData.oldUserId': userId }]
       },
-      include: this.sequelize.models.mediaProgress
+      include: [this.sequelize.models.mediaProgress, this.sequelize.models.userSeriesFollow]
     })
 
     if (user) userCache.set(user)
@@ -447,7 +447,7 @@ class User extends Model {
 
     const user = await this.findOne({
       where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
-      include: this.sequelize.models.mediaProgress
+      include: [this.sequelize.models.mediaProgress, this.sequelize.models.userSeriesFollow]
     })
 
     if (user) userCache.set(user)
@@ -503,6 +503,17 @@ class User extends Model {
     if (cachedUser) {
       Logger.debug(`[User] mediaProgressRemoved: ${mediaProgress.id} from user ${cachedUser.id}`)
       cachedUser.mediaProgresses = cachedUser.mediaProgresses.filter((mp) => mp.id !== mediaProgress.id)
+    }
+  }
+
+  /**
+   * Invalidate cached user when series follows change
+   * @param {string} userId
+   */
+  static seriesFollowChanged(userId) {
+    const cachedUser = userCache.getById(userId)
+    if (cachedUser) {
+      userCache.delete(userId)
     }
   }
 
@@ -621,6 +632,7 @@ class User extends Model {
       isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
+      seriesFollowing: this.userSeriesFollows?.map((f) => f.seriesId) || [],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],
       isActive: this.isActive,
       isLocked: this.isLocked,

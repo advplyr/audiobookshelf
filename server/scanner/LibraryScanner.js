@@ -13,6 +13,7 @@ const TaskManager = require('../managers/TaskManager')
 const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
+const { notifyFollowersOfNewBook } = require('../utils/followNotifications')
 const Task = require('../objects/Task')
 
 class LibraryScanner {
@@ -263,6 +264,7 @@ class LibraryScanner {
         const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library.settings, libraryScan)
         if (newLibraryItem) {
           newLibraryItems.push(newLibraryItem)
+          notifyFollowersOfNewBook(newLibraryItem)
 
           libraryScan.resultsAdded++
         }
@@ -633,6 +635,7 @@ class LibraryScanner {
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
         SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
+        notifyFollowersOfNewBook(newLibraryItem)
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
