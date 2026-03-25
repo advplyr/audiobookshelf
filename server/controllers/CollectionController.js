@@ -42,21 +42,42 @@ class CollectionController {
       return res.status(400).send('Invalid collection description')
     }
     const libraryItemIds = (reqBody.books || []).filter((b) => !!b && typeof b == 'string')
-    if (!libraryItemIds.length) {
-      return res.status(400).send('Invalid collection data. No books')
+    const seriesIds = (reqBody.seriesIds || []).filter((id) => !!id && typeof id === 'string')
+    const uniqueSeriesIds = [...new Set(seriesIds)]
+
+    // Must have at least one book or series
+    if (!libraryItemIds.length && !uniqueSeriesIds.length) {
+      return res.status(400).send('Invalid collection data. No books or series')
     }
 
-    // Load library items
-    const libraryItems = await Database.libraryItemModel.findAll({
-      attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
-      where: {
-        id: libraryItemIds,
-        libraryId: reqBody.libraryId,
-        mediaType: 'book'
+    // Load and validate library items
+    let libraryItems = []
+    if (libraryItemIds.length) {
+      libraryItems = await Database.libraryItemModel.findAll({
+        attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
+        where: {
+          id: libraryItemIds,
+          libraryId: reqBody.libraryId,
+          mediaType: 'book'
+        }
+      })
+      if (libraryItems.length !== libraryItemIds.length) {
+        return res.status(400).send('Invalid collection data. Invalid books')
       }
-    })
-    if (libraryItems.length !== libraryItemIds.length) {
-      return res.status(400).send('Invalid collection data. Invalid books')
+    }
+
+    // Validate series exist in the same library
+    if (uniqueSeriesIds.length) {
+      const seriesRecords = await Database.seriesModel.findAll({
+        attributes: ['id'],
+        where: {
+          id: uniqueSeriesIds,
+          libraryId: reqBody.libraryId
+        }
+      })
+      if (seriesRecords.length !== uniqueSeriesIds.length) {
+        return res.status(400).send('Invalid collection data. Invalid series')
+      }
     }
 
     /** @type {import('../models/Collection')} */
@@ -75,15 +96,28 @@ class CollectionController {
       )
 
       // Create collectionBooks
-      const collectionBookPayloads = libraryItemIds.map((llid, index) => {
-        const libraryItem = libraryItems.find((li) => li.id === llid)
-        return {
+      let order = 1
+      if (libraryItemIds.length) {
+        const collectionBookPayloads = libraryItemIds.map((llid) => {
+          const libraryItem = libraryItems.find((li) => li.id === llid)
+          return {
+            collectionId: newCollection.id,
+            bookId: libraryItem.mediaId,
+            order: order++
+          }
+        })
+        await Database.collectionBookModel.bulkCreate(collectionBookPayloads, { transaction })
+      }
+
+      // Create collectionSeriesItems
+      if (uniqueSeriesIds.length) {
+        const collectionSeriesPayloads = uniqueSeriesIds.map((seriesId) => ({
           collectionId: newCollection.id,
-          bookId: libraryItem.mediaId,
-          order: index + 1
-        }
-      })
-      await Database.collectionBookModel.bulkCreate(collectionBookPayloads, { transaction })
+          seriesId,
+          order: order++
+        }))
+        await Database.collectionSeriesItemModel.bulkCreate(collectionSeriesPayloads, { transaction })
+      }
 
       await transaction.commit()
     } catch (error) {
@@ -92,10 +126,10 @@ class CollectionController {
       return res.status(500).send('Failed to create collection')
     }
 
-    // Load books expanded
+    // Load books and series expanded
     newCollection.books = await newCollection.getBooksExpandedWithLibraryItem()
+    newCollection.collectionSeriesItems = await newCollection.getSeriesItemsExpanded()
 
-    // Note: The old collection model stores expanded libraryItems in the books property
     const jsonExpanded = newCollection.toOldJSONExpanded()
     SocketAuthority.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
@@ -313,29 +347,55 @@ class CollectionController {
   async addBatch(req, res) {
     // filter out invalid libraryItemIds
     const bookIdsToAdd = (req.body.books || []).filter((b) => !!b && typeof b == 'string')
-    if (!bookIdsToAdd.length) {
-      return res.status(400).send('Invalid request body')
+    const seriesIdsToAdd = (req.body.seriesIds || []).filter((id) => !!id && typeof id === 'string')
+    const uniqueSeriesIds = [...new Set(seriesIdsToAdd)]
+
+    if (!bookIdsToAdd.length && !uniqueSeriesIds.length) {
+      return res.status(400).send('Invalid request body. No books or series')
     }
 
     // Get library items associated with ids
-    const libraryItems = await Database.libraryItemModel.findAll({
-      attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
-      where: {
-        id: bookIdsToAdd,
-        libraryId: req.collection.libraryId,
-        mediaType: 'book'
+    let libraryItems = []
+    if (bookIdsToAdd.length) {
+      libraryItems = await Database.libraryItemModel.findAll({
+        attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
+        where: {
+          id: bookIdsToAdd,
+          libraryId: req.collection.libraryId,
+          mediaType: 'book'
+        }
+      })
+      if (!libraryItems.length && !uniqueSeriesIds.length) {
+        return res.status(400).send('Invalid request body. No valid books')
       }
-    })
-    if (!libraryItems.length) {
-      return res.status(400).send('Invalid request body. No valid books')
     }
 
-    // Get collection books already in collection
+    // Validate series
+    if (uniqueSeriesIds.length) {
+      const seriesRecords = await Database.seriesModel.findAll({
+        attributes: ['id'],
+        where: {
+          id: uniqueSeriesIds,
+          libraryId: req.collection.libraryId
+        }
+      })
+      if (seriesRecords.length !== uniqueSeriesIds.length) {
+        return res.status(400).send('Invalid request body. Invalid series')
+      }
+    }
+
+    // Get existing entries in collection
     /** @type {import('../models/CollectionBook')[]} */
     const collectionBooks = await req.collection.getCollectionBooks()
+    const collectionSeriesItems = await req.collection.getCollectionSeriesItems()
 
-    let order = collectionBooks.length + 1
+    // Compute max order across both tables
+    const maxBookOrder = collectionBooks.length ? Math.max(...collectionBooks.map((cb) => cb.order)) : 0
+    const maxSeriesOrder = collectionSeriesItems.length ? Math.max(...collectionSeriesItems.map((csi) => csi.order)) : 0
+    let order = Math.max(maxBookOrder, maxSeriesOrder) + 1
+
     const collectionBooksToAdd = []
+    const collectionSeriesToAdd = []
     let hasUpdated = false
 
     // Check and set new collection books to add
@@ -352,14 +412,32 @@ class CollectionController {
       }
     }
 
-    let jsonExpanded = null
-    if (hasUpdated) {
-      await Database.collectionBookModel.bulkCreate(collectionBooksToAdd)
+    // Check and set new collection series to add
+    for (const seriesId of uniqueSeriesIds) {
+      if (!collectionSeriesItems.some((csi) => csi.seriesId === seriesId)) {
+        collectionSeriesToAdd.push({
+          collectionId: req.collection.id,
+          seriesId,
+          order: order++
+        })
+        hasUpdated = true
+      } else {
+        Logger.warn(`[CollectionController] addBatch: Series ${seriesId} already in collection`)
+      }
+    }
 
-      jsonExpanded = await req.collection.getOldJsonExpanded()
+    if (hasUpdated) {
+      if (collectionBooksToAdd.length) {
+        await Database.collectionBookModel.bulkCreate(collectionBooksToAdd)
+      }
+      if (collectionSeriesToAdd.length) {
+        await Database.collectionSeriesItemModel.bulkCreate(collectionSeriesToAdd)
+      }
+    }
+
+    const jsonExpanded = await req.collection.getOldJsonExpanded()
+    if (hasUpdated) {
       SocketAuthority.emitter('collection_updated', jsonExpanded)
-    } else {
-      jsonExpanded = await req.collection.getOldJsonExpanded()
     }
     res.json(jsonExpanded)
   }
@@ -420,6 +498,52 @@ class CollectionController {
   }
 
   /**
+   * DELETE: /api/collections/:id/series/:seriesId
+   * Remove a series entry from collection
+   *
+   * @param {CollectionControllerRequest} req
+   * @param {Response} res
+   */
+  async removeSeries(req, res) {
+    const collectionSeriesItem = await Database.collectionSeriesItemModel.findOne({
+      where: {
+        collectionId: req.collection.id,
+        seriesId: req.params.seriesId
+      }
+    })
+
+    if (!collectionSeriesItem) {
+      // Idempotent - return 200 if series not in collection
+      const jsonExpanded = await req.collection.getOldJsonExpanded()
+      return res.json(jsonExpanded)
+    }
+
+    // Remove record
+    await collectionSeriesItem.destroy()
+
+    // Re-compact orders across both tables
+    const collectionBooks = await req.collection.getCollectionBooks({ order: [['order', 'ASC']] })
+    const remainingSeriesItems = await req.collection.getCollectionSeriesItems({ order: [['order', 'ASC']] })
+
+    // Merge and sort by current order
+    const allEntries = [
+      ...collectionBooks.map((cb) => ({ record: cb, order: cb.order })),
+      ...remainingSeriesItems.map((csi) => ({ record: csi, order: csi.order }))
+    ].sort((a, b) => a.order - b.order)
+
+    // Reassign sequential orders
+    for (let i = 0; i < allEntries.length; i++) {
+      if (allEntries[i].record.order !== i + 1) {
+        await allEntries[i].record.update({ order: i + 1 })
+      }
+    }
+
+    const jsonExpanded = await req.collection.getOldJsonExpanded()
+    SocketAuthority.emitter('collection_updated', jsonExpanded)
+    res.json(jsonExpanded)
+  }
+
+  /**
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -434,8 +558,8 @@ class CollectionController {
       req.collection = collection
     }
 
-    // Users with update permission can remove books from collections
-    if (req.method == 'DELETE' && !req.params.bookId && !req.user.canDelete) {
+    // Users with update permission can remove books/series from collections
+    if (req.method == 'DELETE' && !req.params.bookId && !req.params.seriesId && !req.user.canDelete) {
       Logger.warn(`[CollectionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {

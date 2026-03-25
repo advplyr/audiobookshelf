@@ -38,7 +38,19 @@ class PlaylistController {
       return res.status(400).send('Invalid playlist description')
     }
     const items = reqBody.items || []
+    const seriesIds = (reqBody.seriesIds || []).filter((id) => !!id && typeof id === 'string')
     const isPodcast = items.some((i) => i.episodeId)
+
+    // Must have at least one item or series
+    if (!items.length && !seriesIds.length) {
+      return res.status(400).send('Invalid playlist data. No items or series')
+    }
+
+    // Series entries not valid for podcast playlists
+    if (isPodcast && seriesIds.length) {
+      return res.status(400).send('Series entries are not valid for podcast playlists')
+    }
+
     const libraryItemIds = new Set()
     for (const item of items) {
       if (!item.libraryItemId || typeof item.libraryItemId !== 'string') {
@@ -53,16 +65,19 @@ class PlaylistController {
     }
 
     // Load library items
-    const libraryItems = await Database.libraryItemModel.findAll({
-      attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
-      where: {
-        id: Array.from(libraryItemIds),
-        libraryId: reqBody.libraryId,
-        mediaType: isPodcast ? 'podcast' : 'book'
+    let libraryItems = []
+    if (libraryItemIds.size) {
+      libraryItems = await Database.libraryItemModel.findAll({
+        attributes: ['id', 'mediaId', 'mediaType', 'libraryId'],
+        where: {
+          id: Array.from(libraryItemIds),
+          libraryId: reqBody.libraryId,
+          mediaType: isPodcast ? 'podcast' : 'book'
+        }
+      })
+      if (libraryItems.length !== libraryItemIds.size) {
+        return res.status(400).send('Invalid playlist data. Invalid items')
       }
-    })
-    if (libraryItems.length !== libraryItemIds.size) {
-      return res.status(400).send('Invalid playlist data. Invalid items')
     }
 
     // Validate podcast episodes
@@ -79,6 +94,21 @@ class PlaylistController {
       }
     }
 
+    // Validate series exist in the same library
+    const uniqueSeriesIds = [...new Set(seriesIds)]
+    if (uniqueSeriesIds.length) {
+      const seriesRecords = await Database.seriesModel.findAll({
+        attributes: ['id'],
+        where: {
+          id: uniqueSeriesIds,
+          libraryId: reqBody.libraryId
+        }
+      })
+      if (seriesRecords.length !== uniqueSeriesIds.length) {
+        return res.status(400).send('Invalid playlist data. Invalid series')
+      }
+    }
+
     const transaction = await Database.sequelize.transaction()
     try {
       // Create playlist
@@ -92,15 +122,26 @@ class PlaylistController {
         { transaction }
       )
 
-      // Create playlistMediaItems
+      // Create playlistMediaItems for books/episodes
       const playlistItemPayloads = []
-      for (const [index, item] of items.entries()) {
+      let order = 1
+      for (const item of items) {
         const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
         playlistItemPayloads.push({
           playlistId: newPlaylist.id,
           mediaItemId: item.episodeId || libraryItem.mediaId,
           mediaItemType: item.episodeId ? 'podcastEpisode' : 'book',
-          order: index + 1
+          order: order++
+        })
+      }
+
+      // Create playlistMediaItems for series
+      for (const seriesId of uniqueSeriesIds) {
+        playlistItemPayloads.push({
+          playlistId: newPlaylist.id,
+          mediaItemId: seriesId,
+          mediaItemType: 'series',
+          order: order++
         })
       }
 
@@ -367,8 +408,8 @@ class PlaylistController {
 
     const jsonExpanded = req.playlist.toOldJSONExpanded()
 
-    // Playlist is removed when there are no items
-    if (!jsonExpanded.items.length) {
+    // Playlist is removed when there are no entries (items + series)
+    if (!req.playlist.playlistMediaItems.length) {
       Logger.info(`[PlaylistController] Playlist "${jsonExpanded.name}" has no more items - removing it`)
       await req.playlist.destroy()
       SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_removed', jsonExpanded)
@@ -387,26 +428,57 @@ class PlaylistController {
    * @param {Response} res
    */
   async addBatch(req, res) {
-    if (!req.body.items?.length || !Array.isArray(req.body.items) || req.body.items.some((i) => !i?.libraryItemId || typeof i.libraryItemId !== 'string' || (i.episodeId && typeof i.episodeId !== 'string'))) {
-      return res.status(400).send('Invalid request body items')
+    const items = req.body.items || []
+    const seriesIds = (req.body.seriesIds || []).filter((id) => !!id && typeof id === 'string')
+
+    // Validate items if provided
+    if (items.length) {
+      if (!Array.isArray(items) || items.some((i) => !i?.libraryItemId || typeof i.libraryItemId !== 'string' || (i.episodeId && typeof i.episodeId !== 'string'))) {
+        return res.status(400).send('Invalid request body items')
+      }
+    }
+
+    if (!items.length && !seriesIds.length) {
+      return res.status(400).send('Invalid request body. No items or series')
     }
 
     // Find all library items
-    const libraryItemIds = new Set(req.body.items.map((i) => i.libraryItemId).filter((i) => i))
+    let libraryItems = []
+    if (items.length) {
+      const libraryItemIds = new Set(items.map((i) => i.libraryItemId).filter((i) => i))
+      libraryItems = await Database.libraryItemModel.findAllExpandedWhere({ id: Array.from(libraryItemIds) })
+      if (libraryItems.length !== libraryItemIds.size) {
+        return res.status(400).send('Invalid request body items')
+      }
+    }
 
-    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({ id: Array.from(libraryItemIds) })
-    if (libraryItems.length !== libraryItemIds.size) {
-      return res.status(400).send('Invalid request body items')
+    // Validate series
+    const uniqueSeriesIds = [...new Set(seriesIds)]
+    if (uniqueSeriesIds.length) {
+      // Series not valid for podcast playlists
+      const isPodcast = items.some((i) => i.episodeId)
+      if (isPodcast) {
+        return res.status(400).send('Series entries are not valid for podcast playlists')
+      }
+      const seriesRecords = await Database.seriesModel.findAll({
+        attributes: ['id'],
+        where: {
+          id: uniqueSeriesIds,
+          libraryId: req.playlist.libraryId
+        }
+      })
+      if (seriesRecords.length !== uniqueSeriesIds.length) {
+        return res.status(400).send('Invalid request body. Invalid series')
+      }
     }
 
     req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
 
     const mediaItemsToAdd = []
-    const jsonExpanded = req.playlist.toOldJSONExpanded()
 
     // Setup array of playlistMediaItem records to add
     let order = req.playlist.playlistMediaItems.length + 1
-    for (const item of req.body.items) {
+    for (const item of items) {
       const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
 
       const mediaItemId = item.episodeId || libraryItem.media.id
@@ -420,28 +492,31 @@ class PlaylistController {
           mediaItemType: item.episodeId ? 'podcastEpisode' : 'book',
           order: order++
         })
-
-        // Add the new item to to the old json expanded to prevent having to fully reload the playlist media items
-        if (item.episodeId) {
-          const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === item.episodeId)
-          jsonExpanded.items.push({
-            episodeId: item.episodeId,
-            episode: episode.toOldJSONExpanded(libraryItem.id),
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONMinified()
-          })
-        } else {
-          jsonExpanded.items.push({
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONExpanded()
-          })
-        }
       }
+    }
+
+    // Add series entries (skip duplicates)
+    for (const seriesId of uniqueSeriesIds) {
+      if (req.playlist.checkHasSeries(seriesId)) {
+        continue
+      }
+      mediaItemsToAdd.push({
+        playlistId: req.playlist.id,
+        mediaItemId: seriesId,
+        mediaItemType: 'series',
+        order: order++
+      })
     }
 
     if (mediaItemsToAdd.length) {
       await Database.playlistMediaItemModel.bulkCreate(mediaItemsToAdd)
+    }
 
+    // Reload fully to get consistent response with entries
+    req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
+    const jsonExpanded = req.playlist.toOldJSONExpanded()
+
+    if (mediaItemsToAdd.length) {
       SocketAuthority.clientEmitter(req.playlist.userId, 'playlist_updated', jsonExpanded)
     }
 
@@ -555,6 +630,50 @@ class PlaylistController {
       Logger.error('[PlaylistController] createFromCollection:', error)
       res.status(500).send('Failed to create playlist')
     }
+  }
+
+  /**
+   * DELETE: /api/playlists/:id/series/:seriesId
+   * Remove a series entry from playlist
+   *
+   * @param {PlaylistControllerRequest} req
+   * @param {Response} res
+   */
+  async removeSeries(req, res) {
+    req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
+
+    const playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => pmi.mediaItemType === 'series' && pmi.mediaItemId === req.params.seriesId)
+    if (!playlistMediaItem) {
+      // Idempotent - return 200 if series not in playlist
+      const jsonExpanded = req.playlist.toOldJSONExpanded()
+      return res.json(jsonExpanded)
+    }
+
+    // Remove record
+    await playlistMediaItem.destroy()
+    req.playlist.playlistMediaItems = req.playlist.playlistMediaItems.filter((pmi) => pmi.id !== playlistMediaItem.id)
+
+    // Update playlist media items order
+    for (const [index, mediaItem] of req.playlist.playlistMediaItems.entries()) {
+      if (mediaItem.order !== index + 1) {
+        await mediaItem.update({
+          order: index + 1
+        })
+      }
+    }
+
+    const jsonExpanded = req.playlist.toOldJSONExpanded()
+
+    // Playlist is removed when there are no entries
+    if (!req.playlist.playlistMediaItems.length) {
+      Logger.info(`[PlaylistController] Playlist "${jsonExpanded.name}" has no more items - removing it`)
+      await req.playlist.destroy()
+      SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_removed', jsonExpanded)
+    } else {
+      SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_updated', jsonExpanded)
+    }
+
+    res.json(jsonExpanded)
   }
 
   /**

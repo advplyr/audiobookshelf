@@ -75,6 +75,9 @@ class Playlist extends Model {
               model: this.sequelize.models.podcast,
               include: this.sequelize.models.libraryItem
             }
+          },
+          {
+            model: this.sequelize.models.series
           }
         ]
       },
@@ -132,6 +135,9 @@ class Playlist extends Model {
                   model: this.sequelize.models.podcast,
                   include: this.sequelize.models.libraryItem
                 }
+              },
+              {
+                model: this.sequelize.models.series
               }
             ]
           }
@@ -152,11 +158,16 @@ class Playlist extends Model {
         } else if (pmi.mediaItemType === 'podcastEpisode' && pmi.podcastEpisode !== undefined) {
           pmi.mediaItem = pmi.podcastEpisode
           pmi.dataValues.mediaItem = pmi.dataValues.podcastEpisode
+        } else if (pmi.mediaItemType === 'series' && pmi.series !== undefined) {
+          pmi.mediaItem = pmi.series
+          pmi.dataValues.mediaItem = pmi.dataValues.series
         }
         delete pmi.book
         delete pmi.dataValues.book
         delete pmi.podcastEpisode
         delete pmi.dataValues.podcastEpisode
+        delete pmi.series
+        delete pmi.dataValues.series
         return pmi
       })
       playlists.push(playlist)
@@ -199,6 +210,64 @@ class Playlist extends Model {
       const jsonExpanded = await playlist.getOldJsonExpanded()
       if (!numMediaItems) {
         Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
+        await playlist.destroy()
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
+      } else {
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
+      }
+    }
+  }
+
+  /**
+   * Removes series entries from playlists and re-orders
+   *
+   * @param {string[]} seriesIds
+   */
+  static async removeSeriesFromPlaylists(seriesIds) {
+    if (!seriesIds?.length) return
+
+    const playlistMediaItems = await this.sequelize.models.playlistMediaItem.findAll({
+      where: {
+        mediaItemType: 'series',
+        mediaItemId: {
+          [Op.in]: seriesIds
+        }
+      },
+      include: {
+        model: this.sequelize.models.playlist
+      }
+    })
+
+    if (!playlistMediaItems.length) return
+
+    // Group by playlist
+    const playlistMap = new Map()
+    for (const pmi of playlistMediaItems) {
+      if (!playlistMap.has(pmi.playlist.id)) {
+        playlistMap.set(pmi.playlist.id, { playlist: pmi.playlist, pmiIds: [] })
+      }
+      playlistMap.get(pmi.playlist.id).pmiIds.push(pmi.id)
+      await pmi.destroy()
+    }
+
+    for (const { playlist, pmiIds } of playlistMap.values()) {
+      // Re-order remaining items
+      const remainingPmis = await this.sequelize.models.playlistMediaItem.findAll({
+        where: { playlistId: playlist.id },
+        order: [['order', 'ASC']]
+      })
+
+      let order = 1
+      for (const pmi of remainingPmis) {
+        if (pmi.order !== order) {
+          await pmi.update({ order })
+        }
+        order++
+      }
+
+      const jsonExpanded = await playlist.getOldJsonExpanded()
+      if (!remainingPmis.length) {
+        Logger.info(`[Playlist] Playlist "${playlist.name}" has no more items - removing it`)
         await playlist.destroy()
         SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
       } else {
@@ -251,12 +320,17 @@ class Playlist extends Model {
             } else if (pmi.mediaItemType === 'podcastEpisode' && pmi.podcastEpisode !== undefined) {
               pmi.mediaItem = pmi.podcastEpisode
               pmi.dataValues.mediaItem = pmi.dataValues.podcastEpisode
+            } else if (pmi.mediaItemType === 'series' && pmi.series !== undefined) {
+              pmi.mediaItem = pmi.series
+              pmi.dataValues.mediaItem = pmi.dataValues.series
             }
             // To prevent mistakes:
             delete pmi.book
             delete pmi.dataValues.book
             delete pmi.podcastEpisode
             delete pmi.dataValues.podcastEpisode
+            delete pmi.series
+            delete pmi.dataValues.series
             return pmi
           })
         }
@@ -300,6 +374,9 @@ class Playlist extends Model {
               include: this.sequelize.models.libraryItem
             }
           ]
+        },
+        {
+          model: this.sequelize.models.series
         }
       ],
       order: [['order', 'ASC']]
@@ -329,7 +406,20 @@ class Playlist extends Model {
     if (episodeId) {
       return this.playlistMediaItems.some((pmi) => pmi.mediaItemId === episodeId)
     }
-    return this.playlistMediaItems.some((pmi) => pmi.mediaItem.libraryItem.id === libraryItemId)
+    return this.playlistMediaItems.some((pmi) => pmi.mediaItem?.libraryItem?.id === libraryItemId)
+  }
+
+  /**
+   * Check if playlist has a series entry
+   *
+   * @param {string} seriesId
+   * @returns {boolean}
+   */
+  checkHasSeries(seriesId) {
+    if (!this.playlistMediaItems) {
+      throw new Error('playlistMediaItems are required to check Playlist')
+    }
+    return this.playlistMediaItems.some((pmi) => pmi.mediaItemType === 'series' && pmi.mediaItemId === seriesId)
   }
 
   toOldJSON() {
@@ -350,27 +440,57 @@ class Playlist extends Model {
     }
 
     const json = this.toOldJSON()
-    json.items = this.playlistMediaItems.map((pmi) => {
-      if (pmi.mediaItemType === 'book') {
-        const libraryItem = pmi.mediaItem.libraryItem
-        delete pmi.mediaItem.libraryItem
-        libraryItem.media = pmi.mediaItem
+
+    // Build entries first (before items processing mutates pmi.mediaItem)
+    json.entries = this.playlistMediaItems.map((pmi) => {
+      if (pmi.mediaItemType === 'series') {
         return {
-          libraryItemId: libraryItem.id,
-          libraryItem: libraryItem.toOldJSONExpanded()
+          type: 'series',
+          seriesId: pmi.mediaItemId,
+          seriesName: pmi.mediaItem.name,
+          order: pmi.order
         }
       }
 
-      const libraryItem = pmi.mediaItem.podcast.libraryItem
-      delete pmi.mediaItem.podcast.libraryItem
-      libraryItem.media = pmi.mediaItem.podcast
+      // libraryItem entry (book or podcastEpisode)
+      let libraryItemId = null
+      if (pmi.mediaItemType === 'book') {
+        libraryItemId = pmi.mediaItem?.libraryItem?.id || null
+      } else if (pmi.mediaItemType === 'podcastEpisode') {
+        libraryItemId = pmi.mediaItem?.podcast?.libraryItem?.id || null
+      }
       return {
-        episodeId: pmi.mediaItemId,
-        episode: pmi.mediaItem.toOldJSONExpanded(libraryItem.id),
-        libraryItemId: libraryItem.id,
-        libraryItem: libraryItem.toOldJSONMinified()
+        type: 'libraryItem',
+        libraryItemId,
+        episodeId: pmi.mediaItemType === 'podcastEpisode' ? pmi.mediaItemId : null,
+        order: pmi.order
       }
     })
+
+    // items: backward-compatible array with only book/episode entries (destructive to pmi.mediaItem)
+    json.items = this.playlistMediaItems
+      .filter((pmi) => pmi.mediaItemType !== 'series')
+      .map((pmi) => {
+        if (pmi.mediaItemType === 'book') {
+          const libraryItem = pmi.mediaItem.libraryItem
+          delete pmi.mediaItem.libraryItem
+          libraryItem.media = pmi.mediaItem
+          return {
+            libraryItemId: libraryItem.id,
+            libraryItem: libraryItem.toOldJSONExpanded()
+          }
+        }
+
+        const libraryItem = pmi.mediaItem.podcast.libraryItem
+        delete pmi.mediaItem.podcast.libraryItem
+        libraryItem.media = pmi.mediaItem.podcast
+        return {
+          episodeId: pmi.mediaItemId,
+          episode: pmi.mediaItem.toOldJSONExpanded(libraryItem.id),
+          libraryItemId: libraryItem.id,
+          libraryItem: libraryItem.toOldJSONMinified()
+        }
+      })
 
     return json
   }

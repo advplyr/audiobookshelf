@@ -152,6 +152,7 @@ class ApiRouter {
     this.router.delete('/collections/:id/book/:bookId', CollectionController.middleware.bind(this), CollectionController.removeBook.bind(this))
     this.router.post('/collections/:id/batch/add', CollectionController.middleware.bind(this), CollectionController.addBatch.bind(this))
     this.router.post('/collections/:id/batch/remove', CollectionController.middleware.bind(this), CollectionController.removeBatch.bind(this))
+    this.router.delete('/collections/:id/series/:seriesId', CollectionController.middleware.bind(this), CollectionController.removeSeries.bind(this))
 
     //
     // Playlist Routes
@@ -165,6 +166,7 @@ class ApiRouter {
     this.router.delete('/playlists/:id/item/:libraryItemId/:episodeId?', PlaylistController.middleware.bind(this), PlaylistController.removeItem.bind(this))
     this.router.post('/playlists/:id/batch/add', PlaylistController.middleware.bind(this), PlaylistController.addBatch.bind(this))
     this.router.post('/playlists/:id/batch/remove', PlaylistController.middleware.bind(this), PlaylistController.removeBatch.bind(this))
+    this.router.delete('/playlists/:id/series/:seriesId', PlaylistController.middleware.bind(this), PlaylistController.removeSeries.bind(this))
     this.router.post('/playlists/collection/:collectionId', PlaylistController.createFromCollection.bind(this))
 
     //
@@ -445,9 +447,16 @@ class ApiRouter {
         Database.removeSeriesFromFilterData(libraryId, id)
         SocketAuthority.emitter('series_removed', { id: id, libraryId: libraryId })
       })
-      // Close rss feeds - remove from db and emit socket event
       if (seriesToRemove.length) {
-        await RssFeedManager.closeFeedsForEntityIds(seriesToRemove.map((s) => s.id))
+        const removedSeriesIds = seriesToRemove.map((s) => s.id)
+
+        // Clean up series entries from playlists (no FK constraint due to polymorphic pattern)
+        await Database.playlistModel.removeSeriesFromPlaylists(removedSeriesIds)
+
+        // CollectionSeriesItem records are cleaned up by ON DELETE CASCADE
+
+        // Close rss feeds - remove from db and emit socket event
+        await RssFeedManager.closeFeedsForEntityIds(removedSeriesIds)
       }
     } catch (error) {
       await transaction.rollback()

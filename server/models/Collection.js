@@ -21,6 +21,8 @@ class Collection extends Model {
 
     /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
     this.books
+    /** @type {import('./CollectionSeriesItem')[]} - only set when expanded */
+    this.collectionSeriesItems
   }
 
   /**
@@ -70,6 +72,12 @@ class Collection extends Model {
             }
           ]
         },
+        {
+          model: this.sequelize.models.collectionSeriesItem,
+          include: {
+            model: this.sequelize.models.series
+          }
+        },
         ...collectionIncludes
       ],
       order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
@@ -92,11 +100,12 @@ class Collection extends Model {
           }) || []
 
         // Users with restricted permissions will not see this collection
-        if (!books.length && c.books.length) {
+        // (only if collection has books but all are filtered out)
+        if (!books.length && c.books.length && !c.collectionSeriesItems?.length) {
           return null
         }
 
-        this.books = books
+        c.books = books
 
         const collectionExpanded = c.toOldJSONExpanded()
 
@@ -137,6 +146,12 @@ class Collection extends Model {
               }
             }
           ]
+        },
+        {
+          model: this.sequelize.models.collectionSeriesItem,
+          include: {
+            model: this.sequelize.models.series
+          }
         }
       ],
       order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
@@ -213,6 +228,20 @@ class Collection extends Model {
   }
 
   /**
+   * Get series items in collection expanded with series data
+   *
+   * @returns {Promise<import('./CollectionSeriesItem')[]>}
+   */
+  getSeriesItemsExpanded() {
+    return this.getCollectionSeriesItems({
+      include: {
+        model: this.sequelize.models.series
+      },
+      order: [['order', 'ASC']]
+    })
+  }
+
+  /**
    * Get toOldJSONExpanded, items filtered for user permissions
    *
    * @param {import('./User')|null} user
@@ -221,6 +250,7 @@ class Collection extends Model {
    */
   async getOldJsonExpanded(user, include) {
     this.books = await this.getBooksExpandedWithLibraryItem()
+    this.collectionSeriesItems = await this.getSeriesItemsExpanded()
 
     // Filter books using user permissions
     // TODO: Handle user permission restrictions on initial query
@@ -236,7 +266,8 @@ class Collection extends Model {
       })
 
       // Users with restricted permissions will not see this collection
-      if (!books.length && this.books.length) {
+      // (only if collection has books but all are filtered out and no series entries)
+      if (!books.length && this.books.length && !this.collectionSeriesItems?.length) {
         return null
       }
 
@@ -278,6 +309,22 @@ class Collection extends Model {
     }
 
     const json = this.toOldJSON()
+
+    // Build entries first (before books processing mutates book.libraryItem)
+    const bookEntries = this.books.map((book) => ({
+      type: 'libraryItem',
+      libraryItemId: book.libraryItem?.id || null,
+      order: book.collectionBook?.order || 0
+    }))
+    const seriesEntries = (this.collectionSeriesItems || []).map((csi) => ({
+      type: 'series',
+      seriesId: csi.seriesId,
+      seriesName: csi.series?.name || null,
+      order: csi.order
+    }))
+    json.entries = [...bookEntries, ...seriesEntries].sort((a, b) => a.order - b.order)
+
+    // books: backward-compatible array with only book entries (destructive to book.libraryItem)
     json.books = this.books.map((book) => {
       const libraryItem = book.libraryItem
       delete book.libraryItem

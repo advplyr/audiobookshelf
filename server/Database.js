@@ -162,6 +162,11 @@ class Database {
     return this.models.device
   }
 
+  /** @type {typeof import('./models/CollectionSeriesItem')} */
+  get collectionSeriesItemModel() {
+    return this.models.collectionSeriesItem
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -336,6 +341,7 @@ class Database {
     require('./models/BookAuthor').init(this.sequelize)
     require('./models/Collection').init(this.sequelize)
     require('./models/CollectionBook').init(this.sequelize)
+    require('./models/CollectionSeriesItem').init(this.sequelize)
     require('./models/Playlist').init(this.sequelize)
     require('./models/PlaylistMediaItem').init(this.sequelize)
     require('./models/Device').init(this.sequelize)
@@ -721,7 +727,7 @@ class Database {
       await libraryItem.destroy()
     }
 
-    // Remove invalid PlaylistMediaItem records
+    // Remove invalid PlaylistMediaItem records (book/podcastEpisode types)
     const playlistMediaItemsWithNoMediaItem = await this.playlistMediaItemModel.findAll({
       include: [
         {
@@ -734,12 +740,29 @@ class Database {
         }
       ],
       where: {
+        mediaItemType: ['book', 'podcastEpisode'],
         '$book.id$': null,
         '$podcastEpisode.id$': null
       }
     })
     for (const playlistMediaItem of playlistMediaItemsWithNoMediaItem) {
       Logger.warn(`Found playlistMediaItem with no book or podcastEpisode - removing it`)
+      await playlistMediaItem.destroy()
+    }
+
+    // Remove invalid PlaylistMediaItem records (series type)
+    const playlistSeriesItemsWithNoSeries = await this.playlistMediaItemModel.findAll({
+      include: {
+        model: this.seriesModel,
+        attributes: ['id']
+      },
+      where: {
+        mediaItemType: 'series',
+        '$series.id$': null
+      }
+    })
+    for (const playlistMediaItem of playlistSeriesItemsWithNoSeries) {
+      Logger.warn(`Found playlistMediaItem with no series - removing it`)
       await playlistMediaItem.destroy()
     }
 
@@ -754,6 +777,19 @@ class Database {
     for (const collectionBook of collectionBooksWithNoBook) {
       Logger.warn(`Found collectionBook with no book - removing it`)
       await collectionBook.destroy()
+    }
+
+    // Remove invalid CollectionSeriesItem records
+    const collectionSeriesItemsWithNoSeries = await this.collectionSeriesItemModel.findAll({
+      include: {
+        model: this.seriesModel,
+        required: false
+      },
+      where: { '$series.id$': null }
+    })
+    for (const collectionSeriesItem of collectionSeriesItemsWithNoSeries) {
+      Logger.warn(`Found collectionSeriesItem with no series - removing it`)
+      await collectionSeriesItem.destroy()
     }
 
     // Remove empty series

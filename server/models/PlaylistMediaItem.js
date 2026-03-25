@@ -19,7 +19,7 @@ class PlaylistMediaItem extends Model {
 
     // Expanded properties
 
-    /** @type {import('./Book')|import('./PodcastEpisode')} - only set when expanded */
+    /** @type {import('./Book')|import('./PodcastEpisode')|import('./Series')} - only set when expanded */
     this.mediaItem
   }
 
@@ -53,7 +53,7 @@ class PlaylistMediaItem extends Model {
       }
     )
 
-    const { book, podcastEpisode, playlist } = sequelize.models
+    const { book, podcastEpisode, playlist, series } = sequelize.models
 
     book.hasMany(PlaylistMediaItem, {
       foreignKey: 'mediaItemId',
@@ -73,6 +73,15 @@ class PlaylistMediaItem extends Model {
     })
     PlaylistMediaItem.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
+    series.hasMany(PlaylistMediaItem, {
+      foreignKey: 'mediaItemId',
+      constraints: false,
+      scope: {
+        mediaItemType: 'series'
+      }
+    })
+    PlaylistMediaItem.belongsTo(series, { foreignKey: 'mediaItemId', constraints: false })
+
     PlaylistMediaItem.addHook('afterFind', (findResult) => {
       if (!findResult) return
 
@@ -85,12 +94,17 @@ class PlaylistMediaItem extends Model {
         } else if (instance.mediaItemType === 'podcastEpisode' && instance.podcastEpisode !== undefined) {
           instance.mediaItem = instance.podcastEpisode
           instance.dataValues.mediaItem = instance.dataValues.podcastEpisode
+        } else if (instance.mediaItemType === 'series' && instance.series !== undefined) {
+          instance.mediaItem = instance.series
+          instance.dataValues.mediaItem = instance.dataValues.series
         }
         // To prevent mistakes:
         delete instance.book
         delete instance.dataValues.book
         delete instance.podcastEpisode
         delete instance.dataValues.podcastEpisode
+        delete instance.series
+        delete instance.dataValues.series
       }
     })
 
