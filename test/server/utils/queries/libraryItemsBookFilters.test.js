@@ -14,7 +14,7 @@ describe('libraryItemsBookFilters.search', () => {
   })
 
   afterEach(async () => {
-    await Database.sequelize.close()
+    await Database.sequelize.sync({ force: true })
   })
 
   it('matches titles when the query omits commas', async () => {
@@ -40,5 +40,30 @@ describe('libraryItemsBookFilters.search', () => {
 
     expect(results.book).to.have.length(1)
     expect(results.book[0].libraryItem.media.metadata.title).to.equal('And Now, Back to You')
+  })
+
+  it('matches titles when the query omits apostrophes', async () => {
+    const library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+    const libraryFolder = await Database.libraryFolderModel.create({ path: '/test', libraryId: library.id })
+    const book = await Database.bookModel.create({
+      title: "Don't Panic",
+      audioFiles: [],
+      tags: [],
+      narrators: [],
+      genres: [],
+      chapters: []
+    })
+    await Database.libraryItemModel.create({
+      libraryFiles: [],
+      mediaId: book.id,
+      mediaType: 'book',
+      libraryId: library.id,
+      libraryFolderId: libraryFolder.id
+    })
+
+    const results = await libraryItemsBookFilters.search(null, library, 'Dont Panic', 10, 0)
+
+    expect(results.book).to.have.length(1)
+    expect(results.book[0].libraryItem.media.metadata.title).to.equal("Don't Panic")
   })
 })
