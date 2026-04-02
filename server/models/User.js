@@ -125,6 +125,7 @@ class User extends Model {
    */
   static permissionMapping = {
     canDownload: 'download',
+    canStream: 'stream',
     canUpload: 'upload',
     canDelete: 'delete',
     canUpdate: 'update',
@@ -169,6 +170,7 @@ class User extends Model {
   static getDefaultPermissionsForUserType(type) {
     return {
       download: true,
+      stream: true,
       update: type === 'root' || type === 'admin',
       delete: type === 'root',
       upload: type === 'root' || type === 'admin',
@@ -566,6 +568,9 @@ class User extends Model {
   }
   get canDownload() {
     return !!this.permissions?.download && this.isActive
+  }
+  get canStream() {
+    return (this.permissions?.stream !== false) && this.isActive
   }
   get canUpload() {
     return !!this.permissions?.upload && this.isActive
