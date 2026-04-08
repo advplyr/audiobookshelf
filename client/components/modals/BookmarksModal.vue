@@ -47,6 +47,7 @@ export default {
       default: 0
     },
     libraryItemId: String,
+    episodeId: String,
     playbackRate: Number,
     hideCreate: Boolean
   },
@@ -92,8 +93,9 @@ export default {
       this.showBookmarkTitleInput = true
     },
     deleteBookmark(bm) {
+      const deleteUrl = this.episodeId ? `/api/me/item/${this.libraryItemId}/bookmark/${bm.time}?episode=${this.episodeId}` : `/api/me/item/${this.libraryItemId}/bookmark/${bm.time}`
       this.$axios
-        .$delete(`/api/me/item/${this.libraryItemId}/bookmark/${bm.time}`)
+        .$delete(deleteUrl)
         .then(() => {
           this.$toast.success(this.$strings.ToastBookmarkRemoveSuccess)
         })
@@ -114,6 +116,7 @@ export default {
         title: this.newBookmarkTitle,
         time: Math.floor(this.currentTime)
       }
+      if (this.episodeId) bookmark.episodeId = this.episodeId
       this.$axios
         .$post(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
         .then(() => {
