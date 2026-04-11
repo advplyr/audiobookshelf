@@ -64,6 +64,9 @@
         <ui-tooltip v-if="userCanUpdate && isBookLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
+        <ui-tooltip v-if="isBookLibrary" :text="$strings.LabelAddToPlaylist" direction="bottom">
+          <ui-icon-btn :disabled="processingBatch" icon="playlist_add" @click="batchAddToPlaylistClick" class="mx-1.5" />
+        </ui-tooltip>
         <template v-if="userCanUpdate">
           <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
             <ui-icon-btn :disabled="processingBatch" icon="edit" bg-color="bg-warning" class="mx-1.5" @click="batchEditClick" />
@@ -370,6 +373,14 @@ export default {
     },
     batchAddToCollectionClick() {
       this.$store.commit('globals/setShowBatchCollectionsModal', true)
+    },
+    batchAddToPlaylistClick() {
+      const playlistItems = this.selectedMediaItems.map((i) => ({
+        libraryItem: { id: i.id },
+        episode: null
+      }))
+      this.$store.commit('globals/setSelectedPlaylistItems', playlistItems)
+      this.$store.commit('globals/setShowPlaylistsModal', true)
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
