@@ -19,6 +19,9 @@
           <div class="truncate max-w-48 md:max-w-md">
             <nuxt-link :to="`/item/${libraryItem.id}`" class="truncate hover:underline text-sm md:text-base">{{ itemTitle }}</nuxt-link>
           </div>
+          <div v-if="seriesList.length" class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
+            <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryItem.libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300"> {{ _series.text }}</nuxt-link>
+          </div>
           <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
             <template v-for="(author, index) in bookAuthors">
               <nuxt-link :key="author.id" :to="`/author/${author.id}`" class="truncate hover:underline">{{ author.name }}</nuxt-link
@@ -104,6 +107,17 @@ export default {
     bookAuthors() {
       if (this.episode) return []
       return this.mediaMetadata.authors || []
+    },
+    series() {
+      if (this.episode) return []
+      return this.mediaMetadata.series || []
+    },
+    seriesList() {
+      return this.series.map((se) => {
+        let text = se.name
+        if (se.sequence) text += ` #${se.sequence}`
+        return { ...se, text }
+      })
     },
     itemDuration() {
       if (this.episode) return this.$elapsedPretty(this.episode.duration)
