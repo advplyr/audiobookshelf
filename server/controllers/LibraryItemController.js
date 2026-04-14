@@ -8,6 +8,8 @@ const Database = require('../Database')
 
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp } = require('../utils/index')
+const Ffmpeg = require('../libs/fluentFfmpeg')
+const archiver = require('../libs/archiver')
 const { ScanResult, AudioMimeType } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
@@ -138,6 +140,37 @@ class LibraryItemController {
         return res.status(500).send('Download failed')
       }
     }
+  }
+
+  /**
+   * Filter book chapters to those belonging to a specific audio file and convert
+   * their timestamps to be relative to that file's start.
+   *
+   * ABS stores chapters with global timestamps spanning all audio files in sequence.
+   * Given a selected audio file, this computes its start offset (sum of durations of
+   * all files ordered before it), filters to chapters that start within that range,
+   * and shifts timestamps to be file-relative (starting at 0).
+   *
+   * @param {object[]} allChapters - All chapters from the book, with global timestamps
+   * @param {object} audioFile - The selected audio file object (must have ino, index, duration)
+   * @param {object[]} includedAudioFiles - All non-excluded audio files for the book
+   * @returns {object[]} Chapters filtered to the selected file with file-relative timestamps
+   */
+  static getChaptersForAudioFile(allChapters, audioFile, includedAudioFiles) {
+    const sortedFiles = [...includedAudioFiles].sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+    let fileStartOffset = 0
+    for (const af of sortedFiles) {
+      if (af.ino === audioFile.ino) break
+      fileStartOffset += af.duration || 0
+    }
+    const fileEndOffset = fileStartOffset + (audioFile.duration || 0)
+    return allChapters
+      .filter((ch) => ch.start >= fileStartOffset && ch.start < fileEndOffset)
+      .map((ch) => ({
+        ...ch,
+        start: ch.start - fileStartOffset,
+        end: Math.min(ch.end, fileEndOffset) - fileStartOffset
+      }))
   }
 
   /**
@@ -1052,6 +1085,125 @@ class LibraryItemController {
     } catch (error) {
       Logger.error(`[LibraryItemController] Failed to download file "${libraryFile.metadata.path}"`, error)
       LibraryItemController.handleDownloadError(error, res)
+    }
+  }
+
+  /**
+   * GET: /api/items/:id/download-chapters
+   * Split an audiobook into per-chapter files and download as a ZIP.
+   * Query params:
+   *   fileIno - inode of the audio file to split (defaults to first included audio file)
+   *
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async downloadChapterFiles(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn(`User "${req.user.username}" attempted to download without permission`)
+      return res.sendStatus(403)
+    }
+
+    if (!req.libraryItem.isBook) {
+      return res.status(400).send('Chapter download is only supported for books')
+    }
+
+    const allChapters = req.libraryItem.media.chapters
+    if (!allChapters?.length) {
+      return res.status(400).send('No chapters found for this item')
+    }
+
+    // Find the target audio file by inode, or default to first included audio file
+    const fileIno = req.query.fileIno
+    const includedAudioFiles = req.libraryItem.media.audioFiles?.filter((af) => !af.exclude) || []
+    let audioFile
+    if (fileIno) {
+      audioFile = includedAudioFiles.find((af) => af.ino === fileIno)
+      if (!audioFile) {
+        return res.status(400).send('Audio file not found')
+      }
+    } else {
+      audioFile = includedAudioFiles[0]
+      if (!audioFile) {
+        return res.status(400).send('No audio files found for this item')
+      }
+    }
+
+    // Compute start offset of the selected file within the combined book timeline.
+    // ABS stores chapters across all audio files with global timestamps — we need
+    // to filter to only chapters belonging to this file and convert to file-relative times.
+    const chapters = LibraryItemController.getChaptersForAudioFile(allChapters, audioFile, includedAudioFiles)
+
+    const inputPath = audioFile.metadata.path
+    const inputExt = Path.extname(audioFile.metadata.filename)
+    const bookTitle = req.libraryItem.media.title
+    const safeBookTitle = bookTitle.replace(/[/\\:*?"<>|]/g, '_').trim()
+    // Unique dir per request — prevents leftover files from concurrent or prior requests
+    const itemCacheDir = Path.join(global.MetadataPath, 'cache', 'items', req.libraryItem.id, `chapter-split-${Date.now()}`)
+
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested chapter download for "${bookTitle}" (${chapters.length} chapters)`)
+
+    try {
+      await fs.ensureDir(itemCacheDir)
+
+      const padLength = chapters.length.toString().length
+
+      // Split all chapters in parallel — all reads from the same input, different output paths
+      await Promise.all(
+        chapters.map(async (chapter, i) => {
+          const duration = chapter.end - chapter.start
+          if (duration <= 0) return
+
+          const paddedNum = String(i + 1).padStart(padLength, '0')
+          const safeTitle = (chapter.title || `Chapter ${i + 1}`).replace(/[/\\:*?"<>|]/g, '_').trim()
+          const outputFilename = `${paddedNum} - ${safeTitle}${inputExt}`
+          const outputPath = Path.join(itemCacheDir, outputFilename)
+
+          await new Promise((resolve, reject) => {
+            Ffmpeg(inputPath)
+              .seekInput(chapter.start)
+              .duration(duration)
+              .outputOptions('-map 0:a')
+              .audioCodec('copy')
+              .output(outputPath)
+              .on('end', resolve)
+              .on('error', (err) => {
+                Logger.error(`[LibraryItemController] ffmpeg error splitting chapter "${chapter.title}": ${err.message}`)
+                reject(err)
+              })
+              .run()
+          })
+        })
+      )
+
+      // Stream zip to client
+      const zipFilename = `${safeBookTitle} - Chapters.zip`
+      res.attachment(zipFilename)
+
+      const archive = archiver('zip', { zlib: { level: 0 } })
+
+      await new Promise((resolve, reject) => {
+        res.on('close', resolve)
+        res.on('end', resolve)
+        archive.on('error', reject)
+        archive.on('warning', (err) => {
+          if (err.code !== 'ENOENT') reject(err)
+          else Logger.warn(`[LibraryItemController] Archiver warning: ${err.message}`)
+        })
+
+        archive.pipe(res)
+        archive.directory(itemCacheDir, false)
+        archive.finalize()
+      })
+
+      Logger.info(`[LibraryItemController] Chapter download complete for "${bookTitle}"`)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Chapter download failed for "${bookTitle}": ${error.message}`)
+      LibraryItemController.handleDownloadError(error, res)
+    } finally {
+      // Clean up temp files regardless of success or failure
+      fs.remove(itemCacheDir).catch((err) => {
+        Logger.error(`[LibraryItemController] Failed to clean up chapter split dir for "${bookTitle}": ${err.message}`)
+      })
     }
   }
 

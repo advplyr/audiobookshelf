@@ -34,6 +34,130 @@ describe('LibraryItemController', () => {
     await Database.sequelize.sync({ force: true })
   })
 
+  describe('downloadChapterFiles', () => {
+    const makeReq = (overrides = {}) => ({
+      user: { canDownload: true, username: 'testuser' },
+      libraryItem: {
+        isBook: true,
+        id: 'item-1',
+        media: {
+          title: 'Test Book',
+          chapters: [],
+          audioFiles: []
+        }
+      },
+      query: {},
+      ...overrides
+    })
+
+    const makeRes = () => ({
+      sendStatus: sinon.spy(),
+      status: sinon.stub().returnsThis(),
+      send: sinon.spy()
+    })
+
+    it('should return 403 when user cannot download', async () => {
+      const req = makeReq({ user: { canDownload: false, username: 'testuser' } })
+      const res = makeRes()
+      await LibraryItemController.downloadChapterFiles.bind(apiRouter)(req, res)
+      expect(res.sendStatus.calledWith(403)).to.be.true
+    })
+
+    it('should return 400 when library item is not a book', async () => {
+      const req = makeReq({ libraryItem: { isBook: false, media: {} } })
+      const res = makeRes()
+      await LibraryItemController.downloadChapterFiles.bind(apiRouter)(req, res)
+      expect(res.status.calledWith(400)).to.be.true
+    })
+
+    it('should return 400 when book has no chapters', async () => {
+      const req = makeReq()
+      req.libraryItem.media.chapters = []
+      const res = makeRes()
+      await LibraryItemController.downloadChapterFiles.bind(apiRouter)(req, res)
+      expect(res.status.calledWith(400)).to.be.true
+    })
+
+    it('should return 400 when specified fileIno is not found', async () => {
+      const req = makeReq()
+      req.libraryItem.media.chapters = [{ id: 0, start: 0, end: 100, title: 'Ch 1' }]
+      req.libraryItem.media.audioFiles = [{ ino: 'abc', exclude: false, index: 1, duration: 100, metadata: { filename: 'book.mp3', path: '/book.mp3' } }]
+      req.query = { fileIno: 'nonexistent' }
+      const res = makeRes()
+      await LibraryItemController.downloadChapterFiles.bind(apiRouter)(req, res)
+      expect(res.status.calledWith(400)).to.be.true
+    })
+  })
+
+  describe('getChaptersForAudioFile', () => {
+    const file1 = { ino: 'f1', index: 1, duration: 1000 }
+    const file2 = { ino: 'f2', index: 2, duration: 800 }
+
+    it('returns all chapters unchanged for a single audio file', () => {
+      const chapters = [
+        { id: 0, start: 0, end: 300, title: 'Intro' },
+        { id: 1, start: 300, end: 700, title: 'Part 1' },
+        { id: 2, start: 700, end: 1000, title: 'Part 2' }
+      ]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file1, [file1])
+      expect(result).to.have.length(3)
+      expect(result[0].start).to.equal(0)
+      expect(result[2].end).to.equal(1000)
+    })
+
+    it('filters chapters to the selected file when multiple files exist', () => {
+      // file1: 0–1000s, file2: 1000–1800s (global)
+      const chapters = [
+        { id: 0, start: 0, end: 500, title: 'A' },
+        { id: 1, start: 500, end: 1000, title: 'B' },
+        { id: 2, start: 1000, end: 1400, title: 'C' },
+        { id: 3, start: 1400, end: 1800, title: 'D' }
+      ]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file2, [file1, file2])
+      expect(result).to.have.length(2)
+      expect(result[0].title).to.equal('C')
+      expect(result[1].title).to.equal('D')
+    })
+
+    it('converts global timestamps to file-relative timestamps', () => {
+      // file1: 0–1000s, file2: 1000–1800s (global)
+      const chapters = [
+        { id: 2, start: 1000, end: 1400, title: 'C' },
+        { id: 3, start: 1400, end: 1800, title: 'D' }
+      ]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file2, [file1, file2])
+      expect(result[0].start).to.equal(0)
+      expect(result[0].end).to.equal(400)
+      expect(result[1].start).to.equal(400)
+      expect(result[1].end).to.equal(800)
+    })
+
+    it('clamps the last chapter end to the file duration', () => {
+      // Global chapter end overshoots the file boundary
+      const chapters = [{ id: 0, start: 1000, end: 9999, title: 'Last' }]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file2, [file1, file2])
+      expect(result[0].end).to.equal(800) // file2 duration
+    })
+
+    it('excludes chapters that start outside the selected file range', () => {
+      const chapters = [
+        { id: 0, start: 0, end: 1000, title: 'File1 chapter' },
+        { id: 1, start: 1000, end: 1800, title: 'File2 chapter' }
+      ]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file1, [file1, file2])
+      expect(result).to.have.length(1)
+      expect(result[0].title).to.equal('File1 chapter')
+    })
+
+    it('sorts files by index regardless of input order', () => {
+      const unordered = [file2, file1] // file2 first in array, but index 2
+      const chapters = [{ id: 0, start: 0, end: 500, title: 'A' }]
+      const result = LibraryItemController.constructor.getChaptersForAudioFile(chapters, file1, unordered)
+      expect(result).to.have.length(1)
+      expect(result[0].start).to.equal(0)
+    })
+  })
+
   describe('checkRemoveAuthorsAndSeries', () => {
     let libraryItem1Id
     let libraryItem2Id

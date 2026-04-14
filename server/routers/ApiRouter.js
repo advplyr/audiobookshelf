@@ -108,6 +108,7 @@ class ApiRouter {
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
     this.router.get('/items/:id/download', LibraryItemController.middleware.bind(this), LibraryItemController.download.bind(this))
+    this.router.get('/items/:id/download-chapters', LibraryItemController.middleware.bind(this), LibraryItemController.downloadChapterFiles.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
     this.router.get('/items/:id/cover', LibraryItemController.getCover.bind(this))
     this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))

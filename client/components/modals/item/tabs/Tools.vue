@@ -48,6 +48,26 @@
       </widgets-alert>
     </div>
 
+    <!-- Download by chapters -->
+    <div v-if="showChapterDownload" class="w-full border border-black-200 p-4 my-8">
+      <div class="flex flex-wrap items-start">
+        <div>
+          <p class="text-lg">{{ $strings.LabelToolsDownloadByChapters }}</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $strings.LabelToolsDownloadByChaptersDescription }}</p>
+        </div>
+        <div class="grow" />
+        <div class="flex flex-col items-end gap-2 mt-2">
+          <select v-if="audioFiles.length > 1" v-model="selectedFileIno" class="bg-primary border border-gray-600 rounded px-2 py-1 text-sm w-full max-w-xs truncate">
+            <option v-for="af in audioFiles" :key="af.ino" :value="af.ino">{{ af.metadata.filename }}</option>
+          </select>
+          <ui-btn :disabled="isChapterDownloading" @click.stop="downloadChapters">
+            <span v-if="isChapterDownloading">{{ $strings.ButtonChapterDownloadZipPreparing }}</span>
+            <span v-else>{{ $strings.ButtonChapterDownloadZip }}</span>
+          </ui-btn>
+        </div>
+      </div>
+    </div>
+
     <p v-if="!mediaTracks.length" class="text-lg text-center my-8">{{ $strings.MessageNoAudioTracks }}</p>
   </div>
 </template>
@@ -62,7 +82,10 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      selectedFileIno: null,
+      isChapterDownloading: false
+    }
   },
   computed: {
     libraryItemId() {
@@ -76,6 +99,18 @@ export default {
     },
     chapters() {
       return this.media.chapters || []
+    },
+    audioFiles() {
+      return this.media.audioFiles?.filter((af) => !af.exclude) || []
+    },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    showChapterDownload() {
+      return this.chapters.length > 0 && this.userCanDownload && this.audioFiles.length > 0
     },
     showM4bDownload() {
       if (!this.mediaTracks.length) return false
@@ -103,7 +138,37 @@ export default {
       return this.encodeTask && !this.encodeTask?.isFinished
     }
   },
+  watch: {
+    audioFiles: {
+      immediate: true,
+      handler(files) {
+        if (files.length && !this.selectedFileIno) {
+          this.selectedFileIno = files[0].ino
+        }
+      }
+    }
+  },
   methods: {
+    downloadChapters() {
+      const ino = this.audioFiles.length === 1 ? this.audioFiles[0].ino : this.selectedFileIno
+      const params = new URLSearchParams({ token: this.userToken })
+      if (ino) params.append('fileIno', ino)
+      const url = `${process.env.serverUrl}/api/items/${this.libraryItemId}/download-chapters?${params}`
+
+      this.isChapterDownloading = true
+      // $nextTick ensures the DOM is updated, then requestAnimationFrame ensures
+      // the browser has actually painted the frame before the anchor click runs.
+      // Without this, the click blocks the JS thread before "Preparing..." is visible.
+      this.$nextTick(() => {
+        requestAnimationFrame(() => {
+          this.$downloadFile(url, `${this.media.title} - Chapters.zip`)
+          // $downloadFile has no completion callback — reset after a delay.
+          setTimeout(() => {
+            this.isChapterDownloading = false
+          }, 3000)
+        })
+      })
+    },
     quickEmbed() {
       const payload = {
         message: this.$strings.MessageConfirmQuickEmbed,
