@@ -433,6 +433,10 @@ class AudioFileScanner {
         key: 'pubDate'
       },
       {
+        tag: 'tagDate',
+        key: 'date'
+      },
+      {
         tag: 'tagDisc',
         key: 'season'
       },
@@ -463,7 +467,7 @@ class AudioFileScanner {
       if (value && typeof value === 'string') {
         value = value.trim() // Trim whitespace
 
-        if (mapping.key === 'pubDate') {
+        if ((mapping.key === 'pubDate' || mapping.key === 'date') && !podcastEpisode.pubDate) {
           const pubJsDate = parseDate.parse(value)
           if (pubJsDate) {
             podcastEpisode.publishedAt = pubJsDate.valueOf()
