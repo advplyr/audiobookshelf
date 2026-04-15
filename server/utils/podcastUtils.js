@@ -4,6 +4,7 @@ const Logger = require('../Logger')
 const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const Fuse = require('../libs/fusejs')
+const parseDate = require('../utils/parsers/parseDate')
 
 /**
  * @typedef RssPodcastChapter
@@ -147,6 +148,12 @@ function extractPodcastMetadata(channel) {
     if (value?.['_']) value = value['_']
     metadata[cleanKey] = value
   })
+
+  if (!metadata['pubDate']) {
+    const dateVal = extractFirstArrayItem(channel, 'date')
+    if (dateVal) metadata['pubDate'] = dateVal
+  }
+
   return metadata
 }
 
@@ -197,6 +204,15 @@ function extractEpisodeData(item) {
       episode.pubDate = pubDate._
     } else {
       Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
+    }
+  } else if (item['date']) {
+    const date = extractFirstArrayItem(item, 'date')
+    if (typeof date === 'string') {
+      episode.pubDate = date
+    } else if (typeof date?._ === 'string') {
+      episode.pubDate = date._
+    } else {
+      Logger.error(`[podcastUtils] Invalid date ${item['date']} for ${episode.enclosure.url}`)
     }
   }
 
@@ -261,7 +277,7 @@ function extractEpisodeData(item) {
 }
 
 function cleanEpisodeData(data) {
-  const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
+  const pubJsDate = data.pubDate ? parseDate.parse(data.pubDate) : null
   const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
 
   return {
