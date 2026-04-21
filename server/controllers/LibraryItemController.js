@@ -7,7 +7,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const zipHelpers = require('../utils/zipHelpers')
-const { reqSupportsWebp } = require('../utils/index')
+const { reqSupportsWebp, clampPositiveInt } = require('../utils/index')
 const { ScanResult, AudioMimeType } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
@@ -111,7 +111,7 @@ class LibraryItemController {
       }
     }
 
-    await this.handleDeleteLibraryItem(req.libraryItem.id, mediaItemIds)
+    await this.handleDeleteLibraryItem(req.libraryItem.id, mediaItemIds, req.libraryItem.libraryId)
     if (hardDelete) {
       Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
       await fs.remove(libraryItemPath).catch((error) => {
@@ -398,8 +398,8 @@ class LibraryItemController {
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
-      height: height ? parseInt(height) : null,
-      width: width ? parseInt(width) : null
+      height: clampPositiveInt(height ? parseInt(height) : null, 4096),
+      width: clampPositiveInt(width ? parseInt(width) : null, 4096)
     }
     return CacheManager.handleCoverCache(res, libraryItemId, options)
   }
@@ -565,7 +565,7 @@ class LibraryItemController {
           authorIds.push(...libraryItem.media.authors.map((au) => au.id))
         }
       }
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, libraryItem.libraryId)
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
