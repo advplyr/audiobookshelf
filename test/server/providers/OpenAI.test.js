@@ -179,4 +179,37 @@ describe('OpenAI', () => {
       expect(result.isbn).to.equal(null)
     })
   })
+
+  describe('validateDirectoryGroupingPayload', () => {
+    it('normalizes valid directory-grouping payload', () => {
+      const result = openAI.validateDirectoryGroupingPayload(
+        {
+          files: [
+            { path: 'Series Alpha/Book One.m4b', groupId: ' book-one ', reason: 'same book' },
+            { path: 'Series Alpha/Disc 1/Book Two Part 1.mp3', groupId: 'book-two', reason: 'disc set' }
+          ]
+        },
+        [{ path: 'Series Alpha/Book One.m4b' }, { path: 'Series Alpha/Disc 1/Book Two Part 1.mp3' }]
+      )
+
+      expect(result[0].groupId).to.equal('book-one')
+      expect(result[1].groupId).to.equal('book-two')
+    })
+
+    it('backfills missing or invalid grouping rows', () => {
+      const result = openAI.validateDirectoryGroupingPayload(
+        {
+          files: [
+            { path: 'unknown/path.m4b', groupId: 'ignored' },
+            { path: 'Series Alpha/Book One.m4b', groupId: '' }
+          ]
+        },
+        [{ path: 'Series Alpha/Book One.m4b' }, { path: 'Series Alpha/Book Two.m4b' }]
+      )
+
+      expect(result[0].groupId).to.equal('Series Alpha/Book One.m4b')
+      expect(result[1].groupId).to.equal('Series Alpha/Book Two.m4b')
+      expect(result[1].reason).to.contain('omitted this media file')
+    })
+  })
 })

@@ -7,6 +7,7 @@ const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 const fileUtils = require('../utils/fileUtils')
 const scanUtils = require('../utils/scandir')
+const globals = require('../utils/globals')
 const { LogLevel, ScanResult } = require('../utils/constants')
 const libraryFilters = require('../utils/queries/libraryFilters')
 const TaskManager = require('../managers/TaskManager')
@@ -14,6 +15,10 @@ const LibraryItemScanner = require('./LibraryItemScanner')
 const LibraryScan = require('./LibraryScan')
 const LibraryItemScanData = require('./LibraryItemScanData')
 const Task = require('../objects/Task')
+const OpenAI = require('../providers/OpenAI')
+
+const openAI = new OpenAI()
+const DISC_DIR_REGEX = /^(cd|dis[ck])\s*\d{1,3}$/i
 
 class LibraryScanner {
   constructor() {
@@ -309,7 +314,10 @@ class LibraryScanner {
     }
 
     const fileItems = await fileUtils.recurseFiles(folderPath)
-    const libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType, fileItems, library.settings.audiobooksOnly)
+    let libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType, fileItems, library.settings.audiobooksOnly)
+    if (library.mediaType === 'book' && library.settings.openAIDirectoryGrouping && openAI.isConfigured) {
+      libraryItemGrouping = await this.applyOpenAIDirectoryGrouping(folderPath, fileItems, libraryItemGrouping, library.settings.audiobooksOnly)
+    }
 
     if (!Object.keys(libraryItemGrouping).length) {
       Logger.error(`Root path has no media folders: ${folderPath}`)
@@ -366,6 +374,201 @@ class LibraryScanner {
       )
     }
     return items
+  }
+
+  expandGroupingFiles(groupPath, groupedFiles) {
+    if (groupPath === groupedFiles) return [groupPath]
+    return groupedFiles.map((file) => {
+      if (file === groupPath || file.startsWith(groupPath + '/')) return file
+      return Path.posix.join(groupPath, file)
+    })
+  }
+
+  getOpenAIDirectoryGroupingCandidates(fileItems, mediaType, audiobooksOnly, libraryItemGrouping) {
+    if (mediaType !== 'book') return []
+
+    const mediaFileItems = fileItems.filter((item) => isMediaFilePath(mediaType, item.path, audiobooksOnly))
+    const candidatesByContainer = new Map()
+
+    mediaFileItems.forEach((item) => {
+      const topLevelDir = item.path.split('/').filter(Boolean)[0]
+      if (!topLevelDir || !item.path.includes('/')) return
+      if (!candidatesByContainer.has(topLevelDir)) {
+        candidatesByContainer.set(topLevelDir, [])
+      }
+      candidatesByContainer.get(topLevelDir).push(item)
+    })
+
+    return [...candidatesByContainer.entries()]
+      .map(([containerPath, containerMediaFileItems]) => {
+        const defaultGroupKeys = Object.keys(libraryItemGrouping).filter((groupPath) => groupPath === containerPath || groupPath.startsWith(containerPath + '/'))
+        const hasDirectMediaFileInContainer = containerMediaFileItems.some((item) => Path.posix.dirname(item.path) === containerPath)
+        const hasMixedDefaultFileAndDirectoryGroups =
+          defaultGroupKeys.some((groupPath) => Path.posix.extname(groupPath)) && defaultGroupKeys.some((groupPath) => !Path.posix.extname(groupPath))
+        const maxRelativeDepth = Math.max(...containerMediaFileItems.map((item) => Path.posix.relative(containerPath, item.path).split('/').filter(Boolean).length))
+        const suspicious = defaultGroupKeys.length <= 1 || hasDirectMediaFileInContainer || hasMixedDefaultFileAndDirectoryGroups || maxRelativeDepth > 2
+
+        if (!suspicious || containerMediaFileItems.length < 2 || containerMediaFileItems.length > 40) {
+          return null
+        }
+
+        const groupingHints = containerMediaFileItems.map((item) => ({
+          path: item.path,
+          filename: item.name,
+          parentDir: item.reldirpath || '',
+          folderHierarchy: item.path.split('/').slice(0, -1).filter(Boolean),
+          currentGroup: defaultGroupKeys.find((groupPath) => this.expandGroupingFiles(groupPath, libraryItemGrouping[groupPath]).includes(item.path)) || null
+        }))
+
+        return {
+          containerPath,
+          groupingHints
+        }
+      })
+      .filter(Boolean)
+  }
+
+  getDirectoryGroupingDescriptor(containerPath, mediaPaths) {
+    const sortedMediaPaths = [...mediaPaths].sort((a, b) => a.localeCompare(b))
+    if (sortedMediaPaths.length === 1) {
+      const mediaDir = Path.posix.dirname(sortedMediaPaths[0])
+      if (mediaDir && mediaDir !== '.' && mediaDir !== containerPath) {
+        return {
+          groupPath: mediaDir,
+          isFile: false
+        }
+      }
+      return {
+        groupPath: sortedMediaPaths[0],
+        isFile: true
+      }
+    }
+
+    const splitPaths = sortedMediaPaths.map((mediaPath) => mediaPath.split('/'))
+    const commonParts = []
+    for (let i = 0; i < Math.min(...splitPaths.map((parts) => parts.length - 1)); i++) {
+      const segment = splitPaths[0][i]
+      if (splitPaths.every((parts) => parts[i] === segment)) {
+        commonParts.push(segment)
+      } else {
+        break
+      }
+    }
+    const commonDir = commonParts.join('/')
+
+    if (commonDir) {
+      const canUseFolderGroup = sortedMediaPaths.every((mediaPath) => {
+        const relativeParts = Path.posix.relative(commonDir, mediaPath).split('/').filter(Boolean)
+        return relativeParts.length === 1 || (relativeParts.length === 2 && DISC_DIR_REGEX.test(relativeParts[0]))
+      })
+
+      if (canUseFolderGroup) {
+        return {
+          groupPath: commonDir,
+          isFile: false
+        }
+      }
+    }
+
+    return {
+      groupPath: sortedMediaPaths[0],
+      isFile: true
+    }
+  }
+
+  buildLibraryItemGroupingFromOpenAIAssignments(containerPath, fileItems, assignments, mediaType, audiobooksOnly) {
+    const mediaPathsByGroupId = new Map()
+    assignments.forEach((assignment) => {
+      if (!mediaPathsByGroupId.has(assignment.groupId)) {
+        mediaPathsByGroupId.set(assignment.groupId, [])
+      }
+      mediaPathsByGroupId.get(assignment.groupId).push(assignment.path)
+    })
+
+    const groupRecords = [...mediaPathsByGroupId.entries()].map(([groupId, mediaPaths]) => {
+      const descriptor = this.getDirectoryGroupingDescriptor(containerPath, mediaPaths)
+      return {
+        groupId,
+        descriptor,
+        mediaPaths: [...mediaPaths].sort((a, b) => a.localeCompare(b)),
+        files: []
+      }
+    })
+
+    groupRecords.forEach((groupRecord) => {
+      if (groupRecord.descriptor.isFile) {
+        groupRecord.files.push(...groupRecord.mediaPaths)
+      } else {
+        groupRecord.files.push(...groupRecord.mediaPaths.map((mediaPath) => Path.posix.relative(groupRecord.descriptor.groupPath, mediaPath)))
+      }
+    })
+
+    const nonMediaItems = fileItems.filter((item) => !isMediaFilePath(mediaType, item.path, audiobooksOnly))
+    nonMediaItems.forEach((item) => {
+      const itemStem = Path.basename(item.name, item.extension)
+
+      let matchingGroup = null
+      const basenameMatches = groupRecords.filter((groupRecord) =>
+        groupRecord.mediaPaths.some((mediaPath) => Path.posix.dirname(mediaPath) === item.reldirpath && Path.basename(mediaPath, Path.extname(mediaPath)) === itemStem)
+      )
+      if (basenameMatches.length === 1) {
+        matchingGroup = basenameMatches[0]
+      }
+
+      if (!matchingGroup) {
+        const directoryMatches = groupRecords.filter((groupRecord) => {
+          if (!groupRecord.descriptor.isFile) {
+            return item.path.startsWith(groupRecord.descriptor.groupPath + '/')
+          }
+          return Path.posix.dirname(groupRecord.descriptor.groupPath) === item.reldirpath
+        })
+        if (directoryMatches.length === 1) {
+          matchingGroup = directoryMatches[0]
+        }
+      }
+
+      if (!matchingGroup) return
+
+      const fileEntry = matchingGroup.descriptor.isFile ? item.path : Path.posix.relative(matchingGroup.descriptor.groupPath, item.path)
+      if (!matchingGroup.files.includes(fileEntry)) {
+        matchingGroup.files.push(fileEntry)
+      }
+    })
+
+    return groupRecords.reduce((acc, groupRecord) => {
+      acc[groupRecord.descriptor.groupPath] = [...new Set(groupRecord.files)]
+      return acc
+    }, {})
+  }
+
+  async applyOpenAIDirectoryGrouping(folderPath, fileItems, libraryItemGrouping, audiobooksOnly) {
+    const candidates = this.getOpenAIDirectoryGroupingCandidates(fileItems, 'book', audiobooksOnly, libraryItemGrouping)
+    if (!candidates.length) return libraryItemGrouping
+
+    let updatedGrouping = { ...libraryItemGrouping }
+    for (const candidate of candidates) {
+      Logger.info(`[LibraryScanner] Evaluating OpenAI directory grouping for "${candidate.containerPath}" with ${candidate.groupingHints.length} media files`)
+      const containerFileItems = fileItems.filter((item) => item.path === candidate.containerPath || item.path.startsWith(candidate.containerPath + '/'))
+      const assignments = await openAI.inferDirectoryGroupingFromPaths(candidate.containerPath, candidate.groupingHints).catch((error) => {
+        Logger.warn(`[LibraryScanner] OpenAI directory grouping failed for "${candidate.containerPath}": ${error.message}`)
+        return null
+      })
+      if (!assignments?.length) continue
+
+      const aiGrouping = this.buildLibraryItemGroupingFromOpenAIAssignments(candidate.containerPath, containerFileItems, assignments, 'book', audiobooksOnly)
+      if (!Object.keys(aiGrouping).length) continue
+
+      updatedGrouping = Object.fromEntries(
+        Object.entries(updatedGrouping).filter(([groupPath]) => !(groupPath === candidate.containerPath || groupPath.startsWith(candidate.containerPath + '/')))
+      )
+      updatedGrouping = {
+        ...updatedGrouping,
+        ...aiGrouping
+      }
+      Logger.info(`[LibraryScanner] Applied OpenAI directory grouping for "${candidate.containerPath}" -> ${Object.keys(aiGrouping).length} library items`)
+    }
+
+    return updatedGrouping
   }
 
   /**
@@ -648,6 +851,14 @@ module.exports = new LibraryScanner()
 
 function ItemToFileInoMatch(libraryItem1, libraryItem2) {
   return libraryItem1.isFile && libraryItem2.libraryFiles.some((lf) => lf.ino === libraryItem1.ino)
+}
+
+function isMediaFilePath(mediaType, filepath, audiobooksOnly = false) {
+  const ext = Path.extname(filepath).slice(1).toLowerCase()
+  if (!ext) return false
+  if (mediaType === 'podcast') return globals.SupportedAudioTypes.includes(ext)
+  if (audiobooksOnly) return globals.SupportedAudioTypes.includes(ext)
+  return globals.SupportedAudioTypes.includes(ext) || globals.SupportedEbookTypes.includes(ext)
 }
 
 function ItemToItemInoMatch(libraryItem1, libraryItem2) {

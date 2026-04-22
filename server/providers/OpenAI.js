@@ -42,6 +42,14 @@ class OpenAI {
     })
   }
 
+  summarizeDirectoryGroupingForLog(grouping) {
+    return JSON.stringify({
+      path: grouping.path,
+      groupId: grouping.groupId,
+      reason: grouping.reason || ''
+    })
+  }
+
   normalizePathForPrompt(filePath) {
     if (!filePath || typeof filePath !== 'string') return null
     return filePath.replace(/\\/g, '/')
@@ -270,6 +278,42 @@ class OpenAI {
       sequence: seriesName ? this.normalizeSequence(book.sequence) : null,
       reason: this.normalizeOptionalString(book.reason, 600) || ''
     }
+  }
+
+  validateDirectoryGroupingPayload(payload, mediaFiles) {
+    const resultFiles = payload?.files
+    if (!Array.isArray(resultFiles)) {
+      throw new Error('OpenAI returned invalid directory-grouping payload')
+    }
+
+    const expectedPaths = new Set(mediaFiles.map((file) => file.path))
+    const resultByPath = new Map()
+
+    resultFiles.forEach((file) => {
+      if (!expectedPaths.has(file?.path)) {
+        Logger.warn(`[OpenAI] Ignoring unknown media path "${file?.path}" in directory-grouping response`)
+        return
+      }
+      if (resultByPath.has(file.path)) {
+        Logger.warn(`[OpenAI] Ignoring duplicate media path "${file.path}" in directory-grouping response`)
+        return
+      }
+      resultByPath.set(file.path, file)
+    })
+
+    return mediaFiles.map((file) => {
+      const result = resultByPath.get(file.path)
+      const groupId = this.normalizeOptionalString(result?.groupId, 120) || file.path
+      const reason = this.normalizeOptionalString(result?.reason, 600) || (result ? '' : 'OpenAI omitted this media file; kept it as its own item')
+      if (!result) {
+        Logger.warn(`[OpenAI] Missing directory-grouping result for media path "${file.path}" - keeping it separate`)
+      }
+      return {
+        path: file.path,
+        groupId,
+        reason
+      }
+    })
   }
 
   validateBookIds(resultBooks, books) {
@@ -647,6 +691,55 @@ ${JSON.stringify(ebookMetadata, null, 2)}`
     const payload = await this.createResponse(prompt)
     const validated = this.validateScanMetadataPayload(payload)
     Logger.info(`[OpenAI] Scan-metadata result for "${libraryItemData.relPath}" ${this.summarizeScanMetadataForLog(validated)}`)
+    return validated
+  }
+
+  async inferDirectoryGroupingFromPaths(containerPath, mediaFiles) {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key is not configured')
+    }
+    if (!Array.isArray(mediaFiles) || !mediaFiles.length) {
+      return []
+    }
+
+    Logger.info(`[OpenAI] Inferring directory grouping for "${containerPath}" with ${mediaFiles.length} media files`)
+    mediaFiles.forEach((file) => {
+      Logger.info(`[OpenAI] Directory-grouping candidate ${JSON.stringify(file)}`)
+    })
+
+    const prompt = `You infer logical audiobook item grouping from messy filesystem paths.
+
+Return only valid JSON in this shape:
+{
+  "files": [
+    {
+      "path": "relative/path/to/media-file.m4b",
+      "groupId": "short-group-label",
+      "reason": "brief reason"
+    }
+  ]
+}
+
+Rules:
+- Include every provided media file exactly once.
+- Files that belong to the same logical audiobook item must share the same groupId.
+- Files for different books must use different groupIds even if they are in the same series container.
+- Use path, filename, parent directories, and current grouping hints as evidence.
+- Prefer preserving existing grouping when it already looks reasonable.
+- Do not merge different titled books just because they share a series or author folder.
+- groupId only needs to be stable within this one response.
+
+Container path:
+${JSON.stringify(containerPath)}
+
+Media files:
+${JSON.stringify(mediaFiles, null, 2)}`
+
+    const payload = await this.createResponse(prompt)
+    const validated = this.validateDirectoryGroupingPayload(payload, mediaFiles)
+    validated.forEach((grouping) => {
+      Logger.info(`[OpenAI] Directory-grouping result ${this.summarizeDirectoryGroupingForLog(grouping)}`)
+    })
     return validated
   }
 }

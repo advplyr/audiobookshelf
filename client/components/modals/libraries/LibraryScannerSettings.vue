@@ -1,5 +1,12 @@
 <template>
   <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
+    <div class="flex items-center justify-between md:justify-start mb-4">
+      <div class="flex items-center">
+        <ui-toggle-switch v-model="openAIDirectoryGrouping" @input="updated" />
+        <p class="pl-4 text-sm text-gray-300">Use OpenAI to interpret poor directory trees during library scans</p>
+      </div>
+    </div>
+
     <div class="flex items-center justify-between mb-2">
       <h2 class="text-base md:text-lg text-gray-200">{{ $strings.HeaderMetadataOrderOfPrecedence }}</h2>
       <ui-btn small @click="resetToDefault">{{ $strings.ButtonResetToDefault }}</ui-btn>
@@ -92,7 +99,8 @@ export default {
           include: true
         }
       },
-      metadataSourceMapped: []
+      metadataSourceMapped: [],
+      openAIDirectoryGrouping: false
     }
   },
   computed: {
@@ -131,6 +139,7 @@ export default {
       metadataSourceIds.reverse()
       return {
         settings: {
+          openAIDirectoryGrouping: !!this.openAIDirectoryGrouping,
           metadataPrecedence: metadataSourceIds
         }
       }
@@ -145,6 +154,7 @@ export default {
       this.$emit('update', this.getLibraryData())
     },
     init() {
+      this.openAIDirectoryGrouping = !!this.librarySettings.openAIDirectoryGrouping
       const metadataPrecedence = this.librarySettings.metadataPrecedence || []
       this.metadataSourceMapped = metadataPrecedence.map((source) => this.metadataSourceData[source]).filter((s) => s)
 

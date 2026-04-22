@@ -127,6 +127,7 @@ export default {
           autoScanCronExpression: null,
           hideSingleBookSeries: false,
           onlyShowLaterBooksInContinueSeries: false,
+          openAIDirectoryGrouping: false,
           metadataPrecedence: ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata'],
           markAsFinishedPercentComplete: null,
           markAsFinishedTimeRemaining: 10
