@@ -31,6 +31,17 @@ class OpenAI {
     })
   }
 
+  summarizeScanMetadataForLog(metadata) {
+    return JSON.stringify({
+      title: metadata.title || null,
+      authors: metadata.authors || [],
+      seriesName: metadata.seriesName || null,
+      sequence: metadata.sequence || null,
+      publishedYear: metadata.publishedYear || null,
+      reason: metadata.reason || ''
+    })
+  }
+
   normalizePathForPrompt(filePath) {
     if (!filePath || typeof filePath !== 'string') return null
     return filePath.replace(/\\/g, '/')
@@ -187,6 +198,78 @@ class OpenAI {
     const sequence = value.trim()
     if (!SEQUENCE_REGEX.test(sequence)) return null
     return sequence
+  }
+
+  normalizeOptionalString(value, maxLength = 300) {
+    if (value === null || value === undefined) return null
+    if (typeof value !== 'string') return null
+    const normalized = value.replace(/\s+/g, ' ').trim()
+    if (!normalized) return null
+    return normalized.slice(0, maxLength)
+  }
+
+  normalizeStringArray(value, maxItems = 10, maxLength = 120) {
+    if (!Array.isArray(value)) return []
+
+    const deduped = []
+    const seen = new Set()
+    for (const item of value) {
+      const normalized = this.normalizeOptionalString(item, maxLength)
+      if (!normalized) continue
+      const key = normalized.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      deduped.push(normalized)
+      if (deduped.length >= maxItems) break
+    }
+    return deduped
+  }
+
+  normalizePublishedYear(value) {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'number' && Number.isInteger(value)) value = String(value)
+    if (typeof value !== 'string') return null
+    const normalized = value.trim()
+    if (!/^\d{4}$/.test(normalized)) return null
+    return normalized
+  }
+
+  normalizeIsbn(value) {
+    const normalized = this.normalizeOptionalString(value, 20)
+    if (!normalized) return null
+    const compact = normalized.replace(/[-\s]/g, '')
+    if (!/^(?:\d{10}|\d{13}|[0-9X]{10})$/i.test(compact)) return null
+    return compact
+  }
+
+  normalizeAsin(value) {
+    const normalized = this.normalizeOptionalString(value, 10)
+    if (!normalized) return null
+    return /^[A-Z0-9]{10}$/i.test(normalized) ? normalized.toUpperCase() : null
+  }
+
+  validateScanMetadataPayload(payload) {
+    const book = payload?.book && typeof payload.book === 'object' ? payload.book : payload
+    if (!book || typeof book !== 'object' || Array.isArray(book)) {
+      throw new Error('OpenAI returned invalid scan metadata payload')
+    }
+
+    const seriesName = this.normalizeSeriesName(book.seriesName)
+
+    return {
+      title: this.normalizeOptionalString(book.title),
+      subtitle: this.normalizeOptionalString(book.subtitle),
+      publishedYear: this.normalizePublishedYear(book.publishedYear),
+      publisher: this.normalizeOptionalString(book.publisher),
+      isbn: this.normalizeIsbn(book.isbn),
+      asin: this.normalizeAsin(book.asin),
+      language: this.normalizeOptionalString(book.language, 40),
+      authors: this.normalizeStringArray(book.authors),
+      narrators: this.normalizeStringArray(book.narrators),
+      seriesName,
+      sequence: seriesName ? this.normalizeSequence(book.sequence) : null,
+      reason: this.normalizeOptionalString(book.reason, 600) || ''
+    }
   }
 
   validateBookIds(resultBooks, books) {
@@ -468,6 +551,102 @@ ${JSON.stringify(books, null, 2)}`
     validated.forEach((assignment) => {
       Logger.info(`[OpenAI] Series-detection result ${this.summarizeAssignmentForLog(assignment)}`)
     })
+    return validated
+  }
+
+  async inferBookMetadataFromScan(libraryItemData, audioFiles = [], ebookFileScanData = null) {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key is not configured')
+    }
+
+    const folderContext = this.getFolderContext(libraryItemData)
+    const audioFileCandidates = (audioFiles || []).slice(0, 25).map((audioFile) => ({
+      relPath: this.normalizePathForPrompt(audioFile.metadata?.relPath),
+      filename: audioFile.metadata?.filename || null,
+      duration: audioFile.duration || null,
+      trackNumber: audioFile.trackNumFromMeta || audioFile.metaTags?.trackNumber || null,
+      discNumber: audioFile.discNumFromMeta || audioFile.metaTags?.discNumber || null,
+      metaTags: {
+        tagTitle: audioFile.metaTags?.tagTitle || null,
+        tagAlbum: audioFile.metaTags?.tagAlbum || null,
+        tagArtist: audioFile.metaTags?.tagArtist || null,
+        tagAlbumArtist: audioFile.metaTags?.tagAlbumArtist || null,
+        tagSeries: audioFile.metaTags?.tagSeries || null,
+        tagSeriesPart: audioFile.metaTags?.tagSeriesPart || null,
+        tagSubtitle: audioFile.metaTags?.tagSubtitle || null,
+        tagDate: audioFile.metaTags?.tagDate || null,
+        tagASIN: audioFile.metaTags?.tagASIN || null
+      }
+    }))
+
+    const ebookMetadata = ebookFileScanData?.metadata
+      ? {
+          title: ebookFileScanData.metadata.title || null,
+          subtitle: ebookFileScanData.metadata.subtitle || null,
+          authors: ebookFileScanData.metadata.authors || [],
+          narrators: ebookFileScanData.metadata.narrators || [],
+          series: ebookFileScanData.metadata.series || [],
+          publishedYear: ebookFileScanData.metadata.publishedYear || null,
+          isbn: ebookFileScanData.metadata.isbn || null,
+          asin: ebookFileScanData.metadata.asin || null
+        }
+      : null
+
+    const currentPathMetadata = {
+      title: libraryItemData.mediaMetadata?.title || null,
+      subtitle: libraryItemData.mediaMetadata?.subtitle || null,
+      authors: libraryItemData.mediaMetadata?.authors || [],
+      narrators: libraryItemData.mediaMetadata?.narrators || [],
+      seriesName: libraryItemData.mediaMetadata?.seriesName || null,
+      sequence: libraryItemData.mediaMetadata?.seriesSequence || null,
+      publishedYear: libraryItemData.mediaMetadata?.publishedYear || null
+    }
+
+    Logger.info(`[OpenAI] Inferring scan metadata for "${libraryItemData.relPath}"`)
+
+    const prompt = `You infer audiobook metadata from weak or messy directory structures.
+
+Return only valid JSON in this shape:
+{
+  "book": {
+    "title": "Book title or null",
+    "subtitle": "Subtitle or null",
+    "authors": ["Author Name"],
+    "narrators": ["Narrator Name"],
+    "seriesName": "Series name or null",
+    "sequence": "1 or null",
+    "publishedYear": "2004 or null",
+    "publisher": "Publisher or null",
+    "isbn": "ISBN or null",
+    "asin": "ASIN or null",
+    "language": "Language or null",
+    "reason": "brief reason"
+  }
+}
+
+Rules:
+- Infer metadata from full path, relative path, folder names, filenames, and any provided tag metadata.
+- Prefer title/author/series evidence that is explicit in filenames or tags.
+- Use null when uncertain.
+- If a series is provided, sequence may be null when it cannot be inferred confidently.
+- Do not invent authors or series when there is weak evidence.
+- Respond with one book object only.
+
+Current path-derived metadata:
+${JSON.stringify(currentPathMetadata, null, 2)}
+
+Folder context:
+${JSON.stringify(folderContext, null, 2)}
+
+Audio files:
+${JSON.stringify(audioFileCandidates, null, 2)}
+
+Ebook metadata:
+${JSON.stringify(ebookMetadata, null, 2)}`
+
+    const payload = await this.createResponse(prompt)
+    const validated = this.validateScanMetadataPayload(payload)
+    Logger.info(`[OpenAI] Scan-metadata result for "${libraryItemData.relPath}" ${this.summarizeScanMetadataForLog(validated)}`)
     return validated
   }
 }

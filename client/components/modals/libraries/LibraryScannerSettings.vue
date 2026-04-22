@@ -66,6 +66,11 @@ export default {
           name: 'Audio file meta tags OR ebook metadata',
           include: true
         },
+        openAIPathMetadata: {
+          id: 'openAIPathMetadata',
+          name: 'OpenAI path and filename inference',
+          include: false
+        },
         nfoFile: {
           id: 'nfoFile',
           name: 'NFO file',

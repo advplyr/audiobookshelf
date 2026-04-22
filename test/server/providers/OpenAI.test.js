@@ -132,4 +132,51 @@ describe('OpenAI', () => {
       expect(result[0].sequence).to.equal('1')
     })
   })
+
+  describe('validateScanMetadataPayload', () => {
+    it('normalizes valid scan metadata', () => {
+      const result = openAI.validateScanMetadataPayload({
+        book: {
+          title: ' Neuromancer ',
+          subtitle: '20th Anniversary Edition',
+          authors: ['William Gibson', 'William Gibson'],
+          narrators: ['Robertson Dean'],
+          seriesName: 'Sprawl Trilogy',
+          sequence: '1',
+          publishedYear: '1984',
+          asin: 'B000FC11ZG',
+          isbn: '978-0441569595',
+          language: 'English',
+          reason: 'path and tags match'
+        }
+      })
+
+      expect(result.title).to.equal('Neuromancer')
+      expect(result.authors).to.deep.equal(['William Gibson'])
+      expect(result.seriesName).to.equal('Sprawl Trilogy')
+      expect(result.sequence).to.equal('1')
+      expect(result.asin).to.equal('B000FC11ZG')
+      expect(result.isbn).to.equal('9780441569595')
+    })
+
+    it('returns nulls for malformed scan metadata fields', () => {
+      const result = openAI.validateScanMetadataPayload({
+        title: '',
+        authors: [''],
+        seriesName: 'Series Name',
+        sequence: 'not-a-sequence',
+        publishedYear: '84',
+        asin: 'bad',
+        isbn: 'nope'
+      })
+
+      expect(result.title).to.equal(null)
+      expect(result.authors).to.deep.equal([])
+      expect(result.seriesName).to.equal('Series Name')
+      expect(result.sequence).to.equal(null)
+      expect(result.publishedYear).to.equal(null)
+      expect(result.asin).to.equal(null)
+      expect(result.isbn).to.equal(null)
+    })
+  })
 })

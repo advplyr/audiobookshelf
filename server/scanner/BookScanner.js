@@ -19,11 +19,14 @@ const LibraryFile = require('../objects/files/LibraryFile')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CoverManager = require('../managers/CoverManager')
+const OpenAI = require('../providers/OpenAI')
 
 const LibraryScan = require('./LibraryScan')
 const OpfFileScanner = require('./OpfFileScanner')
 const NfoFileScanner = require('./NfoFileScanner')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
+
+const openAI = new OpenAI()
 
 /**
  * Metadata for books pulled from files
@@ -754,6 +757,43 @@ class BookScanner {
         }
       }
       return null
+    }
+
+    async openAIPathMetadata() {
+      if (!openAI.isConfigured) {
+        this.libraryScan.addLog(LogLevel.DEBUG, `Skipping OpenAI path metadata for "${this.libraryItemData.relPath}" because OpenAI is not configured`)
+        return
+      }
+
+      const inferredMetadata = await openAI
+        .inferBookMetadataFromScan(this.libraryItemData, this.audioFiles, this.ebookFileScanData)
+        .catch((error) => {
+          this.libraryScan.addLog(LogLevel.WARN, `OpenAI path metadata failed for "${this.libraryItemData.relPath}": ${error.message}`)
+          return null
+        })
+      if (!inferredMetadata) return
+
+      const directKeys = ['title', 'subtitle', 'publishedYear', 'publisher', 'isbn', 'asin', 'language']
+      directKeys.forEach((key) => {
+        if (inferredMetadata[key]) {
+          this.bookMetadata[key] = inferredMetadata[key]
+        }
+      })
+
+      if (inferredMetadata.authors.length) {
+        this.bookMetadata.authors = inferredMetadata.authors
+      }
+      if (inferredMetadata.narrators.length) {
+        this.bookMetadata.narrators = inferredMetadata.narrators
+      }
+      if (inferredMetadata.seriesName) {
+        this.bookMetadata.series = [
+          {
+            name: inferredMetadata.seriesName,
+            sequence: inferredMetadata.sequence || null
+          }
+        ]
+      }
     }
 
     /**
