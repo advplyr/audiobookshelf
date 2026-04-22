@@ -321,8 +321,12 @@ class LibraryScanner {
       let isFile = false // item is not in a folder
       let libraryItemData = null
       let fileObjs = []
-      if (libraryItemPath === libraryItemGrouping[libraryItemPath]) {
-        // Media file in root only get title
+      const groupedFiles = libraryItemGrouping[libraryItemPath]
+      const isSingleFileGroup =
+        libraryItemPath === groupedFiles || (Array.isArray(groupedFiles) && groupedFiles.includes(libraryItemPath))
+
+      if (isSingleFileGroup) {
+        // Media file item may exist in the library root or inside a poorly-structured parent folder.
         libraryItemData = {
           mediaMetadata: {
             title: Path.basename(libraryItemPath, Path.extname(libraryItemPath))
@@ -330,11 +334,11 @@ class LibraryScanner {
           path: Path.posix.join(folderPath, libraryItemPath),
           relPath: libraryItemPath
         }
-        fileObjs = await scanUtils.buildLibraryFile(folderPath, [libraryItemPath])
+        fileObjs = await scanUtils.buildLibraryFile(folderPath, Array.isArray(groupedFiles) ? groupedFiles : [libraryItemPath])
         isFile = true
       } else {
         libraryItemData = scanUtils.getDataFromMediaDir(library.mediaType, folderPath, libraryItemPath)
-        fileObjs = await scanUtils.buildLibraryFile(libraryItemData.path, libraryItemGrouping[libraryItemPath])
+        fileObjs = await scanUtils.buildLibraryFile(libraryItemData.path, groupedFiles)
       }
 
       const libraryItemFolderStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
@@ -651,11 +655,11 @@ function ItemToItemInoMatch(libraryItem1, libraryItem2) {
 }
 
 function hasAudioFiles(fileUpdateGroup, itemDir) {
-  return isSingleMediaFile(fileUpdateGroup, itemDir) ? scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) : fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
+  return isSingleMediaFile(fileUpdateGroup, itemDir) ? scanUtils.checkFilepathIsAudioFile(itemDir) : fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
 }
 
 function isSingleMediaFile(fileUpdateGroup, itemDir) {
-  return itemDir === fileUpdateGroup[itemDir]
+  return itemDir === fileUpdateGroup[itemDir] || (Array.isArray(fileUpdateGroup[itemDir]) && fileUpdateGroup[itemDir].includes(itemDir))
 }
 
 async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {

@@ -30,6 +30,10 @@ function isScannableNonMediaFile(ext) {
   return globals.TextFileTypes.includes(extclean) || globals.MetadataFileTypes.includes(extclean) || globals.SupportedImageTypes.includes(extclean)
 }
 
+function isDiscDirectoryName(name) {
+  return /^(cd|dis[ck])\s*\d{1,3}$/i.test(name || '')
+}
+
 function checkFilepathIsAudioFile(filepath) {
   const ext = Path.extname(filepath)
   if (!ext) return false
@@ -67,52 +71,76 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly,
 
   // Step 3: Group media files (or non-media files if includeNonMediaFiles is true) in library items
   const libraryItemGroup = {}
+  const directMediaFileCountByDir = {}
+  const hasNestedNonDiscMediaByDir = {}
+
+  mediaFileItems.forEach((item) => {
+    const dirPath = item.reldirpath || ''
+    directMediaFileCountByDir[dirPath] = (directMediaFileCountByDir[dirPath] || 0) + 1
+
+    const dirParts = dirPath.split('/').filter(Boolean)
+    for (let i = 0; i < dirParts.length - 1; i++) {
+      const ancestorPath = dirParts.slice(0, i + 1).join('/')
+      const nextSegment = dirParts[i + 1]
+      if (!isDiscDirectoryName(nextSegment)) {
+        hasNestedNonDiscMediaByDir[ancestorPath] = true
+      }
+    }
+  })
+
   mediaFileItems.forEach((item) => {
     const dirparts = item.reldirpath.split('/').filter((p) => !!p)
-    const numparts = dirparts.length
-    let _path = ''
-
     if (!dirparts.length) {
       // Media file in root
-      libraryItemGroup[item.name] = item.name
+      libraryItemGroup[item.path] = item.path
     } else {
-      // Iterate over directories in path
-      for (let i = 0; i < numparts; i++) {
-        const dirpart = dirparts.shift()
-        _path = Path.posix.join(_path, dirpart)
+      const dirPath = dirparts.join('/')
+      const lastDir = dirparts[dirparts.length - 1]
+      const shouldUseFileAsLibraryItem = directMediaFileCountByDir[dirPath] === 1 && hasNestedNonDiscMediaByDir[dirPath]
 
-        if (libraryItemGroup[_path]) {
-          // Directory already has files, add file
-          const relpath = Path.posix.join(dirparts.join('/'), item.name)
-          libraryItemGroup[_path].push(relpath)
-          return
-        } else if (!dirparts.length) {
-          // This is the last directory, create group
-          libraryItemGroup[_path] = [item.name]
-          return
-        } else if (dirparts.length === 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[0])) {
-          // Next directory is the last and is a CD dir, create group
-          libraryItemGroup[_path] = [Path.posix.join(dirparts[0], item.name)]
-          return
-        }
+      if (shouldUseFileAsLibraryItem) {
+        libraryItemGroup[item.path] = [item.path]
+        return
       }
+
+      const groupPath = isDiscDirectoryName(lastDir) && dirparts.length > 1 ? dirparts.slice(0, -1).join('/') : dirPath
+      const relpath = Path.posix.relative(groupPath, item.path)
+      if (!libraryItemGroup[groupPath]) {
+        libraryItemGroup[groupPath] = []
+      }
+      libraryItemGroup[groupPath].push(relpath)
     }
   })
 
   // Step 4: Add other files into library item groups
   otherFileItems.forEach((item) => {
-    const dirparts = item.reldirpath.split('/')
-    const numparts = dirparts.length
-    let _path = ''
+    const dirPath = item.reldirpath || ''
+    const itemPath = item.path
+    const sameDirFileGroups = Object.keys(libraryItemGroup).filter((groupPath) => {
+      if (!groupPath || !Path.posix.extname(groupPath)) return false
+      return Path.posix.dirname(groupPath) === dirPath
+    })
 
-    // Iterate over directories in path
-    for (let i = 0; i < numparts; i++) {
-      const dirpart = dirparts.shift()
-      _path = Path.posix.join(_path, dirpart)
-      if (libraryItemGroup[_path]) {
-        // Directory is audiobook group
-        const relpath = Path.posix.join(dirparts.join('/'), item.name)
-        libraryItemGroup[_path].push(relpath)
+    if (sameDirFileGroups.length) {
+      const itemStem = Path.basename(item.name, item.extension)
+      const matchingFileGroup =
+        sameDirFileGroups.find((groupPath) => Path.basename(groupPath, Path.extname(groupPath)) === itemStem) ||
+        (sameDirFileGroups.length === 1 ? sameDirFileGroups[0] : null)
+
+      if (matchingFileGroup) {
+        if (Array.isArray(libraryItemGroup[matchingFileGroup])) {
+          libraryItemGroup[matchingFileGroup].push(itemPath)
+        }
+        return
+      }
+    }
+
+    const dirparts = dirPath.split('/').filter(Boolean)
+    for (let i = dirparts.length; i >= 1; i--) {
+      const groupPath = dirparts.slice(0, i).join('/')
+      if (Array.isArray(libraryItemGroup[groupPath])) {
+        const relpath = Path.posix.relative(groupPath, itemPath)
+        libraryItemGroup[groupPath].push(relpath)
         return
       }
     }
