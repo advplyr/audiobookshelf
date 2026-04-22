@@ -208,6 +208,41 @@ class OpenAI {
     })
   }
 
+  normalizeDetectionResultBooks(resultBooks, books) {
+    if (!Array.isArray(resultBooks)) {
+      throw new Error('OpenAI returned an invalid books payload')
+    }
+
+    const expectedIds = new Set(books.map((book) => book.id))
+    const resultBooksById = new Map()
+
+    resultBooks.forEach((book) => {
+      if (!expectedIds.has(book?.id)) {
+        Logger.warn(`[OpenAI] Ignoring unknown book id "${book?.id}" in series-detection response`)
+        return
+      }
+      if (resultBooksById.has(book.id)) {
+        Logger.warn(`[OpenAI] Ignoring duplicate book id "${book.id}" in series-detection response`)
+        return
+      }
+      resultBooksById.set(book.id, book)
+    })
+
+    return books.map((book) => {
+      if (resultBooksById.has(book.id)) {
+        return resultBooksById.get(book.id)
+      }
+
+      Logger.warn(`[OpenAI] Missing series-detection result for book "${book.id}" - skipping assignment`)
+      return {
+        id: book.id,
+        seriesName: null,
+        sequence: null,
+        reason: 'Skipped because OpenAI omitted this book from the response'
+      }
+    })
+  }
+
   validateSeriesOrderPayload(payload, books) {
     const resultBooks = payload?.books
     this.validateBookIds(resultBooks, books)
@@ -233,8 +268,7 @@ class OpenAI {
   }
 
   validateSeriesDetectionPayload(payload, books) {
-    const resultBooks = payload?.books
-    this.validateBookIds(resultBooks, books)
+    const resultBooks = this.normalizeDetectionResultBooks(payload?.books, books)
 
     const seriesSequences = new Map()
     return resultBooks.map((book) => {
