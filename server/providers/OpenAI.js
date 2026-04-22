@@ -240,12 +240,25 @@ class OpenAI {
     return resultBooks.map((book) => {
       const seriesName = this.normalizeSeriesName(book.seriesName)
       const sequence = this.normalizeSequence(book.sequence)
+      const reason = typeof book.reason === 'string' ? book.reason.trim() : ''
 
       if (seriesName && !sequence) {
-        throw new Error(`OpenAI returned a series without a valid sequence for "${book.id}"`)
+        Logger.warn(`[OpenAI] Series "${seriesName}" for book "${book.id}" did not include a valid sequence - skipping assignment`)
+        return {
+          id: book.id,
+          seriesName: null,
+          sequence: null,
+          reason: reason ? `${reason} (skipped due to missing or invalid sequence)` : 'Skipped due to missing or invalid sequence'
+        }
       }
       if (!seriesName && sequence) {
-        throw new Error(`OpenAI returned a sequence without a series for "${book.id}"`)
+        Logger.warn(`[OpenAI] Sequence "${sequence}" for book "${book.id}" did not include a series name - skipping assignment`)
+        return {
+          id: book.id,
+          seriesName: null,
+          sequence: null,
+          reason: reason ? `${reason} (skipped due to missing series name)` : 'Skipped due to missing series name'
+        }
       }
 
       if (seriesName && sequence) {
@@ -259,7 +272,7 @@ class OpenAI {
             id: book.id,
             seriesName: null,
             sequence: null,
-            reason: typeof book.reason === 'string' ? `${book.reason.trim()} (skipped due to duplicate inferred sequence)` : 'Skipped due to duplicate inferred sequence'
+            reason: reason ? `${reason} (skipped due to duplicate inferred sequence)` : 'Skipped due to duplicate inferred sequence'
           }
         }
         seriesSequences.get(key).add(sequence)
@@ -269,7 +282,7 @@ class OpenAI {
         id: book.id,
         seriesName,
         sequence,
-        reason: typeof book.reason === 'string' ? book.reason.trim() : ''
+        reason
       }
     })
   }

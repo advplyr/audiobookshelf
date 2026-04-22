@@ -67,17 +67,34 @@ describe('OpenAI', () => {
       expect(result[1].sequence).to.equal('1.5')
     })
 
-    it('rejects a series assignment without sequence', () => {
-      expect(() =>
-        openAI.validateSeriesDetectionPayload(
-          {
-            books: [
-              { id: 'a', seriesName: 'Series Name', sequence: null }
-            ]
-          },
-          [{ id: 'a' }]
-        )
-      ).to.throw('without a valid sequence')
+    it('skips a series assignment without sequence', () => {
+      const result = openAI.validateSeriesDetectionPayload(
+        {
+          books: [
+            { id: 'a', seriesName: 'Series Name', sequence: null, reason: 'folder match' }
+          ]
+        },
+        [{ id: 'a' }]
+      )
+
+      expect(result[0].seriesName).to.equal(null)
+      expect(result[0].sequence).to.equal(null)
+      expect(result[0].reason).to.contain('skipped due to missing or invalid sequence')
+    })
+
+    it('skips a sequence without series name', () => {
+      const result = openAI.validateSeriesDetectionPayload(
+        {
+          books: [
+            { id: 'a', seriesName: null, sequence: '2', reason: 'sequence found' }
+          ]
+        },
+        [{ id: 'a' }]
+      )
+
+      expect(result[0].seriesName).to.equal(null)
+      expect(result[0].sequence).to.equal(null)
+      expect(result[0].reason).to.contain('skipped due to missing series name')
     })
   })
 })
