@@ -19,11 +19,14 @@ const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
 const RssFeedManager = require('../managers/RssFeedManager')
+const OpenAI = require('../providers/OpenAI')
 
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 const zipHelpers = require('../utils/zipHelpers')
+
+const openAI = new OpenAI()
 
 /**
  * @typedef RequestUserObject
@@ -1460,6 +1463,246 @@ class LibraryController {
     } catch (error) {
       Logger.error(`[LibraryController] Download failed for items "${filename}" at ${pathObjects.map((po) => po.path).join(', ')}`, error)
       zipHelpers.handleDownloadError(error, res)
+    }
+  }
+
+  async getLibraryBooksForAISeriesDetection(libraryId) {
+    const books = await Database.bookModel.findAll({
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId,
+            isMissing: false,
+            isInvalid: false
+          }
+        },
+        {
+          model: Database.bookAuthorModel,
+          include: {
+            model: Database.authorModel
+          },
+          separate: true,
+          order: [['createdAt', 'ASC']]
+        },
+        {
+          model: Database.bookSeriesModel,
+          include: {
+            model: Database.seriesModel
+          },
+          separate: true,
+          order: [['createdAt', 'ASC']]
+        }
+      ],
+      order: [['title', 'ASC']]
+    })
+
+    return books.map((book) => {
+      const libraryItem = book.libraryItem
+      delete book.dataValues.libraryItem
+      book.authors = book.bookAuthors?.map((bookAuthor) => bookAuthor.author) || []
+      delete book.dataValues.bookAuthors
+      book.series =
+        book.bookSeries?.map((bookSeries) => {
+          const series = bookSeries.series
+          delete bookSeries.dataValues.series
+          series.bookSeries = bookSeries
+          return series
+        }) || []
+      delete book.dataValues.bookSeries
+      libraryItem.media = book
+      return libraryItem
+    })
+  }
+
+  groupLibraryBooksByPrimaryAuthor(libraryItems) {
+    const groups = new Map()
+
+    for (const libraryItem of libraryItems) {
+      const primaryAuthor = libraryItem.media.authors?.[0]?.name?.trim()
+      if (!primaryAuthor) continue
+
+      const key = primaryAuthor.toLowerCase()
+      if (!groups.has(key)) {
+        groups.set(key, {
+          authorName: primaryAuthor,
+          libraryItems: []
+        })
+      }
+      groups.get(key).libraryItems.push(libraryItem)
+    }
+
+    return [...groups.values()]
+  }
+
+  getLibraryItemFolderKey(libraryItem) {
+    const basePath = (libraryItem.relPath || libraryItem.path || '').replace(/\\/g, '/')
+    if (!basePath) return null
+
+    const itemPath = libraryItem.isFile ? Path.posix.dirname(basePath) : basePath
+    const parentPath = Path.posix.dirname(itemPath)
+    if (!parentPath || parentPath === '.' || parentPath === '/') return null
+    return parentPath.toLowerCase()
+  }
+
+  groupLibraryBooksByFolder(libraryItems) {
+    const groups = new Map()
+
+    for (const libraryItem of libraryItems) {
+      const folderKey = LibraryController.prototype.getLibraryItemFolderKey.call(this, libraryItem)
+      if (!folderKey) continue
+
+      if (!groups.has(folderKey)) {
+        groups.set(folderKey, {
+          label: folderKey,
+          libraryItems: []
+        })
+      }
+      groups.get(folderKey).libraryItems.push(libraryItem)
+    }
+
+    return [...groups.values()]
+  }
+
+  /**
+   * POST: /api/libraries/:id/detect-series-with-ai
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async detectSeriesWithAI(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[LibraryController] User "${req.user.username}" attempted AI series detection without update permissions`)
+      return res.sendStatus(403)
+    }
+    if (req.library.mediaType !== 'book') {
+      return res.status(400).send('AI series detection is only available for book libraries')
+    }
+    if (!openAI.isConfigured) {
+      return res.status(400).send('OpenAI is not configured')
+    }
+
+    try {
+      const onlyMissingSeries = req.query.onlyMissing !== '0'
+      const libraryItems = await LibraryController.prototype.getLibraryBooksForAISeriesDetection.call(this, req.library.id)
+      const authorGroups = LibraryController.prototype.groupLibraryBooksByPrimaryAuthor.call(this, libraryItems).filter(({ libraryItems }) => {
+        if (libraryItems.length < 2) return false
+        if (!onlyMissingSeries) return true
+        return libraryItems.some((libraryItem) => !libraryItem.media.series.length)
+      })
+      const authorCoveredEligibleIds = new Set()
+      authorGroups.forEach((authorGroup) => {
+        authorGroup.libraryItems.forEach((libraryItem) => {
+          if (!onlyMissingSeries || !libraryItem.media.series.length) {
+            authorCoveredEligibleIds.add(libraryItem.id)
+          }
+        })
+      })
+
+      const folderGroups = LibraryController.prototype.groupLibraryBooksByFolder
+        .call(this, libraryItems)
+        .filter(({ libraryItems }) => {
+          if (libraryItems.length < 2) return false
+          const eligibleItems = onlyMissingSeries ? libraryItems.filter((libraryItem) => !libraryItem.media.series.length) : libraryItems
+          if (!eligibleItems.length) return false
+          return eligibleItems.some((libraryItem) => !authorCoveredEligibleIds.has(libraryItem.id))
+        })
+      const evaluationGroups = [
+        ...authorGroups.map((group) => ({ type: 'author', label: group.authorName, libraryItems: group.libraryItems })),
+        ...folderGroups.map((group) => ({ type: 'folder', label: group.label, libraryItems: group.libraryItems }))
+      ]
+
+      let groupsProcessed = 0
+      let booksConsidered = 0
+      let booksUpdated = 0
+
+      for (const evaluationGroup of evaluationGroups) {
+        const eligibleLibraryItems = onlyMissingSeries ? evaluationGroup.libraryItems.filter((libraryItem) => !libraryItem.media.series.length) : evaluationGroup.libraryItems
+        if (!eligibleLibraryItems.length) continue
+
+        if (evaluationGroup.type === 'folder') {
+          const remainingEligibleItems = eligibleLibraryItems.filter((libraryItem) => !authorCoveredEligibleIds.has(libraryItem.id))
+          if (!remainingEligibleItems.length) continue
+          Logger.info(
+            `[LibraryController] AI series detection evaluating folder group "${evaluationGroup.label}" with ${evaluationGroup.libraryItems.length} books (${remainingEligibleItems.length} eligible for update)`
+          )
+          evaluationGroup.eligibleLibraryItems = remainingEligibleItems
+        } else {
+          Logger.info(
+            `[LibraryController] AI series detection evaluating author "${evaluationGroup.label}" with ${evaluationGroup.libraryItems.length} books (${eligibleLibraryItems.length} eligible for update)`
+          )
+          evaluationGroup.eligibleLibraryItems = eligibleLibraryItems
+        }
+
+        const assignments = await openAI.detectSeriesAssignments(evaluationGroup.label, evaluationGroup.libraryItems, evaluationGroup.type)
+        const assignmentsByLibraryItemId = new Map(assignments.map((assignment) => [assignment.id, assignment]))
+        groupsProcessed++
+
+        for (const libraryItem of evaluationGroup.eligibleLibraryItems) {
+          booksConsidered++
+
+          const assignment = assignmentsByLibraryItemId.get(libraryItem.id)
+          if (!assignment?.seriesName || !assignment.sequence) {
+            Logger.info(`[LibraryController] AI series detection skipped "${libraryItem.media.title}" (${libraryItem.id})`)
+            continue
+          }
+
+          Logger.info(
+            `[LibraryController] AI series detection applying "${libraryItem.media.title}" (${libraryItem.id}) -> series "${assignment.seriesName}" sequence "${assignment.sequence}"`
+          )
+
+          const existingSeries = libraryItem.media.series.find((series) => series.name.toLowerCase() === assignment.seriesName.toLowerCase())
+          const seriesPayload = libraryItem.media.series.map((series) => ({
+            id: series.id,
+            name: series.name,
+            sequence: series.bookSeries?.sequence || null
+          }))
+
+          if (existingSeries) {
+            const existingSeriesIndex = seriesPayload.findIndex((series) => series.id === existingSeries.id)
+            if (existingSeriesIndex >= 0) {
+              seriesPayload[existingSeriesIndex].sequence = assignment.sequence
+            }
+          } else {
+            seriesPayload.push({
+              name: assignment.seriesName,
+              sequence: assignment.sequence
+            })
+          }
+
+          const seriesUpdate = await libraryItem.media.updateSeriesFromRequest(seriesPayload, libraryItem.libraryId)
+          if (!seriesUpdate?.hasUpdates) {
+            Logger.info(`[LibraryController] AI series detection found no metadata changes for "${libraryItem.media.title}" (${libraryItem.id})`)
+            continue
+          }
+
+          if (seriesUpdate.seriesAdded?.length) {
+            seriesUpdate.seriesAdded.forEach((series) => {
+              Database.addSeriesToFilterData(req.library.id, series.name, series.id)
+            })
+          }
+
+          libraryItem.changed('updatedAt', true)
+          await libraryItem.save()
+          await libraryItem.saveMetadataFile()
+          booksUpdated++
+          SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
+        }
+      }
+
+      Logger.info(
+        `[LibraryController] AI series detection completed for library "${req.library.name}" - groupsProcessed=${groupsProcessed}, booksConsidered=${booksConsidered}, booksUpdated=${booksUpdated}`
+      )
+
+      res.json({
+        groupsProcessed,
+        booksConsidered,
+        updated: booksUpdated
+      })
+    } catch (error) {
+      Logger.error(`[LibraryController] Failed AI series detection for library "${req.library.name}"`, error)
+      res.status(500).send(error.message || 'Failed to detect series with AI')
     }
   }
 

@@ -602,6 +602,11 @@ export default {
         this.libraryItemUpdated(ab)
       })
     },
+    seriesBooksUpdated(payload) {
+      if (this.entityName !== 'series-books') return
+      if (payload?.seriesId !== this.seriesId) return
+      this.resetEntities(this.currScrollTop)
+    },
     collectionAdded(collection) {
       if (this.entityName !== 'collections') return
       console.log(`[LazyBookshelf] collectionAdded ${collection.id}`, collection)
@@ -791,6 +796,7 @@ export default {
 
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('user-settings', this.settingsUpdated)
+      this.$eventBus.$on('series-books-updated', this.seriesBooksUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -822,6 +828,7 @@ export default {
 
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('user-settings', this.settingsUpdated)
+      this.$eventBus.$off('series-books-updated', this.seriesBooksUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.off('item_updated', this.libraryItemUpdated)

@@ -134,6 +134,13 @@ export default {
         }
       ]
 
+      if (this.userCanUpdate && this.openAIConfigured) {
+        items.push({
+          text: 'Organize Story Order With AI',
+          action: 'organize-story-order-with-ai'
+        })
+      }
+
       if (this.userIsAdminOrUp || this.selectedSeries.rssFeed) {
         items.push({
           text: this.$strings.LabelOpenRSSFeed,
@@ -220,6 +227,9 @@ export default {
     },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
+    },
+    openAIConfigured() {
+      return !!this.$store.getters['getServerSetting']('openAIConfigured')
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
@@ -427,6 +437,12 @@ export default {
     seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
+      } else if (action === 'organize-story-order-with-ai') {
+        if (this.processingSeries) {
+          console.warn('Already processing series')
+          return
+        }
+        this.organizeStoryOrderWithAI()
       } else if (action === 're-add-to-continue-listening') {
         if (this.processingSeries) {
           console.warn('Already processing series')
@@ -452,6 +468,35 @@ export default {
         type: 'series',
         feed: this.selectedSeries.rssFeed
       })
+    },
+    organizeStoryOrderWithAI() {
+      const payload = {
+        message: `Organize "${this.selectedSeries.name}" into AI-detected story order? This will update the series sequence on every book in the series.`,
+        callback: (confirmed) => {
+          if (!confirmed) return
+
+          this.processingSeries = true
+          this.$axios
+            .$post(`/api/series/${this.seriesId}/organize-story-order`)
+            .then((data) => {
+              if (!data.updated) {
+                this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
+              } else {
+                this.$toast.success(`Updated story order for ${data.updated} books`)
+              }
+              this.$eventBus.$emit('series-books-updated', { seriesId: this.seriesId })
+            })
+            .catch((error) => {
+              console.error('Failed to organize story order with AI', error)
+              this.$toast.error(error.response?.data || this.$strings.ToastFailedToUpdate)
+            })
+            .finally(() => {
+              this.processingSeries = false
+            })
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     reAddSeriesToContinueListening() {
       this.processingSeries = true

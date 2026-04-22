@@ -84,6 +84,11 @@ class ServerSettings {
     this.authOpenIDAdvancedPermsClaim = ''
     this.authOpenIDSubfolderForRedirectURLs = undefined
 
+    // OpenAI
+    this.openAIApiKey = null
+    this.openAIBaseURL = 'https://api.openai.com/v1'
+    this.openAIModel = 'gpt-5.4-mini'
+
     if (settings) {
       this.construct(settings)
     }
@@ -147,6 +152,9 @@ class ServerSettings {
     this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
     this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
+    this.openAIApiKey = settings.openAIApiKey || null
+    this.openAIBaseURL = settings.openAIBaseURL || 'https://api.openai.com/v1'
+    this.openAIModel = settings.openAIModel || 'gpt-5.4-mini'
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
@@ -256,7 +264,10 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
-      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
+      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
+      openAIApiKey: this.openAIApiKey, // Do not return to client
+      openAIBaseURL: this.openAIBaseURL,
+      openAIModel: this.openAIModel
     }
   }
 
@@ -268,7 +279,34 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    delete json.openAIApiKey
+    json.openAIConfigured = this.openAIConfigured
+    json.openAIConfigurationSource = this.openAIConfigurationSource
+    json.openAIBaseURL = this.openAIResolvedBaseURL
+    json.openAIModel = this.openAIResolvedModel
     return json
+  }
+
+  get openAIResolvedApiKey() {
+    return process.env.OPENAI_API_KEY || this.openAIApiKey || null
+  }
+
+  get openAIResolvedBaseURL() {
+    return process.env.OPENAI_BASE_URL || this.openAIBaseURL || 'https://api.openai.com/v1'
+  }
+
+  get openAIResolvedModel() {
+    return process.env.OPENAI_MODEL || this.openAIModel || 'gpt-5.4-mini'
+  }
+
+  get openAIConfigured() {
+    return !!this.openAIResolvedApiKey
+  }
+
+  get openAIConfigurationSource() {
+    if (process.env.OPENAI_API_KEY) return 'environment'
+    if (this.openAIApiKey) return 'settings'
+    return null
   }
 
   get supportedAuthMethods() {

@@ -151,6 +151,38 @@
           <div class="py-2">
             <ui-multi-select v-model="newServerSettings.allowedOrigins" :items="newServerSettings.allowedOrigins" :label="$strings.LabelCorsAllowed" class="max-w-72" @input="updateCorsOrigins" />
           </div>
+
+          <div class="pt-4">
+            <h2 class="font-semibold">AI</h2>
+          </div>
+
+          <div class="border border-white/10 rounded-lg p-4 mt-2">
+            <div class="flex items-center">
+              <p class="text-base font-semibold">OpenAI Series Tools</p>
+              <ui-tooltip text="Environment overrides supported: OPENAI_API_KEY, OPENAI_MODEL, OPENAI_BASE_URL.">
+                <span class="material-symbols icon-text ml-2 cursor-help">info</span>
+              </ui-tooltip>
+            </div>
+            <p class="text-sm text-white/70 mt-2">Use OpenAI to detect missing series in a book library and organize books inside a series into story order.</p>
+            <p class="text-sm text-white/70 mt-2">Status: {{ openAIStatusLabel }}</p>
+
+            <div class="mt-4">
+              <ui-text-input-with-label v-model="openAISettings.openAIModel" :disabled="savingOpenAISettings" label="Model" />
+            </div>
+
+            <div class="mt-2">
+              <ui-text-input-with-label v-model="openAISettings.openAIBaseURL" :disabled="savingOpenAISettings" label="Base URL" />
+            </div>
+
+            <div class="mt-2">
+              <ui-text-input-with-label v-model="openAISettings.openAIApiKey" type="password" :disabled="savingOpenAISettings" :placeholder="openAIConfigured ? 'Leave blank to keep current key' : 'sk-...'" label="API Key" />
+            </div>
+
+            <div class="flex items-center pt-4">
+              <ui-btn color="bg-success" small :loading="savingOpenAISettings" @click="saveOpenAISettings">Save AI Settings</ui-btn>
+              <ui-btn v-if="serverSettings && serverSettings.openAIConfigurationSource === 'settings'" color="bg-bg" small class="ml-2" :loading="savingOpenAISettings" @click="clearOpenAISettingsKey">Clear Saved Key</ui-btn>
+            </div>
+          </div>
         </div>
       </div>
     </app-settings-content>
@@ -232,7 +264,13 @@ export default {
       hasPrefixesChanged: false,
       newServerSettings: {},
       showConfirmPurgeCache: false,
-      savingPrefixes: false
+      savingPrefixes: false,
+      savingOpenAISettings: false,
+      openAISettings: {
+        openAIModel: 'gpt-5.4-mini',
+        openAIBaseURL: 'https://api.openai.com/v1',
+        openAIApiKey: ''
+      }
     }
   },
   watch: {
@@ -255,6 +293,14 @@ export default {
     },
     timeFormats() {
       return this.$store.state.globals.timeFormats
+    },
+    openAIConfigured() {
+      return !!this.serverSettings?.openAIConfigured
+    },
+    openAIStatusLabel() {
+      if (!this.serverSettings?.openAIConfigured) return 'Not configured'
+      if (this.serverSettings.openAIConfigurationSource === 'environment') return 'Configured from environment variables'
+      return 'Configured in server settings'
     },
     dateExample() {
       const date = new Date(2014, 2, 25)
@@ -362,11 +408,68 @@ export default {
         }
       })
     },
+    saveOpenAISettings() {
+      const openAIModel = this.openAISettings.openAIModel.trim()
+      const openAIBaseURL = this.openAISettings.openAIBaseURL.trim().replace(/\/+$/, '')
+      const payload = {
+        openAIModel,
+        openAIBaseURL
+      }
+
+      if (!openAIModel) {
+        this.$toast.error('OpenAI model is required')
+        return
+      }
+      if (!openAIBaseURL) {
+        this.$toast.error('OpenAI base URL is required')
+        return
+      }
+
+      try {
+        new URL(openAIBaseURL)
+      } catch {
+        this.$toast.error('OpenAI base URL must be a valid URL')
+        return
+      }
+
+      const openAIApiKey = this.openAISettings.openAIApiKey.trim()
+      if (openAIApiKey) {
+        payload.openAIApiKey = openAIApiKey
+      }
+
+      this.savingOpenAISettings = true
+      this.$store.dispatch('updateServerSettings', payload).then((response) => {
+        if (response.error) {
+          this.$toast.error(response.error)
+        } else {
+          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
+          this.initServerSettings()
+        }
+        this.savingOpenAISettings = false
+      })
+    },
+    clearOpenAISettingsKey() {
+      this.savingOpenAISettings = true
+      this.$store.dispatch('updateServerSettings', { openAIApiKey: null }).then((response) => {
+        if (response.error) {
+          this.$toast.error(response.error)
+        } else {
+          this.$toast.success(this.$strings.ToastServerSettingsUpdateSuccess)
+          this.initServerSettings()
+        }
+        this.savingOpenAISettings = false
+      })
+    },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
       this.newServerSettings.allowedOrigins = [...(this.newServerSettings.allowedOrigins || [])]
       this.scannerEnableWatcher = !this.newServerSettings.scannerDisableWatcher
+      this.openAISettings = {
+        openAIModel: this.serverSettings?.openAIModel || 'gpt-5.4-mini',
+        openAIBaseURL: this.serverSettings?.openAIBaseURL || 'https://api.openai.com/v1',
+        openAIApiKey: ''
+      }
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL

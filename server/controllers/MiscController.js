@@ -145,6 +145,36 @@ class MiscController {
     if (settingsUpdate.allowedOrigins && !Array.isArray(settingsUpdate.allowedOrigins)) {
       return res.status(400).send('allowedOrigins must be an array')
     }
+    if (settingsUpdate.openAIApiKey !== undefined && settingsUpdate.openAIApiKey !== null && typeof settingsUpdate.openAIApiKey !== 'string') {
+      return res.status(400).send('openAIApiKey must be a string or null')
+    }
+    if (settingsUpdate.openAIBaseURL !== undefined && typeof settingsUpdate.openAIBaseURL !== 'string') {
+      return res.status(400).send('openAIBaseURL must be a string')
+    }
+    if (settingsUpdate.openAIModel !== undefined && typeof settingsUpdate.openAIModel !== 'string') {
+      return res.status(400).send('openAIModel must be a string')
+    }
+
+    if (typeof settingsUpdate.openAIApiKey === 'string') {
+      settingsUpdate.openAIApiKey = settingsUpdate.openAIApiKey.trim() || null
+    }
+    if (typeof settingsUpdate.openAIBaseURL === 'string') {
+      settingsUpdate.openAIBaseURL = settingsUpdate.openAIBaseURL.trim().replace(/\/+$/, '')
+      if (!settingsUpdate.openAIBaseURL) {
+        return res.status(400).send('openAIBaseURL is required')
+      }
+      try {
+        new URL(settingsUpdate.openAIBaseURL)
+      } catch {
+        return res.status(400).send('openAIBaseURL must be a valid URL')
+      }
+    }
+    if (typeof settingsUpdate.openAIModel === 'string') {
+      settingsUpdate.openAIModel = settingsUpdate.openAIModel.trim()
+      if (!settingsUpdate.openAIModel) {
+        return res.status(400).send('openAIModel is required')
+      }
+    }
 
     const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
