@@ -1565,6 +1565,97 @@ class LibraryController {
     return [...groups.values()]
   }
 
+  normalizeBookTitleForAIDedupe(title) {
+    if (!title || typeof title !== 'string') return null
+    return title
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\[[^\]]*]/g, ' ')
+      .replace(/\b(unabridged|abridged|audiobook|audio book)\b/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  groupLibraryBooksForAIDedupe(libraryItems) {
+    const parent = new Map()
+    const find = (id) => {
+      if (parent.get(id) !== id) {
+        parent.set(id, find(parent.get(id)))
+      }
+      return parent.get(id)
+    }
+    const union = (a, b) => {
+      const rootA = find(a)
+      const rootB = find(b)
+      if (rootA !== rootB) parent.set(rootB, rootA)
+    }
+
+    libraryItems.forEach((libraryItem) => parent.set(libraryItem.id, libraryItem.id))
+
+    const candidateMaps = [new Map(), new Map(), new Map()]
+    libraryItems.forEach((libraryItem) => {
+      const metadata = libraryItem.media.oldMetadataToJSON()
+      const primaryAuthor = metadata.authors?.[0]?.name?.trim().toLowerCase() || null
+      const normalizedTitle = LibraryController.prototype.normalizeBookTitleForAIDedupe.call(this, metadata.title || '')
+      const isbn = metadata.isbn?.replace(/[-\s]/g, '').toLowerCase() || null
+      const asin = metadata.asin?.trim().toLowerCase() || null
+
+      const candidateKeys = []
+      if (primaryAuthor && normalizedTitle) candidateKeys.push([candidateMaps[0], `${primaryAuthor}::${normalizedTitle}`])
+      if (isbn) candidateKeys.push([candidateMaps[1], `isbn::${isbn}`])
+      if (asin) candidateKeys.push([candidateMaps[2], `asin::${asin}`])
+
+      candidateKeys.forEach(([candidateMap, key]) => {
+        if (!candidateMap.has(key)) candidateMap.set(key, [])
+        candidateMap.get(key).push(libraryItem)
+      })
+    })
+
+    candidateMaps.forEach((candidateMap) => {
+      candidateMap.forEach((groupItems) => {
+        if (groupItems.length < 2) return
+        for (let i = 1; i < groupItems.length; i++) {
+          union(groupItems[0].id, groupItems[i].id)
+        }
+      })
+    })
+
+    const grouped = new Map()
+    libraryItems.forEach((libraryItem) => {
+      const root = find(libraryItem.id)
+      if (!grouped.has(root)) grouped.set(root, [])
+      grouped.get(root).push(libraryItem)
+    })
+
+    return [...grouped.values()]
+      .filter((groupItems) => groupItems.length > 1)
+      .map((groupItems) => ({
+        label: groupItems.map((libraryItem) => libraryItem.media.title).join(' | '),
+        libraryItems: groupItems.sort((a, b) => a.media.title.localeCompare(b.media.title))
+      }))
+  }
+
+  getDeleteDependenciesForLibraryItem(libraryItem) {
+    const mediaItemIds = []
+    const authorIds = []
+    const seriesIds = []
+
+    mediaItemIds.push(libraryItem.media.id)
+    if (libraryItem.media.authors?.length) {
+      authorIds.push(...libraryItem.media.authors.map((author) => author.id))
+    }
+    if (libraryItem.media.series?.length) {
+      seriesIds.push(...libraryItem.media.series.map((series) => series.id))
+    }
+
+    return {
+      mediaItemIds,
+      authorIds,
+      seriesIds
+    }
+  }
+
   /**
    * POST: /api/libraries/:id/detect-series-with-ai
    *
@@ -1703,6 +1794,91 @@ class LibraryController {
     } catch (error) {
       Logger.error(`[LibraryController] Failed AI series detection for library "${req.library.name}"`, error)
       res.status(500).send(error.message || 'Failed to detect series with AI')
+    }
+  }
+
+  /**
+   * POST: /api/libraries/:id/dedupe-books-with-ai
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async dedupeBooksWithAI(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[LibraryController] User "${req.user.username}" attempted AI dedupe without update permissions`)
+      return res.sendStatus(403)
+    }
+    if (req.library.mediaType !== 'book') {
+      return res.status(400).send('AI book dedupe is only available for book libraries')
+    }
+    if (!openAI.isConfigured) {
+      return res.status(400).send('OpenAI is not configured')
+    }
+
+    const hardDelete = req.query.hard !== '0'
+
+    try {
+      const libraryItems = await LibraryController.prototype.getLibraryBooksForAISeriesDetection.call(this, req.library.id)
+      const candidateGroups = LibraryController.prototype.groupLibraryBooksForAIDedupe.call(this, libraryItems)
+
+      let groupsProcessed = 0
+      let duplicatesRemoved = 0
+      const removedIds = new Set()
+      const authorIdsToCheck = new Set()
+      const seriesIdsToCheck = new Set()
+
+      for (const candidateGroup of candidateGroups) {
+        const activeLibraryItems = candidateGroup.libraryItems.filter((libraryItem) => !removedIds.has(libraryItem.id))
+        if (activeLibraryItems.length < 2) continue
+
+        Logger.info(`[LibraryController] AI dedupe evaluating candidate group "${candidateGroup.label}" with ${activeLibraryItems.length} books`)
+        const decisions = await openAI.detectDuplicateBooks(activeLibraryItems)
+        groupsProcessed++
+
+        for (const decision of decisions) {
+          for (const duplicateId of decision.duplicateIds) {
+            if (removedIds.has(duplicateId) || duplicateId === decision.keepId) continue
+            const duplicateItem = activeLibraryItems.find((libraryItem) => libraryItem.id === duplicateId)
+            if (!duplicateItem) continue
+
+            Logger.info(
+              `[LibraryController] AI dedupe removing duplicate "${duplicateItem.media.title}" (${duplicateItem.id}) keeping "${decision.keepId}" reason="${decision.reason || ''}"`
+            )
+
+            const deleteDependencies = LibraryController.prototype.getDeleteDependenciesForLibraryItem.call(this, duplicateItem)
+            await this.handleDeleteLibraryItem(duplicateItem.id, deleteDependencies.mediaItemIds, req.library.id)
+            if (hardDelete) {
+              await fs.remove(duplicateItem.path).catch((error) => {
+                Logger.error(`[LibraryController] Failed to hard-delete duplicate item path "${duplicateItem.path}"`, error)
+              })
+            }
+
+            deleteDependencies.authorIds.forEach((authorId) => authorIdsToCheck.add(authorId))
+            deleteDependencies.seriesIds.forEach((seriesId) => seriesIdsToCheck.add(seriesId))
+            removedIds.add(duplicateItem.id)
+            duplicatesRemoved++
+          }
+        }
+      }
+
+      await this.checkRemoveAuthorsWithNoBooks([...authorIdsToCheck])
+      await this.checkRemoveEmptySeries([...seriesIdsToCheck])
+      await Database.resetLibraryIssuesFilterData(req.library.id)
+
+      Logger.info(
+        `[LibraryController] AI book dedupe completed for library "${req.library.name}" - groupsProcessed=${groupsProcessed}, duplicatesRemoved=${duplicatesRemoved}, hardDelete=${hardDelete}`
+      )
+
+      res.json({
+        groupsProcessed,
+        duplicatesRemoved,
+        hardDelete
+      })
+    } catch (error) {
+      Logger.error(`[LibraryController] Failed AI dedupe for library "${req.library.name}"`, error)
+      res.status(500).send(error.message || 'Failed to dedupe books with AI')
     }
   }
 

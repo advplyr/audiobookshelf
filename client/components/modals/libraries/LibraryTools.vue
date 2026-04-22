@@ -15,6 +15,20 @@
       <p v-if="!openAIConfigured" class="text-sm text-yellow-400 mt-3">Configure OpenAI first in server settings.</p>
     </div>
 
+    <div v-if="isBookLibrary" class="w-full border border-black-200 p-4 my-8">
+      <div class="flex flex-wrap items-center">
+        <div>
+          <p class="text-lg">Dedupe Books With AI</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Analyze likely duplicate books in this library with OpenAI, keep the best copy, and remove the duplicate items. This deletes duplicate files from disk.</p>
+        </div>
+        <div class="grow" />
+        <div>
+          <ui-btn :disabled="processing || !openAIConfigured" @click.stop="dedupeBooksWithAI">Dedupe Books</ui-btn>
+        </div>
+      </div>
+      <p v-if="!openAIConfigured" class="text-sm text-yellow-400 mt-3">Configure OpenAI first in server settings.</p>
+    </div>
+
     <div class="w-full border border-black-200 p-4 my-8">
       <div class="flex flex-wrap items-center">
         <div>
@@ -83,6 +97,18 @@ export default {
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
+    dedupeBooksWithAI() {
+      const payload = {
+        message: 'Deduplicate books in this library with AI? Duplicate items chosen for removal will be deleted from the database and file system.',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.runBookDedupe()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
     runSeriesDetection(onlyMissing = true) {
       this.$emit('update:processing', true)
       this.$axios
@@ -96,6 +122,25 @@ export default {
         })
         .catch((error) => {
           console.error('Failed to detect series with AI', error)
+          this.$toast.error(error.response?.data || this.$strings.ToastFailedToUpdate)
+        })
+        .finally(() => {
+          this.$emit('update:processing', false)
+        })
+    },
+    runBookDedupe() {
+      this.$emit('update:processing', true)
+      this.$axios
+        .$post(`/api/libraries/${this.libraryId}/dedupe-books-with-ai?hard=1`)
+        .then((data) => {
+          if (!data.duplicatesRemoved) {
+            this.$toast.info(this.$strings.ToastNoUpdatesNecessary)
+          } else {
+            this.$toast.success(`AI removed ${data.duplicatesRemoved} duplicate books`)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to dedupe books with AI', error)
           this.$toast.error(error.response?.data || this.$strings.ToastFailedToUpdate)
         })
         .finally(() => {

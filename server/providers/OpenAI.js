@@ -50,6 +50,14 @@ class OpenAI {
     })
   }
 
+  summarizeDuplicateDecisionForLog(decision) {
+    return JSON.stringify({
+      keepId: decision.keepId,
+      duplicateIds: decision.duplicateIds,
+      reason: decision.reason || ''
+    })
+  }
+
   normalizePathForPrompt(filePath) {
     if (!filePath || typeof filePath !== 'string') return null
     return filePath.replace(/\\/g, '/')
@@ -314,6 +322,51 @@ class OpenAI {
         reason
       }
     })
+  }
+
+  validateDuplicateBooksPayload(payload, books) {
+    const resultGroups = Array.isArray(payload?.groups) ? payload.groups : []
+    const expectedIds = new Set(books.map((book) => book.id))
+    const consumedIds = new Set()
+    const validated = []
+
+    resultGroups.forEach((group) => {
+      const keepId = this.normalizeOptionalString(group?.keepId, 120)
+      if (!keepId || !expectedIds.has(keepId)) {
+        Logger.warn(`[OpenAI] Ignoring duplicate-books group with invalid keepId "${group?.keepId}"`)
+        return
+      }
+      if (consumedIds.has(keepId)) {
+        Logger.warn(`[OpenAI] Ignoring duplicate-books group because keepId "${keepId}" was already used`)
+        return
+      }
+
+      const duplicateIds = Array.isArray(group?.duplicateIds)
+        ? group.duplicateIds
+            .map((duplicateId) => this.normalizeOptionalString(duplicateId, 120))
+            .filter((duplicateId) => duplicateId && expectedIds.has(duplicateId) && duplicateId !== keepId)
+        : []
+
+      const dedupedDuplicateIds = []
+      const seenDuplicateIds = new Set()
+      duplicateIds.forEach((duplicateId) => {
+        if (seenDuplicateIds.has(duplicateId) || consumedIds.has(duplicateId)) return
+        seenDuplicateIds.add(duplicateId)
+        dedupedDuplicateIds.push(duplicateId)
+      })
+
+      if (!dedupedDuplicateIds.length) return
+
+      consumedIds.add(keepId)
+      dedupedDuplicateIds.forEach((duplicateId) => consumedIds.add(duplicateId))
+      validated.push({
+        keepId,
+        duplicateIds: dedupedDuplicateIds,
+        reason: this.normalizeOptionalString(group?.reason, 600) || ''
+      })
+    })
+
+    return validated
   }
 
   validateBookIds(resultBooks, books) {
@@ -739,6 +792,93 @@ ${JSON.stringify(mediaFiles, null, 2)}`
     const validated = this.validateDirectoryGroupingPayload(payload, mediaFiles)
     validated.forEach((grouping) => {
       Logger.info(`[OpenAI] Directory-grouping result ${this.summarizeDirectoryGroupingForLog(grouping)}`)
+    })
+    return validated
+  }
+
+  async detectDuplicateBooks(libraryItems) {
+    if (!this.isConfigured) {
+      throw new Error('OpenAI API key is not configured')
+    }
+
+    const books = libraryItems.map((libraryItem) => {
+      const metadata = libraryItem.media.oldMetadataToJSON()
+      const folderContext = this.getFolderContext(libraryItem)
+      const metadataCompletenessScore = [
+        metadata.title,
+        metadata.subtitle,
+        metadata.description,
+        metadata.isbn,
+        metadata.asin,
+        metadata.publisher,
+        metadata.language,
+        metadata.publishedYear,
+        metadata.authors?.length ? 'authors' : null,
+        metadata.series?.length ? 'series' : null,
+        metadata.narrators?.length ? 'narrators' : null,
+        libraryItem.media.coverPath ? 'cover' : null
+      ].filter(Boolean).length
+
+      return {
+        id: libraryItem.id,
+        title: metadata.title || null,
+        subtitle: metadata.subtitle || null,
+        authors: (metadata.authors || []).map((author) => author.name),
+        narrators: metadata.narrators || [],
+        series: (metadata.series || []).map((series) => ({ name: series.name, sequence: series.sequence || null })),
+        publishedYear: metadata.publishedYear || null,
+        description: this.cleanDescription(metadata.description),
+        language: metadata.language || null,
+        abridged: !!metadata.abridged,
+        explicit: !!metadata.explicit,
+        isbn: metadata.isbn || null,
+        asin: metadata.asin || null,
+        duration: libraryItem.media.duration || null,
+        size: libraryItem.media.size || libraryItem.size || null,
+        numAudioFiles: libraryItem.media.audioFiles?.length || 0,
+        numChapters: libraryItem.media.chapters?.length || 0,
+        hasCover: !!libraryItem.media.coverPath,
+        ebookFormat: libraryItem.media.ebookFile?.ebookFormat || null,
+        isFile: !!libraryItem.isFile,
+        fullPath: folderContext.fullPath,
+        relPath: folderContext.relPath,
+        metadataCompletenessScore
+      }
+    })
+
+    Logger.info(`[OpenAI] Evaluating duplicate books for ${books.length} candidates`)
+    books.forEach((book) => {
+      Logger.info(`[OpenAI] Duplicate-books candidate ${JSON.stringify(book)}`)
+    })
+
+    const prompt = `You identify duplicate audiobook library items that represent the same underlying book/work and choose which copy to keep.
+
+Return only valid JSON in this shape:
+{
+  "groups": [
+    {
+      "keepId": "library-item-id-to-keep",
+      "duplicateIds": ["library-item-id-to-remove"],
+      "reason": "brief reason"
+    }
+  ]
+}
+
+Rules:
+- Only mark items as duplicates if they are clearly the same book/work.
+- Books in the same series are not duplicates unless they are the same title/work.
+- Different abridged vs unabridged editions, different languages, dramatizations, companions, or supplemental books are not duplicates unless the evidence strongly indicates they are just duplicate copies.
+- Prefer keeping the copy with richer metadata, cleaner path naming, cover art, more complete file data, and generally better organization.
+- Do not include a group if no duplicates should be removed.
+- Do not include the same id in more than one group.
+
+Books:
+${JSON.stringify(books, null, 2)}`
+
+    const payload = await this.createResponse(prompt)
+    const validated = this.validateDuplicateBooksPayload(payload, books)
+    validated.forEach((decision) => {
+      Logger.info(`[OpenAI] Duplicate-books result ${this.summarizeDuplicateDecisionForLog(decision)}`)
     })
     return validated
   }

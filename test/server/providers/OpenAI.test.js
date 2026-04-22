@@ -212,4 +212,61 @@ describe('OpenAI', () => {
       expect(result[1].reason).to.contain('omitted this media file')
     })
   })
+
+  describe('validateDuplicateBooksPayload', () => {
+    it('normalizes valid duplicate-book groups', () => {
+      const result = openAI.validateDuplicateBooksPayload(
+        {
+          groups: [
+            {
+              keepId: 'a',
+              duplicateIds: ['b', 'c'],
+              reason: 'same book'
+            }
+          ]
+        },
+        [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+      )
+
+      expect(result).to.deep.equal([
+        {
+          keepId: 'a',
+          duplicateIds: ['b', 'c'],
+          reason: 'same book'
+        }
+      ])
+    })
+
+    it('ignores invalid and overlapping duplicate-book groups', () => {
+      const result = openAI.validateDuplicateBooksPayload(
+        {
+          groups: [
+            {
+              keepId: 'a',
+              duplicateIds: ['b', 'missing', 'a'],
+              reason: 'primary match'
+            },
+            {
+              keepId: 'b',
+              duplicateIds: ['c'],
+              reason: 'should be skipped because b was consumed'
+            },
+            {
+              keepId: 'z',
+              duplicateIds: ['c']
+            }
+          ]
+        },
+        [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+      )
+
+      expect(result).to.deep.equal([
+        {
+          keepId: 'a',
+          duplicateIds: ['b'],
+          reason: 'primary match'
+        }
+      ])
+    })
+  })
 })
