@@ -193,11 +193,11 @@ class Scanner {
    */
   async quickMatchBookBuildUpdatePayload(apiRouterCtx, libraryItem, matchData, options) {
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn']
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn', 'rating']
     const updatePayload = {}
 
     for (const key in matchData) {
-      if (matchData[key] && detailKeysToUpdate.includes(key)) {
+      if ((matchData[key] || key === 'rating') && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
           if (!libraryItem.media.narrators?.length || options.overrideDetails) {
             updatePayload.narrators = matchData[key]
@@ -229,6 +229,22 @@ class Scanner {
                 .map((v) => v.trim())
                 .filter((v) => !!v)
             updatePayload[key] = tagsArray
+          }
+        } else if (key === 'rating') {
+          // Normalize rating (handle object format {average: 4.5} from some providers)
+          let ratingValue = matchData[key]
+          if (ratingValue && typeof ratingValue === 'object' && ratingValue.average) {
+            ratingValue = Number(ratingValue.average)
+          } else if (ratingValue !== undefined && ratingValue !== null) {
+            ratingValue = Number(ratingValue)
+          } else {
+            ratingValue = null
+          }
+          // 0 = no rating, only update if valid rating > 0
+          if (ratingValue !== null && !isNaN(ratingValue) && ratingValue > 0 && (!libraryItem.media.rating || options.overrideDetails)) {
+            updatePayload[key] = ratingValue
+          } else if (ratingValue === null && libraryItem.media.rating && options.overrideDetails) {
+            updatePayload[key] = null
           }
         } else if (!libraryItem.media[key] || options.overrideDetails) {
           updatePayload[key] = matchData[key]

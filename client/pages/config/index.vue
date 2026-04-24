@@ -130,6 +130,16 @@
             </ui-tooltip>
           </div>
 
+          <div role="article" :aria-label="$strings.LabelSettingsEnableBookRatingsHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableBookRatings" v-model="newServerSettings.enableBookRatings" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableBookRatings', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableBookRatingsHelp">
+              <p class="pl-4">
+                <span id="settings-enable-book-ratings">{{ $strings.LabelSettingsEnableBookRatings }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div class="grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-72" @input="(val) => updateSettingsKey('dateFormat', val)" />
             <p class="text-xs ml-1 text-white/60">{{ $strings.LabelExample }}: {{ dateExample }}</p>

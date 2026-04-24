@@ -41,6 +41,7 @@ class ServerSettings {
     // Bookshelf Display
     this.homeBookshelfView = BookshelfView.DETAIL
     this.bookshelfView = BookshelfView.DETAIL
+    this.enableBookRatings = false
 
     // Podcasts
     this.podcastEpisodeSchedule = '0 * * * *' // Every hour
@@ -115,6 +116,7 @@ class ServerSettings {
 
     this.homeBookshelfView = settings.homeBookshelfView || BookshelfView.STANDARD
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
+    this.enableBookRatings = !!settings.enableBookRatings
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the']
@@ -227,6 +229,7 @@ class ServerSettings {
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       homeBookshelfView: this.homeBookshelfView,
       bookshelfView: this.bookshelfView,
+      enableBookRatings: this.enableBookRatings,
       podcastEpisodeSchedule: this.podcastEpisodeSchedule,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],

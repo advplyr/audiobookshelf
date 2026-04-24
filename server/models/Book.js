@@ -98,6 +98,8 @@ class Book extends Model {
     this.isbn
     /** @type {string} */
     this.asin
+    /** @type {number} */
+    this.rating
     /** @type {string} */
     this.language
     /** @type {boolean} */
@@ -154,6 +156,7 @@ class Book extends Model {
         description: DataTypes.TEXT,
         isbn: DataTypes.STRING,
         asin: DataTypes.STRING,
+        rating: DataTypes.FLOAT,
         language: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
         abridged: DataTypes.BOOLEAN,
@@ -356,6 +359,7 @@ class Book extends Model {
       description: this.description,
       isbn: this.isbn,
       asin: this.asin,
+      rating: this.rating,
       language: this.language,
       explicit: !!this.explicit,
       abridged: !!this.abridged
@@ -374,6 +378,27 @@ class Book extends Model {
 
     if (payload.metadata) {
       const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
+      if (payload.metadata.rating !== undefined) {
+        let ratingValue = null
+        if (payload.metadata.rating !== null) {
+          if (typeof payload.metadata.rating === 'object' && payload.metadata.rating.average) {
+            ratingValue = Number(payload.metadata.rating.average)
+          } else {
+            ratingValue = Number(payload.metadata.rating)
+          }
+        }
+        // Treat 0 as null (no rating)
+        if (ratingValue === 0) ratingValue = null
+        if (ratingValue !== null && !isNaN(ratingValue) && ratingValue > 0) {
+          if (this.rating !== ratingValue) {
+            this.rating = ratingValue
+            hasUpdates = true
+          }
+        } else if (ratingValue === null && this.rating !== null) {
+          this.rating = null
+          hasUpdates = true
+        }
+      }
       metadataStringKeys.forEach((key) => {
         if (typeof payload.metadata[key] == 'number') {
           payload.metadata[key] = String(payload.metadata[key])
@@ -578,6 +603,7 @@ class Book extends Model {
       description: this.description,
       isbn: this.isbn,
       asin: this.asin,
+      rating: this.rating,
       language: this.language,
       explicit: this.explicit,
       abridged: this.abridged
@@ -600,6 +626,7 @@ class Book extends Model {
       description: this.description,
       isbn: this.isbn,
       asin: this.asin,
+      rating: this.rating,
       language: this.language,
       explicit: this.explicit,
       abridged: this.abridged
