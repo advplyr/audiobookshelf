@@ -31,6 +31,8 @@ const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
 const CustomMetadataProviderController = require('../controllers/CustomMetadataProviderController')
+const AudibleController = require('../controllers/AudibleController')
+const { rateLimit } = require('express-rate-limit')
 const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
@@ -334,6 +336,24 @@ class ApiRouter {
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
     this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
     this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
+
+    //
+    // Audible Routes
+    //
+    const audibleSyncLimiter = rateLimit({
+      windowMs: 5 * 60 * 1000, // 5 minutes
+      max: 10,
+      keyGenerator: (req) => `audible-sync:${req.user?.id || req.ip}`,
+      standardHeaders: true,
+      legacyHeaders: false,
+      handler: (_req, res) => res.status(429).json({ error: 'Too many sync requests — please wait before syncing again' })
+    })
+    this.router.get('/audible/accounts', AudibleController.middleware.bind(this), AudibleController.getAccounts.bind(this))
+    this.router.post('/audible/accounts', AudibleController.middleware.bind(this), AudibleController.createAccount.bind(this))
+    this.router.patch('/audible/accounts/:id', AudibleController.middleware.bind(this), AudibleController.updateAccount.bind(this))
+    this.router.delete('/audible/accounts/:id', AudibleController.middleware.bind(this), AudibleController.deleteAccount.bind(this))
+    this.router.post('/audible/accounts/:id/sync', AudibleController.middleware.bind(this), audibleSyncLimiter, AudibleController.syncAccount.bind(this))
+    this.router.get('/audible/preorders', AudibleController.middleware.bind(this), AudibleController.getPreorders.bind(this))
 
     //
     // Misc Routes

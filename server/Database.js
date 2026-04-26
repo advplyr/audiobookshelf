@@ -157,6 +157,16 @@ class Database {
     return this.models.mediaItemShare
   }
 
+  /** @type {typeof import('./models/AudibleAccount')} */
+  get audibleAccountModel() {
+    return this.models.audibleAccount
+  }
+
+  /** @type {typeof import('./models/AudibleBook')} */
+  get audibleBookModel() {
+    return this.models.audibleBook
+  }
+
   /** @type {typeof import('./models/Device')} */
   get deviceModel() {
     return this.models.device
@@ -345,6 +355,8 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/AudibleAccount').init(this.sequelize)
+    require('./models/AudibleBook').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }

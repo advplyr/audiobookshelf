@@ -894,6 +894,41 @@ class LibraryController {
       .map((v) => v.trim().toLowerCase())
       .filter((v) => !!v)
     const shelves = await Database.libraryItemModel.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
+
+    // Inject Audible preorders shelf if this user has an account configured for this library
+    try {
+      const audibleAccounts = await Database.audibleAccountModel.findAll({
+        where: { userId: req.user.id, isActive: true, libraryId: req.library.id }
+      })
+      if (audibleAccounts.length) {
+        const preorderBooks = await Database.audibleBookModel.findAll({
+          where: {
+            audibleAccountId: audibleAccounts.map((a) => a.id),
+            status: 'preorder'
+          }
+        })
+        if (preorderBooks.length) {
+          const sorted = preorderBooks.slice().sort((a, b) => {
+            const toTime = (d) => { if (!d) return Infinity; const dt = new Date(d.length === 10 ? d + 'T00:00:00' : d); return isNaN(dt.getTime()) ? Infinity : dt.getTime() }
+            return toTime(a.releaseDate) - toTime(b.releaseDate)
+          })
+          const preorderShelf = {
+            id: 'audible-preorders',
+            label: 'Audible Preorders',
+            labelStringKey: 'LabelAudiblePreorders',
+            type: 'audible-preorder',
+            entities: sorted.map((b) => b.toClientJson())
+          }
+          // When multiple accounts map to this library, use the minimum (earliest) shelf position
+          const minPosition = Math.min(...audibleAccounts.map((a) => a.shelfPosition || 0))
+          const position = Math.min(minPosition, shelves.length)
+          shelves.splice(position, 0, preorderShelf)
+        }
+      }
+    } catch (err) {
+      Logger.error('[LibraryController] Failed to inject Audible preorders shelf', err)
+    }
+
     res.json(shelves)
   }
 

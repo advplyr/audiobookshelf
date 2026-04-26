@@ -58,6 +58,7 @@ export default {
         else if (pageName === 'rss-feeds') return this.$strings.HeaderRSSFeeds
         else if (pageName === 'email') return this.$strings.HeaderEmail
         else if (pageName === 'authentication') return this.$strings.HeaderAuthentication
+        else if (pageName === 'audible') return 'Audible'
       }
       return this.$strings.HeaderSettings
     }

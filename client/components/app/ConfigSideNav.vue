@@ -114,6 +114,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'config-audible',
+          title: 'Audible',
+          path: '/config/audible'
         }
       ]
 

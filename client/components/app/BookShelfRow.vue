@@ -32,12 +32,17 @@
             <cards-narrator-card :key="entity.name" :narrator="entity" @hook:updated="updatedBookCard" class="mx-2e" />
           </template>
         </div>
+        <div v-if="shelf.type === 'audible-preorder'" class="flex items-center">
+          <template v-for="entity in shelf.entities">
+            <cards-audible-preorder-card :key="entity.id" :book="entity" class="mx-2e" />
+          </template>
+        </div>
       </div>
     </div>
     <div class="relative">
       <div class="relative text-center categoryPlacard transform z-30 top-0 left-4e md:left-8e w-44e rounded-md">
         <div class="w-full h-full shinyBlack flex items-center justify-center rounded-xs border" :style="{ padding: `0em 0.5em` }">
-          <h2 :style="{ fontSize: 0.9 + 'em' }">{{ $strings[shelf.labelStringKey] }}</h2>
+          <h2 :style="{ fontSize: 0.9 + 'em' }">{{ $strings[shelf.labelStringKey] || shelf.label }}</h2>
         </div>
       </div>
 

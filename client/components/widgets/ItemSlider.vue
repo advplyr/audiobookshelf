@@ -82,6 +82,11 @@ export default {
           component: 'cards-lazy-book-card',
           itemPropName: 'book-mount',
           itemIdFunc: (item) => item.id
+        },
+        'audible-preorder': {
+          component: 'cards-audible-preorder-card',
+          itemPropName: 'book',
+          itemIdFunc: (item) => item.id
         }
       }
     }
