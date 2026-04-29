@@ -8,6 +8,7 @@ const Logger = require('./Logger')
 const TokenManager = require('./auth/TokenManager')
 const LocalAuthStrategy = require('./auth/LocalAuthStrategy')
 const OidcAuthStrategy = require('./auth/OidcAuthStrategy')
+const ProxyAuthStrategy = require('./auth/ProxyAuthStrategy')
 
 const RateLimiterFactory = require('./utils/rateLimiterFactory')
 const { escapeRegExp } = require('./utils')
@@ -26,6 +27,7 @@ class Auth {
     this.tokenManager = new TokenManager()
     this.localAuthStrategy = new LocalAuthStrategy()
     this.oidcAuthStrategy = new OidcAuthStrategy()
+    this.proxyAuthStrategy = new ProxyAuthStrategy()
   }
 
   /**
@@ -59,6 +61,31 @@ class Auth {
    * @param {NextFunction} next
    */
   isAuthenticated(req, res, next) {
+    // If proxy auth is enabled and configured, try proxy auth first
+    if (global.ServerSettings.authActiveAuthMethods.includes('proxy') && global.ServerSettings.authProxyHeaderName) {
+      const headerName = global.ServerSettings.authProxyHeaderName
+      const username = req.get(headerName)
+
+      if (username) {
+        // Try proxy authentication first
+        return passport.authenticate('proxy', { session: false }, (err, user, info) => {
+          if (err) {
+            Logger.error('[Auth] Proxy authentication error:', err)
+            return next(err)
+          }
+          if (user) {
+            // Proxy auth succeeded
+            req.user = user
+            return next()
+          }
+          // Proxy auth failed, fall back to JWT
+          Logger.debug('[Auth] Proxy auth failed, falling back to JWT:', info?.message)
+          return passport.authenticate('jwt', { session: false })(req, res, next)
+        })(req, res, next)
+      }
+    }
+
+    // No proxy auth or no header present, use JWT authentication
     return passport.authenticate('jwt', { session: false })(req, res, next)
   }
 
@@ -119,6 +146,11 @@ class Auth {
       this.oidcAuthStrategy.init()
     }
 
+    // Check if we should load the proxy strategy
+    if (global.ServerSettings.authActiveAuthMethods.includes('proxy')) {
+      this.proxyAuthStrategy.init()
+    }
+
     // Load the JwtStrategy (always) -> for bearer token auth
     passport.use(
       new JwtStrategy(
@@ -171,6 +203,8 @@ class Auth {
       this.oidcAuthStrategy.unuse()
     } else if (name === 'local') {
       this.localAuthStrategy.unuse()
+    } else if (name === 'proxy') {
+      this.proxyAuthStrategy.unuse()
     } else {
       Logger.error('[Auth] Invalid auth strategy ' + name)
     }
@@ -186,6 +220,8 @@ class Auth {
       this.oidcAuthStrategy.init()
     } else if (name === 'local') {
       this.localAuthStrategy.init()
+    } else if (name === 'proxy') {
+      this.proxyAuthStrategy.init()
     } else {
       Logger.error('[Auth] Invalid auth strategy ' + name)
     }
@@ -320,6 +356,18 @@ class Auth {
     router.post('/login', this.authRateLimiter, passport.authenticate('local'), async (req, res) => {
       // Check if mobile app wants refresh token in response
       const returnTokens = req.headers['x-return-tokens'] === 'true'
+
+      const userResponse = await this.handleLoginSuccess(req, res, returnTokens)
+      res.json(userResponse)
+    })
+
+    // Proxy strategy login route (reads username from header)
+    router.post('/auth/proxy', this.authRateLimiter, passport.authenticate('proxy'), async (req, res) => {
+      // Check if mobile app wants refresh token in response
+      const returnTokens = req.headers['x-return-tokens'] === 'true'
+
+      // Set auth method cookie for proxy authentication
+      res.cookie('auth_method', 'proxy', { maxAge: 1000 * 60 * 60 * 24 * 365 * 10, httpOnly: true })
 
       const userResponse = await this.handleLoginSuccess(req, res, returnTokens)
       res.json(userResponse)
@@ -501,6 +549,12 @@ class Auth {
           if (authMethod === 'openid' || authMethod === 'openid-mobile') {
             logoutUrl = this.oidcAuthStrategy.getEndSessionUrl(req, req.cookies.openid_id_token, authMethod)
             res.clearCookie('openid_id_token')
+          } else if (authMethod === 'proxy') {
+            // Use configured proxy logout URL if available
+            if (global.ServerSettings.authProxyLogoutURL) {
+              logoutUrl = global.ServerSettings.authProxyLogoutURL
+              Logger.info(`[Auth] Redirecting proxy user to configured logout URL: ${logoutUrl}`)
+            }
           }
 
           // Tell the user agent (browser) to redirect to the authentification provider's logout URL
