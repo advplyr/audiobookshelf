@@ -1,6 +1,7 @@
 // Import dependencies and modules for testing
 const { expect } = require('chai')
 const sinon = require('sinon')
+const { LRUCache } = require('lru-cache')
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 
 describe('ApiCacheManager', () => {
@@ -92,6 +93,19 @@ describe('ApiCacheManager', () => {
       expect(cache.set.calledWith(key, responseData, ttlOptions)).to.be.true
       expect(res.originalSend.calledOnce).to.be.true
       expect(res.originalSend.calledWith(body)).to.be.true
+    })
+  })
+
+  describe('clear on mediaProgress', () => {
+    it('should remove recent-episodes cache entries', () => {
+      const key = JSON.stringify({ user: 'u', url: '/libraries/abc-123/recent-episodes?limit=50&page=0' })
+      const cache = new LRUCache({ max: 10 })
+      cache.set(key, { body: '[]', headers: {}, statusCode: 200 })
+      const manager = new ApiCacheManager(cache)
+
+      manager.clear({ name: 'mediaProgress' }, 'afterUpdate')
+
+      expect(cache.get(key)).to.be.undefined
     })
   })
 })

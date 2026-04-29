@@ -5,6 +5,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
+const cron = require('../libs/nodeCron')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils')
@@ -44,6 +45,11 @@ class PodcastController {
     const payload = req.body
     if (!payload.media || !payload.media.metadata) {
       return res.status(400).send('Invalid request body. "media" and "media.metadata" are required')
+    }
+
+    if (payload.media.autoDownloadSchedule && !cron.validate(payload.media.autoDownloadSchedule)) {
+      Logger.error(`[PodcastController] Invalid auto download schedule cron expression "${payload.media.autoDownloadSchedule}"`)
+      return res.status(400).send('Invalid auto download schedule cron expression')
     }
 
     const library = await Database.libraryModel.findByIdWithFolders(payload.libraryId)

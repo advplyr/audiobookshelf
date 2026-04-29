@@ -42,11 +42,14 @@ class ApiCacheManager {
   }
 
   clearUserProgressSlices(modelName, hook) {
-    const removedPersonalized = this.modelsInvalidatingPersonalized.has(modelName) ? this.clearByUrlPattern(/^\/libraries\/[^/]+\/personalized/) : 0
+    let removedPersonalized = 0
+    let removedRecentEpisodes = 0
+    if (this.modelsInvalidatingPersonalized.has(modelName)) {
+      removedPersonalized = this.clearByUrlPattern(/^\/libraries\/[^/]+\/personalized/)
+      removedRecentEpisodes = this.clearByUrlPattern(/^\/libraries\/[^/]+\/recent-episodes/)
+    }
     const removedMe = this.modelsInvalidatingMe.has(modelName) ? this.clearByUrlPattern(/^\/me(\/|\?|$)/) : 0
-    Logger.debug(
-      `[ApiCacheManager] ${modelName}.${hook}: cleared user-progress cache slices (personalized=${removedPersonalized}, me=${removedMe})`
-    )
+    Logger.debug(`[ApiCacheManager] ${modelName}.${hook}: cleared user-progress cache slices (personalized=${removedPersonalized}, recentEpisodes=${removedRecentEpisodes}, me=${removedMe})`)
   }
 
   clear(model, hook) {

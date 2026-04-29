@@ -41,6 +41,10 @@ class CollectionController {
     if (reqBody.description && typeof reqBody.description !== 'string') {
       return res.status(400).send('Invalid collection description')
     }
+    if (!req.user.checkCanAccessLibrary(reqBody.libraryId)) {
+      Logger.warn(`[CollectionController] User "${req.user.username}" attempted to create collection in inaccessible library ${reqBody.libraryId}`)
+      return res.sendStatus(403)
+    }
     const libraryItemIds = (reqBody.books || []).filter((b) => !!b && typeof b == 'string')
     if (!libraryItemIds.length) {
       return res.status(400).send('Invalid collection data. No books')
@@ -109,8 +113,9 @@ class CollectionController {
    */
   async findAll(req, res) {
     const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
+    const accessibleCollections = collectionsExpanded.filter((c) => req.user.checkCanAccessLibrary(c.libraryId))
     res.json({
-      collections: collectionsExpanded
+      collections: accessibleCollections
     })
   }
 
@@ -429,6 +434,10 @@ class CollectionController {
     if (req.params.id) {
       const collection = await Database.collectionModel.findByPk(req.params.id)
       if (!collection) {
+        return res.status(404).send('Collection not found')
+      }
+      if (!req.user.checkCanAccessLibrary(collection.libraryId)) {
+        Logger.warn(`[CollectionController] User "${req.user.username}" attempted to access collection ${collection.id} in inaccessible library ${collection.libraryId}`)
         return res.status(404).send('Collection not found')
       }
       req.collection = collection

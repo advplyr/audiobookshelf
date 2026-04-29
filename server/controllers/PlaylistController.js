@@ -37,6 +37,10 @@ class PlaylistController {
     if (reqBody.description && typeof reqBody.description !== 'string') {
       return res.status(400).send('Invalid playlist description')
     }
+    if (!req.user.checkCanAccessLibrary(reqBody.libraryId)) {
+      Logger.warn(`[PlaylistController] User "${req.user.username}" attempted to create playlist in inaccessible library ${reqBody.libraryId}`)
+      return res.sendStatus(403)
+    }
     const items = reqBody.items || []
     const isPodcast = items.some((i) => i.episodeId)
     const libraryItemIds = new Set()
@@ -133,8 +137,9 @@ class PlaylistController {
    */
   async findAllForUser(req, res) {
     const playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id)
+    const accessiblePlaylists = playlistsForUser.filter((p) => req.user.checkCanAccessLibrary(p.libraryId))
     res.json({
-      playlists: playlistsForUser
+      playlists: accessiblePlaylists
     })
   }
 
@@ -508,6 +513,10 @@ class PlaylistController {
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
+    if (!req.user.checkCanAccessLibrary(collection.libraryId)) {
+      Logger.warn(`[PlaylistController] User "${req.user.username}" attempted to create playlist from collection ${collection.id} in inaccessible library ${collection.libraryId}`)
+      return res.status(404).send('Collection not found')
+    }
     // Expand collection to get library items
     const collectionExpanded = await collection.getOldJsonExpanded(req.user)
     if (!collectionExpanded) {
@@ -572,6 +581,10 @@ class PlaylistController {
       if (playlist.userId !== req.user.id) {
         Logger.warn(`[PlaylistController] Playlist ${req.params.id} requested by user ${req.user.id} that is not the owner`)
         return res.sendStatus(403)
+      }
+      if (!req.user.checkCanAccessLibrary(playlist.libraryId)) {
+        Logger.warn(`[PlaylistController] User "${req.user.username}" attempted to access playlist ${playlist.id} in inaccessible library ${playlist.libraryId}`)
+        return res.status(404).send('Playlist not found')
       }
       req.playlist = playlist
     }

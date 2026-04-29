@@ -8,7 +8,7 @@ const Database = require('../Database')
 const Watcher = require('../Watcher')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
-const patternValidation = require('../libs/nodeCron/pattern-validation')
+const cron = require('../libs/nodeCron')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
 
@@ -605,13 +605,11 @@ class MiscController {
       return res.sendStatus(400)
     }
 
-    try {
-      patternValidation(expression)
-      res.sendStatus(200)
-    } catch (error) {
-      Logger.warn(`[MiscController] Invalid cron expression ${expression}`, error.message)
-      res.status(400).send(error.message)
+    if (!cron.validate(expression)) {
+      Logger.warn(`[MiscController] Invalid cron expression ${expression}`)
+      return res.status(400).send('Invalid cron expression')
     }
+    res.sendStatus(200)
   }
 
   /**
