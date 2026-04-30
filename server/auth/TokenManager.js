@@ -187,32 +187,35 @@ class TokenManager {
    * @returns {Promise<{ accessToken:string, refreshToken:string }>}
    */
   async rotateTokensForSession(session, user, req, res, gracePeriod = true) {
-    // Generate new tokens
+    const previousRefreshToken = session.refreshToken
     const newAccessToken = this.generateTempAccessToken(user)
     let newRefreshToken = this.generateRefreshToken(user)
+    const newExpiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
 
+    let lastRefreshToken = null
+    let lastRefreshTokenExpiresAt = null
     if (gracePeriod) {
       // Set grace period of old refresh token in case of race condition in token rotation.
       // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
-      session.lastRefreshToken = session.refreshToken
-      session.lastRefreshTokenExpiresAt = new Date(Date.now() + 60 * 1000) // 1 minute grace period
-    } else {
-      // Do not set grace period of old refresh token, such as when specifically invalidating sessions for a user
-      session.lastRefreshToken = null
-      session.lastRefreshTokenExpiresAt = null
+      lastRefreshToken = previousRefreshToken
+      lastRefreshTokenExpiresAt = new Date(Date.now() + 60 * 1000) // 1 minute grace period
     }
 
-    // Update the session with the new refresh token and expiration
-    session.refreshToken = newRefreshToken
-    session.expiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
-
-    // Only update the session if the refresh token hasn't changed since we originally read it
-    const [numUpdated] = await Database.sessionModel.update(session, {
-      where: {
-        id: session.id,
-        refreshToken: session.lastRefreshToken
+    // Only update if this session row still has the refresh token we read
+    const [numUpdated] = await Database.sessionModel.update(
+      {
+        refreshToken: newRefreshToken,
+        expiresAt: newExpiresAt,
+        lastRefreshToken,
+        lastRefreshTokenExpiresAt
+      },
+      {
+        where: {
+          id: session.id,
+          refreshToken: previousRefreshToken
+        }
       }
-    })
+    )
 
     if (numUpdated === 0) {
       Logger.debug(`[TokenManager] Race condition in rotateTokensForSession for user ${user.id}, getting new token`)
@@ -220,6 +223,15 @@ class TokenManager {
       const updatedSession = await Database.sessionModel.findOne({ where: { id: session.id } })
 
       newRefreshToken = updatedSession.refreshToken
+      session.refreshToken = updatedSession.refreshToken
+      session.expiresAt = updatedSession.expiresAt
+      session.lastRefreshToken = updatedSession.lastRefreshToken
+      session.lastRefreshTokenExpiresAt = updatedSession.lastRefreshTokenExpiresAt
+    } else {
+      session.refreshToken = newRefreshToken
+      session.expiresAt = newExpiresAt
+      session.lastRefreshToken = lastRefreshToken
+      session.lastRefreshTokenExpiresAt = lastRefreshTokenExpiresAt
     }
 
     // Set new refresh token cookie
