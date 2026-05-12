@@ -203,10 +203,42 @@ class Database {
     await this.addTriggers()
 
     await this.loadData()
+    await this.rebuildAuthorRows()
 
     Logger.info(`[Database] running ANALYZE`)
     await this.sequelize.query('ANALYZE')
     Logger.info(`[Database] ANALYZE completed`)
+  }
+
+  /**
+   * Rebuild all author rows so derived fields stay in sync with the model logic.
+   */
+  async rebuildAuthorRows() {
+    const pageSize = 500
+    let offset = 0
+
+    while (true) {
+      const authors = await this.authorModel.findAll({
+        attributes: ['id', 'name', 'libraryId'],
+        order: [['id', 'ASC']],
+        limit: pageSize,
+        offset
+      })
+
+      if (!authors.length) break
+
+      for (const authorRef of authors) {
+        const author = await this.authorModel.findByPk(authorRef.id)
+        if (!author) continue
+        author.changed('name', true)
+        await author.save({ silent: true })
+      }
+
+      offset += authors.length
+      if (authors.length < pageSize) break
+    }
+
+    Logger.debug(`Sanitized ${offset} author rows`)
   }
 
   /**
@@ -624,7 +656,9 @@ class Database {
     if (!this.libraryFilterData[libraryId]) {
       return (await this.authorModel.getByNameAndLibrary(authorName, libraryId))?.id || null
     }
-    return this.libraryFilterData[libraryId].authors.find((au) => au.name === authorName)?.id || null
+    const searchName = this.authorModel.normalizeSearchName(authorName)
+    if (!searchName) return null
+    return this.libraryFilterData[libraryId].authors.find((au) => this.authorModel.normalizeSearchName(au.name) === searchName)?.id || null
   }
 
   /**
