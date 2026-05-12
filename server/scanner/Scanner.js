@@ -247,15 +247,11 @@ class Scanner {
       }
       const authorIdsRemoved = []
       for (const authorName of matchData.author) {
-        const existingAuthor = libraryItem.media.authors.find((a) => a.name.toLowerCase() === authorName.toLowerCase())
+        const existingAuthor = libraryItem.media.authors.find((a) => Database.authorModel.isAuthorNameMatch(a.name, authorName))
         if (!existingAuthor) {
-          let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryItem.libraryId)
-          if (!author) {
-            author = await Database.authorModel.create({
-              name: authorName,
-              lastFirst: Database.authorModel.getLastFirst(authorName),
-              libraryId: libraryItem.libraryId
-            })
+          const { author, created: isCreated } = await Database.authorModel.findOrCreateByNameAndLibrary(authorName, libraryItem.libraryId)
+          if (!author) continue
+          if (isCreated) {
             SocketAuthority.emitter('author_added', author.toOldJSON())
             // Update filter data
             Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
@@ -271,7 +267,7 @@ class Scanner {
               hasAuthorUpdates = true
             })
         }
-        const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => ma.toLowerCase() === a.name.toLowerCase()))
+        const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => Database.authorModel.isAuthorNameMatch(ma, a.name)))
         if (authorsRemoved.length) {
           for (const author of authorsRemoved) {
             await Database.bookAuthorModel.destroy({ where: { authorId: author.id, bookId: libraryItem.media.id } })
