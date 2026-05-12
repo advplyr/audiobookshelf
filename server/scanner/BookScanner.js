@@ -221,23 +221,18 @@ class BookScanner {
       if (key === 'authors') {
         // Check for authors added
         for (const authorName of bookMetadata.authors) {
-          if (!media.authors.some((au) => au.name === authorName)) {
-            const existingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
-            if (existingAuthorId) {
+          if (!media.authors.some((au) => Database.authorModel.isAuthorNameMatch(au.name, authorName))) {
+            const { author, created } = await Database.authorModel.findOrCreateByNameAndLibrary(authorName, libraryItemData.libraryId)
+            if (!created) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,
-                authorId: existingAuthorId
+                authorId: author.id
               })
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
               authorsUpdated = true
             } else {
-              const newAuthor = await Database.authorModel.create({
-                name: authorName,
-                lastFirst: Database.authorModel.getLastFirst(authorName),
-                libraryId: libraryItemData.libraryId
-              })
-              await media.addAuthor(newAuthor)
-              Database.addAuthorToFilterData(libraryItemData.libraryId, newAuthor.name, newAuthor.id)
+              await media.addAuthor(author)
+              Database.addAuthorToFilterData(libraryItemData.libraryId, author.name, author.id)
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new author "${authorName}"`)
               authorsUpdated = true
             }
@@ -245,7 +240,7 @@ class BookScanner {
         }
         // Check for authors removed
         for (const author of media.authors) {
-          if (!bookMetadata.authors.includes(author.name)) {
+          if (!bookMetadata.authors.some((authorName) => Database.authorModel.isAuthorNameMatch(authorName, author.name))) {
             await author.bookAuthor.destroy()
             libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" removed author "${author.name}"`)
             authorsUpdated = true
