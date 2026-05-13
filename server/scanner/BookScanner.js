@@ -223,6 +223,10 @@ class BookScanner {
         for (const authorName of bookMetadata.authors) {
           if (!media.authors.some((au) => Database.authorModel.isAuthorNameMatch(au.name, authorName))) {
             const { author, created } = await Database.authorModel.findOrCreateByNameAndLibrary(authorName, libraryItemData.libraryId)
+            if (!author) {
+              libraryScan.addLog(LogLevel.WARN, `Skipping author "${authorName}" because normalized name was empty`)
+              continue
+            }
             if (!created) {
               await Database.bookAuthorModel.create({
                 bookId: media.id,

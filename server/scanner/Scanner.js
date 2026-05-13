@@ -250,7 +250,10 @@ class Scanner {
         const existingAuthor = libraryItem.media.authors.find((a) => Database.authorModel.isAuthorNameMatch(a.name, authorName))
         if (!existingAuthor) {
           const { author, created: isCreated } = await Database.authorModel.findOrCreateByNameAndLibrary(authorName, libraryItem.libraryId)
-          if (!author) continue
+          if (!author) {
+            libraryScan.addLog(LogLevel.WARN, `Skipping author "${authorName}" because normalized name was empty`)
+            continue
+          }
           if (isCreated) {
             SocketAuthority.emitter('author_added', author.toOldJSON())
             // Update filter data

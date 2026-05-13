@@ -480,7 +480,10 @@ class Book extends Model {
     const authorsAdded = []
     for (const authorName of newAuthorNames) {
       const { author, created } = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
-      if (!author) continue
+      if (!author) {
+        Logger.warn(`[Book] "${this.title}" skipped author "${authorName}" because normalized name was empty`)
+        continue
+      }
       await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
       if (created) {
         SocketAuthority.emitter('author_added', author.toOldJSON())
