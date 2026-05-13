@@ -188,7 +188,7 @@ class Author extends Model {
       return { author: null, created: false }
     }
 
-    const [author, created] = await this.findOrCreate({
+    const [author, created] = await this.findCreateFind({
       where: {
         searchName,
         libraryId
