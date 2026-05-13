@@ -299,7 +299,7 @@ class TokenManager {
       })
 
       if (!session) {
-        Logger.error(`[TokenManager] Failed to refresh token. Session not found for refresh token: ${refreshToken}`)
+        Logger.error(`[TokenManager] Failed to refresh token. Session not found`)
         return {
           error: 'Invalid refresh token'
         }
@@ -389,7 +389,7 @@ class TokenManager {
 
         return newTokens.accessToken
       } else {
-        Logger.error(`[TokenManager] No session found to rotate tokens for refresh token ${currentRefreshToken}`)
+        Logger.error(`[TokenManager] No session found to rotate tokens`)
       }
     }
 
@@ -413,7 +413,7 @@ class TokenManager {
 
     try {
       const numDeleted = await Database.sessionModel.destroy({ where: { refreshToken: refreshToken } })
-      Logger.info(`[TokenManager] Refresh token ${refreshToken} invalidated, ${numDeleted} sessions deleted`)
+      Logger.info(`[TokenManager] Refresh token invalidated, ${numDeleted} sessions deleted`)
       return true
     } catch (error) {
       Logger.error(`[TokenManager] Error invalidating refresh token: ${error.message}`)
