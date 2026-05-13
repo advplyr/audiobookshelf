@@ -471,7 +471,11 @@ async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFileP
   ffmpeg.outputOptions(['-f mp4'])
 
   if (audioRequiresEncode) {
-    ffmpeg.outputOptions(['-map 0:a', `-acodec ${audioCodec}`, `-ac ${audioChannels}`, `-b:a ${audioBitrate}`])
+    if (audioCodec === 'opus') {
+      ffmpeg.outputOptions(['-map 0:a', '-c:a libopus', `-b:a ${audioBitrate}`, '-vbr on', '-compression_level 10', '-application voip', `-ac ${audioChannels}`])
+    } else {
+      ffmpeg.outputOptions(['-map 0:a', `-acodec ${audioCodec}`, `-ac ${audioChannels}`, `-b:a ${audioBitrate}`])
+    }
   } else {
     ffmpeg.outputOptions(['-max_muxing_queue_size 1000'])
 
