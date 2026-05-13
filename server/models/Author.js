@@ -66,6 +66,25 @@ class Author extends Model {
     return this.normalizeSearchName(leftName) === this.normalizeSearchName(rightName)
   }
 
+  static isDerivedFieldChange(author) {
+    const derivedFields = this.buildAuthorDerivedFields(author.name)
+    let changed = false
+
+    if (author.lastFirst !== derivedFields.lastFirst) {
+      author.setDataValue('lastFirst', derivedFields.lastFirst)
+      author.changed('lastFirst', true)
+      changed = true
+    }
+
+    if (author.searchName !== derivedFields.searchName) {
+      author.setDataValue('searchName', derivedFields.searchName)
+      author.changed('searchName', true)
+      changed = true
+    }
+
+    return changed
+  }
+
   /**
    * Check if author exists
    * @param {string} authorId
