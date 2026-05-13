@@ -259,7 +259,7 @@ class Database {
     await this.rebuildComputedTableRows(this.authorModel, {
       label: 'author',
       attributes: ['id', 'name', 'lastFirst', 'searchName', 'libraryId'],
-      prepareRow: (author) => this.authorModel.isDerivedFieldChange(author)
+      prepareRow: (author) => this.authorModel.hasDerivedFieldChange(author)
     })
   }
 

@@ -66,7 +66,7 @@ class Author extends Model {
     return this.normalizeSearchName(leftName) === this.normalizeSearchName(rightName)
   }
 
-  static isDerivedFieldChange(author) {
+  static hasDerivedFieldChange(author) {
     const derivedFields = this.buildAuthorDerivedFields(author.name)
     let changed = false
 
