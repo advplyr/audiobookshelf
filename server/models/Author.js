@@ -37,6 +37,11 @@ class Author extends Model {
     return parseNameString.nameToLastFirst(name)
   }
 
+  /**
+   * Remove all punctionation, diacritics, and whitespace and convert to lowercase for searching and matching
+   * @param {string} name
+   * @returns {string}
+   */
   static normalizeSearchName(name) {
     if (!name?.trim()) return null
     return name
@@ -47,6 +52,11 @@ class Author extends Model {
       .trim()
   }
 
+  /**
+   * Calculate derived fields. Returns null if name is empty after normalization
+   * @param {string} name
+   * @returns { lastFirst: string?, searchName: string? }
+   */
   static buildAuthorDerivedFields(name) {
     const searchName = this.normalizeSearchName(name)
     if (!searchName) {
@@ -62,10 +72,21 @@ class Author extends Model {
     }
   }
 
+  /**
+   * Check if two author names match after normalization
+   * @param {string} leftName
+   * @param {string} rightName
+   * @returns {boolean}
+   */
   static isAuthorNameMatch(leftName, rightName) {
     return this.normalizeSearchName(leftName) === this.normalizeSearchName(rightName)
   }
 
+  /**
+   * Check if any derived fields would change to reduce unnecessary database writes
+   * @param {Author} author
+   * @returns
+   */
   static hasDerivedFieldChange(author) {
     const derivedFields = this.buildAuthorDerivedFields(author.name)
     let changed = false
@@ -96,8 +117,6 @@ class Author extends Model {
 
   /**
    * Get author by name and libraryId. name case insensitive
-   * TODO: Look for authors ignoring punctuation
-   *
    * @param {string} authorName
    * @param {string} libraryId
    * @returns {Promise<Author>}
@@ -158,7 +177,7 @@ class Author extends Model {
   }
 
   /**
-   *
+   * Ensure duplicate authors are not created for the same library using the normalized name
    * @param {string} name
    * @param {string} libraryId
    * @returns {Promise<{ author: Author, created: boolean }>}
