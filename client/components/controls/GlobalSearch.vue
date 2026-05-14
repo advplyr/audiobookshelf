@@ -92,6 +92,12 @@
               </nuxt-link>
             </li>
           </template>
+          <li class="border-t border-white/10 mt-2 pt-1">
+            <button class="w-full text-left px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-black-400 rounded flex items-center gap-1" @click="submitSearch">
+              <span class="material-symbols" style="font-size: 1rem">search</span>
+              {{ $strings.ButtonSeeAllResultsFor || 'See all results for' }} "{{ lastSearch }}"
+            </button>
+          </li>
         </template>
       </ul>
     </div>
