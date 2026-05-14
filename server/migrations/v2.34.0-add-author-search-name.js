@@ -50,7 +50,7 @@ async function removeIndexIfPresent(queryInterface, logger, tableName, indexName
   await queryInterface.removeIndex(tableName, indexName)
 }
 
-async function backfillAuthorSearchName(queryInterface, logger, transaction, offset = 0) {
+async function backfillAuthorSearchName(queryInterface, logger, transaction, Author, offset = 0) {
   while (true) {
     const authors = await queryInterface.sequelize.query(`SELECT id, name FROM ${AUTHORS_TABLE} ORDER BY id ASC LIMIT :limit OFFSET :offset`, {
       replacements: { limit: 500, offset },
@@ -217,6 +217,7 @@ async function refreshLibraryItemAuthorNames(queryInterface, transaction) {
 async function up({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
+  const Author = require('../models/Author')
   const tableDescription = await queryInterface.describeTable(AUTHORS_TABLE)
 
   await queryInterface.sequelize.transaction(async (transaction) => {
@@ -250,7 +251,7 @@ async function up({ context: { queryInterface, logger } }) {
       )
     }
 
-    await backfillAuthorSearchName(queryInterface, logger, transaction, 0)
+    await backfillAuthorSearchName(queryInterface, logger, transaction, Author, 0)
     await mergeDuplicateAuthors(queryInterface, logger, transaction)
     await cleanupDuplicateBookAuthors(queryInterface, transaction)
     await refreshLibraryItemAuthorNames(queryInterface, transaction)
