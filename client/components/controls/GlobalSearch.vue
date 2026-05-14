@@ -42,7 +42,7 @@
           <p v-if="episodeResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">{{ $strings.LabelEpisodes }}</p>
           <template v-for="item in episodeResults">
             <li :key="item.libraryItem.recentEpisode.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
-              <nuxt-link :to="`/item/${item.libraryItem.id}`">
+              <nuxt-link :to="`/item/${item.libraryItem.id}?episodeId=${item.libraryItem.recentEpisode.id}`">
                 <cards-episode-search-card :episode="item.libraryItem.recentEpisode" :library-item="item.libraryItem" />
               </nuxt-link>
             </li>
