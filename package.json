@@ -48,6 +48,7 @@
     "lru-cache": "^10.0.3",
     "node-unrar-js": "^2.0.2",
     "nodemailer": "^6.9.13",
+    "jose": "^4.15.4",
     "openid-client": "^5.6.1",
     "p-throttle": "^4.1.1",
     "passport": "^0.6.0",
