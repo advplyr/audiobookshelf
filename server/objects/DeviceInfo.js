@@ -96,7 +96,12 @@ class DeviceInfo {
     this.clientVersion = stripAllTags(clientDeviceInfo?.clientVersion) || serverVersion
     this.manufacturer = stripAllTags(clientDeviceInfo?.manufacturer) || null
     this.model = stripAllTags(clientDeviceInfo?.model) || null
-    this.sdkVersion = stripAllTags(clientDeviceInfo?.sdkVersion) || null
+
+    if (typeof clientDeviceInfo?.sdkVersion === 'number') {
+      this.sdkVersion = clientDeviceInfo.sdkVersion.toString()
+    } else {
+      this.sdkVersion = stripAllTags(clientDeviceInfo?.sdkVersion) || null
+    }
 
     this.clientName = stripAllTags(clientDeviceInfo?.clientName) || null
     if (this.sdkVersion) {
