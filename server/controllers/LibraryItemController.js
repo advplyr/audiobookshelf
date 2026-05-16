@@ -184,6 +184,11 @@ class LibraryItemController {
         if (audioMimeType) {
           res.setHeader('Content-Type', audioMimeType)
         }
+        // Set Content-Length so clients can show accurate progress bars.
+        const fileStat = await fs.stat(libraryItemPath).catch(() => null)
+        if (fileStat) {
+          res.setHeader('Content-Length', fileStat.size)
+        }
         await new Promise((resolve, reject) => res.download(libraryItemPath, req.libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
       } else {
         const filename = `${itemTitle}.zip`
@@ -1097,6 +1102,12 @@ class LibraryItemController {
     }
 
     try {
+      // Set Content-Length so clients (including the Android app) can show accurate
+      // download progress and avoid chunked-transfer encoding when the file size is known.
+      const fileStat = await fs.stat(libraryFile.metadata.path).catch(() => null)
+      if (fileStat) {
+        res.setHeader('Content-Length', fileStat.size)
+      }
       await new Promise((resolve, reject) => res.download(libraryFile.metadata.path, libraryFile.metadata.filename, (error) => (error ? reject(error) : resolve())))
       Logger.info(`[LibraryItemController] Downloaded file "${libraryFile.metadata.path}"`)
     } catch (error) {
