@@ -8,6 +8,7 @@ const LibraryItemController = require('../../../server/controllers/LibraryItemCo
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
+const zipHelpers = require('../../../server/utils/zipHelpers')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */
@@ -297,6 +298,97 @@ describe('LibraryItemController', () => {
       }
       await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
       expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+  })
+
+  describe('download', () => {
+    let req
+    let res
+
+    beforeEach(() => {
+      req = {
+        user: { username: 'testUser', canDownload: true },
+        libraryItem: {
+          isFile: true,
+          path: '/audiobooks/hitchhikers-guide.mp3',
+          relPath: 'hitchhikers-guide.mp3',
+          media: { title: "The Hitchhiker's Guide To The Galaxy" }
+        }
+      }
+      res = {
+        setHeader: sinon.spy(),
+        sendFile: sinon.stub(),
+        sendStatus: sinon.spy(),
+        status: sinon.stub().returnsThis(),
+        send: sinon.spy()
+      }
+    })
+
+    it('should return 403 when user does not have canDownload permission', async () => {
+      req.user.canDownload = false
+      await LibraryItemController.download(req, res)
+      expect(res.sendStatus.calledWith(403)).to.be.true
+      expect(res.sendFile.called).to.be.false
+    })
+
+    it('should call res.sendFile for single-file library items', async () => {
+      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      await LibraryItemController.download(req, res)
+      expect(res.sendFile.calledOnce).to.be.true
+    })
+
+    it('should pass { dotfiles: "allow" } option to res.sendFile', async () => {
+      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      await LibraryItemController.download(req, res)
+      const opts = res.sendFile.firstCall.args[1]
+      expect(opts).to.deep.equal({ dotfiles: 'allow' })
+    })
+
+    it('should pass the correct file path to res.sendFile', async () => {
+      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      await LibraryItemController.download(req, res)
+      expect(res.sendFile.firstCall.args[0]).to.equal('/audiobooks/hitchhikers-guide.mp3')
+    })
+
+    it('should set Content-Disposition attachment header with the filename', async () => {
+      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      await LibraryItemController.download(req, res)
+      const dispositionCall = res.setHeader.args.find(([header]) => header === 'Content-Disposition')
+      expect(dispositionCall).to.exist
+      expect(dispositionCall[1]).to.include('attachment')
+      expect(dispositionCall[1]).to.include('hitchhikers-guide.mp3')
+    })
+
+    it('should URL-encode special characters in the Content-Disposition filename', async () => {
+      req.libraryItem.relPath = 'Book With Spaces & Symbols!.mp3'
+      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      await LibraryItemController.download(req, res)
+      const dispositionCall = res.setHeader.args.find(([header]) => header === 'Content-Disposition')
+      expect(dispositionCall[1]).to.include(encodeURIComponent('Book With Spaces & Symbols!.mp3'))
+    })
+
+    it('should return 500 when res.sendFile calls back with an error', async () => {
+      res.sendFile.callsFake((filePath, opts, cb) => cb(new Error('File not found')))
+      await LibraryItemController.download(req, res)
+      expect(res.status.calledWith(500)).to.be.true
+      expect(res.send.called).to.be.true
+    })
+
+    it('should call zipDirectoryPipe for multi-file directory items', async () => {
+      req.libraryItem.isFile = false
+      const zipStub = sinon.stub(zipHelpers, 'zipDirectoryPipe').resolves()
+      await LibraryItemController.download(req, res)
+      expect(zipStub.calledOnce).to.be.true
+      expect(zipStub.firstCall.args[0]).to.equal(req.libraryItem.path)
+      expect(zipStub.firstCall.args[1]).to.equal("The Hitchhiker's Guide To The Galaxy.zip")
+      expect(zipStub.firstCall.args[2]).to.equal(res)
+    })
+
+    it('should pass the response object to zipDirectoryPipe', async () => {
+      req.libraryItem.isFile = false
+      const zipStub = sinon.stub(zipHelpers, 'zipDirectoryPipe').resolves()
+      await LibraryItemController.download(req, res)
+      expect(zipStub.firstCall.args[2]).to.equal(res)
     })
   })
 })
