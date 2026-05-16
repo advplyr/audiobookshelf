@@ -184,12 +184,10 @@ class LibraryItemController {
         if (audioMimeType) {
           res.setHeader('Content-Type', audioMimeType)
         }
-        // Set Content-Length so clients can show accurate progress bars.
-        const fileStat = await fs.stat(libraryItemPath).catch(() => null)
-        if (fileStat) {
-          res.setHeader('Content-Length', fileStat.size)
-        }
-        await new Promise((resolve, reject) => res.download(libraryItemPath, req.libraryItem.relPath, (error) => (error ? reject(error) : resolve())))
+        // Use sendFile so the `send` module sets Content-Length, Accept-Ranges,
+        // and handles range requests natively — no extra stat() call needed.
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(Path.basename(req.libraryItem.relPath))}"`)
+        await new Promise((resolve, reject) => res.sendFile(libraryItemPath, { dotfiles: 'allow' }, (error) => (error ? reject(error) : resolve())))
       } else {
         const filename = `${itemTitle}.zip`
         await zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
@@ -1102,13 +1100,10 @@ class LibraryItemController {
     }
 
     try {
-      // Set Content-Length so clients (including the Android app) can show accurate
-      // download progress and avoid chunked-transfer encoding when the file size is known.
-      const fileStat = await fs.stat(libraryFile.metadata.path).catch(() => null)
-      if (fileStat) {
-        res.setHeader('Content-Length', fileStat.size)
-      }
-      await new Promise((resolve, reject) => res.download(libraryFile.metadata.path, libraryFile.metadata.filename, (error) => (error ? reject(error) : resolve())))
+      // Use sendFile so the `send` module sets Content-Length, Accept-Ranges,
+      // and handles range requests natively — no extra stat() call needed.
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(libraryFile.metadata.filename)}"`)
+      await new Promise((resolve, reject) => res.sendFile(libraryFile.metadata.path, { dotfiles: 'allow' }, (error) => (error ? reject(error) : resolve())))
       Logger.info(`[LibraryItemController] Downloaded file "${libraryFile.metadata.path}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Failed to download file "${libraryFile.metadata.path}"`, error)
