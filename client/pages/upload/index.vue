@@ -307,40 +307,77 @@ export default {
       }
     },
     async uploadItem(item) {
-      var form = new FormData()
-      form.set('title', item.title)
-      if (!this.selectedLibraryIsPodcast) {
-        form.set('author', item.author || '')
-        form.set('series', item.series || '')
-      }
-      form.set('library', this.selectedLibraryId)
-      form.set('folder', this.selectedFolderId)
+      const CHUNK_SIZE = 50 * 1024 * 1024 // 50MB
+      let allFilesSuccessful = true
 
-      var index = 0
-      item.files.forEach((file) => {
-        form.set(`${index++}`, file)
-      })
+      for (let fileIndex = 0; fileIndex < item.files.length; fileIndex++) {
+        const file = item.files[fileIndex]
 
-      const config = {
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.lengthComputable) {
-            const progress = {
-              loaded: progressEvent.loaded,
-              total: progressEvent.total
+        if (file.size <= CHUNK_SIZE) {
+          // Legacy upload for small files
+          var form = new FormData()
+          form.set('title', item.title)
+          if (!this.selectedLibraryIsPodcast) {
+            form.set('author', item.author || '')
+            form.set('series', item.series || '')
+          }
+          form.set('library', this.selectedLibraryId)
+          form.set('folder', this.selectedFolderId)
+          form.set(`${fileIndex}`, file)
+
+          const config = {
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.lengthComputable) {
+                this.updateItemCardProgress(item.index, { loaded: progressEvent.loaded, total: progressEvent.total })
+              }
             }
-            this.updateItemCardProgress(item.index, progress)
+          }
+
+          const success = await this.$axios
+            .$post('/api/upload', form, config)
+            .then(() => true)
+            .catch((error) => {
+              console.error('Failed to upload item', error)
+              this.$toast.error(error.response?.data || 'Oops, something went wrong...')
+              return false
+            })
+          if (!success) allFilesSuccessful = false
+        } else {
+          // Chunked upload
+          const fileId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36)
+          const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+
+          for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * CHUNK_SIZE
+            const end = Math.min(start + CHUNK_SIZE, file.size)
+            const chunk = file.slice(start, end)
+
+            var chunkForm = new FormData()
+            chunkForm.set('fileId', fileId)
+            chunkForm.set('chunkIndex', chunkIndex)
+            chunkForm.set('totalChunks', totalChunks)
+            chunkForm.set('filename', file.name)
+            chunkForm.set('title', item.title)
+            if (!this.selectedLibraryIsPodcast) {
+              chunkForm.set('author', item.author || '')
+              chunkForm.set('series', item.series || '')
+            }
+            chunkForm.set('library', this.selectedLibraryId)
+            chunkForm.set('folder', this.selectedFolderId)
+            chunkForm.set('chunk', chunk)
+
+            try {
+              // Await each chunk sequentially
+              await this.$axios.$post('/api/upload/chunk', chunkForm)
+            } catch (error) {
+              console.error(`Failed to upload chunk ${chunkIndex} for ${file.name}`, error)
+              allFilesSuccessful = false
+              break // Stop uploading chunks if one fails
+            }
           }
         }
       }
-
-      return this.$axios
-        .$post('/api/upload', form, config)
-        .then(() => true)
-        .catch((error) => {
-          console.error('Failed to upload item', error)
-          this.$toast.error(error.response?.data || 'Oops, something went wrong...')
-          return false
-        })
+      return allFilesSuccessful
     },
     validateItems() {
       var itemData = []
