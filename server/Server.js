@@ -301,9 +301,9 @@ class Server {
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
-    // Keep connections alive for 120s so multi-file downloads don't pay a new
-    // TCP handshake per file. Default Node.js keepAliveTimeout is only 5s,
-    // which causes connections to drop mid-download for files > 5s.
+    // Extend keep-alive timeout to 120s. Node's default (5s) closes idle
+    // connections quickly, forcing a new TCP handshake for each file when a
+    // client downloads multiple files in sequence (e.g. individual chapters).
     this.server.keepAliveTimeout = 120000
     this.server.headersTimeout = 125000
 

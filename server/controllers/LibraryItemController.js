@@ -187,7 +187,7 @@ class LibraryItemController {
         // Use sendFile so the `send` module sets Content-Length, Accept-Ranges,
         // and handles range requests natively — no extra stat() call needed.
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(Path.basename(req.libraryItem.relPath))}"`)
-        await new Promise((resolve, reject) => res.sendFile(libraryItemPath, { dotfiles: 'allow' }, (error) => (error ? reject(error) : resolve())))
+        await new Promise((resolve, reject) => res.sendFile(libraryItemPath, (error) => (error ? reject(error) : resolve())))
       } else {
         const filename = `${itemTitle}.zip`
         await zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
@@ -1103,7 +1103,7 @@ class LibraryItemController {
       // Use sendFile so the `send` module sets Content-Length, Accept-Ranges,
       // and handles range requests natively — no extra stat() call needed.
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(libraryFile.metadata.filename)}"`)
-      await new Promise((resolve, reject) => res.sendFile(libraryFile.metadata.path, { dotfiles: 'allow' }, (error) => (error ? reject(error) : resolve())))
+      await new Promise((resolve, reject) => res.sendFile(libraryFile.metadata.path, (error) => (error ? reject(error) : resolve())))
       Logger.info(`[LibraryItemController] Downloaded file "${libraryFile.metadata.path}"`)
     } catch (error) {
       Logger.error(`[LibraryItemController] Failed to download file "${libraryFile.metadata.path}"`, error)

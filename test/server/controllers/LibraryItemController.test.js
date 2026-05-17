@@ -332,26 +332,19 @@ describe('LibraryItemController', () => {
     })
 
     it('should call res.sendFile for single-file library items', async () => {
-      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      res.sendFile.callsFake((filePath, cb) => cb(null))
       await LibraryItemController.download(req, res)
       expect(res.sendFile.calledOnce).to.be.true
     })
 
-    it('should pass { dotfiles: "allow" } option to res.sendFile', async () => {
-      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
-      await LibraryItemController.download(req, res)
-      const opts = res.sendFile.firstCall.args[1]
-      expect(opts).to.deep.equal({ dotfiles: 'allow' })
-    })
-
     it('should pass the correct file path to res.sendFile', async () => {
-      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      res.sendFile.callsFake((filePath, cb) => cb(null))
       await LibraryItemController.download(req, res)
       expect(res.sendFile.firstCall.args[0]).to.equal('/audiobooks/hitchhikers-guide.mp3')
     })
 
     it('should set Content-Disposition attachment header with the filename', async () => {
-      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      res.sendFile.callsFake((filePath, cb) => cb(null))
       await LibraryItemController.download(req, res)
       const dispositionCall = res.setHeader.args.find(([header]) => header === 'Content-Disposition')
       expect(dispositionCall).to.exist
@@ -361,14 +354,14 @@ describe('LibraryItemController', () => {
 
     it('should URL-encode special characters in the Content-Disposition filename', async () => {
       req.libraryItem.relPath = 'Book With Spaces & Symbols!.mp3'
-      res.sendFile.callsFake((filePath, opts, cb) => cb(null))
+      res.sendFile.callsFake((filePath, cb) => cb(null))
       await LibraryItemController.download(req, res)
       const dispositionCall = res.setHeader.args.find(([header]) => header === 'Content-Disposition')
       expect(dispositionCall[1]).to.include(encodeURIComponent('Book With Spaces & Symbols!.mp3'))
     })
 
     it('should return 500 when res.sendFile calls back with an error', async () => {
-      res.sendFile.callsFake((filePath, opts, cb) => cb(new Error('File not found')))
+      res.sendFile.callsFake((filePath, cb) => cb(new Error('File not found')))
       await LibraryItemController.download(req, res)
       expect(res.status.calledWith(500)).to.be.true
       expect(res.send.called).to.be.true
