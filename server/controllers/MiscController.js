@@ -140,12 +140,46 @@ class MiscController {
     try {
       await file.mv(chunkPath)
 
-      // If this is the last chunk, we trigger reassembly.
-      // To keep the commit scoped to "Temporary Storage", we will return success here for now
-      // and implement the reassembly in Commit 2.
-      res.sendStatus(200)
+      // Reassembly logic
+      if (parseInt(chunkIndex) === parseInt(totalChunks) - 1) {
+        const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+        if (!folder) return res.status(404).send('Folder not found')
+
+        const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+        const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
+        const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+        await fs.ensureDir(outputDirectory)
+
+        const finalFilePath = Path.join(outputDirectory, sanitizeFilename(filename))
+        const writeStream = fs.createWriteStream(finalFilePath)
+
+        for (let i = 0; i < totalChunks; i++) {
+          const currentChunkPath = Path.join(tmpDir, `${fileId}_${i}`)
+          const data = await fs.readFile(currentChunkPath)
+          if (!writeStream.write(data)) {
+            await new Promise((resolve) => writeStream.once('drain', resolve))
+          }
+        }
+
+        writeStream.end()
+
+        writeStream.on('finish', async () => {
+          Logger.info(`Successfully merged ${totalChunks} chunks for file ${filename}`)
+          await fs.remove(tmpDir) // Cleanup
+          res.sendStatus(200)
+        })
+
+        writeStream.on('error', async (error) => {
+          Logger.error(`Error merging chunks for file ${filename}`, error)
+          await fs.remove(tmpDir).catch((e) => Logger.error('Failed to clean up temp dir on merge error', e)) // Cleanup on error
+          res.status(500).send('Error merging file')
+        })
+      } else {
+        res.sendStatus(200) // Chunk saved, waiting for more
+      }
     } catch (error) {
       Logger.error(`Failed to move chunk ${chunkIndex} for file ${fileId}`, error)
+      await fs.remove(tmpDir).catch((e) => Logger.error('Failed to clean up temp dir on chunk error', e)) // Cleanup
       return res.status(500).send('Failed to save chunk')
     }
   }
