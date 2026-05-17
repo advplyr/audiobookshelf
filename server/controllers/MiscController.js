@@ -100,6 +100,57 @@ class MiscController {
   }
 
   /**
+   * POST: /api/upload/chunk
+   * Handle chunked upload
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async handleChunkUpload(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
+      return res.sendStatus(403)
+    }
+    if (!req.files || !Object.values(req.files).length) {
+      Logger.error('Invalid request, no files')
+      return res.sendStatus(400)
+    }
+
+    const { fileId, chunkIndex, totalChunks, filename, library: libraryId, folder: folderId, title, author, series } = req.body
+
+    if (!fileId || chunkIndex === undefined || !totalChunks || !filename || !libraryId || !folderId || !title) {
+      return res.status(400).send('Invalid request body for chunk upload')
+    }
+
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    if (!req.user.checkCanAccessLibrary(library.id)) {
+      Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
+      return res.sendStatus(403)
+    }
+
+    const tmpDir = Path.join(global.MetadataPath, 'tmp', 'uploads', fileId)
+    await fs.ensureDir(tmpDir)
+
+    const file = Object.values(req.files)[0]
+    const chunkPath = Path.join(tmpDir, `${fileId}_${chunkIndex}`)
+
+    try {
+      await file.mv(chunkPath)
+
+      // If this is the last chunk, we trigger reassembly.
+      // To keep the commit scoped to "Temporary Storage", we will return success here for now
+      // and implement the reassembly in Commit 2.
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.error(`Failed to move chunk ${chunkIndex} for file ${fileId}`, error)
+      return res.status(500).send('Failed to save chunk')
+    }
+  }
+
+  /**
    * GET: /api/tasks
    * Get tasks for task manager
    *
