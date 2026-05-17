@@ -366,13 +366,37 @@ export default {
             chunkForm.set('folder', this.selectedFolderId)
             chunkForm.set('chunk', chunk)
 
-            try {
-              // Await each chunk sequentially
-              await this.$axios.$post('/api/upload/chunk', chunkForm)
-            } catch (error) {
-              console.error(`Failed to upload chunk ${chunkIndex} for ${file.name}`, error)
-              allFilesSuccessful = false
-              break // Stop uploading chunks if one fails
+            let retryCount = 0
+            const maxRetries = 1
+            let chunkSuccess = false
+
+            while (retryCount <= maxRetries && !chunkSuccess) {
+              try {
+                const config = {
+                  onUploadProgress: (progressEvent) => {
+                    if (progressEvent.lengthComputable) {
+                      // Calculate overall progress for this specific file
+                      const totalLoaded = chunkIndex * CHUNK_SIZE + progressEvent.loaded
+                      this.updateItemCardProgress(item.index, { loaded: totalLoaded, total: file.size })
+                    }
+                  }
+                }
+
+                await this.$axios.$post('/api/upload/chunk', chunkForm, config)
+                chunkSuccess = true
+              } catch (error) {
+                retryCount++
+                console.error(`Failed to upload chunk ${chunkIndex} for ${file.name} (Attempt ${retryCount})`, error)
+                if (retryCount > maxRetries) {
+                  this.$toast.error(`Failed to upload part of ${file.name}. Upload aborted.`)
+                  allFilesSuccessful = false
+                  break
+                }
+              }
+            }
+
+            if (!chunkSuccess) {
+              break // Break the outer chunk loop if retries exhausted
             }
           }
         }
