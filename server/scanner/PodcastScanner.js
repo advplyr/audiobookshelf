@@ -11,6 +11,7 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const fsExtra = require('../libs/fsExtra')
 const PodcastEpisode = require('../models/PodcastEpisode')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 /**
  * Metadata for podcasts pulled from files
@@ -397,6 +398,10 @@ class PodcastScanner {
     await AbsMetadataFileScanner.scanPodcastMetadataFile(libraryScan, libraryItemData, podcastMetadata, existingLibraryItemId)
 
     podcastMetadata.titleIgnorePrefix = getTitleIgnorePrefix(podcastMetadata.title)
+
+    if (typeof podcastMetadata.description === 'string' && podcastMetadata.description) {
+      podcastMetadata.description = htmlSanitizer.sanitize(podcastMetadata.description)
+    }
 
     return podcastMetadata
   }
