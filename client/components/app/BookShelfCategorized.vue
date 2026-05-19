@@ -300,6 +300,8 @@ export default {
         })
     },
     userUpdated(user) {
+      if (user.id !== this.$store.state.user.user.id) return
+
       if (user.seriesHideFromContinueListening && user.seriesHideFromContinueListening.length) {
         this.removeAllSeriesFromContinueSeries(user.seriesHideFromContinueListening)
       }

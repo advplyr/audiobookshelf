@@ -7,6 +7,7 @@ const parseNameString = require('../utils/parsers/parseNameString')
 const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
 const globals = require('../utils/globals')
 const { readTextFile, filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
@@ -687,6 +688,10 @@ class BookScanner {
     }
 
     bookMetadata.titleIgnorePrefix = getTitleIgnorePrefix(bookMetadata.title)
+
+    if (typeof bookMetadata.description === 'string' && bookMetadata.description) {
+      bookMetadata.description = htmlSanitizer.sanitize(bookMetadata.description)
+    }
 
     return bookMetadata
   }

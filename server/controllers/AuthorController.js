@@ -10,7 +10,7 @@ const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
-const { reqSupportsWebp, isValidASIN } = require('../utils/index')
+const { reqSupportsWebp, isValidASIN, clampPositiveInt } = require('../utils/index')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -113,7 +113,7 @@ class AuthorController {
       payload.lastFirst = Database.authorModel.getLastFirst(payload.name)
     }
 
-    // Check if author name matches another author and merge the authors
+    // Check if author name matches another author in the same library and merge the authors
     let existingAuthor = null
     if (authorNameUpdate) {
       existingAuthor = await Database.authorModel.findOne({
@@ -121,7 +121,8 @@ class AuthorController {
           id: {
             [sequelize.Op.not]: req.author.id
           },
-          name: payload.name
+          name: payload.name,
+          libraryId: req.author.libraryId
         }
       })
     }
@@ -411,8 +412,8 @@ class AuthorController {
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
-      height: height ? parseInt(height) : null,
-      width: width ? parseInt(width) : null
+      height: clampPositiveInt(height ? parseInt(height) : null, 4096),
+      width: clampPositiveInt(width ? parseInt(width) : null, 4096)
     }
     return CacheManager.handleAuthorCache(res, authorId, options)
   }
