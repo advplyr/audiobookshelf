@@ -188,6 +188,9 @@ class ApiRouter {
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
     this.router.get('/me/stats/year/:year', MeController.getStatsForYear.bind(this))
     this.router.post('/me/ereader-devices', MeController.updateUserEReaderDevices.bind(this))
+    this.router.post('/me/follows/series/:id', MeController.followSeries.bind(this))
+    this.router.delete('/me/follows/series/:id', MeController.unfollowSeries.bind(this))
+    this.router.get('/me/follows', MeController.getFollows.bind(this))
 
     //
     // Backup Routes
