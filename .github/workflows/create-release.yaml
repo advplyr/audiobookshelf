@@ -28,6 +28,7 @@ jobs:
           npm ci
           npm run generate
           cd ..
+          npm install -g pkg
 
       - name: Build Dist
         run: |
