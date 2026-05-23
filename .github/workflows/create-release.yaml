@@ -1,0 +1,45 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required to create a release
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: [actions/setup-node](https://github.com/actions/setup-node)@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd client
+          npm ci
+          npm run generate
+          cd ..
+
+      - name: Build Dist
+        run: |
+          npm run build-win
+          npm run build-linux
+
+      - name: Package Artifacts
+        run: zip release-asset.zip  dist/debian/usr/share/audiobookshelf/audiobookshelf dist/win/audiobookshelf.exe audiobookshelf_*.deb
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/debian/usr/share/audiobookshelf/audiobookshelf dist/win/audiobookshelf.exe audiobookshelf_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
