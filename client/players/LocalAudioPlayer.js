@@ -32,7 +32,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     if (document.getElementById('audio-player')) {
       document.getElementById('audio-player').remove()
     }
-    var audioEl = document.createElement('audio')
+    var audioEl = document.createElement('video')
     audioEl.id = 'audio-player'
     audioEl.style.display = 'none'
     document.body.appendChild(audioEl)
@@ -58,7 +58,8 @@ export default class LocalAudioPlayer extends EventEmitter {
       // `audio/matroska` is the correct mimetype, but the server still uses `audio/x-matroska`
       // ref: https://www.iana.org/assignments/media-types/media-types.xhtml
       'audio/matroska',
-      'audio/x-matroska'
+      'audio/x-matroska',
+      'video/mp4'
     ]
     var mimeTypeCanPlayMap = {}
     mimeTypes.forEach((mt) => {
@@ -126,6 +127,24 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
     this.startTime = startTime
+
+    if (this.audioTracks.length > 0 && this.audioTracks[0].metadata.filename.endsWith('.mp4')) {
+      this.player.style.display = 'block'
+      this.player.style.position = 'fixed'
+      this.player.style.top = '120px'
+      this.player.style.right = '20px'
+      this.player.style.width = '320px'
+      this.player.style.height = 'auto'
+      this.player.style.zindex = 1000
+      this.player.style.backgroundcolor = '#1000'
+      this.player.style.boxshadow = '0 4px 8px rgba(0,0,0,0.5)'
+      this.player.style.borderradius = '5px'
+      this.player.style.overflow = 'hidden'
+      this.ctx.$store.getters['globals/isVideoFile'] = true
+    } else {
+      this.player.style.display = 'none'
+      this.ctx.$store.getters['globals/isVideoFile'] = false
+    }
 
     if (this.hlsInstance) {
       this.destroyHlsInstance()

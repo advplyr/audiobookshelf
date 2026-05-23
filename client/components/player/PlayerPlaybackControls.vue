@@ -25,6 +25,11 @@
             <span class="material-symbols text-2xl sm:text-3xl">last_page</span>
           </button>
         </ui-tooltip>
+        <ui-tooltip v-if="isVideo" direction="top" :text="$strings.ButtonFullscreen" class="ml-4 lg:ml-8">
+          <button :aria-label="$strings.ButtonFullscreen" :disabled="!isVideo" class="text-gray-300 disabled:text-gray-500" @mousedown.prevent @mouseup.prevent @click.stop="toggleFullScreen">
+            <span class="material-symbols text-2xl sm:text-3xl">fullscreen</span>
+          </button>
+        </ui-tooltip>
       </template>
       <template v-else>
         <div class="cursor-pointer p-2 shadow-xs bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
@@ -60,6 +65,9 @@ export default {
     },
     hasNext() {
       return this.hasNextItemInQueue || this.hasNextChapter
+    },
+    isVideo() {
+      return this.$store.getters['globals/isVideoFile']
     }
   },
   methods: {
@@ -92,6 +100,39 @@ export default {
       }
 
       return `${prefix} - ${formattedTime}`
+    },
+    toggleFullScreen() {
+      const container = document.getElementById('audio-player') // Use this if you want the container to go fullscreen
+
+      if (!document.fullscreenElement) {
+        // If not in fullscreen, request fullscreen for the video or container
+        if (container.requestFullscreen) {
+          container.requestFullscreen()
+        } else if (container.webkitRequestFullscreen) {
+          /* Chrome, Safari and Opera */
+          container.webkitRequestFullscreen()
+        } else if (container.mozRequestFullScreen) {
+          /* Firefox */
+          container.mozRequestFullScreen()
+        } else if (container.msRequestFullscreen) {
+          /* IE/Edge */
+          container.msRequestFullscreen()
+        }
+      } else {
+        // If in fullscreen, exit fullscreen mode
+        if (document.exitFullscreen) {
+          document.exitFullscreen()
+        } else if (document.webkitExitFullscreen) {
+          /* Chrome, Safari and Opera */
+          document.webkitExitFullscreen()
+        } else if (document.mozCancelFullScreen) {
+          /* Firefox */
+          document.mozCancelFullScreen()
+        } else if (document.msExitFullscreen) {
+          /* IE/Edge */
+          document.msExitFullscreen()
+        }
+      }
     }
   },
   mounted() {}
