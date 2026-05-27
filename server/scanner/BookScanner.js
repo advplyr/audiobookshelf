@@ -825,6 +825,9 @@ class BookScanner {
 
     const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
 
+    /**
+     * Keys must match abmetadataGenerator.js
+     */
     const jsonObject = {
       tags: libraryItem.media.tags || [],
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })) || [],
