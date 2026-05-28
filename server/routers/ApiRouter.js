@@ -179,6 +179,8 @@ class ApiRouter {
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:libraryItemId/:episodeId?', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
+    this.router.post('/me/item/:id/favorite', MeController.addFavorite.bind(this))
+    this.router.delete('/me/item/:id/favorite', MeController.removeFavorite.bind(this))
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))

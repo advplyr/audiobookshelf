@@ -29,6 +29,9 @@
                   {{ title }}
                   <widgets-explicit-indicator v-if="isExplicit" />
                   <widgets-abridged-indicator v-if="isAbridged" />
+                  <button class="ml-2 cursor-pointer hover:scale-110 transform duration-150 flex items-center" @click="toggleFavorite">
+                    <span class="material-symbols hover:text-yellow-400" :class="[isFavorite ? 'fill text-yellow-400' : 'text-gray-300']" :style="{ fontSize: '.9em' }">star</span>
+                  </button>
                 </div>
               </h1>
 
@@ -227,6 +230,9 @@ export default {
     },
     isAbridged() {
       return !!this.mediaMetadata.abridged
+    },
+    isFavorite() {
+      return this.$store.getters['user/getIsLibraryItemFavorite'](this.libraryItemId)
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
@@ -529,6 +535,22 @@ export default {
           this.isProcessingReadUpdate = false
           this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
+    },
+    toggleFavorite() {
+      const axios = this.$axios || this.$nuxt.$axios
+      const endpoint = `/api/me/item/${this.libraryItemId}/favorite`
+
+      if (this.isFavorite) {
+        axios.$delete(endpoint).catch(error => {
+          console.error('Failed to remove favorite', error)
+          this.$toast.error('Failed to remove from favorites')
+        })
+      } else {
+        axios.$post(endpoint).catch(error => {
+          console.error('Failed to add favorite', error)
+          this.$toast.error('Failed to add to favorites')
+        })
+      }
     },
     playItem(startTime = null) {
       let episodeId = null

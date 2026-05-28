@@ -4,9 +4,15 @@
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-3xl mx-auto py-4">
-        <p class="text-xl mb-2 font-semibold px-4 md:px-0">{{ $strings.HeaderLatestEpisodes }}</p>
-        <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
-        <template v-for="(episode, index) in episodesMapped">
+        <div class="flex items-center mb-2 px-4 md:px-0">
+          <p class="text-xl font-semibold">{{ $strings.HeaderLatestEpisodes }}</p>
+          <div class="flex items-center ml-4 cursor-pointer" @click="toggleOnlyShowFavorites">
+            <span class="material-symbols text-xl" :class="onlyShowFavorites ? 'fill text-yellow-400' : 'text-gray-400'">{{ onlyShowFavorites ? 'check_box' : 'check_box_outline_blank' }}</span>
+            <span class="text-sm ml-1 text-gray-300">{{ $strings.LabelOnlyFavorites }}</span>
+          </div>
+        </div>
+        <p v-if="!filteredEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
+        <template v-for="(episode, index) in filteredEpisodes">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
             <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
             <div class="grow pl-4 max-w-2xl">
@@ -19,6 +25,7 @@
                       <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                     </div>
                     <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
+                    <span v-if="$store.getters['user/getIsLibraryItemFavorite'](episode.libraryItemId)" class="material-symbols fill text-yellow-400 text-sm ml-1 !block" :style="{ fontSize: '.9em' }">star</span>
                   </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
@@ -30,6 +37,7 @@
                     <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
                   </div>
                   <widgets-explicit-indicator v-if="episode.podcast.metadata.explicit" />
+                  <span v-if="$store.getters['user/getIsLibraryItemFavorite'](episode.libraryItemId)" class="material-symbols fill text-yellow-400 text-sm ml-1 !block" :style="{ fontSize: '.9em' }">star</span>
                 </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>
@@ -70,7 +78,7 @@
 
             <div v-if="episode.progress" class="absolute bottom-0 left-0 h-0.5 pointer-events-none bg-warning" :style="{ width: episode.progress.progress * 100 + '%' }" />
           </div>
-          <div :key="index" v-if="index !== recentEpisodes.length" class="w-full h-px bg-white/10" />
+          <div :key="index" v-if="index !== filteredEpisodes.length" class="w-full h-px bg-white/10" />
         </template>
       </div>
     </div>
@@ -130,6 +138,13 @@ export default {
         }
       })
     },
+    onlyShowFavorites() {
+      return this.$store.getters['user/getUserSetting']('podcastLatestOnlyFavorites')
+    },
+    filteredEpisodes() {
+      if (!this.onlyShowFavorites) return this.episodesMapped
+      return this.episodesMapped.filter((ep) => this.$store.getters['user/getIsLibraryItemFavorite'](ep.libraryItemId))
+    },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
     },
@@ -145,6 +160,9 @@ export default {
     }
   },
   methods: {
+    toggleOnlyShowFavorites() {
+      this.$store.dispatch('user/updateUserSettings', { podcastLatestOnlyFavorites: !this.onlyShowFavorites })
+    },
     async toggleEpisodeFinished(episode, confirmed = false) {
       if (this.episodesProcessingMap[episode.id]) {
         console.warn('Episode is already processing')

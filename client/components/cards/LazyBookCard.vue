@@ -65,6 +65,14 @@
           <div cy-id="ebookFormat" v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 + 'em', left: 0.375 + 'em' }">
             <span class="text-white/80" :style="{ fontSize: 0.8 + 'em' }">{{ ebookFormat }}</span>
           </div>
+
+          <!-- Unfavorite star icon -->
+          <div v-if="!isFavorite && !isSelectionMode"
+                class="absolute text-gray-300 hover:text-yellow-400 left-0 z-10 cursor-pointer hover:scale-110 transform duration-150"
+                :style="{ padding: 0.375 + 'em', bottom: ebookFormat ? '1.25em' : '0px' }"
+                @click.stop.prevent="toggleFavorite">
+            <span class="material-symbols" aria-hidden="true" :style="{ fontSize: 1.5 + 'em' }">star</span>
+          </div>
         </div>
 
         <!-- Processing/loading spinner overlay -->
@@ -91,6 +99,14 @@
         <!-- media item shared icon -->
         <div cy-id="mediaItemShare" v-if="mediaItemShare && !isSelectionMode && !isHovering" class="absolute text-success left-0 z-10" :style="{ padding: 0.375 + 'em', top: rssFeed ? '2em' : '0px' }">
           <span class="material-symbols" aria-hidden="true" :style="{ fontSize: 1.5 + 'em' }">public</span>
+        </div>
+
+        <!-- Favorite star icon -->
+        <div v-if="isFavorite && !isSelectionMode"
+              class="absolute text-yellow-400 left-0 z-10 cursor-pointer hover:scale-110 transform duration-150"
+              :style="{ padding: 0.375 + 'em', bottom: ebookFormat ? '1.25em' : '0px' }"
+              @click.stop.prevent="toggleFavorite">
+          <span class="material-symbols fill" aria-hidden="true" :style="{ fontSize: 1.5 + 'em', textShadow: '0 0 3px black' }">star</span>
         </div>
 
         <!-- Series sequence -->
@@ -653,6 +669,9 @@ export default {
     mediaItemShare() {
       return this._libraryItem.mediaItemShare || null
     },
+    isFavorite() {
+      return this.store.getters['user/getIsLibraryItemFavorite'](this.libraryItemId)
+    },
     showSubtitles() {
       return !this.isPodcast && this.store.getters['user/getUserSetting']('showSubtitles')
     }
@@ -756,6 +775,22 @@ export default {
           this.processing = false
           toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
+    },
+    toggleFavorite() {
+      const axios = this.$axios || this.$nuxt.$axios
+      const endpoint = `/api/me/item/${this.libraryItemId}/favorite`
+
+      if (this.isFavorite) {
+        axios.$delete(endpoint).catch(error => {
+          console.error('Failed to remove favorite', error)
+          this.$toast.error('Failed to remove from favorites')
+        })
+      } else {
+        axios.$post(endpoint).catch(error => {
+          console.error('Failed to add favorite', error)
+          this.$toast.error('Failed to add to favorites')
+        })
+      }
     },
     editPodcast() {
       this.$emit('editPodcast', this.libraryItem)

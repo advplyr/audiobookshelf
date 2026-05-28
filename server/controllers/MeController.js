@@ -198,6 +198,67 @@ class MeController {
     res.sendStatus(200)
   }
 
+
+  /**
+   * POST: /api/me/item/:id/favorite
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async addFavorite(req, res) {
+    const libraryItemId = req.params.id
+    await Database.userFavoriteModel.create({
+      userId: req.user.id,
+      libraryItemId
+    })
+    
+    // Reload favorites for the user
+    await req.user.reload({
+      include: [
+        Database.mediaProgressModel,
+        {
+          model: Database.libraryItemModel,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
+    })
+    
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
+    res.sendStatus(200)
+  }
+
+  /**
+   * DELETE: /api/me/item/:id/favorite
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async removeFavorite(req, res) {
+    const libraryItemId = req.params.id
+    await Database.userFavoriteModel.destroy({
+      where: { userId: req.user.id, libraryItemId }
+    })
+    
+    // Reload favorites for the user
+    await req.user.reload({
+      include: [
+        Database.mediaProgressModel,
+        {
+          model: Database.libraryItemModel,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
+    })
+    
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
+    res.sendStatus(200)
+  }
+
+
   /**
    * POST: /api/me/item/:id/bookmark
    *

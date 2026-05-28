@@ -114,6 +114,8 @@ class User extends Model {
     this.updatedAt
     /** @type {import('./MediaProgress')[]?} - Only included when extended */
     this.mediaProgresses
+    /** @type {import('./LibraryItem')[]?} - Only included when extended */
+    this.favorites
   }
 
   // Excludes "root" since their can only be 1 root user
@@ -357,7 +359,15 @@ class User extends Model {
           [sequelize.Op.like]: username
         }
       },
-      include: this.sequelize.models.mediaProgress
+      include: [
+        this.sequelize.models.mediaProgress,
+        {
+          model: this.sequelize.models.libraryItem,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
     })
 
     if (user) userCache.set(user)
@@ -382,7 +392,15 @@ class User extends Model {
           [sequelize.Op.like]: email
         }
       },
-      include: this.sequelize.models.mediaProgress
+      include: [
+        this.sequelize.models.mediaProgress,
+        {
+          model: this.sequelize.models.libraryItem,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
     })
 
     if (user) userCache.set(user)
@@ -402,7 +420,15 @@ class User extends Model {
     if (cachedUser) return cachedUser
 
     const user = await this.findByPk(userId, {
-      include: this.sequelize.models.mediaProgress
+      include: [
+        this.sequelize.models.mediaProgress,
+        {
+          model: this.sequelize.models.libraryItem,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
     })
 
     if (user) userCache.set(user)
@@ -426,7 +452,15 @@ class User extends Model {
       where: {
         [sequelize.Op.or]: [{ id: userId }, { 'extraData.oldUserId': userId }]
       },
-      include: this.sequelize.models.mediaProgress
+      include: [
+        this.sequelize.models.mediaProgress,
+        {
+          model: this.sequelize.models.libraryItem,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
     })
 
     if (user) userCache.set(user)
@@ -447,7 +481,15 @@ class User extends Model {
 
     const user = await this.findOne({
       where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
-      include: this.sequelize.models.mediaProgress
+      include: [
+        this.sequelize.models.mediaProgress,
+        {
+          model: this.sequelize.models.libraryItem,
+          as: 'favorites',
+          attributes: ['id'],
+          through: { attributes: [] }
+        }
+      ]
     })
 
     if (user) userCache.set(user)
@@ -621,6 +663,7 @@ class User extends Model {
       isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
+      favorites: this.favorites?.map(f => f.id) || [],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -634,6 +677,7 @@ class User extends Model {
     if (minimal) {
       delete json.mediaProgress
       delete json.bookmarks
+      delete json.favorites
     }
     return json
   }
