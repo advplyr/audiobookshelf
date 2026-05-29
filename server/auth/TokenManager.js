@@ -1,4 +1,5 @@
 const { Op } = require('sequelize')
+const uuid = require('uuid')
 
 const Database = require('../Database')
 const Logger = require('../Logger')
@@ -115,6 +116,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
+      jti: uuid.v4(),
       type: 'access'
     }
     const options = {
@@ -138,6 +140,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
+      jti: uuid.v4(),
       type: 'refresh'
     }
     const options = {

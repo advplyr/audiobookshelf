@@ -149,7 +149,7 @@ class AuthorController {
       })
       if (libraryItems.length) {
         await Database.bookAuthorModel.removeByIds(req.author.id) // Remove all old BookAuthor
-        await Database.bookAuthorModel.bulkCreate(bookAuthorsToCreate) // Create all new BookAuthor
+        await Database.bookAuthorModel.bulkCreate(bookAuthorsToCreate, { ignoreDuplicates: true }) // Create all new unique BookAuthor
         for (const libraryItem of libraryItems) {
           await libraryItem.saveMetadataFile()
         }
