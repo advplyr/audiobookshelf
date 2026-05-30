@@ -301,6 +301,11 @@ class Server {
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
+    // Extend keep-alive timeout to 120s. Node's default (5s) closes idle
+    // connections quickly, forcing a new TCP handshake for each file when a
+    // client downloads multiple files in sequence (e.g. individual chapters).
+    this.server.keepAliveTimeout = 120000
+    this.server.headersTimeout = 125000
 
     router.use(
       fileUpload({
