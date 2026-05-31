@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, Op } = require('sequelize')
 const parseNameString = require('../utils/parsers/parseNameString')
 
 class Author extends Model {
@@ -119,17 +119,24 @@ class Author extends Model {
    * Get author by name and libraryId. name case insensitive
    * @param {string} authorName
    * @param {string} libraryId
+   * @param {string} [excludeAuthorId]
    * @returns {Promise<Author>}
    */
-  static async getByNameAndLibrary(authorName, libraryId) {
+  static async getByNameAndLibrary(authorName, libraryId, excludeAuthorId = null) {
     const searchName = this.normalizeSearchName(authorName)
     if (!searchName) return null
-    return this.findOne({
-      where: {
-        searchName,
-        libraryId
+
+    const where = {
+      searchName,
+      libraryId
+    }
+    if (excludeAuthorId) {
+      where.id = {
+        [Op.not]: excludeAuthorId
       }
-    })
+    }
+
+    return this.findOne({ where })
   }
 
   /**
