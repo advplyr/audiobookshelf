@@ -25,7 +25,7 @@ const UNIQUE_SEARCH_INDEX = 'unique_author_search_name_per_library'
  * @param {string} name
  * @returns {string}
  */
-async function normalizeSearchName(name) {
+function normalizeSearchName(name) {
   if (!name?.trim()) return null
   return name
     .normalize('NFKC') // Standardize compatibility characters
@@ -41,7 +41,7 @@ async function normalizeSearchName(name) {
  * @param {string} name
  * @returns { lastFirst: string?, searchName: string? }
  */
-async function buildAuthorDerivedFields(name) {
+function buildAuthorDerivedFields(name) {
   const searchName = normalizeSearchName(name)
   if (!searchName) {
     return {
