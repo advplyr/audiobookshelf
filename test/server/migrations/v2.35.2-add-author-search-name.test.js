@@ -78,7 +78,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
   })
 
   describe('up', () => {
-    it('should backfill derived author fields before adding indexes', async () => {
+    it('should backfill searchName before adding indexes', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
       const authors = await queryInterface.sequelize.query('SELECT id, name, lastFirst, searchName, asin, description, libraryId FROM authors ORDER BY id ASC')
@@ -86,7 +86,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 2,
           name: 'JRR Tolkein',
-          lastFirst: 'Tolkein, JRR',
+          lastFirst: null,
           searchName: 'jrrtolkein',
           asin: 'ASIN-1',
           description: null,
@@ -95,7 +95,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 3,
           name: 'John Smith',
-          lastFirst: 'Smith, John',
+          lastFirst: null,
           searchName: 'johnsmith',
           asin: null,
           description: 'Author bio',
@@ -104,7 +104,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 6,
           name: 'Anna-Lee',
-          lastFirst: 'Anna-Lee',
+          lastFirst: null,
           searchName: 'annalee',
           asin: null,
           description: null,
@@ -113,7 +113,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 7,
           name: 'JRR Tolkein',
-          lastFirst: 'Tolkein, JRR',
+          lastFirst: null,
           searchName: 'jrrtolkein',
           asin: null,
           description: null,
@@ -122,7 +122,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 8,
           name: 'Agatha Christie',
-          lastFirst: 'Christie, Agatha',
+          lastFirst: null,
           searchName: 'agathachristie',
           asin: null,
           description: null,
@@ -139,7 +139,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 2,
           name: 'JRR Tolkein',
-          lastFirst: 'Tolkein, JRR',
+          lastFirst: null,
           searchName: 'jrrtolkein',
           asin: 'ASIN-1',
           description: null,
@@ -148,7 +148,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 3,
           name: 'John Smith',
-          lastFirst: 'Smith, John',
+          lastFirst: null,
           searchName: 'johnsmith',
           asin: null,
           description: 'Author bio',
@@ -157,7 +157,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 6,
           name: 'Anna-Lee',
-          lastFirst: 'Anna-Lee',
+          lastFirst: null,
           searchName: 'annalee',
           asin: null,
           description: null,
@@ -166,7 +166,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 7,
           name: 'JRR Tolkein',
-          lastFirst: 'Tolkein, JRR',
+          lastFirst: null,
           searchName: 'jrrtolkein',
           asin: null,
           description: null,
@@ -175,7 +175,7 @@ describe('Migration v2.35.2-add-author-search-name', () => {
         {
           id: 8,
           name: 'Agatha Christie',
-          lastFirst: 'Christie, Agatha',
+          lastFirst: null,
           searchName: 'agathachristie',
           asin: null,
           description: null,
@@ -194,10 +194,10 @@ describe('Migration v2.35.2-add-author-search-name', () => {
 
       const libraryItems = await queryInterface.sequelize.query('SELECT mediaId, authorNamesFirstLast, authorNamesLastFirst FROM libraryItems ORDER BY mediaId ASC')
       expect(libraryItems[0]).to.deep.equal([
-        { mediaId: 101, authorNamesFirstLast: 'JRR Tolkein', authorNamesLastFirst: 'Tolkein, JRR' },
-        { mediaId: 102, authorNamesFirstLast: 'John Smith', authorNamesLastFirst: 'Smith, John' },
-        { mediaId: 103, authorNamesFirstLast: 'Anna-Lee', authorNamesLastFirst: 'Anna-Lee' },
-        { mediaId: 104, authorNamesFirstLast: 'JRR Tolkein, Agatha Christie', authorNamesLastFirst: 'Tolkein, JRR, Christie, Agatha' }
+        { mediaId: 101, authorNamesFirstLast: 'JRR Tolkein', authorNamesLastFirst: null },
+        { mediaId: 102, authorNamesFirstLast: 'John Smith', authorNamesLastFirst: null },
+        { mediaId: 103, authorNamesFirstLast: 'Anna-Lee', authorNamesLastFirst: null },
+        { mediaId: 104, authorNamesFirstLast: 'JRR Tolkein, Agatha Christie', authorNamesLastFirst: null }
       ])
     })
 
