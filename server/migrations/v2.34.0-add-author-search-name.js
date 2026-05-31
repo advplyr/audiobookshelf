@@ -21,6 +21,43 @@ const AUTHOR_SEARCH_INDEX = 'author_search_name'
 const AUTHOR_LAST_FIRST_INDEX = 'author_last_first'
 const UNIQUE_SEARCH_INDEX = 'unique_author_search_name_per_library'
 
+/**
+ * Remove all punctionation, diacritics, and whitespace and convert to lowercase for searching and matching
+ * (copied from Author model to ensure consistent normalization between the migration and the model)
+ * @param {string} name
+ * @returns {string}
+ */
+async function normalizeSearchName(name) {
+  if (!name?.trim()) return null
+  return name
+    .normalize('NFKC') // Standardize compatibility characters
+    .normalize('NFD') // Split accents into combining marks
+    .toLocaleLowerCase('und')
+    .replace(/[\p{P}\p{Z}\p{M}\s]+/gu, '') // Remove punctuation, whitespace, and diacritics
+    .trim()
+}
+
+/**
+ * Calculate derived fields. Returns null if name is empty after normalization
+ * (copied from Author model to ensure consistent normalization between the migration and the model)
+ * @param {string} name
+ * @returns { lastFirst: string?, searchName: string? }
+ */
+async function buildAuthorDerivedFields(name) {
+  const searchName = normalizeSearchName(name)
+  if (!searchName) {
+    return {
+      lastFirst: null, // populated after migration complete by server startup
+      searchName: null
+    }
+  }
+
+  return {
+    lastFirst: null, // populated after migration complete by server startup
+    searchName
+  }
+}
+
 async function indexExists(queryInterface, tableName, indexName) {
   const indexes = await queryInterface.showIndex(tableName)
   return indexes.some((index) => index.name === indexName)
@@ -62,7 +99,7 @@ async function backfillAuthorSearchName(queryInterface, logger, transaction, Aut
 
     logger.info(`${loggerPrefix} backfilling derived author fields for ${authors.length} authors`)
     for (const author of authors) {
-      const derivedFields = Author.buildAuthorDerivedFields(author.name)
+      const derivedFields = buildAuthorDerivedFields(author.name)
       await queryInterface.sequelize.query(
         `UPDATE ${AUTHORS_TABLE}
          SET lastFirst = :lastFirst,
