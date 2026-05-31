@@ -258,7 +258,8 @@ class Book extends Model {
   }
 
   get includedAudioFiles() {
-    return this.audioFiles.filter((af) => !af.exclude)
+    const audioFiles = Array.isArray(this.audioFiles) ? this.audioFiles : []
+    return audioFiles.filter((af) => !af.exclude)
   }
 
   get hasMediaFiles() {
@@ -328,10 +329,18 @@ class Book extends Model {
    * @returns {number}
    */
   get size() {
+    const computedSize = Number(this.dataValues?.computedMediaSize)
+    if (Number.isFinite(computedSize)) {
+      return computedSize
+    }
+
     let total = 0
-    this.audioFiles.forEach((af) => (total += af.metadata.size))
+    const audioFiles = Array.isArray(this.audioFiles) ? this.audioFiles : []
+    audioFiles.forEach((af) => {
+      total += Number(af?.metadata?.size) || 0
+    })
     if (this.ebookFile) {
-      total += this.ebookFile.metadata.size
+      total += Number(this.ebookFile?.metadata?.size) || 0
     }
     return total
   }
@@ -655,14 +664,18 @@ class Book extends Model {
       throw new Error(`[Book] Cannot convert to old JSON because series are not loaded`)
     }
 
+    const computedNumTracks = Number(this.dataValues?.computedNumTracks)
+    const computedNumAudioFiles = Number(this.dataValues?.computedNumAudioFiles)
+    const computedNumChapters = Number(this.dataValues?.computedNumChapters)
+
     return {
       id: this.id,
       metadata: this.oldMetadataToJSONMinified(),
       coverPath: this.coverPath,
       tags: [...(this.tags || [])],
-      numTracks: this.includedAudioFiles.length,
-      numAudioFiles: this.audioFiles?.length || 0,
-      numChapters: this.chapters?.length || 0,
+      numTracks: Number.isFinite(computedNumTracks) ? computedNumTracks : this.includedAudioFiles.length,
+      numAudioFiles: Number.isFinite(computedNumAudioFiles) ? computedNumAudioFiles : this.audioFiles?.length || 0,
+      numChapters: Number.isFinite(computedNumChapters) ? computedNumChapters : this.chapters?.length || 0,
       duration: this.duration,
       size: this.size,
       ebookFormat: this.ebookFile?.ebookFormat
