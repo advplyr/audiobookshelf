@@ -94,9 +94,9 @@ export default {
     },
     ebookUrl() {
       if (this.fileId) {
-        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+        return `/audiobookshelf/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
-      return `/api/items/${this.libraryItemId}/ebook`
+      return `/audiobookshelf/api/items/${this.libraryItemId}/ebook`
     },
     themeRules() {
       const theme = this.ereaderSettings.theme
@@ -206,7 +206,7 @@ export default {
      */
     updateProgress(payload) {
       if (!this.keepProgress) return
-      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
+      this.$axios.$patch(`/audiobookshelf/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },

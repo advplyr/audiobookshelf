@@ -31,9 +31,9 @@ export default {
     },
     ebookUrl() {
       if (this.fileId) {
-        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+        return `/audiobookshelf/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
-      return `/api/items/${this.libraryItemId}/ebook`
+      return `/audiobookshelf/api/items/${this.libraryItemId}/ebook`
     }
   },
   methods: {
