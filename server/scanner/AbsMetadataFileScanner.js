@@ -35,8 +35,18 @@ class AbsMetadataFileScanner {
       const abMetadata = abmetadataGenerator.parseJson(metadataText, 'book') || {}
 
       for (const key in abMetadata) {
-        // TODO: When to override with null or empty arrays?
-        if (abMetadata[key] === undefined || abMetadata[key] === null) continue
+        if (abMetadata[key] === undefined) continue
+        if (abMetadata[key] === null) {
+          // Propagate null for scalar string fields so that values intentionally cleared
+          // by the user are preserved when the library is rescanned. absMetadata has the
+          // highest metadata precedence, so a null here means the user explicitly cleared
+          // the field and lower-priority sources (e.g. audio file tags) should not refill it.
+          const clearableStringFields = ['subtitle', 'publishedYear', 'publisher', 'description', 'isbn', 'asin', 'language']
+          if (clearableStringFields.includes(key)) {
+            bookMetadata[key] = null
+          }
+          continue
+        }
         if (key === 'authors' && !abMetadata.authors?.length) continue
         if (key === 'genres' && !abMetadata.genres?.length) continue
         if (key === 'tags' && !abMetadata.tags?.length) continue
