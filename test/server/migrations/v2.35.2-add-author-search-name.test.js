@@ -6,9 +6,9 @@ const { DataTypes, Sequelize } = require('sequelize')
 const Logger = require('../../../server/Logger')
 const Author = require('../../../server/models/Author')
 
-const { up, down } = require('../../../server/migrations/v2.34.0-add-author-search-name')
+const { up, down } = require('../../../server/migrations/v2.35.2-add-author-search-name')
 
-describe('Migration v2.34.0-add-author-search-name', () => {
+describe('Migration v2.35.2-add-author-search-name', () => {
   let sequelize
   let queryInterface
 
@@ -213,15 +213,12 @@ describe('Migration v2.34.0-add-author-search-name', () => {
       const [[{ count: uniqueCount }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='unique_author_search_name_per_library'`)
       expect(uniqueCount).to.equal(1)
 
-      const [[{ count: duplicateCount }]] = await queryInterface.sequelize.query(
-        `SELECT COUNT(*) as count FROM authors WHERE libraryId = :libraryId AND searchName = :searchName`,
-        {
-          replacements: {
-            libraryId: 1,
-            searchName: Author.normalizeSearchName('JRR Tolkein')
-          }
+      const [[{ count: duplicateCount }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM authors WHERE libraryId = :libraryId AND searchName = :searchName`, {
+        replacements: {
+          libraryId: 1,
+          searchName: Author.normalizeSearchName('JRR Tolkein')
         }
-      )
+      })
       expect(Number(duplicateCount)).to.equal(1)
     })
 
