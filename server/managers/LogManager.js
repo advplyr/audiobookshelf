@@ -177,7 +177,7 @@ class LogManager {
    * @returns {string}
    */
   getMostRecentCurrentDailyLogs() {
-    return this.currentDailyLog?.logs.slice(-5000) || ''
+    return this.currentDailyLog?.logs.slice(-5000) || []
   }
 }
 module.exports = LogManager
