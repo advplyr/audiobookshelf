@@ -1,7 +1,7 @@
 <template>
   <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
     <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
-      <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
+      <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :cover-src="currentCoverSrc" />
     </div>
     <div class="flex items-start mb-6 lg:mb-0" :class="isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
       <div class="min-w-0 w-full">
@@ -178,6 +178,12 @@ export default {
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []
+    },
+    currentCoverSrc() {
+      if (this.streamEpisode?.coverPath) {
+        return `${this.$store.state.routerBasePath}/api/podcasts/${this.libraryItemId}/episode/${this.streamEpisode.id}/cover?ts=${this.streamEpisode.updatedAt}`
+      }
+      return null
     }
   },
   methods: {
@@ -397,7 +403,7 @@ export default {
           album: this.mediaMetadata.seriesName || '',
           artwork: [
             {
-              src: this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
+              src: this.currentCoverSrc || this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
             }
           ],
           chapterInfo

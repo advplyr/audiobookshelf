@@ -45,7 +45,11 @@ export default {
       default: 120
     },
     expandOnClick: Boolean,
-    bookCoverAspectRatio: Number
+    bookCoverAspectRatio: Number,
+    coverSrc: {
+      type: String,
+      default: null
+    }
   },
   data() {
     return {
@@ -100,6 +104,7 @@ export default {
       return store.getters['globals/getPlaceholderCoverSrc']
     },
     fullCoverUrl() {
+      if (this.coverSrc) return this.coverSrc
       if (!this.libraryItem) return null
       const store = this.$store || this.$nuxt.$store
       return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
