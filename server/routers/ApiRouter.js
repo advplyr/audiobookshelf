@@ -89,6 +89,8 @@ class ApiRouter {
     this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.removeNarrator.bind(this))
     this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
+    this.router.post('/libraries/:id/detect-series-with-ai', LibraryController.middleware.bind(this), LibraryController.detectSeriesWithAI.bind(this))
+    this.router.post('/libraries/:id/dedupe-books-with-ai', LibraryController.middleware.bind(this), LibraryController.dedupeBooksWithAI.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
     this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
@@ -222,6 +224,7 @@ class ApiRouter {
     //
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
+    this.router.post('/series/:id/organize-story-order', SeriesController.middleware.bind(this), SeriesController.organizeStoryOrder.bind(this))
 
     //
     // Playback Session Routes

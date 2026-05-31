@@ -33,6 +33,7 @@ describe('scanUtils', async () => {
       const dirname = Path.dirname(filePath)
       fileItems.push({
         name: Path.basename(filePath),
+        path: filePath,
         reldirpath: dirname === '.' ? '' : dirname,
         extension: Path.extname(filePath),
         deep: filePath.split('/').length - 1
@@ -47,6 +48,45 @@ describe('scanUtils', async () => {
       'Author/Book3': ['audiofile.mp3', 'Disc 1/audiofile.mp3', 'Disc 2/audiofile.mp3'],
       'Author/Series/Book4': ['CD1/audiofile.mp3', 'CD2/audiofile.mp3', 'cover.jpg'],
       'Author/Series2/Book5/deeply/nested': ['cd 01/audiofile.mp3', 'cd 02/audiofile.mp3']
+    })
+  })
+
+  it('should keep nested book folders separate when a parent folder also contains a direct media file', async () => {
+    const filePaths = [
+      'Series Alpha/Standalone Side Story.m4b',
+      'Series Alpha/Standalone Side Story.nfo',
+      'Series Alpha/Author Example - Book One Main Saga, Book 1/Book One Main Saga, Book 1.m4b',
+      'Series Alpha/Author Example - Book One Main Saga, Book 1/Book One Main Saga, Book 1.cue',
+      'Series Alpha/Author Example - Book Two Main Saga, Book 2/Book Two Main Saga, Book 2.m4b',
+      'Series Alpha/Author Example - Book Two Main Saga, Book 2/Book Two Main Saga, Book 2.nfo'
+    ]
+
+    const fileItems = filePaths.map((filePath) => {
+      const dirname = Path.dirname(filePath)
+      return {
+        name: Path.basename(filePath),
+        path: filePath,
+        reldirpath: dirname === '.' ? '' : dirname,
+        extension: Path.extname(filePath),
+        deep: filePath.split('/').length - 1
+      }
+    })
+
+    const libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs('book', fileItems, false)
+
+    expect(libraryItemGrouping).to.deep.equal({
+      'Series Alpha/Standalone Side Story.m4b': [
+        'Series Alpha/Standalone Side Story.m4b',
+        'Series Alpha/Standalone Side Story.nfo'
+      ],
+      'Series Alpha/Author Example - Book One Main Saga, Book 1': [
+        'Book One Main Saga, Book 1.m4b',
+        'Book One Main Saga, Book 1.cue'
+      ],
+      'Series Alpha/Author Example - Book Two Main Saga, Book 2': [
+        'Book Two Main Saga, Book 2.m4b',
+        'Book Two Main Saga, Book 2.nfo'
+      ]
     })
   })
 })

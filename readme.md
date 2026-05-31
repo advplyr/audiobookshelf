@@ -29,6 +29,7 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 - Progressive Web App (PWA)
 - Chromecast support on the web app and android app
 - Fetch metadata and cover art from several sources
+- OpenAI-assisted library tools for series detection, story ordering, scan-time metadata inference, poor directory-tree interpretation, and duplicate-book cleanup
 - Chapter editor and chapter lookup (using [Audnexus API](https://audnex.us/))
 - Merge your audio files into a single m4b
 - Embed metadata and cover image into your audio files
@@ -72,6 +73,42 @@ Check out the [API documentation](https://api.audiobookshelf.org/)
 #### Directory structure and folder names are important to Audiobookshelf!
 
 See [documentation](https://audiobookshelf.org/docs#book-directory-structure) for supported directory structure, folder naming conventions, and audio file metadata usage.
+
+### OpenAI-assisted library organization
+
+Audiobookshelf can optionally use OpenAI to help organize difficult audiobook libraries when filenames, folders, and metadata are inconsistent.
+
+Available OpenAI features in this branch:
+
+- Detect missing series assignments for books in a library
+- Re-evaluate existing series assignments after metadata changes
+- Organize books inside a series into story order
+- Infer book metadata during scans from messy paths, filenames, and embedded tag data
+- Interpret poor directory trees during scans to split ambiguous folders into better logical library items
+- Detect likely duplicate books in library tools and remove duplicate copies
+
+Configuration:
+
+- Open the web app and go to `Settings -> AI`
+- Enter your OpenAI API key, model, and base URL
+- Environment overrides are also supported through `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_BASE_URL`
+
+Library usage:
+
+- `Config -> Libraries -> Edit Library -> Scanner`
+- Enable `OpenAI path and filename inference` to let scans infer metadata from weak path structure
+- Enable `Use OpenAI to interpret poor directory trees during library scans` to let scans group difficult folder layouts more intelligently
+
+Library tools:
+
+- `Config -> Libraries -> Edit Library -> Tools`
+- `Detect Missing Series`
+- `Re-evaluate All Series`
+- `Dedupe Books`
+
+Series page usage:
+
+- Open a series page and use `Organize Story Order With AI`
 
 <br />
 

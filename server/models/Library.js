@@ -11,6 +11,7 @@ const Logger = require('../Logger')
  * @property {boolean} audiobooksOnly
  * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
  * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
+ * @property {boolean} openAIDirectoryGrouping Allow OpenAI to infer library-item grouping from poor directory structures
  * @property {string[]} metadataPrecedence
  * @property {number} markAsFinishedTimeRemaining Time remaining in seconds to mark as finished. (defaults to 10s)
  * @property {number} markAsFinishedPercentComplete Percent complete to mark as finished (0-100). If this is set it will be used over markAsFinishedTimeRemaining.
@@ -74,6 +75,7 @@ class Library extends Model {
         epubsAllowScriptedContent: false,
         hideSingleBookSeries: false,
         onlyShowLaterBooksInContinueSeries: false,
+        openAIDirectoryGrouping: false,
         metadataPrecedence: this.defaultMetadataPrecedence,
         markAsFinishedPercentComplete: null,
         markAsFinishedTimeRemaining: 10

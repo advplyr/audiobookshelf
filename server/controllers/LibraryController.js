@@ -19,11 +19,14 @@ const Scanner = require('../scanner/Scanner')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
 const RssFeedManager = require('../managers/RssFeedManager')
+const OpenAI = require('../providers/OpenAI')
 
 const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 const zipHelpers = require('../utils/zipHelpers')
+
+const openAI = new OpenAI()
 
 /**
  * @typedef RequestUserObject
@@ -1460,6 +1463,422 @@ class LibraryController {
     } catch (error) {
       Logger.error(`[LibraryController] Download failed for items "${filename}" at ${pathObjects.map((po) => po.path).join(', ')}`, error)
       zipHelpers.handleDownloadError(error, res)
+    }
+  }
+
+  async getLibraryBooksForAISeriesDetection(libraryId) {
+    const books = await Database.bookModel.findAll({
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId,
+            isMissing: false,
+            isInvalid: false
+          }
+        },
+        {
+          model: Database.bookAuthorModel,
+          include: {
+            model: Database.authorModel
+          },
+          separate: true,
+          order: [['createdAt', 'ASC']]
+        },
+        {
+          model: Database.bookSeriesModel,
+          include: {
+            model: Database.seriesModel
+          },
+          separate: true,
+          order: [['createdAt', 'ASC']]
+        }
+      ],
+      order: [['title', 'ASC']]
+    })
+
+    return books.map((book) => {
+      const libraryItem = book.libraryItem
+      delete book.dataValues.libraryItem
+      book.authors = book.bookAuthors?.map((bookAuthor) => bookAuthor.author) || []
+      delete book.dataValues.bookAuthors
+      book.series =
+        book.bookSeries?.map((bookSeries) => {
+          const series = bookSeries.series
+          delete bookSeries.dataValues.series
+          series.bookSeries = bookSeries
+          return series
+        }) || []
+      delete book.dataValues.bookSeries
+      libraryItem.media = book
+      return libraryItem
+    })
+  }
+
+  groupLibraryBooksByPrimaryAuthor(libraryItems) {
+    const groups = new Map()
+
+    for (const libraryItem of libraryItems) {
+      const primaryAuthor = libraryItem.media.authors?.[0]?.name?.trim()
+      if (!primaryAuthor) continue
+
+      const key = primaryAuthor.toLowerCase()
+      if (!groups.has(key)) {
+        groups.set(key, {
+          authorName: primaryAuthor,
+          libraryItems: []
+        })
+      }
+      groups.get(key).libraryItems.push(libraryItem)
+    }
+
+    return [...groups.values()]
+  }
+
+  getLibraryItemFolderKey(libraryItem) {
+    const basePath = (libraryItem.relPath || libraryItem.path || '').replace(/\\/g, '/')
+    if (!basePath) return null
+
+    const itemPath = libraryItem.isFile ? Path.posix.dirname(basePath) : basePath
+    const parentPath = Path.posix.dirname(itemPath)
+    if (!parentPath || parentPath === '.' || parentPath === '/') return null
+    return parentPath.toLowerCase()
+  }
+
+  groupLibraryBooksByFolder(libraryItems) {
+    const groups = new Map()
+
+    for (const libraryItem of libraryItems) {
+      const folderKey = LibraryController.prototype.getLibraryItemFolderKey.call(this, libraryItem)
+      if (!folderKey) continue
+
+      if (!groups.has(folderKey)) {
+        groups.set(folderKey, {
+          label: folderKey,
+          libraryItems: []
+        })
+      }
+      groups.get(folderKey).libraryItems.push(libraryItem)
+    }
+
+    return [...groups.values()]
+  }
+
+  normalizeBookTitleForAIDedupe(title) {
+    if (!title || typeof title !== 'string') return null
+    return title
+      .toLowerCase()
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\[[^\]]*]/g, ' ')
+      .replace(/\b(unabridged|abridged|audiobook|audio book)\b/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
+  groupLibraryBooksForAIDedupe(libraryItems) {
+    const parent = new Map()
+    const find = (id) => {
+      if (parent.get(id) !== id) {
+        parent.set(id, find(parent.get(id)))
+      }
+      return parent.get(id)
+    }
+    const union = (a, b) => {
+      const rootA = find(a)
+      const rootB = find(b)
+      if (rootA !== rootB) parent.set(rootB, rootA)
+    }
+
+    libraryItems.forEach((libraryItem) => parent.set(libraryItem.id, libraryItem.id))
+
+    const candidateMaps = [new Map(), new Map(), new Map()]
+    libraryItems.forEach((libraryItem) => {
+      const metadata = libraryItem.media.oldMetadataToJSON()
+      const primaryAuthor = metadata.authors?.[0]?.name?.trim().toLowerCase() || null
+      const normalizedTitle = LibraryController.prototype.normalizeBookTitleForAIDedupe.call(this, metadata.title || '')
+      const isbn = metadata.isbn?.replace(/[-\s]/g, '').toLowerCase() || null
+      const asin = metadata.asin?.trim().toLowerCase() || null
+
+      const candidateKeys = []
+      if (primaryAuthor && normalizedTitle) candidateKeys.push([candidateMaps[0], `${primaryAuthor}::${normalizedTitle}`])
+      if (isbn) candidateKeys.push([candidateMaps[1], `isbn::${isbn}`])
+      if (asin) candidateKeys.push([candidateMaps[2], `asin::${asin}`])
+
+      candidateKeys.forEach(([candidateMap, key]) => {
+        if (!candidateMap.has(key)) candidateMap.set(key, [])
+        candidateMap.get(key).push(libraryItem)
+      })
+    })
+
+    candidateMaps.forEach((candidateMap) => {
+      candidateMap.forEach((groupItems) => {
+        if (groupItems.length < 2) return
+        for (let i = 1; i < groupItems.length; i++) {
+          union(groupItems[0].id, groupItems[i].id)
+        }
+      })
+    })
+
+    const grouped = new Map()
+    libraryItems.forEach((libraryItem) => {
+      const root = find(libraryItem.id)
+      if (!grouped.has(root)) grouped.set(root, [])
+      grouped.get(root).push(libraryItem)
+    })
+
+    return [...grouped.values()]
+      .filter((groupItems) => groupItems.length > 1)
+      .map((groupItems) => ({
+        label: groupItems.map((libraryItem) => libraryItem.media.title).join(' | '),
+        libraryItems: groupItems.sort((a, b) => a.media.title.localeCompare(b.media.title))
+      }))
+  }
+
+  getDeleteDependenciesForLibraryItem(libraryItem) {
+    const mediaItemIds = []
+    const authorIds = []
+    const seriesIds = []
+
+    mediaItemIds.push(libraryItem.media.id)
+    if (libraryItem.media.authors?.length) {
+      authorIds.push(...libraryItem.media.authors.map((author) => author.id))
+    }
+    if (libraryItem.media.series?.length) {
+      seriesIds.push(...libraryItem.media.series.map((series) => series.id))
+    }
+
+    return {
+      mediaItemIds,
+      authorIds,
+      seriesIds
+    }
+  }
+
+  /**
+   * POST: /api/libraries/:id/detect-series-with-ai
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async detectSeriesWithAI(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[LibraryController] User "${req.user.username}" attempted AI series detection without update permissions`)
+      return res.sendStatus(403)
+    }
+    if (req.library.mediaType !== 'book') {
+      return res.status(400).send('AI series detection is only available for book libraries')
+    }
+    if (!openAI.isConfigured) {
+      return res.status(400).send('OpenAI is not configured')
+    }
+
+    try {
+      const onlyMissingSeries = req.query.onlyMissing !== '0'
+      const libraryItems = await LibraryController.prototype.getLibraryBooksForAISeriesDetection.call(this, req.library.id)
+      const authorGroups = LibraryController.prototype.groupLibraryBooksByPrimaryAuthor.call(this, libraryItems).filter(({ libraryItems }) => {
+        if (libraryItems.length < 2) return false
+        if (!onlyMissingSeries) return true
+        return libraryItems.some((libraryItem) => !libraryItem.media.series.length)
+      })
+      const authorCoveredEligibleIds = new Set()
+      authorGroups.forEach((authorGroup) => {
+        authorGroup.libraryItems.forEach((libraryItem) => {
+          if (!onlyMissingSeries || !libraryItem.media.series.length) {
+            authorCoveredEligibleIds.add(libraryItem.id)
+          }
+        })
+      })
+
+      const folderGroups = LibraryController.prototype.groupLibraryBooksByFolder
+        .call(this, libraryItems)
+        .filter(({ libraryItems }) => {
+          if (libraryItems.length < 2) return false
+          const eligibleItems = onlyMissingSeries ? libraryItems.filter((libraryItem) => !libraryItem.media.series.length) : libraryItems
+          if (!eligibleItems.length) return false
+          return eligibleItems.some((libraryItem) => !authorCoveredEligibleIds.has(libraryItem.id))
+        })
+      const evaluationGroups = [
+        ...authorGroups.map((group) => ({ type: 'author', label: group.authorName, libraryItems: group.libraryItems })),
+        ...folderGroups.map((group) => ({ type: 'folder', label: group.label, libraryItems: group.libraryItems }))
+      ]
+
+      let groupsProcessed = 0
+      let booksConsidered = 0
+      let booksUpdated = 0
+
+      for (const evaluationGroup of evaluationGroups) {
+        const eligibleLibraryItems = onlyMissingSeries ? evaluationGroup.libraryItems.filter((libraryItem) => !libraryItem.media.series.length) : evaluationGroup.libraryItems
+        if (!eligibleLibraryItems.length) continue
+
+        if (evaluationGroup.type === 'folder') {
+          const remainingEligibleItems = eligibleLibraryItems.filter((libraryItem) => !authorCoveredEligibleIds.has(libraryItem.id))
+          if (!remainingEligibleItems.length) continue
+          Logger.info(
+            `[LibraryController] AI series detection evaluating folder group "${evaluationGroup.label}" with ${evaluationGroup.libraryItems.length} books (${remainingEligibleItems.length} eligible for update)`
+          )
+          evaluationGroup.eligibleLibraryItems = remainingEligibleItems
+        } else {
+          Logger.info(
+            `[LibraryController] AI series detection evaluating author "${evaluationGroup.label}" with ${evaluationGroup.libraryItems.length} books (${eligibleLibraryItems.length} eligible for update)`
+          )
+          evaluationGroup.eligibleLibraryItems = eligibleLibraryItems
+        }
+
+        const assignments = await openAI.detectSeriesAssignments(evaluationGroup.label, evaluationGroup.libraryItems, evaluationGroup.type)
+        const assignmentsByLibraryItemId = new Map(assignments.map((assignment) => [assignment.id, assignment]))
+        groupsProcessed++
+
+        for (const libraryItem of evaluationGroup.eligibleLibraryItems) {
+          booksConsidered++
+
+          const assignment = assignmentsByLibraryItemId.get(libraryItem.id)
+          if (!assignment?.seriesName || !assignment.sequence) {
+            Logger.info(`[LibraryController] AI series detection skipped "${libraryItem.media.title}" (${libraryItem.id})`)
+            continue
+          }
+
+          Logger.info(
+            `[LibraryController] AI series detection applying "${libraryItem.media.title}" (${libraryItem.id}) -> series "${assignment.seriesName}" sequence "${assignment.sequence}"`
+          )
+
+          const existingSeries = libraryItem.media.series.find((series) => series.name.toLowerCase() === assignment.seriesName.toLowerCase())
+          const seriesPayload = libraryItem.media.series.map((series) => ({
+            id: series.id,
+            name: series.name,
+            sequence: series.bookSeries?.sequence || null
+          }))
+
+          if (existingSeries) {
+            const existingSeriesIndex = seriesPayload.findIndex((series) => series.id === existingSeries.id)
+            if (existingSeriesIndex >= 0) {
+              seriesPayload[existingSeriesIndex].sequence = assignment.sequence
+            }
+          } else {
+            seriesPayload.push({
+              name: assignment.seriesName,
+              sequence: assignment.sequence
+            })
+          }
+
+          const seriesUpdate = await libraryItem.media.updateSeriesFromRequest(seriesPayload, libraryItem.libraryId)
+          if (!seriesUpdate?.hasUpdates) {
+            Logger.info(`[LibraryController] AI series detection found no metadata changes for "${libraryItem.media.title}" (${libraryItem.id})`)
+            continue
+          }
+
+          if (seriesUpdate.seriesAdded?.length) {
+            seriesUpdate.seriesAdded.forEach((series) => {
+              Database.addSeriesToFilterData(req.library.id, series.name, series.id)
+            })
+          }
+
+          libraryItem.changed('updatedAt', true)
+          await libraryItem.save()
+          await libraryItem.saveMetadataFile()
+          booksUpdated++
+          SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
+        }
+      }
+
+      Logger.info(
+        `[LibraryController] AI series detection completed for library "${req.library.name}" - groupsProcessed=${groupsProcessed}, booksConsidered=${booksConsidered}, booksUpdated=${booksUpdated}`
+      )
+
+      res.json({
+        groupsProcessed,
+        booksConsidered,
+        updated: booksUpdated
+      })
+    } catch (error) {
+      Logger.error(`[LibraryController] Failed AI series detection for library "${req.library.name}"`, error)
+      res.status(500).send(error.message || 'Failed to detect series with AI')
+    }
+  }
+
+  /**
+   * POST: /api/libraries/:id/dedupe-books-with-ai
+   *
+   * @this {import('../routers/ApiRouter')}
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async dedupeBooksWithAI(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn(`[LibraryController] User "${req.user.username}" attempted AI dedupe without update permissions`)
+      return res.sendStatus(403)
+    }
+    if (req.library.mediaType !== 'book') {
+      return res.status(400).send('AI book dedupe is only available for book libraries')
+    }
+    if (!openAI.isConfigured) {
+      return res.status(400).send('OpenAI is not configured')
+    }
+
+    const hardDelete = req.query.hard !== '0'
+
+    try {
+      const libraryItems = await LibraryController.prototype.getLibraryBooksForAISeriesDetection.call(this, req.library.id)
+      const candidateGroups = LibraryController.prototype.groupLibraryBooksForAIDedupe.call(this, libraryItems)
+
+      let groupsProcessed = 0
+      let duplicatesRemoved = 0
+      const removedIds = new Set()
+      const authorIdsToCheck = new Set()
+      const seriesIdsToCheck = new Set()
+
+      for (const candidateGroup of candidateGroups) {
+        const activeLibraryItems = candidateGroup.libraryItems.filter((libraryItem) => !removedIds.has(libraryItem.id))
+        if (activeLibraryItems.length < 2) continue
+
+        Logger.info(`[LibraryController] AI dedupe evaluating candidate group "${candidateGroup.label}" with ${activeLibraryItems.length} books`)
+        const decisions = await openAI.detectDuplicateBooks(activeLibraryItems)
+        groupsProcessed++
+
+        for (const decision of decisions) {
+          for (const duplicateId of decision.duplicateIds) {
+            if (removedIds.has(duplicateId) || duplicateId === decision.keepId) continue
+            const duplicateItem = activeLibraryItems.find((libraryItem) => libraryItem.id === duplicateId)
+            if (!duplicateItem) continue
+
+            Logger.info(
+              `[LibraryController] AI dedupe removing duplicate "${duplicateItem.media.title}" (${duplicateItem.id}) keeping "${decision.keepId}" reason="${decision.reason || ''}"`
+            )
+
+            const deleteDependencies = LibraryController.prototype.getDeleteDependenciesForLibraryItem.call(this, duplicateItem)
+            await this.handleDeleteLibraryItem(duplicateItem.id, deleteDependencies.mediaItemIds, req.library.id)
+            if (hardDelete) {
+              await fs.remove(duplicateItem.path).catch((error) => {
+                Logger.error(`[LibraryController] Failed to hard-delete duplicate item path "${duplicateItem.path}"`, error)
+              })
+            }
+
+            deleteDependencies.authorIds.forEach((authorId) => authorIdsToCheck.add(authorId))
+            deleteDependencies.seriesIds.forEach((seriesId) => seriesIdsToCheck.add(seriesId))
+            removedIds.add(duplicateItem.id)
+            duplicatesRemoved++
+          }
+        }
+      }
+
+      await this.checkRemoveAuthorsWithNoBooks([...authorIdsToCheck])
+      await this.checkRemoveEmptySeries([...seriesIdsToCheck])
+      await Database.resetLibraryIssuesFilterData(req.library.id)
+
+      Logger.info(
+        `[LibraryController] AI book dedupe completed for library "${req.library.name}" - groupsProcessed=${groupsProcessed}, duplicatesRemoved=${duplicatesRemoved}, hardDelete=${hardDelete}`
+      )
+
+      res.json({
+        groupsProcessed,
+        duplicatesRemoved,
+        hardDelete
+      })
+    } catch (error) {
+      Logger.error(`[LibraryController] Failed AI dedupe for library "${req.library.name}"`, error)
+      res.status(500).send(error.message || 'Failed to dedupe books with AI')
     }
   }
 

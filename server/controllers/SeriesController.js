@@ -2,10 +2,13 @@ const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const OpenAI = require('../providers/OpenAI')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+
+const openAI = new OpenAI()
 
 /**
  * @typedef RequestUserObject
@@ -84,6 +87,68 @@ class SeriesController {
       SocketAuthority.emitter('series_updated', req.series.toOldJSON())
     }
     res.json(req.series.toOldJSON())
+  }
+
+  /**
+   * POST: /api/series/:id/organize-story-order
+   *
+   * @param {SeriesControllerRequest} req
+   * @param {Response} res
+   */
+  async organizeStoryOrder(req, res) {
+    if (!openAI.isConfigured) {
+      return res.status(400).send('OpenAI is not configured')
+    }
+
+    if (!req.libraryItemsInSeries.length) {
+      return res.status(400).send('No books found in this series')
+    }
+
+    try {
+      const seriesOrder = await openAI.getSeriesOrder(req.series, req.libraryItemsInSeries)
+      const sequenceByLibraryItemId = new Map(seriesOrder.map((book) => [book.id, book.sequence]))
+
+      const updatedItems = []
+      Logger.info(`[SeriesController] AI story-order evaluation returned ${seriesOrder.length} books for series "${req.series.name}"`)
+      for (const libraryItem of req.libraryItemsInSeries) {
+        const nextSequence = sequenceByLibraryItemId.get(libraryItem.id)
+        if (!nextSequence) continue
+
+        Logger.info(`[SeriesController] AI story-order applying "${libraryItem.media.title}" (${libraryItem.id}) -> sequence "${nextSequence}" in series "${req.series.name}"`)
+
+        const seriesPayload = libraryItem.media.series.map((series) => ({
+          id: series.id,
+          name: series.name,
+          sequence: series.id === req.series.id ? nextSequence : series.bookSeries?.sequence || null
+        }))
+
+        const seriesUpdate = await libraryItem.media.updateSeriesFromRequest(seriesPayload, libraryItem.libraryId)
+        if (!seriesUpdate?.hasUpdates) {
+          Logger.info(`[SeriesController] AI story-order found no change for "${libraryItem.media.title}" (${libraryItem.id})`)
+          continue
+        }
+
+        libraryItem.changed('updatedAt', true)
+        await libraryItem.save()
+        await libraryItem.saveMetadataFile()
+        updatedItems.push(libraryItem)
+        SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
+      }
+
+      if (updatedItems.length) {
+        SocketAuthority.emitter('series_updated', req.series.toOldJSON())
+      }
+
+      Logger.info(`[SeriesController] AI story-order completed for series "${req.series.name}" - updated=${updatedItems.length}, total=${req.libraryItemsInSeries.length}`)
+
+      res.json({
+        updated: updatedItems.length,
+        total: req.libraryItemsInSeries.length
+      })
+    } catch (error) {
+      Logger.error(`[SeriesController] Failed to organize story order for "${req.series.name}"`, error)
+      res.status(500).send(error.message || 'Failed to organize story order')
+    }
   }
 
   /**
