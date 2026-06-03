@@ -622,7 +622,7 @@
   "LabelSettingsStoreMetadataWithItemHelp": "Par défaut, les fichiers de métadonnées sont stockés dans /metadata/items. En activant ce paramètre, les fichiers de métadonnées seront stockés dans les dossiers des éléments de votre bibliothèque",
   "LabelSettingsTimeFormat": "Format d’heure",
   "LabelShare": "Partager",
-  "LabelShareDownloadableHelp": "Permet aux utilisateurs de télécharger un fichier ZIP de l'élément de la bibliothèque.",
+  "LabelShareDownloadableHelp": "Permet aux utilisateurs disposant du lien de partage de télécharger un fichier zip contenant l'élément de la bibliothèque.",
   "LabelShareOpen": "Ouvrir le partage",
   "LabelShareURL": "Partager l’URL",
   "LabelShowAll": "Tout afficher",

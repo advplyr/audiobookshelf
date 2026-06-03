@@ -227,7 +227,7 @@ export default {
         .catch((error) => {
           console.error('Failed to create collection', error)
           var errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error(this.$strings.ToastCollectionCreateFailed + ': ' + errMsg)
+          this.$toast.error(errMsg)
           this.processing = false
         })
     }

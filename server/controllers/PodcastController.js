@@ -5,9 +5,10 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
+const cron = require('../libs/nodeCron')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
+const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils')
 const { validateUrl } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
@@ -46,6 +47,11 @@ class PodcastController {
       return res.status(400).send('Invalid request body. "media" and "media.metadata" are required')
     }
 
+    if (payload.media.autoDownloadSchedule && !cron.validate(payload.media.autoDownloadSchedule)) {
+      Logger.error(`[PodcastController] Invalid auto download schedule cron expression "${payload.media.autoDownloadSchedule}"`)
+      return res.status(400).send('Invalid auto download schedule cron expression')
+    }
+
     const library = await Database.libraryModel.findByIdWithFolders(payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
@@ -58,7 +64,17 @@ class PodcastController {
       return res.status(404).send('Folder not found')
     }
 
+    if (typeof payload.path !== 'string' || !payload.path.trim()) {
+      return res.status(400).send('Invalid request body. "path" must be a non-empty string')
+    }
+
+    const libraryFolderPath = filePathToPOSIX(folder.path)
     const podcastPath = filePathToPOSIX(payload.path)
+
+    if (!isSameOrSubPath(libraryFolderPath, podcastPath)) {
+      Logger.error(`[PodcastController] Create: Podcast path is outside library folder "${libraryFolderPath}": "${podcastPath}"`)
+      return res.status(400).send('Podcast path must be inside the selected library folder')
+    }
 
     // Check if a library item with this podcast folder exists already
     const existingLibraryItem =
@@ -83,7 +99,7 @@ class PodcastController {
 
     const libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
 
-    let relPath = payload.path.replace(folder.fullPath, '')
+    let relPath = podcastPath.replace(libraryFolderPath, '')
     if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
     let newLibraryItem = null

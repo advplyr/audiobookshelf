@@ -275,7 +275,7 @@
   "LabelBonus": "Bonus",
   "LabelBooks": "Knihy",
   "LabelButtonText": "Text tlačidla",
-  "LabelByAuthor": "od",
+  "LabelByAuthor": "od {0}",
   "LabelChangePassword": "Zmeniť heslo",
   "LabelChannels": "Kanály",
   "LabelChapterCount": "{0} kapitol",

@@ -10,7 +10,7 @@ const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
-const { reqSupportsWebp, isValidASIN } = require('../utils/index')
+const { reqSupportsWebp, isValidASIN, clampPositiveInt } = require('../utils/index')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -149,7 +149,7 @@ class AuthorController {
       })
       if (libraryItems.length) {
         await Database.bookAuthorModel.removeByIds(req.author.id) // Remove all old BookAuthor
-        await Database.bookAuthorModel.bulkCreate(bookAuthorsToCreate) // Create all new BookAuthor
+        await Database.bookAuthorModel.bulkCreate(bookAuthorsToCreate, { ignoreDuplicates: true }) // Create all new unique BookAuthor
         for (const libraryItem of libraryItems) {
           await libraryItem.saveMetadataFile()
         }
@@ -412,8 +412,8 @@ class AuthorController {
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
-      height: height ? parseInt(height) : null,
-      width: width ? parseInt(width) : null
+      height: clampPositiveInt(height ? parseInt(height) : null, 4096),
+      width: clampPositiveInt(width ? parseInt(width) : null, 4096)
     }
     return CacheManager.handleAuthorCache(res, authorId, options)
   }
