@@ -65,7 +65,7 @@ const MAX_SCALE = 400
 const MIN_SCALE = 10
 
 Archive.init({
-  workerUrl: '/libarchive/worker-bundle.js'
+  workerUrl: '/audiobookshelf/libarchive/worker-bundle.js'
 })
 
 export default {
@@ -109,9 +109,9 @@ export default {
     },
     ebookUrl() {
       if (this.fileId) {
-        return `/audiobookshelf/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
-      return `/audiobookshelf/api/items/${this.libraryItemId}/ebook`
+      return `/api/items/${this.libraryItemId}/ebook`
     },
     comicMetadataKeys() {
       return this.comicMetadata ? Object.keys(this.comicMetadata) : []
@@ -176,7 +176,7 @@ export default {
         ebookLocation: this.page,
         ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
       }
-      this.$axios.$patch(`/audiobookshelf/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('ComicReader.updateProgress failed:', error)
       })
     },

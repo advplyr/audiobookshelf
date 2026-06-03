@@ -127,7 +127,7 @@ export default {
         ebookLocation: this.page,
         ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
       }
-      this.$axios.$patch(`/audiobookshelf/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload, { progress: false }).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },
