@@ -240,11 +240,7 @@ class PodcastScanner {
     if (hasMediaChanges) {
       await media.save()
       await this.saveMetadataFile(existingLibraryItem, libraryScan)
-      libraryItemUpdated = global.ServerSettings.storeMetadataWithItem
-    } else if (global.ServerSettings.storeMetadataWithItem) {
-      // Always save metadata file when setting is enabled, even without media changes
-      await this.saveMetadataFile(existingLibraryItem, libraryScan)
-      libraryItemUpdated = true
+      libraryItemUpdated = global.ServerSettings.storeMetadataWithItem && !existingLibraryItem.isFile
     }
 
     if (libraryItemUpdated) {
