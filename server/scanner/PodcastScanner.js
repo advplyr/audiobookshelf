@@ -443,18 +443,7 @@ class PodcastScanner {
       asin: libraryItem.media.asin,
       language: libraryItem.media.language,
       explicit: !!libraryItem.media.explicit,
-      podcastType: libraryItem.media.podcastType,
-      episodes: (libraryItem.media.podcastEpisodes || []).map((ep) => ({
-        title: ep.title,
-        subtitle: ep.subtitle,
-        season: ep.season,
-        episode: ep.episode,
-        episodeType: ep.episodeType,
-        pubDate: ep.pubDate,
-        publishedAt: ep.publishedAt,
-        description: ep.description,
-        chapters: ep.chapters || []
-      }))
+      podcastType: libraryItem.media.podcastType
     }
     return fsExtra
       .writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2))
@@ -488,12 +477,63 @@ class PodcastScanner {
 
         libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
 
+        // Write per-episode metadata files alongside each episode's audio file
+        if (storeMetadataWithItem && libraryItem.media.podcastEpisodes?.length) {
+          await this.saveEpisodeMetadataFiles(libraryItem, libraryItem.media.podcastEpisodes, libraryScan)
+        }
+
         return metadataLibraryFile
       })
       .catch((error) => {
         libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
         return null
       })
+  }
+
+  /**
+   * Write per-episode metadata files alongside each episode's audio file.
+   * For an episode at /path/to/episode.mp3, writes /path/to/episode.json
+   * containing title, description, pubDate, chapters, etc.
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')[]} podcastEpisodes
+   * @param {import('./LibraryScan')} libraryScan
+   * @returns {Promise<void>}
+   */
+  async saveEpisodeMetadataFiles(libraryItem, podcastEpisodes, libraryScan) {
+    for (const episode of podcastEpisodes) {
+      if (!episode.audioFile?.metadata?.path) continue
+
+      const audioFilePath = episode.audioFile.metadata.path
+      const episodeMetadataPath = audioFilePath.replace(/\.[^.]+$/, '.json')
+
+      const episodeJson = {
+        title: episode.title,
+        subtitle: episode.subtitle,
+        season: episode.season,
+        episode: episode.episode,
+        episodeType: episode.episodeType,
+        pubDate: episode.pubDate,
+        publishedAt: episode.publishedAt,
+        description: episode.description,
+        chapters: episode.chapters || []
+      }
+
+      try {
+        await fsExtra.writeFile(episodeMetadataPath, JSON.stringify(episodeJson, null, 2))
+        libraryScan.addLog(LogLevel.DEBUG, `Saved episode metadata to "${episodeMetadataPath}"`)
+
+        // Add to libraryFiles if not already tracked
+        const metadataLibraryFile = libraryItem.libraryFiles.find((lf) => lf.metadata.path === filePathToPOSIX(episodeMetadataPath))
+        if (!metadataLibraryFile) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(episodeMetadataPath, Path.basename(episodeMetadataPath))
+          libraryItem.libraryFiles.push(newLibraryFile.toJSON())
+        }
+      } catch (error) {
+        libraryScan.addLog(LogLevel.ERROR, `Failed to save episode metadata at "${episodeMetadataPath}"`, error)
+      }
+    }
   }
 }
 module.exports = new PodcastScanner()
