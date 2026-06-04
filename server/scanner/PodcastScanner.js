@@ -443,7 +443,18 @@ class PodcastScanner {
       asin: libraryItem.media.asin,
       language: libraryItem.media.language,
       explicit: !!libraryItem.media.explicit,
-      podcastType: libraryItem.media.podcastType
+      podcastType: libraryItem.media.podcastType,
+      episodes: (libraryItem.media.podcastEpisodes || []).map((ep) => ({
+        title: ep.title,
+        subtitle: ep.subtitle,
+        season: ep.season,
+        episode: ep.episode,
+        episodeType: ep.episodeType,
+        pubDate: ep.pubDate,
+        publishedAt: ep.publishedAt,
+        description: ep.description,
+        chapters: ep.chapters || []
+      }))
     }
     return fsExtra
       .writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2))
