@@ -3,20 +3,25 @@ const sinon = require('sinon')
 
 const Database = require('../../../server/Database')
 const Logger = require('../../../server/Logger')
+const User = require('../../../server/models/User')
 const OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy')
 
 describe('OidcAuthStrategy', () => {
   let strategy
   let originalServerSettings
+  let originalUserModel
 
   beforeEach(() => {
     strategy = new OidcAuthStrategy()
     originalServerSettings = Database.serverSettings
+    originalUserModel = Database.userModel
+    Database.userModel = User
     sinon.stub(Logger, 'info')
   })
 
   afterEach(() => {
     Database.serverSettings = originalServerSettings
+    Database.userModel = originalUserModel
     sinon.restore()
   })
 
@@ -30,6 +35,7 @@ describe('OidcAuthStrategy', () => {
       await strategy.setUserGroup(user, { groups: ['syncloud'] })
 
       expect(user.type).to.equal('admin')
+      expect(user.permissions.upload).to.be.true
       expect(user.save.calledOnce).to.be.true
     })
 

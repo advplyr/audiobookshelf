@@ -212,6 +212,7 @@ class OidcAuthStrategy {
       if (user.type !== userType) {
         Logger.info(`[OidcAuth] openid callback: Updating user "${user.username}" type to "${userType}" from "${user.type}"`)
         user.type = userType
+        user.permissions = Database.userModel.getDefaultPermissionsForUserType(userType)
         await user.save()
       }
     } else {
