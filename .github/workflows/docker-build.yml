@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tags:
-        description: 'Docker Tag'
+        description: 'Docker Tag (e.g. latest)'
         required: true
         default: 'latest'
   push:
@@ -22,7 +22,7 @@ on:
 
 jobs:
   build:
-    if: ${{ !contains(github.event.head_commit.message, 'skip ci') && github.repository == 'advplyr/audiobookshelf' }}
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -33,8 +33,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: advplyr/audiobookshelf,ghcr.io/${{ github.repository_owner }}/audiobookshelf
+          images: entree3000/audiobookshelf
           tags: |
+            type=edge,branch=main
             type=edge,branch=master
             type=semver,pattern={{version}}
 
@@ -58,17 +59,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Login to ghcr
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_PASSWORD }}
-
       - name: Build image
         uses: docker/build-push-action@v6
         with:
-          tags: ${{ github.event.inputs.tags || steps.meta.outputs.tags }}
+          tags: ${{ github.event.inputs.tags && format('entree3000/audiobookshelf:{0}', github.event.inputs.tags) || steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           context: .
           platforms: linux/amd64,linux/arm64
