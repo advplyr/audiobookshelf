@@ -192,10 +192,12 @@ class OidcAuthStrategy {
 
     if (!userinfo[groupClaimName]) throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
 
-    const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase())
+    const adminGroups = (Database.serverSettings.authOpenIDAdminGroups || '').split(',').map((group) => group.trim().toLowerCase()).filter(Boolean)
+    const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase()).map((group) => (adminGroups.includes(group) ? 'admin' : group))
     const rolesInOrderOfPriority = ['admin', 'user', 'guest']
 
-    let userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role))
+    const defaultRole = (Database.serverSettings.authOpenIDGroupDefaultRole || '').toLowerCase()
+    let userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role)) || (rolesInOrderOfPriority.includes(defaultRole) ? defaultRole : undefined)
     if (userType) {
       if (user.type === 'root') {
         // Check OpenID Group
