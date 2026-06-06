@@ -31,9 +31,16 @@
 
         <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoDownloadEpisodes" v-model="cronExpression" />
       </template>
+
+      <template v-if="feedUrl">
+        <div class="flex items-center justify-between mb-4 mt-6">
+          <p class="text-base md:text-xl font-semibold">{{ $strings.HeaderEpisodeMetadata }}</p>
+          <ui-checkbox v-model="enableFetchEpisodeMetadata" :label="$strings.LabelEnable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
+        </div>
+      </template>
     </div>
 
-    <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white/5">
+    <div v-if="feedUrl || autoDownloadEpisodes || fetchEpisodeMetadata" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white/5">
       <div class="flex items-center px-2 md:px-4">
         <div class="grow" />
         <ui-btn @click="save" :disabled="!isUpdated" :color="isUpdated ? 'bg-success' : 'bg-primary'" class="mx-2">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdatesWereNecessary }}</ui-btn>
@@ -54,6 +61,7 @@ export default {
   data() {
     return {
       enableAutoDownloadEpisodes: false,
+      enableFetchEpisodeMetadata: false,
       cronExpression: null,
       newMaxEpisodesToKeep: 0,
       newMaxNewEpisodesToDownload: 0
@@ -94,6 +102,9 @@ export default {
     autoDownloadEpisodes() {
       return !!this.media.autoDownloadEpisodes
     },
+    fetchEpisodeMetadata() {
+      return !!this.media.fetchEpisodeMetadata
+    },
     autoDownloadSchedule() {
       return this.media.autoDownloadSchedule
     },
@@ -104,7 +115,7 @@ export default {
       return this.media.maxNewEpisodesToDownload
     },
     isUpdated() {
-      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
+      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload) || this.fetchEpisodeMetadata !== this.enableFetchEpisodeMetadata
     }
   },
   methods: {
@@ -152,6 +163,10 @@ export default {
         updatePayload.maxNewEpisodesToDownload = this.newMaxNewEpisodesToDownload
       }
 
+      if (this.enableFetchEpisodeMetadata !== this.fetchEpisodeMetadata) {
+        updatePayload.fetchEpisodeMetadata = this.enableFetchEpisodeMetadata
+      }
+
       this.updateDetails(updatePayload)
     },
     async updateDetails(updatePayload) {
@@ -175,6 +190,7 @@ export default {
     },
     init() {
       this.enableAutoDownloadEpisodes = this.autoDownloadEpisodes
+      this.enableFetchEpisodeMetadata = this.fetchEpisodeMetadata
       this.cronExpression = this.autoDownloadSchedule
       this.newMaxEpisodesToKeep = this.maxEpisodesToKeep
       this.newMaxNewEpisodesToDownload = this.maxNewEpisodesToDownload

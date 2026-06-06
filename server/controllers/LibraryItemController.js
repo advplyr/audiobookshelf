@@ -215,6 +215,7 @@ class LibraryItemController {
 
     // Podcast specific
     let isPodcastAutoDownloadUpdated = false
+    let isFetchEpisodeMetadataEnabled = false
     if (req.libraryItem.isPodcast) {
       if (mediaPayload.autoDownloadEpisodes !== undefined && req.libraryItem.media.autoDownloadEpisodes !== mediaPayload.autoDownloadEpisodes) {
         isPodcastAutoDownloadUpdated = true
@@ -225,6 +226,11 @@ class LibraryItemController {
       if (mediaPayload.autoDownloadSchedule && !cron.validate(mediaPayload.autoDownloadSchedule)) {
         Logger.error(`[LibraryItemController] Invalid auto download schedule cron expression "${mediaPayload.autoDownloadSchedule}" for library item "${req.libraryItem.media.title}"`)
         return res.status(400).send('Invalid auto download schedule cron expression')
+      }
+
+      // Check if fetchEpisodeMetadata is being toggled on
+      if (mediaPayload.fetchEpisodeMetadata && !req.libraryItem.media.fetchEpisodeMetadata) {
+        isFetchEpisodeMetadataEnabled = true
       }
     }
 
@@ -274,6 +280,14 @@ class LibraryItemController {
 
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(req.libraryItem)
+      }
+
+      // Fetch and populate episode metadata from RSS when toggle is turned on
+      if (isFetchEpisodeMetadataEnabled) {
+        const episodesUpdated = await this.podcastManager.populateEpisodeMetadataFromFeed(req.libraryItem)
+        if (episodesUpdated) {
+          await req.libraryItem.saveMetadataFile()
+        }
       }
 
       Logger.debug(`[LibraryItemController] Updated library item media ${req.libraryItem.media.title}`)

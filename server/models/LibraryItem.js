@@ -672,6 +672,20 @@ class LibraryItem extends Model {
         explicit: !!mediaExpanded.explicit,
         podcastType: mediaExpanded.podcastType
       }
+
+      if (mediaExpanded.fetchEpisodeMetadata && mediaExpanded.podcastEpisodes?.length) {
+        jsonObject.episodes = mediaExpanded.podcastEpisodes.map((ep) => ({
+          title: ep.title,
+          description: ep.description || null,
+          season: ep.season || null,
+          episode: ep.episode || null,
+          episodeType: ep.episodeType || null,
+          pubDate: ep.pubDate || null,
+          guid: ep.extraData?.guid || null,
+          subtitle: ep.subtitle || null,
+          duration: ep.audioFile?.duration ? String(Math.round(ep.audioFile.duration)) : null
+        }))
+      }
     }
 
     return fsExtra
