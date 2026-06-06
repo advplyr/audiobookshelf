@@ -12,6 +12,71 @@ const fsExtra = require('../libs/fsExtra')
 const PodcastEpisode = require('../models/PodcastEpisode')
 const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const Logger = require('../Logger')
+
+/**
+ * Match a podcast episode to an entry in the metadata episodes array
+ * @param {Object} episode - PodcastEpisode model or plain object
+ * @param {Object[]} metadataEpisodes - episodes array from metadata.json
+ * @returns {Object|null}
+ */
+function matchEpisodeMetadata(episode, metadataEpisodes) {
+  // Prefer GUID match
+  const guid = episode.extraData?.guid
+  if (guid) {
+    const match = metadataEpisodes.find((me) => me.guid === guid)
+    if (match) return match
+  }
+  // Fall back to title match (case-insensitive, trimmed)
+  const episodeTitle = (episode.title || '').trim().toLowerCase()
+  if (episodeTitle) {
+    const match = metadataEpisodes.find((me) => (me.title || '').trim().toLowerCase() === episodeTitle)
+    if (match) return match
+  }
+  return null
+}
+
+/**
+ * Backfill null episode fields from matched metadata
+ * @param {Object} episode - PodcastEpisode model or plain object
+ * @param {Object} matched - matched metadata entry
+ * @returns {boolean} whether any fields were updated
+ */
+function applyEpisodeMetadata(episode, matched) {
+  let updated = false
+  if (!episode.description && matched.description) {
+    episode.description = matched.description
+    updated = true
+  }
+  if (!episode.season && matched.season) {
+    episode.season = matched.season
+    updated = true
+  }
+  if (!episode.episode && matched.episode) {
+    episode.episode = matched.episode
+    updated = true
+  }
+  if (!episode.episodeType && matched.episodeType) {
+    episode.episodeType = matched.episodeType
+    updated = true
+  }
+  if (!episode.pubDate && matched.pubDate) {
+    episode.pubDate = matched.pubDate
+    updated = true
+  }
+  if (!episode.subtitle && matched.subtitle) {
+    episode.subtitle = matched.subtitle
+    updated = true
+  }
+  if (matched.guid && !episode.extraData?.guid) {
+    episode.extraData = { ...(episode.extraData || {}), guid: matched.guid }
+    if (typeof episode.changed === 'function') {
+      episode.changed('extraData', true)
+    }
+    updated = true
+  }
+  return updated
+}
 
 /**
  * Metadata for podcasts pulled from files
@@ -232,6 +297,17 @@ class PodcastScanner {
       }
     }
 
+    // Backfill episode metadata from metadata.json if fetchEpisodeMetadata is enabled
+    if (media.fetchEpisodeMetadata && podcastMetadata.episodes?.length) {
+      for (const episode of existingPodcastEpisodes) {
+        const matched = matchEpisodeMetadata(episode, podcastMetadata.episodes)
+        if (matched && applyEpisodeMetadata(episode, matched)) {
+          libraryScan.addLog(LogLevel.INFO, `Backfilled metadata for episode "${episode.title}" from metadata.json`)
+          await episode.save()
+        }
+      }
+    }
+
     existingLibraryItem.media = media
 
     let libraryItemUpdated = false
@@ -310,6 +386,16 @@ class PodcastScanner {
     // Set default podcastType to episodic
     if (!podcastMetadata.podcastType) {
       podcastMetadata.podcastType = 'episodic'
+    }
+
+    // Backfill episode metadata from metadata.json if episodes data exists
+    if (podcastMetadata.episodes?.length) {
+      for (const newEpisode of newPodcastEpisodes) {
+        const matched = matchEpisodeMetadata(newEpisode, podcastMetadata.episodes)
+        if (matched && applyEpisodeMetadata(newEpisode, matched)) {
+          libraryScan.addLog(LogLevel.INFO, `Backfilled metadata for episode "${newEpisode.title}" from metadata.json`)
+        }
+      }
     }
 
     const podcastObject = {
@@ -445,6 +531,21 @@ class PodcastScanner {
       explicit: !!libraryItem.media.explicit,
       podcastType: libraryItem.media.podcastType
     }
+
+    if (libraryItem.media.fetchEpisodeMetadata && libraryItem.media.podcastEpisodes?.length) {
+      jsonObject.episodes = libraryItem.media.podcastEpisodes.map((ep) => ({
+        title: ep.title,
+        description: ep.description || null,
+        season: ep.season || null,
+        episode: ep.episode || null,
+        episodeType: ep.episodeType || null,
+        pubDate: ep.pubDate || null,
+        guid: ep.extraData?.guid || null,
+        subtitle: ep.subtitle || null,
+        duration: ep.audioFile?.duration ? String(Math.round(ep.audioFile.duration)) : null
+      }))
+    }
+
     return fsExtra
       .writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2))
       .then(async () => {

@@ -56,6 +56,9 @@
         <div class="px-4">
           <ui-checkbox v-model="podcast.autoDownloadEpisodes" :label="$strings.LabelAutoDownloadEpisodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
         </div>
+        <div class="px-4">
+          <ui-checkbox v-model="podcast.fetchEpisodeMetadata" :label="$strings.LabelFetchEpisodeMetadata" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
+        </div>
         <ui-btn color="bg-success" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
       </div>
     </div>
@@ -94,6 +97,7 @@ export default {
         itunesId: '',
         itunesArtistId: '',
         autoDownloadEpisodes: false,
+        fetchEpisodeMetadata: false,
         language: '',
         explicit: false,
         type: ''
@@ -196,7 +200,8 @@ export default {
             explicit: this.podcast.explicit,
             type: this.podcast.type
           },
-          autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
+          autoDownloadEpisodes: this.podcast.autoDownloadEpisodes,
+          fetchEpisodeMetadata: this.podcast.fetchEpisodeMetadata
         }
       }
       console.log('Podcast payload', podcastPayload)
