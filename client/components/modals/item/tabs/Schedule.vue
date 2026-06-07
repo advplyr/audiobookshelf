@@ -31,6 +31,7 @@
 
         <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoDownloadEpisodes" v-model="cronExpression" />
       </template>
+
     </div>
 
     <div v-if="feedUrl || autoDownloadEpisodes" class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg border-t border-white/5">
@@ -104,8 +105,7 @@ export default {
       return this.media.maxNewEpisodesToDownload
     },
     isUpdated() {
-      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
-    }
+      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)    }
   },
   methods: {
     updatedMaxEpisodesToKeep() {

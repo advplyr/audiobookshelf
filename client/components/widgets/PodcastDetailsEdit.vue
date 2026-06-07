@@ -43,6 +43,11 @@
         <div class="w-1/4 px-1">
           <ui-dropdown :label="$strings.LabelPodcastType" v-model="details.type" :items="podcastTypes" small class="max-w-52" @input="handleInputChange" />
         </div>
+        <div class="grow px-1 pt-6">
+          <div class="flex justify-center">
+            <ui-checkbox v-model="enableFetchEpisodeMetadata" :label="$strings.LabelFetchEpisodeMetadata" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" @input="handleInputChange" />
+          </div>
+        </div>
       </div>
     </form>
   </div>
@@ -73,7 +78,8 @@ export default {
         language: null,
         type: null
       },
-      newTags: []
+      newTags: [],
+      enableFetchEpisodeMetadata: false
     }
   },
   watch: {
@@ -223,6 +229,10 @@ export default {
         updatePayload.tags = [...this.newTags]
       }
 
+      if (this.enableFetchEpisodeMetadata !== !!this.media.fetchEpisodeMetadata) {
+        updatePayload.fetchEpisodeMetadata = this.enableFetchEpisodeMetadata
+      }
+
       return {
         updatePayload,
         hasChanges: !!Object.keys(updatePayload).length
@@ -244,6 +254,7 @@ export default {
       this.details.type = this.mediaMetadata.type || 'episodic'
 
       this.newTags = [...(this.media.tags || [])]
+      this.enableFetchEpisodeMetadata = !!this.media.fetchEpisodeMetadata
     },
     submitForm() {
       this.$emit('submit')
