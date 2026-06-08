@@ -251,9 +251,7 @@ class PodcastManager {
     }
 
     // Update metadata.json after episode download
-    if (global.ServerSettings.storeMetadataWithItem || libraryItem.media.fetchEpisodeMetadata) {
-      await libraryItem.saveMetadataFile()
-    }
+    await libraryItem.saveMetadataFile()
 
     SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     const podcastEpisodeExpanded = podcastEpisode.toOldJSONExpanded(libraryItem.id)
