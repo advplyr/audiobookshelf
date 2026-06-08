@@ -250,8 +250,8 @@ class PodcastManager {
       await libraryItem.media.save()
     }
 
-    // Save episode metadata to metadata.json if fetchEpisodeMetadata is enabled
-    if (libraryItem.media.fetchEpisodeMetadata) {
+    // Update metadata.json after episode download
+    if (global.ServerSettings.storeMetadataWithItem || libraryItem.media.fetchEpisodeMetadata) {
       await libraryItem.saveMetadataFile()
     }
 
