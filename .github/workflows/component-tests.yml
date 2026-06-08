@@ -1,0 +1,48 @@
+name: Run Component Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch/Tag/SHA to test'
+        required: true
+  pull_request:
+    paths:
+      - 'client/**'
+      - '.github/workflows/component-tests.yml'
+  push:
+    paths:
+      - 'client/**'
+      - '.github/workflows/component-tests.yml'
+
+jobs:
+  run-component-tests:
+    name: Run Component Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (push/pull request)
+        uses: actions/checkout@v4
+        if: github.event_name != 'workflow_dispatch'
+
+      - name: Checkout (workflow_dispatch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+        if: github.event_name == 'workflow_dispatch'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd client
+          npm test

@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"path": "client",
+			"type": "npm",
+			"script": "generate",
+			"detail": "nuxt generate",
+			"label": "Build client",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"dependsOn": [
+				"Build client"
+			],
+			"type": "npm",
+			"script": "dev",
+			"detail": "nodemon --watch server index.js",
+			"label": "Run server",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"path": "client",
+			"type": "npm",
+			"script": "dev",
+			"detail": "nuxt",
+			"label": "Run Live-reload client",
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		}
+	]
+}

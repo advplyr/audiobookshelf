@@ -1,0 +1,17 @@
+name: Dispatch an abs-windows event
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  abs-windows-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send a remote repository dispatch event
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.ABS_WINDOWS_PAT }}
+          repository: mikiher/audiobookshelf-windows
+          event-type: build-windows

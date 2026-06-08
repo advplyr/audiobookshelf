@@ -1,0 +1,27 @@
+{
+  "vetur.format.defaultFormatterOptions": {
+    "prettier": {
+      "semi": false,
+      "singleQuote": true,
+      "printWidth": 400,
+      "proseWrap": "never",
+      "trailingComma": "none"
+    },
+    "prettyhtml": {
+      "printWidth": 400,
+      "singleQuote": false,
+      "wrapAttributes": false,
+      "sortAttributes": false
+    }
+  },
+  "editor.formatOnSave": true,
+  "editor.detectIndentation": true,
+  "editor.tabSize": 2,
+  "javascript.format.semicolons": "remove",
+  "[javascript][json][jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "octref.vetur"
+  }
+}

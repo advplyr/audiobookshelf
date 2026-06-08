@@ -1,0 +1,52 @@
+name: Integration Test
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - 'dependabot/**' # Don't run dependabot branches, as they are already covered by pull requests
+    # Only build when files in these directories have been changed
+    paths:
+      - client/**
+      - server/**
+      - test/**
+      - index.js
+      - package.json
+
+jobs:
+  build:
+    name: build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: install pkg (using yao-pkg fork for targeting node20)
+        run: npm install -g @yao-pkg/pkg
+
+      - name: get client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: build client
+        working-directory: client
+        run: npm run generate
+
+      - name: get server dependencies
+        run: npm ci --only=production
+
+      - name: build binary
+        run: pkg -t node20-linux-x64 -o audiobookshelf .
+
+      - name: run audiobookshelf
+        run: |
+          ./audiobookshelf &
+          sleep 5
+
+      - name: test if server is available
+        run: curl -sf http://127.0.0.1:3333 | grep Audiobookshelf

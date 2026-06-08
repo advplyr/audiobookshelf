@@ -1,0 +1,55 @@
+name: Add issue comments by label
+on:
+  issues:
+    types:
+      - labeled
+jobs:
+  help-wanted:
+    if: github.event.label.name == 'help wanted'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Help wanted comment
+        run: gh issue comment "$NUMBER" --body "$BODY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          BODY: >
+            This issue is not able to be completed due to limited bandwidth or access to the required test hardware.
+            
+            This issue is available for anyone to work on.
+
+
+  config-issue:
+    if: github.event.label.name == 'config-issue'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Config issue comment
+        run: gh issue close "$NUMBER" --reason "not planned" --comment "$BODY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          BODY: >
+            After reviewing this issue, this appears to be a problem with your setup and not Audiobookshelf. This issue is being closed to keep the issue tracker focused on Audiobookshelf itself. Please reach out on the Audiobookshelf Discord for community support.
+            
+            Some common search terms to help you find the solution to your problem:
+              - Reverse proxy
+              - Enabling websockets
+              - SSL (https vs http)
+              - Configuring a static IP
+              - `localhost` versus IP address
+              - hairpin NAT
+              - VPN
+              - firewall ports
+              - public versus private network
+              - bridge versus host mode
+              - Docker networking
+              - DNS (such as EAI_AGAIN errors)
+            
+            After you have followed these steps, please post the solution or steps you followed to fix the problem to help others in the future, or show that it is a problem with Audiobookshelf so we can reopen the issue.
+

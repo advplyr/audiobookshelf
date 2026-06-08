@@ -1,0 +1,98 @@
+name: 🐞 Bug Report
+description: File a bug/issue and help us improve Audiobookshelf
+title: '[Bug]: '
+labels: ['bug', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: 'Thank you for filing a bug report! 🐛'
+  - type: markdown
+    attributes:
+      value: 'Please first search for your issue and check the [docs](https://audiobookshelf.org/docs).'
+  - type: markdown
+    attributes:
+      value: 'Report issues with the mobile app [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose).'
+  - type: markdown
+    attributes:
+      value: 'Join the [discord server](https://discord.gg/HQgCbd6E75) for questions or if you are not sure about a bug.'
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: what-was-expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: Tell us what you expected to see! Be as descriptive as you can and include screenshots if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce the issue
+      value: '1. '
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: '## Install Environment'
+  - type: input
+    id: version
+    attributes:
+      label: Audiobookshelf version
+      description: Do not put 'Latest version', please put the actual version here
+      placeholder: 'e.g. v1.6.60'
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How are you running audiobookshelf?
+      options:
+        - Docker
+        - Debian/PPA
+        - Windows Tray App
+        - Built from source
+        - Other (list in "Additional Notes" box)
+    validations:
+      required: true
+  - type: dropdown
+    id: server-os
+    attributes:
+      label: What OS is your Audiobookshelf server hosted from?
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other (list in "Additional Notes" box)
+    validations:
+      required: true
+  - type: dropdown
+    id: desktop-browsers
+    attributes:
+      label: If the issue is being seen in the UI, what browsers are you seeing the problem on?
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Firefox for Android
+        - Chrome for Android
+        - Safari on iOS
+        - Other (list in "Additional Notes" box)
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Please include any relevant logs here. This field is automatically formatted into code, so you do not need to include any backticks.
+      placeholder: Paste logs here
+      render: shell
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: Additional Notes
+      description: Anything else you want to add?
+      placeholder: 'e.g. I have tried X, Y, and Z.'

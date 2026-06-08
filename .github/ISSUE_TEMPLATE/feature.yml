@@ -1,0 +1,63 @@
+name: 🚀 Feature Request
+description: Request a feature/enhancement
+title: '[Enhancement]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: '#### *Mobile app features should be [requested here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)*.'
+  - type: markdown
+    attributes:
+      value: '## Web/Server Feature Request Description'
+  - type: markdown
+    attributes:
+      value: 'Please first search in both issues & discussions for your enhancement.'
+  - type: dropdown
+    id: enhancment-type
+    attributes:
+      label: Type of Enhancement
+      options:
+        - Server Backend
+        - Web Interface/Frontend
+        - Documentation
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the Feature/Enhancement
+      description: Please help us understand what you want.
+      placeholder: What is your vision?
+    validations:
+      required: true
+  - type: textarea
+    id: the-why
+    attributes:
+      label: Why would this be helpful?
+      description: Please help us understand why this would enhance your experience.
+      placeholder: Explain the "why" or "use case".
+    validations:
+      required: true
+  - type: textarea
+    id: image
+    attributes:
+      label: Future Implementation (Screenshot)
+      description: Please help us visualize by including a doodle or screenshot.
+      placeholder: How could this look?
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: '## Web/Server Current Implementation'
+  - type: input
+    id: version
+    attributes:
+      label: Audiobookshelf Server Version
+      description: Do not put 'Latest version', please put your current version number here
+      placeholder: 'e.g. v1.6.60'
+    validations:
+      required: true
+  - type: textarea
+    id: current-image
+    attributes:
+      label: Current Implementation (Screenshot)
+      description: What page were you looking at when you thought of this enhancement?
+      placeholder: If an image is not applicable, please explain why.

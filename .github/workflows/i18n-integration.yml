@@ -1,0 +1,31 @@
+name: Verify all i18n files are alphabetized
+
+on:
+  pull_request:
+    paths:
+      - client/strings/** # Should only check if any strings changed
+  push:
+    paths:
+      - client/strings/** # Should only check if any strings changed
+
+jobs:
+  update_translations:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up node to run the javascript
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # The only argument is the `directory`, which is where the i18n files are
+      # stored.
+      - name: Run Update JSON Files action
+        uses: audiobookshelf/audiobookshelf-i18n-updater@v1.3.0
+        with:
+          directory: 'client/strings/' # Adjust the directory path as needed
