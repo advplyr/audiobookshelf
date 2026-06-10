@@ -26,6 +26,8 @@ class MediaProgress extends Model {
     this.ebookProgress
     /** @type {Date} */
     this.finishedAt
+    /** @type {number[]} */
+    this.finishedDates
     /** @type {Object} */
     this.extraData
     /** @type {UUIDV4} */
@@ -71,6 +73,7 @@ class MediaProgress extends Model {
         ebookLocation: DataTypes.STRING,
         ebookProgress: DataTypes.FLOAT,
         finishedAt: DataTypes.DATE,
+        finishedDates: DataTypes.JSON,
         extraData: DataTypes.JSON,
         podcastId: DataTypes.UUID
       },
@@ -171,7 +174,8 @@ class MediaProgress extends Model {
       ebookProgress: this.ebookProgress,
       lastUpdate: this.updatedAt.valueOf(),
       startedAt: this.createdAt.valueOf(),
-      finishedAt: this.finishedAt?.valueOf() || null
+      finishedAt: this.finishedAt?.valueOf() || null,
+      finishedDates: this.finishedDates || []
     }
   }
 
@@ -182,6 +186,31 @@ class MediaProgress extends Model {
   }
 
   /**
+   * Append a finish event to the finishedDates history
+   *
+   * @param {Date|number|string} finishedAt
+   */
+  addFinishedDate(finishedAt) {
+    const finishedAtMs = new Date(finishedAt).valueOf()
+    if (isNaN(finishedAtMs)) {
+      Logger.warn(`[MediaProgress] Invalid finishedAt date "${finishedAt}" not added to finishedDates (media item ${this.mediaItemId})`)
+      return
+    }
+    const finishedDates = Array.isArray(this.finishedDates) ? [...this.finishedDates] : []
+    finishedDates.push(finishedAtMs)
+    this.finishedDates = finishedDates
+  }
+
+  /**
+   * Remove the most recent finish event from the finishedDates history.
+   * Used when explicitly un-marking an item as finished.
+   */
+  removeLastFinishedDate() {
+    if (!Array.isArray(this.finishedDates) || !this.finishedDates.length) return
+    this.finishedDates = this.finishedDates.slice(0, -1)
+  }
+
+  /**
    * Apply update to media progress
    *
    * @param {import('./User').ProgressUpdatePayload} progressPayload
@@ -189,13 +218,18 @@ class MediaProgress extends Model {
    */
   async applyProgressUpdate(progressPayload) {
     if (!this.extraData) this.extraData = {}
+    // finishedDates history is managed by the server
+    delete progressPayload.finishedDates
     if (progressPayload.isFinished !== undefined) {
       if (progressPayload.isFinished && !this.isFinished) {
         this.finishedAt = progressPayload.finishedAt || Date.now()
+        this.addFinishedDate(this.finishedAt)
         this.extraData.progress = 1
         this.changed('extraData', true)
         delete progressPayload.finishedAt
       } else if (!progressPayload.isFinished && this.isFinished) {
+        // Explicitly un-marking as finished undoes the most recent finish event
+        this.removeLastFinishedDate()
         this.finishedAt = null
         this.extraData.progress = 0
         this.currentTime = 0
@@ -240,9 +274,11 @@ class MediaProgress extends Model {
     if (!this.isFinished && shouldMarkAsFinished) {
       this.isFinished = true
       this.finishedAt = this.finishedAt || Date.now()
+      this.addFinishedDate(this.finishedAt)
       this.extraData.progress = 1
       this.changed('extraData', true)
     } else if (this.isFinished && this.changed('currentTime') && !shouldMarkAsFinished) {
+      // Re-listening to a finished item resets isFinished but keeps the finishedDates history
       this.isFinished = false
       this.finishedAt = null
     }

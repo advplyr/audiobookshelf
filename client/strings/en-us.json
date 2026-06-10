@@ -527,6 +527,7 @@
   "LabelPort": "Port",
   "LabelPrefixesToIgnore": "Prefixes to Ignore (case insensitive)",
   "LabelPreventIndexing": "Prevent your feed from being indexed by iTunes and Google podcast directories",
+  "LabelPreviouslyFinished": "Previously finished",
   "LabelPrimaryEbook": "Primary ebook",
   "LabelProgress": "Progress",
   "LabelProvider": "Provider",

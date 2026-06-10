@@ -810,6 +810,7 @@ class User extends Model {
       }
       if (newMediaProgressPayload.isFinished) {
         newMediaProgressPayload.finishedAt = newMediaProgressPayload.finishedAt || new Date()
+        newMediaProgressPayload.finishedDates = [new Date(newMediaProgressPayload.finishedAt).valueOf()]
         newMediaProgressPayload.extraData.progress = 1
       } else {
         newMediaProgressPayload.finishedAt = null

@@ -73,6 +73,9 @@
             <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
             <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
             <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
+            <ui-tooltip v-if="finishedDateHistory.length" :text="finishedDateHistoryTooltip" direction="top" class="inline-block">
+              <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelPreviouslyFinished }} {{ $formatDate(finishedDateHistory[finishedDateHistory.length - 1], dateFormat) }}</p>
+            </ui-tooltip>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
               <span class="material-symbols text-sm">&#xe5cd;</span>
@@ -333,6 +336,19 @@ export default {
     },
     userProgressFinishedAt() {
       return this.userMediaProgress ? this.userMediaProgress.finishedAt : 0
+    },
+    finishedDateHistory() {
+      const finishedDates = this.userMediaProgress?.finishedDates || []
+      // The most recent finish date is already shown as the "Finished" line when progress is 100%
+      if (this.progressPercent >= 1) return finishedDates.slice(0, -1)
+      return finishedDates
+    },
+    finishedDateHistoryTooltip() {
+      return this.finishedDateHistory
+        .slice()
+        .reverse()
+        .map((date) => `${this.$strings.LabelFinished} ${this.$formatDate(date, this.dateFormat)}`)
+        .join('<br>')
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem

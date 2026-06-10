@@ -41,14 +41,22 @@ module.exports = {
    * @returns {Promise<MediaProgress[]>}
    */
   async getBookMediaProgressFinishedForYear(userId, year) {
+    const yearStartMs = Date.UTC(year, 0, 1)
+    const yearEndMs = Date.UTC(year + 1, 0, 1)
     const progresses = await Database.mediaProgressModel.findAll({
       where: {
         userId,
         mediaItemType: 'book',
-        finishedAt: {
-          [Sequelize.Op.gte]: `${year}-01-01`,
-          [Sequelize.Op.lt]: `${year + 1}-01-01`
-        }
+        [Sequelize.Op.or]: [
+          {
+            finishedAt: {
+              [Sequelize.Op.gte]: `${year}-01-01`,
+              [Sequelize.Op.lt]: `${year + 1}-01-01`
+            }
+          },
+          // Also include books finished during the year that were re-started or finished again later (finishedDates history)
+          Sequelize.literal(`EXISTS (SELECT 1 FROM json_each(COALESCE(\`mediaProgress\`.\`finishedDates\`, '[]')) WHERE json_each.value >= ${yearStartMs} AND json_each.value < ${yearEndMs})`)
+        ]
       },
       include: {
         model: Database.bookModel,
