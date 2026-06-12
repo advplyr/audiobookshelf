@@ -1019,7 +1019,7 @@
   "ToastChaptersAllLocked": "Alle kapitler er låst. Lås op for nogle kapitler for at ændre deres tider.",
   "ToastChaptersHaveErrors": "Kapitler har fejl",
   "ToastChaptersInvalidShiftAmountLast": "Ugyldig varighed. Det sidste kapitels starttidspunkt ville strække sig ud over denne lydbogs varighed.",
-  "ToastChaptersInvalidShiftAmountStart": "Ugyldig ændring. Første kapitel ville have en længde på nul eller negativt og ville blive overskrevet af andet kapitel. Udvid startvarigheden på andet kapitel.",
+  "ToastChaptersInvalidShiftAmountStart": "Ugyldig varighed. Det første kapitel ville have en længde på nul eller negativ længde og ville blive overskrevet af det andet kapitel. Øg startvarigheden af det andet kapitel.",
   "ToastChaptersMustHaveTitles": "Kapitler skal have titler",
   "ToastChaptersRemoved": "Kapitler fjernet",
   "ToastChaptersUpdated": "Kapitler opdateret",
