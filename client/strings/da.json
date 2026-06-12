@@ -1044,7 +1044,7 @@
   "ToastEpisodeUpdateSuccess": "{0} afsnit opdateret",
   "ToastErrorCannotShare": "Kan ikke dele på denne enhed",
   "ToastFailedToCreate": "Oprettelsen mislykkedes",
-  "ToastFailedToDelete": "Sletning fejlede",
+  "ToastFailedToDelete": "Kunne ikke slette",
   "ToastFailedToLoadData": "Indlæsning af data fejlede",
   "ToastFailedToMatch": "Fejlet match",
   "ToastFailedToShare": "Deling fejlede",
