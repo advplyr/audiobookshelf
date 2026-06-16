@@ -373,8 +373,8 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       'Accept-Encoding': 'gzip, compress, deflate',
       'User-Agent': userAgent
     },
-    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
-    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
+    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : getSsrfFilter(feedUrl),
+    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : getSsrfFilter(feedUrl)
   })
     .then(async (data) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
