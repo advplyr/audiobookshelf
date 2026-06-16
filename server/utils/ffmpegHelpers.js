@@ -124,8 +124,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
             'User-Agent': userAgent
           },
           timeout: global.PodcastDownloadTimeout,
-          httpAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : getSsrfFilter(podcastEpisodeDownload.url),
-          httpsAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : getSsrfFilter(podcastEpisodeDownload.url)
+          httpAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : global.getSsrfFilter(podcastEpisodeDownload.url),
+          httpsAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : global.getSsrfFilter(podcastEpisodeDownload.url)
         })
 
         Logger.debug(`[ffmpegHelpers] Successfully connected with User-Agent: ${userAgent}`)
