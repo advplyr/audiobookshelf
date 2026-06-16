@@ -87,6 +87,28 @@ class Server {
       }
     }
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
+
+    // SSRF filter wrapper that also allows NAT64 addresses (RFC 6052)
+    // The ssrf-req-filter package blocks NAT64 addresses (64:ff9b::/96) because
+    // ipaddr.js classifies them as "rfc6052" range instead of "unicast".
+    // We need to allow these for environments using NAT64/DNS64.
+    const ssrfFilterLib = require('ssrf-req-filter')
+    const net = require('net')
+    global.getSsrfFilter = (url) => {
+      const agent = ssrfFilterLib(url)
+      const originalCreateConnection = agent.createConnection.bind(agent)
+      agent.createConnection = function(options, callback) {
+        const { host: address } = options
+        // Allow NAT64 addresses (64:ff9b::/96 prefix)
+        if (address && address.startsWith('64:ff9b::')) {
+          const socket = net.createConnection({ host: options.host, port: options.port }, callback)
+          return socket
+        }
+        return originalCreateConnection(options, callback)
+      }
+      return agent
+    }
+
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
