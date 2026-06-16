@@ -91,18 +91,32 @@ class Server {
     // SSRF filter wrapper that also allows NAT64 addresses (RFC 6052)
     // The ssrf-req-filter package blocks NAT64 addresses (64:ff9b::/96) because
     // ipaddr.js classifies them as "rfc6052" range instead of "unicast".
-    // We need to allow these for environments using NAT64/DNS64.
+    // We allow NAT64 but still validate the embedded IPv4 is not private.
     const ssrfFilterLib = require('ssrf-req-filter')
     const net = require('net')
+    const ipaddr = require('ipaddr.js')
     global.getSsrfFilter = (url) => {
       const agent = ssrfFilterLib(url)
       const originalCreateConnection = agent.createConnection.bind(agent)
       agent.createConnection = function(options, callback) {
         const { host: address } = options
-        // Allow NAT64 addresses (64:ff9b::/96 prefix)
         if (address && address.startsWith('64:ff9b::')) {
-          const socket = net.createConnection({ host: options.host, port: options.port }, callback)
-          return socket
+          try {
+            const addr = ipaddr.parse(address)
+            if (addr.kind() === 'ipv6') {
+              const parts = addr.toNormalizedString().split(':')
+              const lastPart = parts[parts.length - 1]
+              if (lastPart && lastPart.includes('.')) {
+                const ipv4Addr = ipaddr.parse(lastPart)
+                if (ipv4Addr.range() !== 'unicast') {
+                  throw new Error('NAT64 embeds non-unicast IPv4')
+                }
+              }
+            }
+          } catch (e) {
+            throw new Error(`Call to ${address} is blocked: ${e.message}`)
+          }
+          return net.createConnection({ host: options.host, port: options.port }, callback)
         }
         return originalCreateConnection(options, callback)
       }
