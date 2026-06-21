@@ -43,6 +43,26 @@
               </div>
             </template>
           </div>
+          <div v-if="isBookLibrary && enableReviews && top10RatedItems.length" class="w-80 my-6 mx-auto">
+            <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTopRated }}</h1>
+            <template v-for="(ab, index) in top10RatedItems">
+              <div :key="index" class="w-full py-2">
+                <div class="flex items-center mb-1">
+                  <p class="text-sm text-white/70 w-36 pr-2 truncate">
+                    {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
+                  </p>
+                  <div class="grow rounded-full h-2.5 bg-primary/0 overflow-hidden">
+                    <div class="bg-yellow-400 h-full rounded-full" :style="{ width: (ab.avgRating * 20) + '%' }" />
+                  </div>
+                  <div class="w-12 ml-3 flex items-center">
+                    <p class="text-sm font-bold">{{ ab.avgRating.toFixed(1) }}</p>
+                    <span class="material-symbols text-sm text-yellow-400 ml-0.5">star</span>
+                  </div>
+                </div>
+                <p class="text-[10px] text-gray-400 ml-8 -mt-1">{{ ab.numReviews }} {{ $strings.LabelReviews.toLowerCase() }}</p>
+              </div>
+            </template>
+          </div>
           <div class="w-80 my-6 mx-auto">
             <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsLongestItems }}</h1>
             <p v-if="!top10LongestItems.length">{{ $strings.MessageNoItems }}</p>
@@ -154,6 +174,9 @@ export default {
     top10Authors() {
       return this.authorsWithCount?.slice(0, 10) || []
     },
+    top10RatedItems() {
+      return this.libraryStats?.topRatedItems || []
+    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -165,6 +188,9 @@ export default {
     },
     isBookLibrary() {
       return this.currentLibraryMediaType === 'book'
+    },
+    enableReviews() {
+      return this.$store.getters['getServerSetting']('enableReviews')
     }
   },
   methods: {
