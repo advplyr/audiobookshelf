@@ -1,5 +1,4 @@
 const { Request, Response, NextFunction } = require('express')
-const sequelize = require('sequelize')
 const fs = require('../libs/fsExtra')
 const { createNewSortInstance } = require('../libs/fastSort')
 
@@ -113,18 +112,10 @@ class AuthorController {
       payload.lastFirst = Database.authorModel.getLastFirst(payload.name)
     }
 
-    // Check if author name matches another author in the same library and merge the authors
+    // Check if the new author name matches another author in the same library and merge the authors
     let existingAuthor = null
     if (authorNameUpdate) {
-      existingAuthor = await Database.authorModel.findOne({
-        where: {
-          id: {
-            [sequelize.Op.not]: req.author.id
-          },
-          name: payload.name,
-          libraryId: req.author.libraryId
-        }
-      })
+      existingAuthor = await Database.authorModel.getByNameAndLibrary(payload.name, req.author.libraryId, req.author.id)
     }
     if (existingAuthor) {
       Logger.info(`[AuthorController] Merging author "${req.author.name}" with "${existingAuthor.name}"`)
