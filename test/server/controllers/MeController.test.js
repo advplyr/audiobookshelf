@@ -222,7 +222,7 @@ describe('MeController - IDOR Security Tests', () => {
       it('should allow user to create bookmark for accessible library item', async () => {
         const expandedItem = await Database.libraryItemModel.getExpandedById(libraryItem1.id)
 
-        const bookmark = { libraryItemId: libraryItem1.id, time: 100, title: 'Test Bookmark', createdAt: Date.now() }
+        const bookmark = { libraryItemId: libraryItem1.id, time: 100, title: 'Test Bookmark', episodeId: 'test-ep-1', createdAt: Date.now() }
 
         const fakeReq = {
           user: {
@@ -234,7 +234,7 @@ describe('MeController - IDOR Security Tests', () => {
             toOldJSONForBrowser: () => ({ id: user2.id, username: user2.username })
           },
           params: { id: libraryItem1.id },
-          body: { time: 100, title: 'Test Bookmark' }
+          body: { time: 100, title: 'Test Bookmark', episodeId: 'test-ep-1' }
         }
         const fakeRes = {
           sendStatus: sinon.spy(),
@@ -247,6 +247,7 @@ describe('MeController - IDOR Security Tests', () => {
 
         await MeController.createBookmark(fakeReq, fakeRes)
 
+        expect(fakeReq.user.createBookmark.calledWith(libraryItem1.id, 100, 'Test Bookmark', 'test-ep-1')).to.be.true
         expect(fakeRes.json.calledOnce).to.be.true
         expect(fakeRes.json.calledWith(bookmark)).to.be.true
 
@@ -343,7 +344,7 @@ describe('MeController - IDOR Security Tests', () => {
       it('should allow user to update bookmark for accessible library item', async () => {
         const expandedItem = await Database.libraryItemModel.getExpandedById(libraryItem1.id)
 
-        const bookmark = { libraryItemId: libraryItem1.id, time: 100, title: 'Updated Title' }
+        const bookmark = { libraryItemId: libraryItem1.id, time: 100, title: 'Updated Title', episodeId: 'test-ep-1' }
 
         const fakeReq = {
           user: {
@@ -355,7 +356,7 @@ describe('MeController - IDOR Security Tests', () => {
             toOldJSONForBrowser: () => ({ id: user1.id, username: user1.username })
           },
           params: { id: libraryItem1.id },
-          body: { time: 100, title: 'Updated Title' }
+          body: { time: 100, title: 'Updated Title', episodeId: 'test-ep-1' }
         }
         const fakeRes = {
           sendStatus: sinon.spy(),
@@ -368,6 +369,7 @@ describe('MeController - IDOR Security Tests', () => {
 
         await MeController.updateBookmark(fakeReq, fakeRes)
 
+        expect(fakeReq.user.updateBookmark.calledWith(libraryItem1.id, 100, 'Updated Title', 'test-ep-1')).to.be.true
         expect(fakeRes.json.calledOnce).to.be.true
         expect(fakeRes.json.calledWith(bookmark)).to.be.true
 
@@ -415,11 +417,12 @@ describe('MeController - IDOR Security Tests', () => {
             id: user1.id,
             username: user1.username,
             checkCanAccessLibraryItem: () => true,
-            findBookmark: sinon.stub().returns({ libraryItemId: libraryItem1.id, time: 100, title: 'Test Bookmark' }),
+            findBookmark: sinon.stub().returns({ libraryItemId: libraryItem1.id, time: 100, title: 'Test Bookmark', episodeId: 'test-ep-1' }),
             removeBookmark: sinon.stub().resolves(true),
             toOldJSONForBrowser: () => ({ id: user1.id, username: user1.username })
           },
-          params: { id: libraryItem1.id, time: '100' }
+          params: { id: libraryItem1.id, time: '100' },
+          query: { episode: 'test-ep-1' }
         }
         const fakeRes = {
           sendStatus: sinon.spy(),
@@ -431,6 +434,8 @@ describe('MeController - IDOR Security Tests', () => {
 
         await MeController.removeBookmark(fakeReq, fakeRes)
 
+        expect(fakeReq.user.findBookmark.calledWith(libraryItem1.id, 100, 'test-ep-1')).to.be.true
+        expect(fakeReq.user.removeBookmark.calledWith(libraryItem1.id, 100, 'test-ep-1')).to.be.true
         expect(fakeRes.sendStatus.calledWith(200)).to.be.true
 
         Database.libraryItemModel.getExpandedById.restore()
