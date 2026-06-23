@@ -302,7 +302,9 @@ class Server {
 
     this.server = http.createServer(app)
 
+    // Skip file upload parsing for internal-api routes (Next.js proxies read multipart bodies).
     router.use(
+      /^(?!\/internal-api).*/,
       fileUpload({
         defCharset: 'utf8',
         defParamCharset: 'utf8',
