@@ -4,11 +4,11 @@
 
   <p align="center">
     <br />
-    <a href="https://audiobookshelf.org/docs">Documentation</a>
+    <a href="https://audiobookshelf.org/docs/documentation/introduction/">Documentation</a>
     ·
-    <a href="https://audiobookshelf.org/guides">User Guides</a>
+    <a>User Guides</a>
     ·
-    <a href="https://audiobookshelf.org/support">Support</a>
+    <a>Support</a>
   </p>
 </div>
 
