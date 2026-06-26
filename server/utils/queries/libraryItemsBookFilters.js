@@ -719,10 +719,17 @@ module.exports = {
     let booksNotFinishedQuery = `SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL)`
 
     if (library.settings.onlyShowLaterBooksInContinueSeries) {
-      const maxSequenceQuery = `(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)`
-      includeAttributes.push([Sequelize.literal(`${maxSequenceQuery}`), 'maxSequence'])
+      const lastFinishedSequenceQuery = `(SELECT CAST(bs.sequence as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id ORDER BY COALESCE(mp.finishedAt, mp.updatedAt) DESC, CAST(bs.sequence as FLOAT) DESC LIMIT 1)`
+      includeAttributes.push([Sequelize.literal(lastFinishedSequenceQuery), 'lastFinishedSequence'])
 
-      booksNotFinishedQuery = booksNotFinishedQuery + ` AND CAST(bs.sequence as FLOAT) > ${maxSequenceQuery}`
+      booksNotFinishedQuery = `SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id AND CAST(bs.sequence as FLOAT) > ${lastFinishedSequenceQuery}`
+    }
+
+    const bookSeriesWhere = {}
+    if (!library.settings.onlyShowLaterBooksInContinueSeries) {
+      bookSeriesWhere['$book.mediaProgresses.isFinished$'] = {
+        [Sequelize.Op.or]: [null, 0]
+      }
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -758,11 +765,7 @@ module.exports = {
         separate: true,
         subQuery: false,
         order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
-        where: {
-          '$book.mediaProgresses.isFinished$': {
-            [Sequelize.Op.or]: [null, 0]
-          }
-        },
+        where: bookSeriesWhere,
         include: {
           model: Database.bookModel,
           where: bookWhere,
@@ -802,10 +805,10 @@ module.exports = {
         // if the library setting is toggled, only show later entries in series, otherwise skip
         if (library.settings.onlyShowLaterBooksInContinueSeries) {
           bookIndex = s.bookSeries.findIndex(function (b) {
-            return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+            return parseFloat(b.dataValues.sequence) > s.dataValues.lastFinishedSequence
           })
           if (bookIndex === -1) {
-            // no later books than maxSequence
+            // no later books than lastFinishedSequence
             return null
           }
         }
