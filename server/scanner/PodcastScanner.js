@@ -429,6 +429,7 @@ class PodcastScanner {
      * Keys must match abmetadataGenerator.js
      */
     const jsonObject = {
+      id: libraryItem.id,
       tags: libraryItem.media.tags || [],
       title: libraryItem.media.title,
       author: libraryItem.media.author,
