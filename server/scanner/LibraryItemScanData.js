@@ -2,14 +2,17 @@ const packageJson = require('../../package.json')
 const { LogLevel } = require('../utils/constants')
 const LibraryItem = require('../models/LibraryItem')
 const globals = require('../utils/globals')
+const LibraryFile = require('../objects/files/LibraryFile')
+const LibraryScan = require('./LibraryScan')
+const ScanLogger = require('./ScanLogger')
 
 class LibraryItemScanData {
   /**
-   * @typedef LibraryFileModifiedObject
+   * @typedef {Object} LibraryFileModifiedObject
    * @property {LibraryItem.LibraryFileObject} old
    * @property {LibraryItem.LibraryFileObject} new
+   * @param {{ libraryFolderId: any; libraryId: any; mediaType: any; ino: any; deviceId: any; mtimeMs: any; ctimeMs: any; birthtimeMs: any; path: any; relPath: any; isFile: any; mediaMetadata: any; libraryFiles: any; }} data
    */
-
   constructor(data) {
     /** @type {string} */
     this.libraryFolderId = data.libraryFolderId
@@ -19,6 +22,8 @@ class LibraryItemScanData {
     this.mediaType = data.mediaType
     /** @type {string} */
     this.ino = data.ino
+    /** @type {string} */
+    this.deviceId = data.deviceId
     /** @type {number} */
     this.mtimeMs = data.mtimeMs
     /** @type {number} */
@@ -54,9 +59,10 @@ class LibraryItemScanData {
    */
   get libraryItemObject() {
     let size = 0
-    this.libraryFiles.forEach((lf) => size += (!isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+    this.libraryFiles.forEach((lf) => (size += !isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
     return {
       ino: this.ino,
+      deviceId: this.deviceId,
       path: this.path,
       relPath: this.relPath,
       mediaType: this.mediaType,
@@ -80,107 +86,107 @@ class LibraryItemScanData {
 
   /** @type {boolean} */
   get hasAudioFileChanges() {
-    return (this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified.length) > 0
+    return this.audioLibraryFilesRemoved.length + this.audioLibraryFilesAdded.length + this.audioLibraryFilesModified.length > 0
   }
 
   /** @type {LibraryFileModifiedObject[]} */
   get audioLibraryFilesModified() {
-    return this.libraryFilesModified.filter(lf => globals.SupportedAudioTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesModified.filter((lf) => globals.SupportedAudioTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get audioLibraryFilesRemoved() {
-    return this.libraryFilesRemoved.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesRemoved.filter((lf) => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get audioLibraryFilesAdded() {
-    return this.libraryFilesAdded.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesAdded.filter((lf) => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get audioLibraryFiles() {
-    return this.libraryFiles.filter(lf => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFiles.filter((lf) => globals.SupportedAudioTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryFileModifiedObject[]} */
   get imageLibraryFilesModified() {
-    return this.libraryFilesModified.filter(lf => globals.SupportedImageTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesModified.filter((lf) => globals.SupportedImageTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get imageLibraryFilesRemoved() {
-    return this.libraryFilesRemoved.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesRemoved.filter((lf) => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get imageLibraryFilesAdded() {
-    return this.libraryFilesAdded.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesAdded.filter((lf) => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get imageLibraryFiles() {
-    return this.libraryFiles.filter(lf => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFiles.filter((lf) => globals.SupportedImageTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryFileModifiedObject[]} */
   get ebookLibraryFilesModified() {
-    return this.libraryFilesModified.filter(lf => globals.SupportedEbookTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesModified.filter((lf) => globals.SupportedEbookTypes.includes(lf.old.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get ebookLibraryFilesRemoved() {
-    return this.libraryFilesRemoved.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesRemoved.filter((lf) => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get ebookLibraryFilesAdded() {
-    return this.libraryFilesAdded.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFilesAdded.filter((lf) => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject[]} */
   get ebookLibraryFiles() {
-    return this.libraryFiles.filter(lf => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
+    return this.libraryFiles.filter((lf) => globals.SupportedEbookTypes.includes(lf.metadata.ext?.slice(1).toLowerCase() || ''))
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get descTxtLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.filename === 'desc.txt')
+    return this.libraryFiles.find((lf) => lf.metadata.filename === 'desc.txt')
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get readerTxtLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.filename === 'reader.txt')
+    return this.libraryFiles.find((lf) => lf.metadata.filename === 'reader.txt')
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get metadataAbsLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    return this.libraryFiles.find((lf) => lf.metadata.filename === 'metadata.abs')
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get metadataJsonLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.json')
+    return this.libraryFiles.find((lf) => lf.metadata.filename === 'metadata.json')
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get metadataOpfLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.opf')
+    return this.libraryFiles.find((lf) => lf.metadata.ext.toLowerCase() === '.opf')
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
   get metadataNfoLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.nfo')
+    return this.libraryFiles.find((lf) => lf.metadata.ext.toLowerCase() === '.nfo')
   }
 
   /**
-   * 
-   * @param {LibraryItem} existingLibraryItem 
-   * @param {import('./LibraryScan')} libraryScan
-   * @returns {boolean} true if changes found
+   *
+   * @param {LibraryItem} existingLibraryItem
+   * @param {import('./LibraryScan') | import('./ScanLogger')} libraryScan
+   * @returns {Promise<boolean>} true if changes found
    */
   async checkLibraryItemData(existingLibraryItem, libraryScan) {
-    const keysToCompare = ['libraryFolderId', 'ino', 'path', 'relPath', 'isFile']
+    const keysToCompare = ['libraryFolderId', 'ino', 'deviceId', 'path', 'relPath', 'isFile']
     this.hasChanges = false
     this.hasPathChange = false
     for (const key of keysToCompare) {
@@ -219,28 +225,23 @@ class LibraryItemScanData {
 
     this.libraryFilesRemoved = []
     this.libraryFilesModified = []
-    let libraryFilesAdded = this.libraryFiles.map(lf => lf)
+    let libraryFilesAdded = this.libraryFiles.map((lf) => lf)
 
     for (const existingLibraryFile of existingLibraryItem.libraryFiles) {
       // Find matching library file using path first and fallback to using inode value
-      let matchingLibraryFile = this.libraryFiles.find(lf => lf.metadata.path === existingLibraryFile.metadata.path)
-      if (!matchingLibraryFile) {
-        matchingLibraryFile = this.libraryFiles.find(lf => lf.ino === existingLibraryFile.ino)
-        if (matchingLibraryFile) {
-          libraryScan.addLog(LogLevel.INFO, `Library file with path "${existingLibraryFile.metadata.path}" not found, but found file with matching inode value "${existingLibraryFile.ino}" at path "${matchingLibraryFile.metadata.path}"`)
-        }
-      }
+      let matchingLibraryFile = this.findMatchingLibraryFileByPathOrInodeAndDeviceId(existingLibraryFile, libraryScan)
 
-      if (!matchingLibraryFile) { // Library file removed
+      if (!matchingLibraryFile) {
+        // Library file removed
         libraryScan.addLog(LogLevel.INFO, `Library file "${existingLibraryFile.metadata.path}" was removed from library item "${existingLibraryItem.relPath}"`)
         this.libraryFilesRemoved.push(existingLibraryFile)
-        existingLibraryItem.libraryFiles = existingLibraryItem.libraryFiles.filter(lf => lf !== existingLibraryFile)
+        existingLibraryItem.libraryFiles = existingLibraryItem.libraryFiles.filter((lf) => lf !== existingLibraryFile)
         this.hasChanges = true
       } else {
-        libraryFilesAdded = libraryFilesAdded.filter(lf => lf !== matchingLibraryFile)
+        libraryFilesAdded = libraryFilesAdded.filter((lf) => lf !== matchingLibraryFile)
         let existingLibraryFileBefore = structuredClone(existingLibraryFile)
-        if (this.compareUpdateLibraryFile(existingLibraryItem.path, existingLibraryFile, matchingLibraryFile, libraryScan)) {
-          this.libraryFilesModified.push({old: existingLibraryFileBefore, new: existingLibraryFile})
+        if (LibraryItemScanData.compareUpdateLibraryFile(existingLibraryItem.path, existingLibraryFile, matchingLibraryFile, libraryScan)) {
+          this.libraryFilesModified.push({ old: existingLibraryFileBefore, new: existingLibraryFile })
           this.hasChanges = true
         }
       }
@@ -263,7 +264,7 @@ class LibraryItemScanData {
 
     if (this.hasChanges) {
       existingLibraryItem.size = 0
-      existingLibraryItem.libraryFiles.forEach((lf) => existingLibraryItem.size += lf.metadata.size)
+      existingLibraryItem.libraryFiles.forEach((lf) => (existingLibraryItem.size += lf.metadata.size))
 
       existingLibraryItem.lastScan = Date.now()
       existingLibraryItem.lastScanVersion = packageJson.version
@@ -274,25 +275,25 @@ class LibraryItemScanData {
         existingLibraryItem.changed('libraryFiles', true)
       }
       await existingLibraryItem.save()
-      return true
     }
 
-    return false
+    return this.hasChanges
   }
 
   /**
    * Update existing library file with scanned in library file data
    * @param {string} libraryItemPath
-   * @param {LibraryItem.LibraryFileObject} existingLibraryFile 
-   * @param {import('../objects/files/LibraryFile')} scannedLibraryFile 
-   * @param {import('./LibraryScan')} libraryScan
+   * @param {LibraryItem.LibraryFileObject} existingLibraryFile
+   * @param {import('../objects/files/LibraryFile')} scannedLibraryFile
+   * @param {import('./LibraryScan') | import('./ScanLogger')} libraryScan
    * @returns {boolean} false if no changes
    */
-  compareUpdateLibraryFile(libraryItemPath, existingLibraryFile, scannedLibraryFile, libraryScan) {
+  static compareUpdateLibraryFile(libraryItemPath, existingLibraryFile, scannedLibraryFile, libraryScan) {
     let hasChanges = false
 
-    if (existingLibraryFile.ino !== scannedLibraryFile.ino) {
+    if (existingLibraryFile.ino !== scannedLibraryFile.ino && existingLibraryFile.deviceId !== scannedLibraryFile.deviceId) {
       existingLibraryFile.ino = scannedLibraryFile.ino
+      existingLibraryFile.deviceId = scannedLibraryFile.deviceId
       hasChanges = true
     }
 
@@ -316,39 +317,56 @@ class LibraryItemScanData {
   }
 
   /**
+   * @returns {LibraryFile | undefined} if [existingLibraryFile] matches an existing libraryFile
+   * @param {LibraryItem.LibraryFileObject} [existingLibraryFile]
+   * @param {LibraryScan | ScanLogger} [libraryScan]
+   */
+  findMatchingLibraryFileByPathOrInodeAndDeviceId(existingLibraryFile, libraryScan) {
+    if (!existingLibraryFile) return
+    let matchingLibraryFile = this.libraryFiles.find((lf) => lf.metadata.path === existingLibraryFile.metadata.path)
+    if (!matchingLibraryFile) {
+      matchingLibraryFile = this.libraryFiles.find((lf) => lf.ino === existingLibraryFile.ino && lf.deviceId === existingLibraryFile.deviceId)
+      if (matchingLibraryFile) {
+        libraryScan && libraryScan.addLog(LogLevel.INFO, `Library file with path "${existingLibraryFile.metadata.path}" not found, but found file with matching inode value "${existingLibraryFile.ino}" at path "${matchingLibraryFile.metadata.path}"`)
+      }
+    }
+    return matchingLibraryFile
+  }
+
+  /**
    * Check if existing audio file on Book was removed
-   * @param {import('../models/Book').AudioFileObject} existingAudioFile 
+   * @param {import('../models/Book').AudioFileObject} existingAudioFile
    * @returns {boolean} true if audio file was removed
    */
   checkAudioFileRemoved(existingAudioFile) {
     if (!this.audioLibraryFilesRemoved.length) return false
     // First check exact path
-    if (this.audioLibraryFilesRemoved.some(af => af.metadata.path === existingAudioFile.metadata.path)) {
+    if (this.audioLibraryFilesRemoved.some((af) => af.metadata.path === existingAudioFile.metadata.path)) {
       return true
     }
     // Fallback to check inode value
-    return this.audioLibraryFilesRemoved.some(af => af.ino === existingAudioFile.ino)
+    return this.audioLibraryFilesRemoved.some((af) => af.ino === existingAudioFile.ino && af.deviceId === existingAudioFile.deviceId)
   }
 
   /**
    * Check if existing ebook file on Book was removed
-   * @param {import('../models/Book').EBookFileObject} ebookFile 
+   * @param {import('../models/Book').EBookFileObject} ebookFile
    * @returns {boolean} true if ebook file was removed
    */
   checkEbookFileRemoved(ebookFile) {
-    if (!this.ebookLibraryFiles.length) return true
+    if (!this.ebookLibraryFilesRemoved.length) return false
 
-    if (this.ebookLibraryFiles.some(lf => lf.metadata.path === ebookFile.metadata.path)) {
-      return false
+    if (this.ebookLibraryFilesRemoved.some((lf) => lf.metadata.path === ebookFile.metadata.path)) {
+      return true
     }
 
-    return !this.ebookLibraryFiles.some(lf => lf.ino === ebookFile.ino)
+    return this.ebookLibraryFilesRemoved.some((lf) => lf.ino === ebookFile.ino && lf.deviceId === ebookFile.deviceId)
   }
 
   /**
    * Set data parsed from filenames
-   * 
-   * @param {Object} bookMetadata 
+   *
+   * @param {Object} bookMetadata
    */
   setBookMetadataFromFilenames(bookMetadata) {
     const keysToMap = ['title', 'subtitle', 'publishedYear', 'asin']
