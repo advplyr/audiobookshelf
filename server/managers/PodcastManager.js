@@ -250,6 +250,9 @@ class PodcastManager {
       await libraryItem.media.save()
     }
 
+    // Update metadata.json after episode download
+    await libraryItem.saveMetadataFile()
+
     SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
     const podcastEpisodeExpanded = podcastEpisode.toOldJSONExpanded(libraryItem.id)
     podcastEpisodeExpanded.libraryItem = libraryItem.toOldJSONExpanded()
@@ -738,6 +741,91 @@ class PodcastManager {
     task.setFinished(taskFinishedString)
     TaskManager.taskFinished(task)
     Logger.info(`[PodcastManager] createPodcastsFromFeedUrls: Finished OPML import. Created ${numPodcastsAdded} podcasts out of ${rssFeedUrls.length} RSS feed URLs`)
+  }
+
+  /**
+   * Fetch episode metadata from RSS feed and backfill missing fields on existing episodes
+   *
+   * @param {import('../models/LibraryItem')} libraryItem - must have media.podcastEpisodes loaded
+   * @returns {Promise<boolean>} - true if any episodes were updated
+   */
+  async populateEpisodeMetadataFromFeed(libraryItem) {
+    const podcast = libraryItem.media
+    if (!podcast.feedURL) {
+      Logger.warn(`[PodcastManager] Cannot fetch episode metadata - no feed URL for "${podcast.title}"`)
+      return false
+    }
+
+    const feed = await getPodcastFeed(podcast.feedURL).catch((error) => {
+      Logger.error(`[PodcastManager] Failed to fetch feed for episode metadata population`, error)
+      return null
+    })
+    if (!feed?.episodes?.length) {
+      Logger.warn(`[PodcastManager] No episodes found in feed for "${podcast.title}"`)
+      return false
+    }
+
+    const episodes = podcast.podcastEpisodes || []
+    let hasUpdates = false
+
+    for (const episode of episodes) {
+      // Match by GUID first, then by title
+      const guid = episode.extraData?.guid
+      let matched = null
+      if (guid) {
+        matched = feed.episodes.find((fe) => fe.guid === guid)
+      }
+      if (!matched) {
+        const episodeTitle = (episode.title || '').trim().toLowerCase()
+        if (episodeTitle) {
+          matched = feed.episodes.find((fe) => (fe.title || '').trim().toLowerCase() === episodeTitle)
+        }
+      }
+
+      if (!matched) continue
+
+      let episodeUpdated = false
+      if (!episode.description && matched.description) {
+        episode.description = matched.description
+        episodeUpdated = true
+      }
+      if (!episode.season && matched.season) {
+        episode.season = matched.season
+        episodeUpdated = true
+      }
+      if (!episode.episode && matched.episode) {
+        episode.episode = matched.episode
+        episodeUpdated = true
+      }
+      if (!episode.episodeType && matched.episodeType) {
+        episode.episodeType = matched.episodeType
+        episodeUpdated = true
+      }
+      if (!episode.pubDate && matched.pubDate) {
+        episode.pubDate = matched.pubDate
+        episodeUpdated = true
+      }
+      if (!episode.subtitle && matched.subtitle) {
+        episode.subtitle = matched.subtitle
+        episodeUpdated = true
+      }
+      if (matched.guid && !episode.extraData?.guid) {
+        episode.extraData = { ...(episode.extraData || {}), guid: matched.guid }
+        episode.changed('extraData', true)
+        episodeUpdated = true
+      }
+
+      if (episodeUpdated) {
+        await episode.save()
+        hasUpdates = true
+      }
+    }
+
+    if (hasUpdates) {
+      Logger.info(`[PodcastManager] Populated episode metadata from feed for "${podcast.title}"`)
+    }
+
+    return hasUpdates
   }
 }
 module.exports = PodcastManager

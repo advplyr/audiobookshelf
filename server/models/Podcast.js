@@ -44,6 +44,8 @@ class Podcast extends Model {
     /** @type {boolean} */
     this.explicit
     /** @type {boolean} */
+    this.fetchEpisodeMetadata
+    /** @type {boolean} */
     this.autoDownloadEpisodes
     /** @type {string} */
     this.autoDownloadSchedule
@@ -108,6 +110,7 @@ class Podcast extends Model {
         language: typeof payload.metadata.language === 'string' ? payload.metadata.language : null,
         podcastType: typeof payload.metadata.type === 'string' ? payload.metadata.type : null,
         explicit: !!payload.metadata.explicit,
+        fetchEpisodeMetadata: !!payload.fetchEpisodeMetadata,
         autoDownloadEpisodes: !!payload.autoDownloadEpisodes,
         autoDownloadSchedule: autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule,
         lastEpisodeCheck: new Date(),
@@ -146,6 +149,7 @@ class Podcast extends Model {
         podcastType: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
 
+        fetchEpisodeMetadata: DataTypes.BOOLEAN,
         autoDownloadEpisodes: DataTypes.BOOLEAN,
         autoDownloadSchedule: DataTypes.STRING,
         lastEpisodeCheck: DataTypes.DATE,
@@ -269,6 +273,10 @@ class Podcast extends Model {
       hasUpdates = true
     }
 
+    if (payload.fetchEpisodeMetadata !== undefined && payload.fetchEpisodeMetadata !== this.fetchEpisodeMetadata) {
+      this.fetchEpisodeMetadata = !!payload.fetchEpisodeMetadata
+      hasUpdates = true
+    }
     if (payload.autoDownloadEpisodes !== undefined && payload.autoDownloadEpisodes !== this.autoDownloadEpisodes) {
       this.autoDownloadEpisodes = !!payload.autoDownloadEpisodes
       hasUpdates = true
@@ -443,6 +451,7 @@ class Podcast extends Model {
       coverPath: this.coverPath,
       tags: [...(this.tags || [])],
       episodes: this.podcastEpisodes.map((episode) => episode.toOldJSON(libraryItemId)),
+      fetchEpisodeMetadata: this.fetchEpisodeMetadata,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
@@ -459,6 +468,7 @@ class Podcast extends Model {
       coverPath: this.coverPath,
       tags: [...(this.tags || [])],
       numEpisodes: this.podcastEpisodes?.length || 0,
+      fetchEpisodeMetadata: this.fetchEpisodeMetadata,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
@@ -483,6 +493,7 @@ class Podcast extends Model {
       coverPath: this.coverPath,
       tags: [...(this.tags || [])],
       episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId)),
+      fetchEpisodeMetadata: this.fetchEpisodeMetadata,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,

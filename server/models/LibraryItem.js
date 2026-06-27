@@ -672,6 +672,28 @@ class LibraryItem extends Model {
         explicit: !!mediaExpanded.explicit,
         podcastType: mediaExpanded.podcastType
       }
+
+      if (mediaExpanded.fetchEpisodeMetadata && mediaExpanded.podcastEpisodes?.length) {
+        jsonObject.episodes = [...mediaExpanded.podcastEpisodes].sort((a, b) => {
+          const seasonA = Number(a.season) || 0
+          const seasonB = Number(b.season) || 0
+          if (seasonA !== seasonB) return seasonA - seasonB
+          const epA = Number(a.episode) || 0
+          const epB = Number(b.episode) || 0
+          if (epA !== epB) return epA - epB
+          return new Date(a.pubDate || 0) - new Date(b.pubDate || 0)
+        }).map((ep) => ({
+          title: ep.title,
+          description: ep.description || null,
+          season: ep.season || null,
+          episode: ep.episode || null,
+          episodeType: ep.episodeType || null,
+          pubDate: ep.pubDate || null,
+          guid: ep.extraData?.guid || null,
+          subtitle: ep.subtitle || null,
+          duration: ep.audioFile?.duration ? String(Math.round(ep.audioFile.duration)) : null
+        }))
+      }
     }
 
     return fsExtra

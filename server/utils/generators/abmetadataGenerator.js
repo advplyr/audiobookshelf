@@ -84,6 +84,16 @@ function parseJsonMetadataText(text, mediaType) {
       validated.series = validated.series.map((series) => parseSeriesString.parse(series)).filter(Boolean)
     }
 
+    if (mediaType === 'podcast' && 'episodes' in abmetadataData) {
+      if (abmetadataData.episodes === null) {
+        validated.episodes = []
+      } else if (Array.isArray(abmetadataData.episodes)) {
+        validated.episodes = cleanEpisodesArray(abmetadataData.episodes)
+      } else {
+        Logger.warn(`[abmetadataGenerator] Invalid metadata key "episodes" expected array, got ${typeof abmetadataData.episodes}`)
+      }
+    }
+
     if (mediaType === 'book' && 'chapters' in abmetadataData) {
       if (abmetadataData.chapters === null) {
         validated.chapters = []
@@ -146,6 +156,29 @@ function validateMetadataValue(key, value, expectedType) {
 
   Logger.warn(`[abmetadataGenerator] Unknown expected type "${expectedType}" for key "${key}"`)
   return undefined
+}
+
+/**
+ * @param {Object[]} episodesArray
+ * @returns {Object[]}
+ */
+function cleanEpisodesArray(episodesArray) {
+  const episodes = []
+  for (const ep of episodesArray) {
+    if (!ep.title || typeof ep.title !== 'string') continue
+    episodes.push({
+      title: ep.title,
+      description: typeof ep.description === 'string' ? ep.description : null,
+      season: typeof ep.season === 'string' ? ep.season : null,
+      episode: typeof ep.episode === 'string' ? ep.episode : null,
+      episodeType: typeof ep.episodeType === 'string' ? ep.episodeType : null,
+      pubDate: typeof ep.pubDate === 'string' ? ep.pubDate : null,
+      guid: typeof ep.guid === 'string' ? ep.guid : null,
+      subtitle: typeof ep.subtitle === 'string' ? ep.subtitle : null,
+      duration: typeof ep.duration === 'string' ? ep.duration : null
+    })
+  }
+  return episodes
 }
 
 /**
