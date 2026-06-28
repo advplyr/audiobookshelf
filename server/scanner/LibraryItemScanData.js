@@ -173,6 +173,11 @@ class LibraryItemScanData {
     return this.libraryFiles.find(lf => lf.metadata.ext.toLowerCase() === '.nfo')
   }
 
+  /** @type {LibraryItem.LibraryFileObject} */
+  get metadataDaisyNccLibraryFile() {
+    return this.libraryFiles.find(lf => lf.metadata.filename?.toLowerCase() === 'ncc.html')
+  }
+
   /**
    * 
    * @param {LibraryItem} existingLibraryItem 
