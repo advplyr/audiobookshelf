@@ -2,6 +2,7 @@ const passport = require('passport')
 const LocalStrategy = require('../libs/passportLocal')
 const Database = require('../Database')
 const Logger = require('../Logger')
+const { toNumber } = require('../utils/index')
 
 const bcrypt = require('../libs/bcryptjs')
 const requestIp = require('../libs/requestIp')
@@ -87,6 +88,20 @@ class LocalAuthStrategy {
       // approve login
       Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
 
+      const BCRYPT_COST = Math.max(Math.trunc(toNumber(process.env.BCRYPT_COST, 12)), 8);
+      const oldRounds = bcrypt.getRounds(user.pash);
+      // Update even if current hash is stronger, otherwise users with extra-light hardware (raspberry-pi or similar)
+      // will have unexpectedly slow logins even after lowering the BCRYPT_COST env var.
+      if (oldRounds != BCRYPT_COST) {
+        Logger.info(`[LocalAuth] Updating bcrypt cost for user "${user.username}" from ${oldRounds} to ${BCRYPT_COST}`)
+        const pash = await this.hashPassword(password)
+        if (!pash) {
+          Logger.error(`[LocalAuth] Failed to update bcrypt cost for user "${user.username}"`)
+          done(null, null)
+        }
+        await user.update({ pash })
+      }
+
       done(null, user)
       return
     }
@@ -114,7 +129,8 @@ class LocalAuthStrategy {
    */
   hashPassword(password) {
     return new Promise((resolve) => {
-      bcrypt.hash(password, 8, (err, hash) => {
+      const BCRYPT_COST = Math.max(Math.trunc(toNumber(process.env.BCRYPT_COST, 12)), 8);
+      bcrypt.hash(password, BCRYPT_COST, (err, hash) => {
         if (err) {
           resolve(null)
         } else {
