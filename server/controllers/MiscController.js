@@ -78,22 +78,30 @@ class MiscController {
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
-    await fs.ensureDir(outputDirectory)
+    try {
+      await fs.ensureDir(outputDirectory)
+    } catch (error) {
+      Logger.error(`[MiscController] Failed to create upload directory "${outputDirectory}"`, error)
+      return res.status(500).send(`Failed to create upload directory: ${error.message}`)
+    }
 
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
+    const failedFiles = []
     for (const file of files) {
       const path = Path.join(outputDirectory, sanitizeFilename(file.name))
 
-      await file
-        .mv(path)
-        .then(() => {
-          return true
-        })
-        .catch((error) => {
-          Logger.error('Failed to move file', path, error)
-          return false
-        })
+      await file.mv(path).catch((error) => {
+        Logger.error('Failed to move file', path, error)
+        failedFiles.push(`${file.name} (${error.message})`)
+      })
+    }
+
+    if (failedFiles.length === files.length) {
+      return res.status(500).send(`Failed to upload files: ${failedFiles.join(', ')}`)
+    }
+    if (failedFiles.length) {
+      return res.status(500).send(`Uploaded ${files.length - failedFiles.length} of ${files.length} files. Failed: ${failedFiles.join(', ')}`)
     }
 
     res.sendStatus(200)
