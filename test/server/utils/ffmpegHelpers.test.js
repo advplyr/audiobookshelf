@@ -4,7 +4,7 @@ const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('../../../server/libs/fsExtra')
 const EventEmitter = require('events')
 
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const { generateFFMetadata, addCoverAndMetadataToFile, extractCoverArt } = require('../../../server/utils/ffmpegHelpers')
 
 global.isWin = process.platform === 'win32'
 
@@ -245,5 +245,222 @@ describe('addCoverAndMetadataToFile', () => {
 
     // Restore the stub
     sinon.restore()
+  })
+})
+
+describe('extractCoverArt', () => {
+  function createTestSetup() {
+    const filepath = '/path/to/audio/file.m4b'
+    const outputpath = '/path/to/output/cover.jpg'
+
+    const ffmpegCommandStub = new EventEmitter()
+    ffmpegCommandStub.addOption = sinon.stub().returnsThis()
+    ffmpegCommandStub.output = sinon.stub().returnsThis()
+    ffmpegCommandStub.run = sinon.stub().callsFake(() => {
+      ffmpegCommandStub.emit('end')
+    })
+
+    const ffmpegModuleStub = sinon.stub().returns(ffmpegCommandStub)
+    ffmpegModuleStub.ffprobe = sinon.stub()
+
+    const ensureDirStub = sinon.stub(fs, 'ensureDir').resolves()
+
+    return { filepath, outputpath, ffmpegCommandStub, ffmpegModuleStub, ensureDirStub }
+  }
+
+  let filepath = null
+  let outputpath = null
+  let ffmpegCommandStub = null
+  let ffmpegModuleStub = null
+  let ensureDirStub = null
+
+  beforeEach(() => {
+    const input = createTestSetup()
+    filepath = input.filepath
+    outputpath = input.outputpath
+    ffmpegCommandStub = input.ffmpegCommandStub
+    ffmpegModuleStub = input.ffmpegModuleStub
+    ensureDirStub = input.ensureDirStub
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('should extract cover art from a file with a single video stream', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'audio', index: 0 },
+        { codec_type: 'video', index: 1, width: 400, height: 400 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegModuleStub.ffprobe.firstCall.args[0]).to.equal(filepath)
+    expect(ffmpegCommandStub.addOption.calledOnce).to.be.true
+    expect(ffmpegCommandStub.addOption.firstCall.args[0]).to.deep.equal(['-map 0:1', '-frames:v 1'])
+    expect(ffmpegCommandStub.output.calledOnce).to.be.true
+    expect(ffmpegCommandStub.output.firstCall.args[0]).to.equal(outputpath)
+    expect(ffmpegCommandStub.run.calledOnce).to.be.true
+    expect(result).to.equal(outputpath)
+  })
+
+  it('should select the largest video stream when multiple exist and ignore 1x1 placeholder', async () => {
+    // Arrange - simulate the Christmas Carol case with 1x1 and 400x400 streams
+    const metadata = {
+      streams: [
+        { codec_type: 'audio', index: 0 },
+        { codec_type: 'video', index: 1, width: 1, height: 1 },
+        { codec_type: 'audio', index: 2 },
+        { codec_type: 'video', index: 3, width: 400, height: 400 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegCommandStub.addOption.calledOnce).to.be.true
+    // Should select index 3 (400x400) and ignore index 1 (1x1)
+    expect(ffmpegCommandStub.addOption.firstCall.args[0]).to.deep.equal(['-map 0:3', '-frames:v 1'])
+    expect(result).to.equal(outputpath)
+  })
+
+  it('should select the largest video stream among multiple sizes', async () => {
+    // Arrange - test with various resolutions
+    const metadata = {
+      streams: [
+        { codec_type: 'video', index: 0, width: 100, height: 100 }, // 10,000 pixels
+        { codec_type: 'video', index: 1, width: 200, height: 150 }, // 30,000 pixels
+        { codec_type: 'video', index: 2, width: 300, height: 200 }, // 60,000 pixels (largest)
+        { codec_type: 'video', index: 3, width: 150, height: 300 }  // 45,000 pixels
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegCommandStub.addOption.firstCall.args[0]).to.deep.equal(['-map 0:2', '-frames:v 1'])
+    expect(result).to.equal(outputpath)
+  })
+
+  it('should ignore video streams with missing width/height and select valid ones', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'video', index: 0 }, // no dimensions (will be filtered out)
+        { codec_type: 'video', index: 1, width: 400, height: 400 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    // Should ignore index 0 (no dimensions) and select index 1 (400x400)
+    expect(ffmpegCommandStub.addOption.firstCall.args[0]).to.deep.equal(['-map 0:1', '-frames:v 1'])
+    expect(result).to.equal(outputpath)
+  })
+
+  it('should return false when ffprobe fails', async () => {
+    // Arrange
+    ffmpegModuleStub.ffprobe.yields(new Error('ffprobe error'), null)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegCommandStub.run.called).to.be.false
+    expect(result).to.be.false
+  })
+
+  it('should return false when no video streams found', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'audio', index: 0 },
+        { codec_type: 'audio', index: 1 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegCommandStub.run.called).to.be.false
+    expect(result).to.be.false
+  })
+
+  it('should return false when only tiny placeholder images exist (width or height <= 1)', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'audio', index: 0 },
+        { codec_type: 'video', index: 1, width: 1, height: 1 },
+        { codec_type: 'video', index: 2, width: 0, height: 100 },
+        { codec_type: 'video', index: 3, width: 100, height: 1 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegCommandStub.run.called).to.be.false
+    expect(result).to.be.false
+  })
+
+  it('should return false when ffmpeg extraction fails', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'video', index: 0, width: 400, height: 400 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+    ffmpegCommandStub.run = sinon.stub().callsFake(() => {
+      ffmpegCommandStub.emit('error', new Error('FFmpeg extraction error'))
+    })
+
+    // Act
+    const result = await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ffmpegModuleStub.ffprobe.calledOnce).to.be.true
+    expect(ffmpegCommandStub.run.calledOnce).to.be.true
+    expect(result).to.be.false
+  })
+
+  it('should ensure output directory exists', async () => {
+    // Arrange
+    const metadata = {
+      streams: [
+        { codec_type: 'video', index: 0, width: 400, height: 400 }
+      ]
+    }
+    ffmpegModuleStub.ffprobe.yields(null, metadata)
+
+    // Act
+    await extractCoverArt(filepath, outputpath, ffmpegModuleStub)
+
+    // Assert
+    expect(ensureDirStub.calledOnce).to.be.true
+    expect(ensureDirStub.firstCall.args[0]).to.equal('/path/to/output')
   })
 })
