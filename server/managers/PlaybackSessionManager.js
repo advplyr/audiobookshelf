@@ -181,6 +181,7 @@ class PlaybackSessionManager {
       // New session from local
       session = new PlaybackSession(sessionJson)
       session.deviceInfo = deviceInfo
+      session.ipAddress = deviceInfo.ipAddress
 
       if (session.mediaMetadata == null) {
         session.mediaMetadata = {}
