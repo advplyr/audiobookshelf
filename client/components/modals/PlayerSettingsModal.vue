@@ -17,6 +17,28 @@
       <div class="flex items-center mb-4">
         <ui-select-input v-model="playbackRateIncrementDecrement" :label="$strings.LabelPlaybackRateIncrementDecrement" menuMaxHeight="250px" :items="playbackRateIncrementDecrementValues" @input="setPlaybackRateIncrementDecrementAmount" />
       </div>
+
+      <div class="border-t pt-4 mt-6">
+        <h4 class="text-lg font-medium mb-4">{{ $strings.HeaderChapterIntroOutroSkipSettings }}</h4>
+
+        <div class="flex items-center mb-4">
+          <ui-toggle-switch v-model="skipIntro" @input="setSkipIntro" />
+          <div class="pl-4 flex-1">
+            <span>{{ $strings.LabelSkipChapterIntro }}</span>
+          </div>
+          <ui-text-input v-model="introDuration" type="number" min="0" max="60" @input="setIntroDuration" class="w-20" />
+          <span class="ml-2 text-sm text-gray-400">{{ $strings.LabelSeconds }}</span>
+        </div>
+
+        <div class="flex items-center mb-4">
+          <ui-toggle-switch v-model="skipOutro" @input="setSkipOutro" />
+          <div class="pl-4 flex-1">
+            <span>{{ $strings.LabelSkipChapterOutro }}</span>
+          </div>
+          <ui-text-input v-model="outroDuration" type="number" min="0" max="60" @input="setOutroDuration" class="w-20" />
+          <span class="ml-2 text-sm text-gray-400">{{ $strings.LabelSeconds }}</span>
+        </div>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -40,7 +62,11 @@ export default {
       jumpForwardAmount: 10,
       jumpBackwardAmount: 10,
       playbackRateIncrementDecrementValues: [0.1, 0.05],
-      playbackRateIncrementDecrement: 0.1
+      playbackRateIncrementDecrement: 0.1,
+      skipIntro: false,
+      introDuration: 10,
+      skipOutro: false,
+      outroDuration: 10
     }
   },
   computed: {
@@ -69,11 +95,29 @@ export default {
       this.playbackRateIncrementDecrement = val
       this.$store.dispatch('user/updateUserSettings', { playbackRateIncrementDecrement: val })
     },
+    setSkipIntro() {
+      this.$store.dispatch('user/updateUserSettings', { skipIntro: this.skipIntro })
+    },
+    setIntroDuration() {
+      this.introDuration = Math.max(0, Math.min(60, parseInt(this.introDuration) || 0))
+      this.$store.dispatch('user/updateUserSettings', { introDuration: this.introDuration })
+    },
+    setSkipOutro() {
+      this.$store.dispatch('user/updateUserSettings', { skipOutro: this.skipOutro })
+    },
+    setOutroDuration() {
+      this.outroDuration = Math.max(0, Math.min(60, parseInt(this.outroDuration) || 0))
+      this.$store.dispatch('user/updateUserSettings', { outroDuration: this.outroDuration })
+    },
     settingsUpdated() {
       this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack')
       this.jumpForwardAmount = this.$store.getters['user/getUserSetting']('jumpForwardAmount')
       this.jumpBackwardAmount = this.$store.getters['user/getUserSetting']('jumpBackwardAmount')
       this.playbackRateIncrementDecrement = this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
+      this.skipIntro = this.$store.getters['user/getUserSetting']('skipIntro') || false
+      this.introDuration = this.$store.getters['user/getUserSetting']('introDuration') || 10
+      this.skipOutro = this.$store.getters['user/getUserSetting']('skipOutro') || false
+      this.outroDuration = this.$store.getters['user/getUserSetting']('outroDuration') || 10
     }
   },
   mounted() {
