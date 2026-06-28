@@ -37,10 +37,15 @@ export const getters = {
         return li.libraryItemId == libraryItemId
       })
     },
-  getUserBookmarksForItem: (state) => (libraryItemId) => {
-    if (!state.user?.bookmarks) return []
-    return state.user.bookmarks.filter((bm) => bm.libraryItemId === libraryItemId)
-  },
+  getUserBookmarksForItem:
+    (state) =>
+    (libraryItemId, episodeId = null) => {
+      if (!state.user?.bookmarks) return []
+      return state.user.bookmarks.filter((bm) => {
+        if (episodeId && bm.episodeId !== episodeId) return false
+        return bm.libraryItemId === libraryItemId
+      })
+    },
   getUserSetting: (state) => (key) => {
     return state.settings?.[key] || null
   },

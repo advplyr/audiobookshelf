@@ -216,7 +216,7 @@ class MeController {
       return res.sendStatus(403)
     }
 
-    const { time, title } = req.body
+    const { time, title, episodeId } = req.body
     if (isNullOrNaN(time)) {
       Logger.error(`[MeController] createBookmark invalid time`, time)
       return res.status(400).send('Invalid time')
@@ -226,7 +226,7 @@ class MeController {
       return res.status(400).send('Invalid title')
     }
 
-    const bookmark = await req.user.createBookmark(req.params.id, time, title)
+    const bookmark = await req.user.createBookmark(req.params.id, time, title, episodeId)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.json(bookmark)
   }
@@ -249,7 +249,7 @@ class MeController {
       return res.sendStatus(403)
     }
 
-    const { time, title } = req.body
+    const { time, title, episodeId } = req.body
     if (isNullOrNaN(time)) {
       Logger.error(`[MeController] updateBookmark invalid time`, time)
       return res.status(400).send('Invalid time')
@@ -259,7 +259,7 @@ class MeController {
       return res.status(400).send('Invalid title')
     }
 
-    const bookmark = await req.user.updateBookmark(req.params.id, time, title)
+    const bookmark = await req.user.updateBookmark(req.params.id, time, title, episodeId)
     if (!bookmark) {
       Logger.error(`[MeController] updateBookmark not found for library item id "${req.params.id}" and time "${time}"`)
       return res.sendStatus(404)
@@ -291,13 +291,14 @@ class MeController {
     if (isNaN(time)) {
       return res.status(400).send('Invalid time')
     }
+    const episodeId = req.query.episode
 
-    if (!req.user.findBookmark(req.params.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time, episodeId)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
 
-    await req.user.removeBookmark(req.params.id, time)
+    await req.user.removeBookmark(req.params.id, time, episodeId)
 
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
     res.sendStatus(200)
