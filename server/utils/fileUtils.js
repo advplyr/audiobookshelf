@@ -1,6 +1,8 @@
 const axios = require('axios')
 const Path = require('path')
 const ssrfFilter = require('ssrf-req-filter')
+const iconvlite = require('iconv-lite')
+const jschardet = require('jschardet')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
@@ -122,7 +124,15 @@ module.exports.getIno = getIno
  */
 async function readTextFile(path) {
   try {
-    var data = await fs.readFile(path)
+    let data = await fs.readFile(path)
+    const det_enc = jschardet.detect(data)
+    if (det_enc)
+      try {
+        return iconvlite.decode(data, det_enc.encoding)
+      } catch (error) {
+        Logger.info(`[FileUtils] ReadTextFile detected encoding ${det_enc.encoding} for file ${path} failed to decode, defaulting to UTF-8. Internal error in iconv-lite: ${error}`)
+      }
+    // defaults to utf-8
     return String(data)
   } catch (error) {
     Logger.error(`[FileUtils] ReadTextFile error ${error}`)
