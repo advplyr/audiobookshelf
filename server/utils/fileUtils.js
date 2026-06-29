@@ -1,6 +1,5 @@
 const axios = require('axios')
 const Path = require('path')
-const ssrfFilter = require('ssrf-req-filter')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
@@ -306,8 +305,8 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
         'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
       timeout: 30000,
-      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url),
-      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
+      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : global.getSsrfFilter(url),
+      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : global.getSsrfFilter(url)
     })
       .then((response) => {
         // Validate content type

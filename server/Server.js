@@ -87,6 +87,59 @@ class Server {
       }
     }
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
+
+    // SSRF filter wrapper that also allows NAT64 addresses (RFC 6052)
+    // The ssrf-req-filter package blocks NAT64 addresses (64:ff9b::/96) because
+    // ipaddr.js classifies them as "rfc6052" range instead of "unicast".
+    // We allow NAT64 but still validate the embedded IPv4 is not private.
+    const ssrfFilterLib = require('ssrf-req-filter')
+    const net = require('net')
+    const ipaddr = require('ipaddr.js')
+    // Check if an IPv4 address string is private/reserved
+    function isPrivateIPv4(ip) {
+      try {
+        const addr = ipaddr.IPv4.parse(ip)
+        return addr.range() !== 'unicast'
+      } catch {
+        return false
+      }
+    }
+    global.getSsrfFilter = (url) => {
+      const agent = ssrfFilterLib(url)
+      const originalCreateConnection = agent.createConnection.bind(agent)
+      agent.createConnection = function(options, callback) {
+        const { host: address } = options
+        // Allow NAT64 addresses (64:ff9b::/96 prefix) but validate embedded IPv4
+        if (address && address.startsWith('64:ff9b::')) {
+          try {
+            const addr = ipaddr.parse(address)
+            if (addr.kind() === 'ipv6') {
+              // Extract the embedded IPv4 from the last 32 bits of the NAT64 address
+              // NAT64 format: 64:ff9b::[96-bit prefix][32-bit IPv4]
+              // The IPv4 is encoded as two 16-bit hex groups in the last two positions
+              const parts = addr.toNormalizedString().split(':')
+              if (parts.length >= 2) {
+                // Last two 16-bit groups contain the 32-bit IPv4
+                const high = parseInt(parts[parts.length - 2], 16)
+                const low = parseInt(parts[parts.length - 1], 16)
+                if (!isNaN(high) && !isNaN(low)) {
+                  const ipv4 = `${(high >> 8) & 0xff}.${high & 0xff}.${(low >> 8) & 0xff}.${low & 0xff}`
+                  if (isPrivateIPv4(ipv4)) {
+                    throw new Error(`NAT64 address embeds private IPv4: ${ipv4}`)
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            throw new Error(`Call to ${address} is blocked: ${e.message}`)
+          }
+          return net.createConnection({ host: options.host, port: options.port }, callback)
+        }
+        return originalCreateConnection(options, callback)
+      }
+      return agent
+    }
+
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
