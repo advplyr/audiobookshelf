@@ -87,15 +87,24 @@ See [install docs](https://www.audiobookshelf.org/docs)
 
 #### Note: Using a subfolder is supported with no additional changes but the path must be `/audiobookshelf` (this is not changeable). See [discussion](https://github.com/advplyr/audiobookshelf/discussions/3535)
 
-See [Reverse Proxy docs](https://audiobookshelf.org/docs/category/reverse-proxy)
+See [reverse proxy docs](https://audiobookshelf.org/docs/category/reverse-proxy)
 
-# Contributing / Run from source
+<br />
 
-This application is built using [NodeJs](https://nodejs.org/).
+# Contributing
+
+See [contributing docs](https://audiobookshelf.org/docs/contributing/general/)
 
 ### Localization
 
-Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations). <a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/abs-web-client/multi-auto.svg" alt="Translation status" /> </a>
+Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations).
+<a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/abs-web-client/multi-auto.svg" alt="Translation status" /> </a>
+
+<br />
+
+# Run from source
+
+This application is built using [NodeJs](https://nodejs.org/).
 
 ### Dev Container Setup
 
@@ -187,6 +196,3 @@ If you are using VSCode, this project includes a couple of pre-defined targets t
 - `Debug client (nuxt)`—Run the client with live reload.
 - `Debug server and client (nuxt)`—Runs both the preceding two debug targets.
 
-# How to Support
-
-[See the incomplete "How to Support" page](https://www.audiobookshelf.org/support)
