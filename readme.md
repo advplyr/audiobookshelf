@@ -57,21 +57,17 @@ Try it out on the [Google Play Store](https://play.google.com/store/apps/details
 
 Using Test Flight: https://testflight.apple.com/join/wiic7QIW **_(beta is full)_**
 
-### Build your own tools & clients
-
-Check out the [API documentation](https://api.audiobookshelf.org/)
-
 <br />
 
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/DemoLibrary.png" />
 
 <br />
 
-# Organizing your audiobooks
+# Organizing your media
 
 #### Directory structure and folder names are important to Audiobookshelf!
 
-See [documentation](https://audiobookshelf.org/docs#book-directory-structure) for supported directory structure, folder naming conventions, and audio file metadata usage.
+See [library docs](https://audiobookshelf.org/docs/category/libraries) for supported directory structures, folder naming conventions, and audio file metadata usage.
 
 <br />
 
