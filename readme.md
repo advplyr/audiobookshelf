@@ -6,9 +6,9 @@
     <br />
     <a href="https://audiobookshelf.org/docs">Documentation</a>
     ·
-    <a href="https://audiobookshelf.org/guides">User Guides</a>
-    ·
     <a href="https://audiobookshelf.org/support">Support</a>
+    ·
+    <a href="https://audiobooks.dev/">Demo</a>
   </p>
 </div>
 
