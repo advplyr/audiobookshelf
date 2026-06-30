@@ -203,10 +203,64 @@ class Database {
     await this.addTriggers()
 
     await this.loadData()
+    await this.rebuildAuthorRows()
 
     Logger.info(`[Database] running ANALYZE`)
     await this.sequelize.query('ANALYZE')
     Logger.info(`[Database] ANALYZE completed`)
+  }
+
+  /**
+   * Rebuild rows for a model so hooks can recompute derived fields.
+   *
+   * @param {import('sequelize').ModelStatic<any>} model
+   * @param {{
+   *   label?: string,
+   *   pageSize?: number,
+   *   attributes?: string[],
+   *   order?: import('sequelize').Order,
+   *   prepareRow?: (row: any) => void | Promise<void>
+   * }} [options]
+   */
+  async rebuildComputedTableRows(model, options = {}) {
+    const { label = model?.name || 'rows', pageSize = 500, attributes = ['id'], order = [['id', 'ASC']], prepareRow = async () => {} } = options
+
+    let offset = 0
+    let totalChange = 0
+
+    while (true) {
+      const rows = await model.findAll({
+        attributes,
+        order,
+        limit: pageSize,
+        offset
+      })
+
+      if (!rows.length) break
+
+      for (const row of rows) {
+        await prepareRow(row)
+        if (!row.changed()) continue
+        totalChange++
+        await row.save({ silent: true })
+      }
+
+      offset += rows.length
+      if (rows.length < pageSize) break
+    }
+
+    Logger.debug(`${totalChange} out of ${offset} ${label} rows required recalculation of derived columns`)
+  }
+
+  /**
+   * Rebuild all author rows so derived fields stay in sync with the model logic.
+   */
+  async rebuildAuthorRows() {
+    await this.rebuildComputedTableRows(this.authorModel, {
+      label: 'author',
+      attributes: ['id', 'name', 'lastFirst', 'searchName', 'libraryId'],
+      prepareRow: (author) => this.authorModel.hasDerivedFieldChange(author)
+    })
   }
 
   /**
@@ -624,7 +678,9 @@ class Database {
     if (!this.libraryFilterData[libraryId]) {
       return (await this.authorModel.getByNameAndLibrary(authorName, libraryId))?.id || null
     }
-    return this.libraryFilterData[libraryId].authors.find((au) => au.name === authorName)?.id || null
+    const searchName = this.authorModel.normalizeSearchName(authorName)
+    if (!searchName) return null
+    return this.libraryFilterData[libraryId].authors.find((au) => this.authorModel.normalizeSearchName(au.name) === searchName)?.id || null
   }
 
   /**
