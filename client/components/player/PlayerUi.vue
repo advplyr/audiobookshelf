@@ -110,6 +110,12 @@ export default {
     useChapterTrack() {
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.updateTimestamp()
+    },
+    '$store.state.streamLibraryItem'() {
+      this.initPlaybackRate()
+    },
+    '$store.state.streamEpisodeId'() {
+      this.initPlaybackRate()
     }
   },
   computed: {
@@ -224,17 +230,26 @@ export default {
     increasePlaybackRate() {
       if (this.playbackRate >= 10) return
       this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.playbackRateChanged(this.playbackRate)
     },
     decreasePlaybackRate() {
       if (this.playbackRate <= 0.5) return
       this.playbackRate = Number((this.playbackRate - this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.playbackRateChanged(this.playbackRate)
     },
     playbackRateChanged(playbackRate) {
       this.setPlaybackRate(playbackRate)
       this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
         console.error('Failed to update settings', err)
+      })
+
+      // Save per-book playback rate to mediaProgress
+      const libraryItemId = this.$store.state.streamLibraryItem?.id
+      if (!libraryItemId) return
+      const episodeId = this.$store.state.streamEpisodeId
+      const progressPath = episodeId ? `${libraryItemId}/${episodeId}` : libraryItemId
+      this.$axios.$patch(`/api/me/progress/${progressPath}`, { playbackRate }).catch((err) => {
+        console.error('Failed to save playback rate to progress', err)
       })
     },
     setPlaybackRate(playbackRate) {
@@ -321,15 +336,27 @@ export default {
     showPlayerSettings() {
       this.showPlayerSettingsModal = !this.showPlayerSettingsModal
     },
+    initPlaybackRate() {
+      const libraryItemId = this.$store.state.streamLibraryItem?.id
+      const episodeId = this.$store.state.streamEpisodeId
+      const mediaProgress = this.$store.getters['user/getUserMediaProgress'](libraryItemId, episodeId)
+      this.playbackRate = mediaProgress?.playbackRate || this.$store.getters['user/getUserSetting']('playbackRate') || 1
+      this.setPlaybackRate(this.playbackRate)
+    },
     init() {
-      this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
+      this.initPlaybackRate()
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
-      this.setPlaybackRate(this.playbackRate)
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
-        this.setPlaybackRate(settings.playbackRate)
+        // Don't let global setting override a per-book rate
+        const libraryItemId = this.$store.state.streamLibraryItem?.id
+        const episodeId = this.$store.state.streamEpisodeId
+        const mediaProgress = this.$store.getters['user/getUserMediaProgress'](libraryItemId, episodeId)
+        if (!mediaProgress?.playbackRate) {
+          this.setPlaybackRate(settings.playbackRate)
+        }
       }
     },
     closePlayer() {
