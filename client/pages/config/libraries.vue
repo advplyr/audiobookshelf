@@ -3,7 +3,7 @@
     <app-settings-content :header-text="$strings.HeaderLibraries">
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
-          <a href="https://www.audiobookshelf.org/guides/library_creation" target="_blank" class="inline-flex">
+          <a href="https://audiobookshelf.org/docs/documentation/libraries/common-content/overview" target="_blank" class="inline-flex">
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
