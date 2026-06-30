@@ -8,6 +8,7 @@ const LibraryItemController = require('../../../server/controllers/LibraryItemCo
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
+const SocketAuthority = require('../../../server/SocketAuthority')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */
@@ -297,6 +298,43 @@ describe('LibraryItemController', () => {
       }
       await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
       expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+  })
+
+  describe('updateTracks', () => {
+    it('recomputes book duration to exclude disabled audio tracks', async () => {
+      const library = await Database.libraryModel.create({ name: 'Tracks Library', mediaType: 'book' })
+      const libraryFolder = await Database.libraryFolderModel.create({ path: '/tracks', libraryId: library.id })
+
+      // Book with two audio tracks (100s + 50s) and a stored duration of 150s
+      const audioFiles = [
+        { index: 1, ino: 'file-1', duration: 100, exclude: false, metadata: { filename: 'track1.mp3', size: 1000 } },
+        { index: 2, ino: 'file-2', duration: 50, exclude: false, metadata: { filename: 'track2.mp3', size: 1000 } }
+      ]
+      const book = await Database.bookModel.create({ title: 'Two Track Book', duration: 150, audioFiles, tags: [], narrators: [], genres: [], chapters: [] })
+      const libraryItem = await Database.libraryItemModel.create({ libraryFiles: [], mediaId: book.id, mediaType: 'book', libraryId: library.id, libraryFolderId: libraryFolder.id })
+
+      sinon.stub(SocketAuthority, 'libraryItemEmitter')
+
+      const expandedLibraryItem = await Database.libraryItemModel.getExpandedById(libraryItem.id)
+      const fakeReq = {
+        libraryItem: expandedLibraryItem,
+        body: {
+          orderedFileData: [
+            { ino: 'file-1', exclude: false },
+            { ino: 'file-2', exclude: true }
+          ]
+        }
+      }
+      const fakeRes = { json: sinon.spy(), sendStatus: sinon.spy() }
+
+      await LibraryItemController.updateTracks.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.json.calledOnce).to.be.true
+
+      // Duration should now reflect only the enabled track (100s), not the original 150s
+      const updatedBook = await Database.bookModel.findByPk(book.id)
+      expect(updatedBook.duration).to.equal(100)
     })
   })
 })

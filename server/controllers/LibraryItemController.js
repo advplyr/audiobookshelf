@@ -507,6 +507,8 @@ class LibraryItemController {
 
     req.libraryItem.media.audioFiles = updatedAudioFiles
     req.libraryItem.media.changed('audioFiles', true)
+    // Recompute duration so disabled (excluded) tracks no longer count toward the total
+    req.libraryItem.media.updateDuration()
     await req.libraryItem.media.save()
 
     SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
