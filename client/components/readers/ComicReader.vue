@@ -65,7 +65,7 @@ const MAX_SCALE = 400
 const MIN_SCALE = 10
 
 Archive.init({
-  workerUrl: '/libarchive/worker-bundle.js'
+  workerUrl: '/audiobookshelf/libarchive/worker-bundle.js'
 })
 
 export default {
