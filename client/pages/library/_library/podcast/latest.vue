@@ -8,11 +8,11 @@
         <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
         <template v-for="(episode, index) in episodesMapped">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
-            <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
+            <covers-preview-cover :src="getEpisodeCoverSrc(episode)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
             <div class="grow pl-4 max-w-2xl">
               <!-- mobile -->
               <div class="flex md:hidden mb-2">
-                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
+                <covers-preview-cover :src="getEpisodeCoverSrc(episode)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
                 <div class="grow px-2">
                   <div class="flex items-center">
                     <div class="flex" @click.stop>
@@ -145,6 +145,13 @@ export default {
     }
   },
   methods: {
+    getEpisodeCoverSrc(episode) {
+      if (episode.coverPath) {
+        return `${this.$store.state.routerBasePath}/api/podcasts/${episode.libraryItemId}/episode/${episode.id}/cover?ts=${episode.updatedAt}`
+      }
+      // Fallback to podcast cover
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId, episode.updatedAt)
+    },
     async toggleEpisodeFinished(episode, confirmed = false) {
       if (this.episodesProcessingMap[episode.id]) {
         console.warn('Episode is already processing')
@@ -236,7 +243,7 @@ export default {
             subtitle: episode.podcast.metadata.title,
             caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
             duration: episode.duration || null,
-            coverPath: episode.podcast.coverPath || null
+            coverPath: episode.coverPath || episode.podcast.coverPath || null
           })
         }
       }
@@ -273,7 +280,7 @@ export default {
           subtitle: episode.podcast.metadata.title,
           caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.duration || null,
-          coverPath: episode.podcast.coverPath || null
+          coverPath: episode.coverPath || episode.podcast.coverPath || null
         }
         this.$store.commit('addItemToQueue', queueItem)
       }
