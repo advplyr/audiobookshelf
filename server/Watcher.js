@@ -18,14 +18,14 @@ class FolderWatcher extends EventEmitter {
   constructor() {
     super()
 
-    /** @type {{id:string, name:string, libraryFolders:import('./models/Folder')[], paths:string[], watcher:Watcher[]}[]} */
+    /** @type {{id:string, name:string, libraryFolders:import('./models/LibraryFolder')[], paths:string[], watcher:Watcher[]}[]} */
     this.libraryWatchers = []
     /** @type {PendingFileUpdate[]} */
     this.pendingFileUpdates = []
     this.pendingDelay = 10000
-    /** @type {NodeJS.Timeout} */
+    /** @type {NodeJS.Timeout | null} */
     this.pendingTimeout = null
-    /** @type {Task} */
+    /** @type {Task | null} */
     this.pendingTask = null
 
     this.filesBeingAdded = new Set()
@@ -36,7 +36,7 @@ class FolderWatcher extends EventEmitter {
     this.ignoreDirs = []
     /** @type {string[]} */
     this.pendingDirsToRemoveFromIgnore = []
-    /** @type {NodeJS.Timeout} */
+    /** @type {NodeJS.Timeout | null} */
     this.removeFromIgnoreTimer = null
 
     this.disabled = false
