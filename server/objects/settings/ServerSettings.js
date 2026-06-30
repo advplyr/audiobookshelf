@@ -82,6 +82,8 @@ class ServerSettings {
     this.authOpenIDMobileRedirectURIs = ['audiobookshelf://oauth']
     this.authOpenIDGroupClaim = ''
     this.authOpenIDAdvancedPermsClaim = ''
+    this.authOpenIDAdminGroups = ''
+    this.authOpenIDGroupDefaultRole = null
     this.authOpenIDSubfolderForRedirectURLs = undefined
 
     if (settings) {
@@ -146,6 +148,8 @@ class ServerSettings {
     this.authOpenIDMobileRedirectURIs = settings.authOpenIDMobileRedirectURIs || ['audiobookshelf://oauth']
     this.authOpenIDGroupClaim = settings.authOpenIDGroupClaim || ''
     this.authOpenIDAdvancedPermsClaim = settings.authOpenIDAdvancedPermsClaim || ''
+    this.authOpenIDAdminGroups = settings.authOpenIDAdminGroups || ''
+    this.authOpenIDGroupDefaultRole = settings.authOpenIDGroupDefaultRole || null
     this.authOpenIDSubfolderForRedirectURLs = settings.authOpenIDSubfolderForRedirectURLs
 
     if (!Array.isArray(this.authActiveAuthMethods)) {
@@ -256,6 +260,8 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authOpenIDAdminGroups: this.authOpenIDAdminGroups, // Do not return to client
+      authOpenIDGroupDefaultRole: this.authOpenIDGroupDefaultRole, // Do not return to client
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
     }
   }
@@ -268,6 +274,8 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    delete json.authOpenIDAdminGroups
+    delete json.authOpenIDGroupDefaultRole
     return json
   }
 
@@ -302,6 +310,8 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
+      authOpenIDAdminGroups: this.authOpenIDAdminGroups, // Do not return to client
+      authOpenIDGroupDefaultRole: this.authOpenIDGroupDefaultRole, // Do not return to client
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
 
       authOpenIDSamplePermissions: User.getSampleAbsPermissions()

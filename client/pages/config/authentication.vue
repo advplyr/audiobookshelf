@@ -110,6 +110,20 @@
 
             <div class="flex flex-col sm:flex-row mb-4">
               <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidAdminGroups" v-model="newAuthSettings.authOpenIDAdminGroups" :disabled="savingSettings" :placeholder="'admin'" :label="'Admin Groups'" />
+              </div>
+              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDAdminGroupsDescription"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
+                <ui-text-input-with-label ref="openidGroupDefaultRole" v-model="newAuthSettings.authOpenIDGroupDefaultRole" :disabled="savingSettings" :placeholder="'user'" :label="'Default Group Role'" />
+              </div>
+              <p class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300" v-html="$strings.LabelOpenIDGroupDefaultRoleDescription"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row mb-4">
+              <div class="w-44 min-w-44">
                 <ui-text-input-with-label ref="openidAdvancedPermsClaim" v-model="newAuthSettings.authOpenIDAdvancedPermsClaim" :disabled="savingSettings" :placeholder="'abspermissions'" :label="'Advanced Permission Claim'" />
               </div>
               <div class="sm:pl-4 pt-2 sm:pt-0 text-sm text-gray-300">
