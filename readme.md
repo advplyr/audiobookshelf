@@ -75,6 +75,10 @@ See [library docs](https://audiobookshelf.org/docs/category/libraries) for suppo
 
 See [install docs](https://www.audiobookshelf.org/docs)
 
+Or deploy a fully managed instance in one click:
+
+[![Deploy with Zenith](https://cdn.zenith.hosting/buttons/deploy-with-zenith.svg)](https://zenith.hosting/host/audiobookshelf)
+
 <br />
 
 # Reverse Proxy Set Up
