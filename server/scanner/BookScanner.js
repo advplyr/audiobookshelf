@@ -228,6 +228,11 @@ class BookScanner {
                 bookId: media.id,
                 authorId: existingAuthorId
               })
+              const author = await Database.authorModel.findByPk(existingAuthorId)
+              if (author) {
+                const numBooks = await Database.bookAuthorModel.getCountForAuthor(existingAuthorId)
+                SocketAuthority.emitter('author_updated', author.toOldJSONExpanded(numBooks))
+              }
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
               authorsUpdated = true
             } else {
@@ -238,6 +243,7 @@ class BookScanner {
               })
               await media.addAuthor(newAuthor)
               Database.addAuthorToFilterData(libraryItemData.libraryId, newAuthor.name, newAuthor.id)
+              SocketAuthority.emitter('author_added', newAuthor.toOldJSON())
               libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new author "${authorName}"`)
               authorsUpdated = true
             }
@@ -478,6 +484,8 @@ class BookScanner {
     }
 
     const createdAtTimestamp = new Date().getTime()
+    const linkedAuthorIds = new Set()
+    const newAuthorNames = new Set()
     if (bookMetadata.authors.length) {
       for (const authorName of bookMetadata.authors) {
         const matchingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
@@ -485,6 +493,7 @@ class BookScanner {
           bookObject.bookAuthors.push({
             authorId: matchingAuthorId
           })
+          linkedAuthorIds.add(matchingAuthorId)
         } else {
           // New author
           bookObject.bookAuthors.push({
@@ -496,6 +505,7 @@ class BookScanner {
               lastFirst: Database.authorModel.getLastFirst(authorName)
             }
           })
+          newAuthorNames.add(authorName)
         }
       }
     }
@@ -593,6 +603,12 @@ class BookScanner {
       for (const ba of libraryItem.book.bookAuthors) {
         if (ba.author) {
           Database.addAuthorToFilterData(libraryItemData.libraryId, ba.author.name, ba.author.id)
+          if (newAuthorNames.has(ba.author.name)) {
+            SocketAuthority.emitter('author_added', ba.author.toOldJSON())
+          } else if (linkedAuthorIds.has(ba.author.id)) {
+            const numBooks = await Database.bookAuthorModel.getCountForAuthor(ba.author.id)
+            SocketAuthority.emitter('author_updated', ba.author.toOldJSONExpanded(numBooks))
+          }
         }
       }
     }
