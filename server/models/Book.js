@@ -465,9 +465,8 @@ class Book extends Model {
     /** @type {typeof import('./BookAuthor')} */
     const bookAuthorModel = this.sequelize.models.bookAuthor
 
-    const authorsCleaned = authors.map((a) => a.toLowerCase()).filter((a) => a)
-    const authorsRemoved = this.authors.filter((au) => !authorsCleaned.includes(au.name.toLowerCase()))
-    const newAuthorNames = authors.filter((a) => !this.authors.some((au) => au.name.toLowerCase() === a.toLowerCase()))
+    const authorsRemoved = this.authors.filter((au) => !authors.some((authorName) => authorModel.isAuthorNameMatch(authorName, au.name)))
+    const newAuthorNames = authors.filter((a) => !this.authors.some((au) => authorModel.isAuthorNameMatch(au.name, a)))
 
     for (const author of authorsRemoved) {
       await bookAuthorModel.removeByIds(author.id, this.id)
@@ -481,6 +480,10 @@ class Book extends Model {
     const authorsAdded = []
     for (const authorName of newAuthorNames) {
       const { author, created } = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
+      if (!author) {
+        Logger.warn(`[Book] "${this.title}" skipped author "${authorName}" because normalized name was empty`)
+        continue
+      }
       await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
       if (created) {
         SocketAuthority.emitter('author_added', author.toOldJSON())
