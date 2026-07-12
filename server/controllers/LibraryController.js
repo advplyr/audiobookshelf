@@ -1620,9 +1620,8 @@ class LibraryController {
     const category = req.query.category || 'All'
     const search = req.query.q || ''
     
-    // Trigger a refresh if it's been a while (optional, maybe Phase 3)
-    // For now, just return what's in the DB
-    const data = await require('../managers/BayManager').getBayItems(req.library.id, req.user, category, search)
+    // Use the bayManager from the router context (bound to this)
+    const data = await this.bayManager.getBayItems(req.library.id, req.user, category, search)
     res.json(data)
   }
 
@@ -1633,8 +1632,8 @@ class LibraryController {
   async refreshBay(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     
-    // Run in background
-    require('../managers/BayManager').refreshBay(req.user)
+    // Run in background using the manager from the router context
+    this.bayManager.refreshBay(req.user)
     res.sendStatus(200)
   }
 
@@ -1646,18 +1645,28 @@ class LibraryController {
     const url = req.query.url
     if (!url) return res.sendStatus(400)
 
+    Logger.info(`[LibraryController] Cover proxy request for: ${url}`)
+
     try {
       const axios = require('axios')
       const response = await axios.get(url, {
-        responseType: 'stream',
+        responseType: 'arraybuffer',
+        timeout: 25000, // Increased to 25s
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://www.audible.com/'
-        }
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        validateStatus: false
       })
-      res.setHeader('Content-Type', response.headers['content-type'])
-      res.setHeader('Cache-Control', 'public, max-age=86400') // 24h cache
-      response.data.pipe(res)
+
+      if (response.status !== 200) {
+        Logger.error(`[LibraryController] Cover proxy failed for ${url}: Status ${response.status}`)
+        return res.sendStatus(response.status)
+      }
+
+      const contentType = response.headers['content-type'] || 'image/jpeg'
+      res.setHeader('Content-Type', contentType)
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      res.send(Buffer.from(response.data, 'binary'))
     } catch (error) {
       Logger.error(`[LibraryController] Cover proxy failed for ${url}:`, error.message)
       res.sendStatus(500)

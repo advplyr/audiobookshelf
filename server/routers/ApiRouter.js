@@ -57,9 +57,9 @@ class ApiRouter {
     /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
+    this.bayManager = Server.bayManager
 
-    this.router = express()
-    this.router.disable('x-powered-by')
+    this.router = express.Router()
     this.init()
   }
 
@@ -87,7 +87,6 @@ class ApiRouter {
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/bay', LibraryController.middleware.bind(this), LibraryController.getBayItems.bind(this))
-    this.router.get('/bay/cover-proxy', LibraryController.getBayCoverProxy.bind(this))
     this.router.post('/libraries/:id/bay/refresh', LibraryController.middleware.bind(this), LibraryController.refreshBay.bind(this))
     this.router.get('/libraries/:id/reviews', LibraryController.middleware.bind(this), ReviewController.findAllForLibrary.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))

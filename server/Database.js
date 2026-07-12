@@ -102,11 +102,6 @@ class Database {
     return this.models.libraryItem
   }
 
-  /** @type {typeof import('./models/PodcastEpisode')} */
-  get podcastEpisodeModel() {
-    return this.models.podcastEpisode
-  }
-
   /** @type {typeof import('./models/MediaProgress')} */
   get mediaProgressModel() {
     return this.models.mediaProgress
@@ -130,6 +125,11 @@ class Database {
   /** @type {typeof import('./models/PlaylistMediaItem')} */
   get playlistMediaItemModel() {
     return this.models.playlistMediaItem
+  }
+
+  /** @type {typeof import('./models/Device')} */
+  get deviceModel() {
+    return this.models.device
   }
 
   /** @type {typeof import('./models/Feed')} */

@@ -756,6 +756,7 @@ export default {
     this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$on('play-queue-item', this.playQueueItem)
     this.$eventBus.$on('play-item', this.playLibraryItem)
+    this.$eventBus.$on('play-pause', this.playPause)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
@@ -764,6 +765,7 @@ export default {
     this.$eventBus.$off('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$off('play-queue-item', this.playQueueItem)
     this.$eventBus.$off('play-item', this.playLibraryItem)
+    this.$eventBus.$off('play-pause', this.playPause)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }
 }

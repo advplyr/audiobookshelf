@@ -1,6 +1,7 @@
 const express = require('express')
 const ShareController = require('../controllers/ShareController')
 const SessionController = require('../controllers/SessionController')
+const LibraryController = require('../controllers/LibraryController')
 
 class PublicRouter {
   constructor(playbackSessionManager) {
@@ -14,6 +15,7 @@ class PublicRouter {
 
   init() {
     this.router.get('/share/:slug', ShareController.getMediaItemShareBySlug.bind(this))
+    this.router.get('/bay/cover-proxy', LibraryController.getBayCoverProxy.bind(this))
     this.router.get('/share/:slug/track/:index', ShareController.getMediaItemShareAudioTrack.bind(this))
     this.router.get('/share/:slug/cover', ShareController.getMediaItemShareCoverImage.bind(this))
     this.router.get('/share/:slug/download', ShareController.downloadMediaItemShare.bind(this))
