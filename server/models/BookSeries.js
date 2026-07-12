@@ -48,6 +48,10 @@ class BookSeries extends Model {
           {
             name: 'bookSeries_seriesId',
             fields: ['seriesId']
+          },
+          {
+            name: 'book_series_series_book',
+            fields: ['seriesId', 'bookId']
           }
         ]
       }

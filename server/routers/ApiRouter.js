@@ -381,8 +381,9 @@ class ApiRouter {
    * Remove library item and associated entities
    * @param {string} libraryItemId
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
+   * @param {string} libraryId
    */
-  async handleDeleteLibraryItem(libraryItemId, mediaItemIds) {
+  async handleDeleteLibraryItem(libraryItemId, mediaItemIds, libraryId) {
     const numProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: mediaItemIds
@@ -413,7 +414,8 @@ class ApiRouter {
     await Database.libraryItemModel.removeById(libraryItemId)
 
     SocketAuthority.emitter('item_removed', {
-      id: libraryItemId
+      id: libraryItemId,
+      libraryId
     })
   }
 

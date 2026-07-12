@@ -523,7 +523,6 @@ class LibraryItem extends Model {
         })
       }
       Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} episodes for "Continue Series" in ${continueSeriesResult.elapsedSeconds}s`)
-
       const newestEpisodesPayload = newestEpisodesResult.payload
       // "Newest Episodes" shelf
       if (newestEpisodesPayload.libraryItems.length) {

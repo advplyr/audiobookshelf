@@ -547,9 +547,7 @@ describe('MeController - IDOR Security Tests', () => {
 
       // Create mock context with getUserItemListeningSessionsHelper
       const mockContext = {
-        getUserItemListeningSessionsHelper: sinon.stub().resolves([
-          { id: 'session1', timeListening: 300, startedAt: Date.now() }
-        ])
+        getUserItemListeningSessionsHelper: sinon.stub().resolves([{ id: 'session1', timeListening: 300, startedAt: Date.now() }])
       }
 
       const fakeReq = {

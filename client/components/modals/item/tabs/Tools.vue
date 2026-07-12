@@ -119,6 +119,7 @@ export default {
     quickEmbed() {
       const payload = {
         message: this.$strings.MessageConfirmQuickEmbed,
+        allowHtml: true,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios

@@ -3,6 +3,7 @@ const packageJson = require('../../../package.json')
 const { BookshelfView } = require('../../utils/constants')
 const Logger = require('../../Logger')
 const User = require('../../models/User')
+const { sanitize } = require('../../utils/htmlSanitizer')
 
 class ServerSettings {
   constructor(settings) {
@@ -138,7 +139,7 @@ class ServerSettings {
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
 
-    this.authLoginCustomMessage = settings.authLoginCustomMessage || null // Added v2.8.0
+    this.authLoginCustomMessage = sanitize(settings.authLoginCustomMessage) || null // Added v2.8.0
     this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
 
     this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || null
@@ -324,7 +325,7 @@ class ServerSettings {
 
   get authFormData() {
     const clientFormData = {
-      authLoginCustomMessage: this.authLoginCustomMessage
+      authLoginCustomMessage: sanitize(this.authLoginCustomMessage)
     }
     if (this.authActiveAuthMethods.includes('openid')) {
       clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
@@ -342,6 +343,9 @@ class ServerSettings {
   update(payload) {
     let hasUpdates = false
     for (const key in payload) {
+      if (key === 'authLoginCustomMessage') {
+        payload[key] = sanitize(payload[key])
+      }
       if (key === 'sortingPrefixes') {
         // Sorting prefixes are updated with the /api/sorting-prefixes endpoint
         continue

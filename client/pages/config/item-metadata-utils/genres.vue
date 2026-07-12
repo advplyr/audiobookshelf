@@ -90,9 +90,9 @@ export default {
 
       let message = this.$getString('MessageConfirmRenameGenre', [this.editingGenre, this.newGenreName])
       if (genreNameExists) {
-        message += `<br><span class="text-sm">${this.$strings.MessageConfirmRenameGenreMergeNote}</span>`
+        message += ` ${this.$strings.MessageConfirmRenameGenreMergeNote}`
       } else if (genreNameExistsOfDifferentCase) {
-        message += `<br><span class="text-warning text-sm">${this.$getString('MessageConfirmRenameGenreWarning', [genreNameExistsOfDifferentCase])}</span>`
+        message += ` ${this.$getString('MessageConfirmRenameGenreWarning', [genreNameExistsOfDifferentCase])}`
       }
 
       const payload = {

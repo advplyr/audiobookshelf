@@ -484,7 +484,7 @@ class LibraryController {
               }
             }
             Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.path}"`)
-            await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+            await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
           }
 
           if (authorIds.length) {
@@ -585,7 +585,7 @@ class LibraryController {
         mediaItemIds.push(libraryItem.mediaId)
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${req.library.name}"`)
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
     }
 
     // Set PlaybackSessions libraryId to null
@@ -736,7 +736,7 @@ class LibraryController {
         }
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" with issue`)
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
     }
 
     if (authorIds.length) {
@@ -1506,9 +1506,14 @@ class LibraryController {
     const libraryItems = await Database.libraryItemModel.findAll({
       attributes: ['id', 'libraryId', 'path', 'isFile'],
       where: {
-        id: itemIds
+        id: itemIds,
+        libraryId: req.library.id
       }
     })
+
+    if (libraryItems.length < itemIds.length) {
+      Logger.warn(`[LibraryController] User "${req.user.username}" requested ${itemIds.length} items but only ${libraryItems.length} are in library "${req.library.id}"`)
+    }
 
     Logger.info(`[LibraryController] User "${req.user.username}" requested download for items "${itemIds}"`)
 
