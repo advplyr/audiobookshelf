@@ -160,6 +160,164 @@ describe('MeController - IDOR Security Tests', () => {
     })
   })
 
+  describe('current user progress and bookmark reads', () => {
+    let user1, user2
+    let bookLibraryItem, podcastLibraryItem, podcastEpisode
+
+    beforeEach(async () => {
+      user1 = await Database.userModel.create({
+        username: 'user1',
+        pash: 'hashed_password_1',
+        type: 'user',
+        isActive: true,
+        permissions: {
+          accessAllLibraries: true,
+          accessAllTags: true
+        }
+      })
+      user2 = await Database.userModel.create({
+        username: 'user2',
+        pash: 'hashed_password_2',
+        type: 'user',
+        isActive: true,
+        permissions: {
+          accessAllLibraries: false,
+          accessAllTags: true,
+          librariesAccessible: []
+        }
+      })
+
+      const bookLibrary = await Database.libraryModel.create({ name: 'Book Library', mediaType: 'book' })
+      const bookLibraryFolder = await Database.libraryFolderModel.create({ path: '/books', libraryId: bookLibrary.id })
+      const book = await Database.bookModel.create({ title: 'Test Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      bookLibraryItem = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book.id,
+        mediaType: 'book',
+        libraryId: bookLibrary.id,
+        libraryFolderId: bookLibraryFolder.id
+      })
+
+      const podcastLibrary = await Database.libraryModel.create({ name: 'Podcast Library', mediaType: 'podcast' })
+      const podcastLibraryFolder = await Database.libraryFolderModel.create({ path: '/podcasts', libraryId: podcastLibrary.id })
+      const podcast = await Database.podcastModel.create({ title: 'Test Podcast', tags: [], genres: [] })
+      podcastLibraryItem = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: podcast.id,
+        mediaType: 'podcast',
+        libraryId: podcastLibrary.id,
+        libraryFolderId: podcastLibraryFolder.id
+      })
+      podcastEpisode = await Database.podcastEpisodeModel.create({
+        podcastId: podcast.id,
+        title: 'Episode 1',
+        index: 1,
+        audioFile: { ino: '1', metadata: { filename: 'episode-1.mp3', ext: '.mp3', path: '/podcasts/episode-1.mp3', relPath: 'episode-1.mp3' } }
+      })
+
+      await Database.mediaProgressModel.create({
+        userId: user1.id,
+        mediaItemId: book.id,
+        mediaItemType: 'book',
+        duration: 1000,
+        currentTime: 500,
+        isFinished: false,
+        extraData: { libraryItemId: bookLibraryItem.id, progress: 0.5 }
+      })
+      await Database.mediaProgressModel.create({
+        userId: user1.id,
+        mediaItemId: podcastEpisode.id,
+        podcastId: podcast.id,
+        mediaItemType: 'podcastEpisode',
+        duration: 1000,
+        currentTime: 250,
+        isFinished: false,
+        extraData: { libraryItemId: podcastLibraryItem.id, progress: 0.25 }
+      })
+      await Database.mediaProgressModel.create({
+        userId: user2.id,
+        mediaItemId: book.id,
+        mediaItemType: 'book',
+        duration: 1000,
+        currentTime: 750,
+        isFinished: false,
+        extraData: { libraryItemId: bookLibraryItem.id, progress: 0.75 }
+      })
+
+      user1.mediaProgresses = await user1.getMediaProgresses()
+      user2.mediaProgresses = await user2.getMediaProgresses()
+      user1.bookmarks = [
+        { libraryItemId: bookLibraryItem.id, time: 100, title: 'Book Bookmark' },
+        { libraryItemId: podcastLibraryItem.id, episodeId: podcastEpisode.id, time: 200, title: 'Episode Bookmark' }
+      ]
+      user2.bookmarks = [{ libraryItemId: bookLibraryItem.id, time: 300, title: 'Other User Bookmark' }]
+    })
+
+    it('should register the current-user progress and bookmark read routes', () => {
+      const routes = apiRouter.router._router.stack.filter((layer) => layer.route).map((layer) => `${Object.keys(layer.route.methods)[0].toUpperCase()} ${layer.route.path}`)
+
+      expect(routes).to.include('GET /me/progress')
+      expect(routes).to.include('GET /me/bookmarks')
+      expect(routes).to.include('GET /me/bookmarks/:libraryItemId')
+    })
+
+    it("should return only the authenticated user's media progress, including podcast episode progress", () => {
+      const fakeRes = { json: sinon.spy() }
+
+      MeController.getAllMediaProgress({ user: user1 }, fakeRes)
+
+      const mediaProgress = fakeRes.json.firstCall.args[0]
+      expect(mediaProgress).to.have.length(2)
+      expect(mediaProgress.every((progress) => progress.userId === user1.id)).to.be.true
+      const podcastProgress = mediaProgress.find((progress) => progress.mediaItemId === podcastEpisode.id)
+      expect(podcastProgress).to.include({
+        id: user1.mediaProgresses.find((progress) => progress.mediaItemId === podcastEpisode.id).id,
+        userId: user1.id,
+        libraryItemId: podcastLibraryItem.id,
+        episodeId: podcastEpisode.id,
+        mediaItemId: podcastEpisode.id,
+        mediaItemType: 'podcastEpisode',
+        duration: 1000,
+        progress: 0.25,
+        currentTime: 250,
+        isFinished: false,
+        hideFromContinueListening: false,
+        ebookLocation: null,
+        ebookProgress: null,
+        finishedAt: null
+      })
+      expect(podcastProgress.lastUpdate).to.be.a('number')
+      expect(podcastProgress.startedAt).to.be.a('number')
+    })
+
+    it("should return only the authenticated user's bookmarks", () => {
+      const fakeRes = { json: sinon.spy() }
+
+      MeController.getAllBookmarks({ user: user1 }, fakeRes)
+
+      expect(fakeRes.json.calledWith(user1.bookmarks)).to.be.true
+      expect(fakeRes.json.firstCall.args[0]).to.not.deep.include(user2.bookmarks[0])
+    })
+
+    it('should return podcast episode bookmarks using the parent podcast library item id', async () => {
+      const fakeRes = { json: sinon.spy(), sendStatus: sinon.spy() }
+
+      await MeController.getBookmarksForLibraryItem({ user: user1, params: { libraryItemId: podcastLibraryItem.id } }, fakeRes)
+
+      expect(fakeRes.sendStatus.notCalled).to.be.true
+      expect(fakeRes.json.calledWith([user1.bookmarks[1]])).to.be.true
+    })
+
+    it('should prevent a user from reading bookmarks for an inaccessible library item', async () => {
+      const fakeRes = { json: sinon.spy(), sendStatus: sinon.spy() }
+
+      await MeController.getBookmarksForLibraryItem({ user: user2, params: { libraryItemId: podcastLibraryItem.id } }, fakeRes)
+
+      expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+      expect(fakeRes.json.notCalled).to.be.true
+    })
+  })
+
   describe('Bookmark Operations - Authorization Checks', () => {
     let user1, user2
     let library1, library2

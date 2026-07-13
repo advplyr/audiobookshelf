@@ -27,6 +27,52 @@ class MeController {
   }
 
   /**
+   * GET: /api/me/progress
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  getAllMediaProgress(req, res) {
+    const mediaProgress = req.user.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || []
+    res.json(mediaProgress)
+  }
+
+  /**
+   * GET: /api/me/bookmarks
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  getAllBookmarks(req, res) {
+    const bookmarks = req.user.bookmarks?.map((bookmark) => ({ ...bookmark })) || []
+    res.json(bookmarks)
+  }
+
+  /**
+   * GET: /api/me/bookmarks/:libraryItemId
+   *
+   * Podcast episodes belong to their podcast's library item, so bookmarks for
+   * a podcast are retrieved with the podcast library item id.
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getBookmarksForLibraryItem(req, res) {
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.libraryItemId)
+    if (!libraryItem) {
+      return res.sendStatus(404)
+    }
+
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to access bookmarks for library item "${req.params.libraryItemId}" without access`)
+      return res.sendStatus(403)
+    }
+
+    const bookmarks = req.user.bookmarks?.filter((bookmark) => bookmark.libraryItemId === libraryItem.id).map((bookmark) => ({ ...bookmark })) || []
+    res.json(bookmarks)
+  }
+
+  /**
    * GET: /api/me/listening-sessions
    *
    * @this import('../routers/ApiRouter')
