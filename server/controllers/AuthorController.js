@@ -259,7 +259,7 @@ class AuthorController {
 
   /**
    * POST: /api/authors/:id/image
-   * Upload author image from web URL
+   * Upload author image from web URL or multipart file
    *
    * @param {AuthorControllerRequest} req
    * @param {Response} res
@@ -269,17 +269,22 @@ class AuthorController {
       Logger.warn(`User "${req.user.username}" attempted to upload an image without permission`)
       return res.sendStatus(403)
     }
-    if (!req.body.url) {
-      Logger.error(`[AuthorController] Invalid request payload. 'url' not in request body`)
-      return res.status(400).send(`Invalid request payload. 'url' not in request body`)
-    }
-    if (!req.body.url.startsWith?.('http:') && !req.body.url.startsWith?.('https:')) {
-      Logger.error(`[AuthorController] Invalid request payload. Invalid url "${req.body.url}"`)
-      return res.status(400).send(`Invalid request payload. Invalid url "${req.body.url}"`)
-    }
 
-    Logger.debug(`[AuthorController] Requesting download author image from url "${req.body.url}"`)
-    const result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url)
+    let result = null
+    if (req.body?.url) {
+      if (!req.body.url.startsWith?.('http:') && !req.body.url.startsWith?.('https:')) {
+        Logger.error(`[AuthorController] Invalid request payload. Invalid url "${req.body.url}"`)
+        return res.status(400).send(`Invalid request payload. Invalid url "${req.body.url}"`)
+      }
+
+      Logger.debug(`[AuthorController] Requesting download author image from url "${req.body.url}"`)
+      result = await AuthorFinder.saveAuthorImage(req.author.id, req.body.url, req.author.imagePath)
+    } else if (req.files?.image) {
+      Logger.debug(`[AuthorController] Handling uploaded author image`)
+      result = await AuthorFinder.uploadAuthorImage(req.author.id, req.files.image, req.author.imagePath)
+    } else {
+      return res.status(400).send('Invalid request no file or url')
+    }
 
     if (result?.error) {
       return res.status(400).send(result.error)
@@ -357,7 +362,7 @@ class AuthorController {
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
       await CacheManager.purgeImageCache(req.author.id)
 
-      const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image)
+      const imageData = await AuthorFinder.saveAuthorImage(req.author.id, authorData.image, req.author.imagePath)
       if (imageData?.path) {
         req.author.imagePath = imageData.path
         hasUpdates = true

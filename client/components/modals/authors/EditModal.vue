@@ -16,10 +16,19 @@
           </div>
         </div>
         <div class="grow">
-          <form @submit.prevent="submitUploadCover" class="flex grow mb-2 p-2">
-            <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
-            <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
-          </form>
+          <div class="flex items-center mb-2 p-2">
+            <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 md:min-w-32">
+              <ui-file-input ref="fileInput" @change="fileUploadSelected">
+                <span class="hidden md:inline-block">{{ $strings.ButtonUpload }}</span>
+                <span class="material-symbols text-2xl inline-block md:hidden!">upload</span>
+              </ui-file-input>
+            </div>
+
+            <form @submit.prevent="submitUploadCover" class="flex grow">
+              <ui-text-input v-model="imageUrl" :placeholder="$strings.LabelImageURLFromTheWeb" class="h-9 w-full" />
+              <ui-btn color="bg-success" type="submit" :padding-x="4" :disabled="!imageUrl" class="ml-2 sm:ml-3 w-24 h-9">{{ $strings.ButtonSubmit }}</ui-btn>
+            </form>
+          </div>
 
           <form v-if="author" @submit.prevent="submitForm">
             <div class="flex">
@@ -44,6 +53,18 @@
           </form>
         </div>
       </div>
+
+      <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
+        <p class="text-lg">{{ $strings.HeaderPreviewCover }}</p>
+        <span class="absolute top-4 right-4 material-symbols text-2xl cursor-pointer" @click="resetImagePreview">close</span>
+        <div class="flex justify-center py-4">
+          <img :src="previewUpload" class="max-h-64 max-w-full object-contain" />
+        </div>
+        <div class="absolute bottom-0 right-0 flex py-4 px-5">
+          <ui-btn :disabled="processingUpload" class="mx-2" @click="resetImagePreview">{{ $strings.ButtonReset }}</ui-btn>
+          <ui-btn :loading="processingUpload" color="bg-success" @click="submitImageUpload">{{ $strings.ButtonUpload }}</ui-btn>
+        </div>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -58,7 +79,10 @@ export default {
         description: ''
       },
       imageUrl: '',
-      processing: false
+      processing: false,
+      processingUpload: false,
+      previewUpload: null,
+      selectedFile: null
     }
   },
   watch: {
@@ -98,14 +122,53 @@ export default {
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    userCanUpload() {
+      return this.$store.getters['user/getUserCanUpload']
     }
   },
   methods: {
     init() {
       this.imageUrl = ''
+      this.resetImagePreview()
       this.authorCopy = {
         ...this.author
       }
+    },
+    fileUploadSelected(file) {
+      this.previewUpload = URL.createObjectURL(file)
+      this.selectedFile = file
+    },
+    resetImagePreview() {
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.reset()
+      }
+      this.previewUpload = null
+      this.selectedFile = null
+    },
+    submitImageUpload() {
+      if (!this.selectedFile) return
+
+      this.processingUpload = true
+      const form = new FormData()
+      form.set('image', this.selectedFile)
+
+      this.$axios
+        .$post(`/api/authors/${this.authorId}/image`, form)
+        .then((data) => {
+          this.resetImagePreview()
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+
+          this.authorCopy.updatedAt = data.author.updatedAt
+          this.authorCopy.imagePath = data.author.imagePath
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error(error.response?.data || this.$strings.ToastUnknownError)
+        })
+        .finally(() => {
+          this.processingUpload = false
+        })
     },
     removeClick() {
       const payload = {

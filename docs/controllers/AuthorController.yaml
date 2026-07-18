@@ -200,24 +200,41 @@ paths:
     post:
       operationId: addAuthorImageById
       summary: Add an author image to the server
-      description: Add an author image to the server. The image will be downloaded from the provided URL and stored on the server.
+      description: Add an author image to the server. Provide either a URL to download or a multipart image file upload. The image is stored on the server.
       tags:
         - Authors
       requestBody:
         required: true
-        description: The author image to add by URL.
+        description: The author image to add by URL or file upload.
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/imageUrl'
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  $ref: '#/components/schemas/imageUrl'
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Author image file (png, jpg, jpeg, or webp)
       responses:
         '200':
           description: addAuthorImageById OK
           content:
-            image/*:
+            application/json:
               schema:
-                type: string
-                format: binary
+                type: object
+                properties:
+                  author:
+                    $ref: '../objects/entities/Author.yaml#/components/schemas/author'
         '404':
           $ref: '#/components/responses/author404'
     patch:
