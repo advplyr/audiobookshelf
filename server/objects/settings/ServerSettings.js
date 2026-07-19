@@ -260,6 +260,18 @@ class ServerSettings {
     }
   }
 
+  /**
+   * Host timezone used by cron schedulers (not persisted in settings)
+   * @returns {string} IANA timezone name, e.g. "America/New_York"
+   */
+  static getHostTimeZone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    } catch {
+      return 'UTC'
+    }
+  }
+
   toJSONForBrowser() {
     const json = this.toJSON()
     delete json.tokenSecret
@@ -268,6 +280,7 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    json.timeZone = ServerSettings.getHostTimeZone()
     return json
   }
 
