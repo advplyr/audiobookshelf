@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
-const { isNullOrNaN } = require('../utils')
+const { isNullOrNaN, cleanStringForSearch } = require('../utils')
 
 class MediaProgress extends Model {
   constructor(values, options) {
@@ -44,6 +44,170 @@ class MediaProgress extends Model {
         id: mediaProgressId
       }
     })
+  }
+
+  /**
+   * When a new book library item is created by a scan, look for media progress left behind by
+   * missing (or deleted) library items in the same library and re-link it to the new book, so
+   * users don't lose their listening progress when a folder is recreated and rescanned.
+   *
+   * Candidates are matched using a tiered check (the first tier with any match wins):
+   *   1. Both ASINs non-empty and equal, and duration within 5 seconds
+   *   2. Only for books where ASIN can't be compared on at least one side: normalized title and
+   *      author names equal, and duration within 5 seconds
+   *   3. Only when neither tier above matched: same number of audio files with an identical set
+   *      of audio file byte sizes, and duration within 5 seconds - metadata-independent, catches
+   *      files that were moved or copied with no tag changes
+   * A tier with more than one match is ambiguous and is skipped entirely (nothing is relinked).
+   * Users who already have progress on the new book are left alone.
+   *
+   * Best-effort: failures are logged and swallowed so a scan is never broken by this.
+   *
+   * @param {import('./LibraryItem').LibraryItemExpanded} newExpandedLibraryItem
+   */
+  static async relinkFromMissingItems(newExpandedLibraryItem) {
+    if (newExpandedLibraryItem?.mediaType !== 'book' || !newExpandedLibraryItem.media) return
+
+    try {
+      const newBook = newExpandedLibraryItem.media
+      const bookModel = this.sequelize.models.book
+      const libraryItemModel = this.sequelize.models.libraryItem
+      const authorModel = this.sequelize.models.author
+
+      // Books left behind by missing library items in the same library
+      const missingItemBooks = await bookModel.findAll({
+        include: [
+          {
+            model: libraryItemModel,
+            required: true,
+            where: {
+              libraryId: newExpandedLibraryItem.libraryId,
+              isMissing: true
+            }
+          },
+          {
+            model: authorModel,
+            through: { attributes: [] }
+          }
+        ]
+      })
+
+      // Books whose library item no longer exists at all (library cannot be determined for these)
+      const orphanedBooks = await bookModel.findAll({
+        include: [
+          {
+            model: libraryItemModel,
+            required: false
+          },
+          {
+            model: authorModel,
+            through: { attributes: [] }
+          }
+        ],
+        where: { '$libraryItem.id$': null }
+      })
+
+      const candidateBooks = [...missingItemBooks, ...orphanedBooks]
+      if (!candidateBooks.length) return
+
+      const durationsMatch = (book) => Math.abs((book.duration || 0) - (newBook.duration || 0)) <= 5
+      const getAudioFileSizes = (book) =>
+        (book.audioFiles || [])
+          .map((af) => af.metadata?.size)
+          .filter((size) => !isNaN(size))
+          .sort((a, b) => a - b)
+      const getAuthorNamesKey = (book) =>
+        (book.authors || [])
+          .map((au) => cleanStringForSearch(au.name))
+          .sort()
+          .join(',')
+
+      const newAsin = newBook.asin?.trim().toLowerCase() || ''
+      const newTitle = cleanStringForSearch(newBook.title)
+      const newAuthorNamesKey = getAuthorNamesKey(newBook)
+      const newAudioFileSizes = getAudioFileSizes(newBook)
+
+      // Sort candidates into tier 1 matches, tier 2 candidates (ASIN not comparable on one side)
+      // and books explicitly excluded by a disagreeing ASIN (never matched at any tier)
+      const tier1Matches = []
+      const tier2Candidates = []
+      const excludedByAsinMismatch = new Set()
+      for (const book of candidateBooks) {
+        const asin = book.asin?.trim().toLowerCase() || ''
+        if (newAsin && asin) {
+          if (asin === newAsin && durationsMatch(book)) {
+            tier1Matches.push(book)
+          } else if (asin !== newAsin) {
+            excludedByAsinMismatch.add(book.id)
+          }
+        } else {
+          tier2Candidates.push(book)
+        }
+      }
+
+      let winningTierMatches = tier1Matches
+
+      if (!winningTierMatches.length) {
+        winningTierMatches = tier2Candidates.filter((book) => cleanStringForSearch(book.title) === newTitle && getAuthorNamesKey(book) === newAuthorNamesKey && durationsMatch(book))
+      }
+
+      if (!winningTierMatches.length && newAudioFileSizes.length) {
+        winningTierMatches = candidateBooks.filter((book) => {
+          if (excludedByAsinMismatch.has(book.id)) return false
+          const audioFileSizes = getAudioFileSizes(book)
+          return JSON.stringify(audioFileSizes) === JSON.stringify(newAudioFileSizes) && durationsMatch(book)
+        })
+      }
+
+      if (winningTierMatches.length !== 1) {
+        if (winningTierMatches.length > 1) {
+          Logger.debug(`[MediaProgress] Not relinking media progress for new book "${newBook.title}" because ${winningTierMatches.length} missing/orphaned books matched`)
+        }
+        return
+      }
+
+      const oldBook = winningTierMatches[0]
+
+      const oldProgresses = await this.findAll({
+        where: {
+          mediaItemId: oldBook.id,
+          mediaItemType: 'book'
+        }
+      })
+      if (!oldProgresses.length) return
+
+      const existingUserIds = (
+        await this.findAll({
+          attributes: ['userId'],
+          where: {
+            mediaItemId: newBook.id,
+            mediaItemType: 'book'
+          }
+        })
+      ).map((mp) => mp.userId)
+
+      const progressesToRelink = oldProgresses.filter((mp) => !existingUserIds.includes(mp.userId))
+      if (!progressesToRelink.length) return
+
+      // Per-row updates rather than one bulk update: extraData is serialized to clients as the
+      // progress row's libraryItemId (see toOldJSON), so it has to be repointed at the new library
+      // item, and the JSON merge preserving each row's other extraData keys is per-row by nature
+      await Promise.all(
+        progressesToRelink.map((mp) =>
+          mp.update({
+            mediaItemId: newBook.id,
+            extraData: { ...(mp.extraData || {}), libraryItemId: newExpandedLibraryItem.id }
+          })
+        )
+      )
+
+      // Cached user objects hold their media progress rows, so evict affected users to avoid serving stale progress
+      this.sequelize.models.user.mediaProgressesRelinked(progressesToRelink.map((mp) => mp.userId))
+
+      Logger.info(`[MediaProgress] Relinked media progress for ${progressesToRelink.length} user${progressesToRelink.length === 1 ? '' : 's'} from missing item "${oldBook.title}" to new library item "${newExpandedLibraryItem.path}"`)
+    } catch (error) {
+      Logger.error(`[MediaProgress] Failed to relink media progress for new library item "${newExpandedLibraryItem.path}"`, error)
+    }
   }
 
   /**
