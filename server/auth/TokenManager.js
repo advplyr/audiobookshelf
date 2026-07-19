@@ -16,12 +16,17 @@ class TokenManager {
     this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 30 * 24 * 60 * 60 // 30 days
     /** @type {number} Access token expiry in seconds */
     this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 1 * 60 * 60 // 1 hour
+    /** @type {number} Grace period in seconds during which a rotated (old) refresh token is still accepted */
+    this.RefreshTokenGracePeriod = parseInt(process.env.REFRESH_TOKEN_GRACE_PERIOD) || 10 * 60 // 10 minutes
 
     if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)
     }
     if (parseInt(process.env.ACCESS_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Access token expiry set from ENV variable to ${this.AccessTokenExpiry} seconds`)
+    }
+    if (parseInt(process.env.REFRESH_TOKEN_GRACE_PERIOD) > 0) {
+      Logger.info(`[TokenManager] Refresh token grace period set from ENV variable to ${this.RefreshTokenGracePeriod} seconds`)
     }
   }
 
@@ -199,9 +204,13 @@ class TokenManager {
     let lastRefreshTokenExpiresAt = null
     if (gracePeriod) {
       // Set grace period of old refresh token in case of race condition in token rotation.
-      // This grace period may need to be longer if fetching the user data takes longer due to large progress objects
+      // During this window a retry with the old refresh token returns the already-rotated
+      // current token instead of failing, so a client that never received the rotation
+      // response (e.g. dropped/suspended mobile request) can still recover the session.
+      // Configurable via REFRESH_TOKEN_GRACE_PERIOD; may need to be longer if fetching the
+      // user data takes longer due to large progress objects.
       lastRefreshToken = previousRefreshToken
-      lastRefreshTokenExpiresAt = new Date(Date.now() + 60 * 1000) // 1 minute grace period
+      lastRefreshTokenExpiresAt = new Date(Date.now() + this.RefreshTokenGracePeriod * 1000)
     }
 
     // Only update if this session row still has the refresh token we read
