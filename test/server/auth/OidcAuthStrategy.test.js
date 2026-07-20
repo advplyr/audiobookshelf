@@ -1,6 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
 
+// Load Database first so Auth resolves OidcAuthStrategy before the circular require completes.
+require('../../../server/Database')
 const OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy')
 const Logger = require('../../../server/Logger')
 
