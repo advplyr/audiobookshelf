@@ -363,15 +363,16 @@ class UserController {
    * @param {Response} res
    */
   async delete(req, res) {
-    if (req.params.id === 'root') {
-      Logger.error('[UserController] Attempt to delete root user. Root user cannot be deleted')
-      return res.sendStatus(400)
-    }
+    const user = req.reqUser
+
     if (req.user.id === req.params.id) {
       Logger.error(`[UserController] User ${req.user.username} is attempting to delete self`)
       return res.sendStatus(400)
     }
-    const user = req.reqUser
+    if (user.isRoot) {
+      Logger.error(`[UserController] Admin user "${req.user.username}" attempted to delete root user`)
+      return res.sendStatus(403)
+    }
 
     // Todo: check if user is logged in and cancel streams
 
