@@ -14,6 +14,7 @@ const { version } = require('../package.json')
 const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
+const { getRequestOrigin } = require('./utils/requestUtils')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -288,10 +289,9 @@ class Server {
     // if RouterBasePath is set, modify all requests to include the base path
     app.use((req, res, next) => {
       const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
-      const host = req.get('host')
-      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const { origin } = getRequestOrigin(req)
       const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
-      req.originalHostPrefix = `${protocol}://${host}${prefix}`
+      req.originalHostPrefix = `${origin}${prefix}`
       if (!urlStartsWithRouterBasePath) {
         req.url = `${global.RouterBasePath}${req.url}`
       }

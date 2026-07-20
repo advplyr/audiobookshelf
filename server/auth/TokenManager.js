@@ -6,6 +6,7 @@ const Logger = require('../Logger')
 
 const requestIp = require('../libs/requestIp')
 const jwt = require('../libs/jsonwebtoken')
+const { isRequestSecure } = require('../utils/requestUtils')
 
 class TokenManager {
   /** @type {string} JWT secret key */
@@ -59,7 +60,7 @@ class TokenManager {
   setRefreshTokenCookie(req, res, refreshToken) {
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: req.secure || req.get('x-forwarded-proto') === 'https',
+      secure: isRequestSecure(req),
       sameSite: 'lax',
       maxAge: this.RefreshTokenExpiry * 1000,
       path: '/'
