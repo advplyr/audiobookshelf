@@ -19,10 +19,10 @@ describe('requestUtils', () => {
     expect(isRequestSecure(mockReq({ secure: false }))).to.equal(false)
   })
 
-  it('isRequestSecure uses strict x-forwarded-proto check', () => {
+  it('isRequestSecure uses x-forwarded-proto', () => {
     expect(isRequestSecure(mockReq({ xForwardedProto: 'https' }))).to.equal(true)
     expect(isRequestSecure(mockReq({ xForwardedProto: 'http' }))).to.equal(false)
-    expect(isRequestSecure(mockReq({ xForwardedProto: 'http, https' }))).to.equal(false)
+    expect(isRequestSecure(mockReq({ xForwardedProto: 'http, https' }))).to.equal(true)
   })
 
   it('getRequestProtocol returns https or http', () => {

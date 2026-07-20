@@ -1,12 +1,21 @@
 /**
  * Whether the request was made over HTTPS.
- * Uses Express `req.secure` and a strict `x-forwarded-proto === 'https'` check.
+ * Uses Express `req.secure` and `x-forwarded-proto`
  *
  * @param {import('express').Request} req
  * @returns {boolean}
  */
 function isRequestSecure(req) {
-  return req.secure || req.get('x-forwarded-proto') === 'https'
+  if (req.secure) return true
+  const xfp = (req.get('x-forwarded-proto') || '').toLowerCase()
+  // Nginx Proxy Manager sends "http, https"; see https://github.com/advplyr/audiobookshelf/pull/4635
+  return (
+    xfp === 'https' ||
+    xfp
+      .split(',')
+      .map((s) => s.trim())
+      .includes('https')
+  )
 }
 
 /**
