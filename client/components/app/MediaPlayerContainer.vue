@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2" :style="{ zIndex: isFullscreen ? 100 : 50 }">
     <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </div>
@@ -26,6 +26,9 @@
         </div>
       </div>
       <div class="grow" />
+      <ui-tooltip direction="top" :text="$strings.LabelExpandPlayer || 'Expand player'">
+        <button :aria-label="$strings.LabelExpandPlayer || 'Expand player'" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="openFullscreen">open_in_full</button>
+      </ui-tooltip>
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
         <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
@@ -55,11 +58,44 @@
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
     />
 
-    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :playback-rate="currentPlaybackRate" :library-item-id="libraryItemId" @select="selectBookmark" />
+    <transition name="player-fullscreen-fade">
+      <player-fullscreen
+        v-if="isFullscreen"
+        ref="audioPlayerFullscreen"
+        :library-item="streamLibraryItem"
+        :title="title"
+        :authors="authors"
+        :podcast-author="podcastAuthor"
+        :cover="fullscreenCoverSrc"
+        :cover-aspect-ratio="coverAspectRatio"
+        :chapters="chapters"
+        :current-chapter="currentChapter"
+        :paused="!isPlaying"
+        :loading="playerLoading"
+        :bookmarks="bookmarks"
+        :sleep-timer-set="sleepTimerSet"
+        :sleep-timer-remaining="sleepTimerRemaining"
+        :sleep-timer-type="sleepTimerType"
+        :is-podcast="isPodcast"
+        :hasNextItemInQueue="hasNextItemInQueue"
+        @playPause="playPause"
+        @jumpForward="jumpForward"
+        @jumpBackward="jumpBackward"
+        @setVolume="setVolume"
+        @setPlaybackRate="setPlaybackRate"
+        @seek="seek"
+        @nextItemInQueue="playNextItemInQueue"
+        @showBookmarks="showBookmarks"
+        @showSleepTimer="showSleepTimerModal = true"
+        @showPlayerQueueItems="showPlayerQueueItemsModal = true"
+      />
+    </transition>
 
-    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :z-index="110" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :playback-rate="currentPlaybackRate" :library-item-id="libraryItemId" @select="selectBookmark" />
 
-    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" />
+    <modals-sleep-timer-modal v-model="showSleepTimerModal" :z-index="110" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
+
+    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :z-index="110" />
   </div>
 </template>
 
@@ -120,6 +156,13 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    isFullscreen() {
+      return this.$store.state.playerIsFullscreen
+    },
+    fullscreenCoverSrc() {
+      if (!this.streamLibraryItem) return '/Logo.png'
+      return this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
     },
     streamEpisode() {
       if (!this.$store.state.streamEpisodeId) return null
@@ -304,6 +347,9 @@ export default {
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setCurrentTime(time)
       }
+      if (this.$refs.audioPlayerFullscreen) {
+        this.$refs.audioPlayerFullscreen.setCurrentTime(time)
+      }
 
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
         this.checkChapterEnd()
@@ -314,10 +360,16 @@ export default {
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setDuration(duration)
       }
+      if (this.$refs.audioPlayerFullscreen) {
+        this.$refs.audioPlayerFullscreen.setDuration(duration)
+      }
     },
     setBufferTime(buffertime) {
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setBufferTime(buffertime)
+      }
+      if (this.$refs.audioPlayerFullscreen) {
+        this.$refs.audioPlayerFullscreen.setBufferTime(buffertime)
       }
     },
     showBookmarks() {
@@ -331,6 +383,28 @@ export default {
     closePlayer() {
       this.playerHandler.closePlayer()
       this.$store.commit('setMediaPlaying', null)
+      this.$store.commit('setPlayerIsFullscreen', false)
+    },
+    openFullscreen() {
+      this.$store.commit('setPlayerIsFullscreen', true)
+      this.$nextTick(() => {
+        if (this.$refs.audioPlayerFullscreen) {
+          this.$refs.audioPlayerFullscreen.setDuration(this.totalDuration)
+          this.$refs.audioPlayerFullscreen.setCurrentTime(this.currentTime)
+        }
+      })
+    },
+    handleGlobalKeydown(e) {
+      if (e.key !== 'f' && e.key !== 'F') return
+      const target = e.target
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      if (isTyping) return
+      e.preventDefault()
+      if (this.isFullscreen) {
+        this.$store.commit('setPlayerIsFullscreen', false)
+      } else {
+        this.openFullscreen()
+      }
     },
     mediaSessionPlay() {
       console.log('Media session play')
@@ -426,6 +500,9 @@ export default {
         } else {
           console.error('No Audio Ref')
         }
+        if (this.$refs.audioPlayerFullscreen) {
+          this.$refs.audioPlayerFullscreen.setChunksReady(chunks, data.numSegments)
+        }
       }
     },
     sessionOpen(session) {
@@ -452,6 +529,9 @@ export default {
         this.$refs.audioPlayer.setStreamReady()
       } else {
         console.error('No Audio Ref')
+      }
+      if (this.$refs.audioPlayerFullscreen) {
+        this.$refs.audioPlayerFullscreen.setStreamReady()
       }
     },
     streamError(streamId) {
@@ -526,6 +606,7 @@ export default {
 
       this.$nextTick(() => {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
+        if (this.$refs.audioPlayerFullscreen) this.$refs.audioPlayerFullscreen.checkUpdateChapterTrack()
       })
 
       this.playerHandler.load(libraryItem, episodeId, true, this.currentPlaybackRate, payload.startTime)
@@ -542,6 +623,7 @@ export default {
         console.log('sessionClosedEvent closing current session', sessionId)
         this.playerHandler.resetPlayer() // Closes player without reporting to server
         this.$store.commit('setMediaPlaying', null)
+        this.$store.commit('setPlayerIsFullscreen', false)
       }
     }
   },
@@ -552,6 +634,7 @@ export default {
     this.$eventBus.$on('play-queue-item', this.playQueueItem)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
+    window.addEventListener('keydown', this.handleGlobalKeydown)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
@@ -560,6 +643,7 @@ export default {
     this.$eventBus.$off('play-queue-item', this.playQueueItem)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
+    window.removeEventListener('keydown', this.handleGlobalKeydown)
   }
 }
 </script>
@@ -567,5 +651,16 @@ export default {
 <style>
 #mediaPlayerContainer {
   box-shadow: 0px -6px 8px #1111113f;
+}
+.player-fullscreen-fade-enter-active,
+.player-fullscreen-fade-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.player-fullscreen-fade-enter,
+.player-fullscreen-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
 }
 </style>
