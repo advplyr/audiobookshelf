@@ -24,3 +24,7 @@ sw.*
 .idea/*
 tailwind.compiled.css
 tailwind.config.js
+
+# Local dev server logs
+client-dev.log
+server-dev.log

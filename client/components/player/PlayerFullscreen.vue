@@ -497,12 +497,15 @@ export default {
       const target = e.target
       const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
       if (e.key === 'Escape') {
-        e.preventDefault()
-        if (this.showChapterPanel) this.showChapterPanel = false
-        else this.minimize()
-      } else if (e.code === 'Space' && !isTyping) {
-        e.preventDefault()
-        this.playPause()
+        // Only intercept Escape to close the chapter panel; otherwise let the
+        // global player hotkey handler (layouts/default.vue) close the player.
+        if (this.showChapterPanel) {
+          e.preventDefault()
+          e.stopPropagation()
+          this.showChapterPanel = false
+        }
+        // Space (play/pause) is handled by the global player-hotkey system.
+        // Handling it here too would double-toggle and cancel itself out.
       } else if ((e.key === ',' || e.key === '<') && !isTyping) {
         e.preventDefault()
         this.seek(Math.max(0, this.currentTime - 10))
