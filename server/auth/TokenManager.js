@@ -68,6 +68,18 @@ class TokenManager {
   }
 
   /**
+   * Whether a decoded JWT payload may authenticate API/socket requests (not refresh-only credentials).
+   *
+   * @param {Object} decoded
+   * @returns {boolean}
+   */
+  static isBearerAccessTokenPayload(decoded) {
+    if (!decoded?.userId) return false
+    if (decoded.type === 'refresh') return false
+    return true
+  }
+
+  /**
    * Function to validate a jwt token for a given user
    * Used to authenticate socket connections
    * TODO: Support API keys for web socket connections
@@ -77,7 +89,9 @@ class TokenManager {
    */
   static validateAccessToken(token) {
     try {
-      return jwt.verify(token, TokenManager.TokenSecret)
+      const decoded = jwt.verify(token, TokenManager.TokenSecret)
+      if (!TokenManager.isBearerAccessTokenPayload(decoded)) return null
+      return decoded
     } catch (err) {
       return null
     }
@@ -283,7 +297,11 @@ class TokenManager {
 
       done(null, user)
     } else {
-      // JWT based authentication
+      // JWT based authentication — refresh tokens are only valid at POST /auth/refresh
+      if (!TokenManager.isBearerAccessTokenPayload(jwt_payload)) {
+        done(null, null)
+        return
+      }
 
       // Check if the jwt is expired
       if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
