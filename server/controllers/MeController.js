@@ -45,14 +45,11 @@ class MeController {
    */
   getAllBookmarks(req, res) {
     const bookmarks = req.user.bookmarks?.map((bookmark) => ({ ...bookmark })) || []
-    res.json(bookmarks)
+    res.json({ bookmarks })
   }
 
   /**
    * GET: /api/me/bookmarks/:libraryItemId
-   *
-   * Podcast episodes belong to their podcast's library item, so bookmarks for
-   * a podcast are retrieved with the podcast library item id.
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -69,7 +66,7 @@ class MeController {
     }
 
     const bookmarks = req.user.bookmarks?.filter((bookmark) => bookmark.libraryItemId === libraryItem.id).map((bookmark) => ({ ...bookmark })) || []
-    res.json(bookmarks)
+    res.json({ bookmarks })
   }
 
   /**
