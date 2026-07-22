@@ -18,7 +18,7 @@
           </button>
         </ui-tooltip>
 
-        <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
+        <ui-tooltip v-if="!hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
           <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
             <span class="material-symbols text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
           </button>
