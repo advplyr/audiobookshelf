@@ -342,6 +342,9 @@ class ApiRouter {
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
+    this.router.post('/upload/chunk', MiscController.handleUploadChunk.bind(this))
+    this.router.get('/upload/chunk/:uploadId/:fileIndex', MiscController.getUploadChunks.bind(this))
+    this.router.post('/upload/finalize', MiscController.handleUploadFinalize.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
     this.router.patch('/sorting-prefixes', MiscController.updateSortingPrefixes.bind(this))
