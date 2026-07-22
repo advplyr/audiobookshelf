@@ -21,6 +21,7 @@
     "@nuxtjs/proxy": "^2.1.0",
     "@tailwindcss/postcss": "^4.0.13",
     "@teckel/vue-pdf": "^4.3.5",
+    "cipher-base": "^1.0.5",
     "core-js": "^3.16.0",
     "cron-parser": "^4.7.1",
     "date-fns": "^2.25.0",
