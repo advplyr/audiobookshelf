@@ -34,7 +34,7 @@ class MeController {
    */
   getAllMediaProgress(req, res) {
     const mediaProgress = req.user.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || []
-    res.json(mediaProgress)
+    res.json({ mediaProgress })
   }
 
   /**
