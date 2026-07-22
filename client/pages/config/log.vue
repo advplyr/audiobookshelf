@@ -3,7 +3,7 @@
     <app-settings-content :header-text="$strings.HeaderLogs" :description="$strings.MessageLogsDescription">
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
-          <a href="https://www.audiobookshelf.org/guides/server_logs" target="_blank" class="inline-flex">
+          <a href="https://audiobookshelf.org/docs/documentation/server-management/server-logs" target="_blank" class="inline-flex">
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
