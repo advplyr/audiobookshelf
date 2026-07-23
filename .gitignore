@@ -28,3 +28,4 @@ tailwind.config.js
 # Local dev server logs
 client-dev.log
 server-dev.log
+/deploy/redeploy.log
