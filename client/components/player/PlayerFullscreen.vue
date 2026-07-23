@@ -41,6 +41,14 @@
             <p class="font-mono text-sm text-white">{{ $secondsToTimestamp(displayRingTime / _playbackRate) }} / {{ $secondsToTimestamp(duration / _playbackRate) }}</p>
           </div>
 
+          <!-- Jump feedback burst — the only visible confirmation when the jump came from a hotkey -->
+          <div v-if="jumpBurst" :key="jumpBurstKey" class="jump-burst absolute inset-0 rounded-2xl flex items-center justify-center pointer-events-none z-20" :class="jumpBurst.direction === 'backward' ? 'jump-burst-back' : 'jump-burst-fwd'">
+            <div class="jump-burst-pill flex flex-col items-center justify-center gap-0.5 w-24 h-24 rounded-full bg-black/55 backdrop-blur-md ring-1 ring-white/15">
+              <span class="jump-burst-icon material-symbols text-3xl leading-none">{{ jumpBurst.direction === 'backward' ? 'replay' : 'forward_media' }}</span>
+              <span class="font-mono text-sm font-semibold tabular-nums leading-none">{{ jumpBurstLabel }}</span>
+            </div>
+          </div>
+
           <!-- pl-5 (not ml-5) so the gap between cover and stack is part of the hover target -->
           <div class="fab-stack absolute z-30 top-1/2 -translate-y-1/2 left-full pl-5 flex flex-col items-center gap-1.5 pointer-events-none group-hover:pointer-events-auto">
             <div class="fab-slot flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/15">
@@ -184,12 +192,26 @@ export default {
       coverPxWidth: 420,
       ringSamples: [],
       isDraggingRing: false,
-      dragPercent: null
+      dragPercent: null,
+      jumpBurst: null,
+      jumpBurstKey: 0,
+      jumpBurstTimeout: null
     }
   },
   computed: {
     libraryItemId() {
       return this.libraryItem?.id || null
+    },
+    jumpForwardAmount() {
+      return this.$store.getters['user/getUserSetting']('jumpForwardAmount') || 10
+    },
+    jumpBackwardAmount() {
+      return this.$store.getters['user/getUserSetting']('jumpBackwardAmount') || 10
+    },
+    jumpBurstLabel() {
+      if (!this.jumpBurst) return ''
+      const sign = this.jumpBurst.direction === 'backward' ? '−' : '+'
+      return `${sign}${this.jumpBurst.amount}s`
     },
     // Concentric with the artwork corners: the ring stroke centerline sits
     // (ringPad - ringStroke/2) outside the cover edge.
@@ -392,10 +414,22 @@ export default {
       this.$emit('playPause')
     },
     jumpBackward() {
+      this.$eventBus.$emit('player-jump', { direction: 'backward', amount: this.jumpBackwardAmount })
       this.$emit('jumpBackward')
     },
     jumpForward() {
+      this.$eventBus.$emit('player-jump', { direction: 'forward', amount: this.jumpForwardAmount })
       this.$emit('jumpForward')
+    },
+    onPlayerJump({ direction, amount } = {}) {
+      if (direction !== 'backward' && direction !== 'forward') return
+      this.jumpBurst = { direction, amount }
+      // Key change forces the node to remount so the animation replays on rapid presses
+      this.jumpBurstKey++
+      clearTimeout(this.jumpBurstTimeout)
+      this.jumpBurstTimeout = setTimeout(() => {
+        this.jumpBurst = null
+      }, 600)
     },
     setVolume(volume) {
       this.$emit('setVolume', volume)
@@ -539,8 +573,11 @@ export default {
     this.updateCoverWidth()
     window.addEventListener('keydown', this.handleKeydown)
     window.addEventListener('resize', this.updateCoverWidth)
+    this.$eventBus.$on('player-jump', this.onPlayerJump)
   },
   beforeDestroy() {
+    clearTimeout(this.jumpBurstTimeout)
+    this.$eventBus.$off('player-jump', this.onPlayerJump)
     window.removeEventListener('keydown', this.handleKeydown)
     window.removeEventListener('resize', this.updateCoverWidth)
     window.removeEventListener('mousemove', this.onRingDragMove)
@@ -593,5 +630,89 @@ export default {
 .chapter-panel-leave-to {
   margin-right: -24rem; /* -w-96 */
   opacity: 0;
+}
+
+/* Jump feedback burst: dark scrim wipes in from the side that was jumped toward,
+   pill springs up then fades. Whole thing is done in ~0.6s and self-removes. */
+.jump-burst {
+  animation: jump-burst-scrim 0.6s ease forwards;
+}
+.jump-burst-back {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 65%);
+}
+.jump-burst-fwd {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 65%);
+}
+@keyframes jump-burst-scrim {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.jump-burst-pill {
+  animation: jump-burst-pill 0.6s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+}
+@keyframes jump-burst-pill {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  45% {
+    transform: scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+/* Icon spins in the direction of travel — reads as "time moved" at a glance */
+.jump-burst-icon {
+  animation: jump-burst-spin-back 0.55s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.jump-burst-fwd .jump-burst-icon {
+  animation-name: jump-burst-spin-fwd;
+}
+@keyframes jump-burst-spin-back {
+  from {
+    transform: rotate(120deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes jump-burst-spin-fwd {
+  from {
+    transform: rotate(-120deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jump-burst-icon {
+    animation: none !important;
+  }
+  .jump-burst-pill {
+    animation: jump-burst-scrim 0.6s ease forwards !important;
+  }
 }
 </style>

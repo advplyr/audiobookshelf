@@ -180,6 +180,12 @@ export default {
     },
     playbackRateIncrementDecrement() {
       return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
+    },
+    jumpForwardAmount() {
+      return this.$store.getters['user/getUserSetting']('jumpForwardAmount') || 10
+    },
+    jumpBackwardAmount() {
+      return this.$store.getters['user/getUserSetting']('jumpBackwardAmount') || 10
     }
   },
   methods: {
@@ -198,9 +204,13 @@ export default {
       this.$emit('playPause')
     },
     jumpBackward() {
+      // Broadcast so the controls (and fullscreen overlay) can flash feedback.
+      // Needed because hotkeys bypass the buttons entirely.
+      this.$eventBus.$emit('player-jump', { direction: 'backward', amount: this.jumpBackwardAmount })
       this.$emit('jumpBackward')
     },
     jumpForward() {
+      this.$eventBus.$emit('player-jump', { direction: 'forward', amount: this.jumpForwardAmount })
       this.$emit('jumpForward')
     },
     increaseVolume() {
