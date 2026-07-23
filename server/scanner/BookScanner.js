@@ -136,12 +136,8 @@ class BookScanner {
 
       media.audioFiles = AudioFileScanner.runSmartTrackOrder(existingLibraryItem.relPath, media.audioFiles)
 
-      media.duration = 0
-      media.audioFiles.forEach((af) => {
-        if (!isNaN(af.duration)) {
-          media.duration += af.duration
-        }
-      })
+      // Recompute duration from included (non-excluded) tracks so disabled tracks don't get re-counted on rescan
+      media.updateDuration()
 
       media.changed('audioFiles', true)
     }
