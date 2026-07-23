@@ -297,6 +297,8 @@ module.exports.getFilePathItemFromFileUpdate = (fileUpdate) => {
  */
 module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
+    const DOWNLOAD_STALL_TIMEOUT_MS = 60000
+
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
     axios({
       url,
@@ -310,9 +312,42 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
       httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
     })
       .then((response) => {
+        let isSettled = false
+        let downloadStallWatchdog = null
+
+        const clearDownloadStallWatchdog = () => {
+          if (downloadStallWatchdog) {
+            clearTimeout(downloadStallWatchdog)
+            downloadStallWatchdog = null
+          }
+        }
+
+        const scheduleDownloadStallWatchdog = () => {
+          clearDownloadStallWatchdog()
+          downloadStallWatchdog = setTimeout(() => {
+            Logger.error(`[fileUtils] File "${Path.basename(filepath)}" download stalled (no data for ${DOWNLOAD_STALL_TIMEOUT_MS}ms)`)
+            const timeoutError = new Error(`Download stalled for ${DOWNLOAD_STALL_TIMEOUT_MS}ms`)
+            response.data.destroy(timeoutError)
+            writer.destroy(timeoutError)
+            settle(timeoutError)
+          }, DOWNLOAD_STALL_TIMEOUT_MS)
+        }
+
+        const settle = (error = null) => {
+          if (isSettled) return
+          isSettled = true
+          clearDownloadStallWatchdog()
+          if (error) {
+            reject(error)
+          } else {
+            resolve()
+          }
+        }
+
         // Validate content type
         if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
-          return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+          response.data.destroy(new Error('Invalid content type'))
+          return settle(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
         }
 
         const totalSize = parseInt(response.headers['content-length'], 10)
@@ -322,8 +357,11 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
         const writer = fs.createWriteStream(filepath)
         response.data.pipe(writer)
 
+        scheduleDownloadStallWatchdog()
+
         let lastProgress = 0
         response.data.on('data', (chunk) => {
+          scheduleDownloadStallWatchdog()
           downloadedSize += chunk.length
           const progress = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0
           if (progress >= lastProgress + 5) {
@@ -332,8 +370,11 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
           }
         })
 
-        writer.on('finish', resolve)
-        writer.on('error', reject)
+        response.data.on('error', (err) => {
+          settle(err)
+        })
+        writer.on('finish', () => settle())
+        writer.on('error', (err) => settle(err))
       })
       .catch((err) => {
         Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)
