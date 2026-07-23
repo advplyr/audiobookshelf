@@ -14,6 +14,9 @@
           <p class="text-base mb-1">{{ podcastTitle }}</p>
           <p class="text-xs text-gray-300">{{ podcastAuthor }}</p>
         </div>
+        <button class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white" @click="play">
+          <span class="material-symbols text-2xl">play_arrow</span>
+        </button>
       </div>
       <p dir="auto" class="text-lg font-semibold mb-6">{{ title }}</p>
       <div v-if="description" dir="auto" class="default-style less-spacing" @click="handleDescriptionClick" v-html="description" />
@@ -105,6 +108,13 @@ export default {
     }
   },
   methods: {
+    play() {
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: this.libraryItem.id,
+        episodeId: this.episodeId
+      })
+      this.show = false
+    },
     handleDescriptionClick(e) {
       if (e.target.matches('span.time-marker')) {
         const time = parseInt(e.target.dataset.time)
