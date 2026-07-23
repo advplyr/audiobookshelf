@@ -165,6 +165,8 @@ class Server {
 
     await this.cleanUserData() // Remove invalid user item progress
     await CacheManager.ensureCachePaths()
+    const ComicCacheManager = require('./managers/ComicCacheManager')
+    await ComicCacheManager.ensureCachePaths()
 
     await ShareManager.init()
     await this.backupManager.init()
