@@ -351,6 +351,8 @@ class MeController {
    * User change password. Requires current password.
    * Guest users cannot change password.
    *
+   * Invalidates all other JWT sessions for the user. If using x-refresh-token, returns new tokens for the current session.
+   *
    * @this import('../routers/ApiRouter')
    *
    * @param {RequestWithUser} req
@@ -371,6 +373,24 @@ class MeController {
 
     if (result.error) {
       return res.status(400).send(result.error)
+    }
+
+    const shouldReturnTokens = !!req.headers['x-refresh-token']
+    const newTokens = await this.auth.invalidateJwtSessionsForUser(req.user, req, res)
+
+    if (newTokens?.accessToken) {
+      Logger.info(`[MeController] Invalidated other JWT sessions for user ${req.user.username} after password change`)
+      if (shouldReturnTokens) {
+        return res.json({
+          success: true,
+          user: {
+            accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken
+          }
+        })
+      }
+    } else {
+      Logger.info(`[MeController] Invalidated all JWT sessions for user ${req.user.username} after password change`)
     }
 
     res.sendStatus(200)
