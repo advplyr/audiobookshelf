@@ -586,6 +586,8 @@
   "LabelSettingsAudiobooksOnly": "Audiobooks only",
   "LabelSettingsAudiobooksOnlyHelp": "Enabling this setting will ignore ebook files unless they are inside an audiobook folder in which case they will be set as supplementary ebooks",
   "LabelSettingsBookshelfViewHelp": "Skeumorphic design with wooden shelves",
+  "LabelSettingsCarryFinishedToNewEditions": "Carry finished status to replacement editions",
+  "LabelSettingsCarryFinishedToNewEditionsHelp": "When a book is replaced by a different edition and playback position cannot be carried over, move the finished status of users who finished the old edition to the new one.",
   "LabelSettingsChromecastSupport": "Chromecast support",
   "LabelSettingsDateFormat": "Date Format",
   "LabelSettingsEnableWatcher": "Automatically watch libraries for changes",
