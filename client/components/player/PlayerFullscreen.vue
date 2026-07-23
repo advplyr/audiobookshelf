@@ -146,7 +146,7 @@
         <div class="flex items-center gap-2.5 justify-self-end pr-1">
           <!-- Only surfaces once the rate is off 1x - the speed menu on the artwork stays the primary control -->
           <transition name="speed-pill">
-            <div v-if="isPlaybackRateModified" class="speed-pill flex items-center h-8 pl-0.5 pr-0.5 rounded-full bg-accent/15 text-accent">
+            <div v-if="isPlaybackRateModified" class="speed-pill flex items-center h-8 pl-0.5 pr-0.5 rounded-full bg-accent/15 text-accent" :class="ratePulse ? 'speed-pill-pulse' : ''">
               <ui-tooltip direction="top" :text="$strings.ButtonSlower || 'Slower'">
                 <button :aria-label="$strings.ButtonSlower || 'Slower'" :disabled="!canDecrementPlaybackRate" class="speed-pill-btn flex items-center justify-center w-7 h-7 rounded-full hover:bg-accent/25 disabled:opacity-40 disabled:hover:bg-transparent" @click.stop="decrementPlaybackRate">
                   <span class="material-symbols text-base">remove</span>
@@ -235,7 +235,9 @@ export default {
       jumpBurstKey: 0,
       jumpBurstTimeout: null,
       showVolumeHud: false,
-      volumeHudTimeout: null
+      volumeHudTimeout: null,
+      ratePulse: false,
+      ratePulseTimeout: null
     }
   },
   computed: {
@@ -500,6 +502,21 @@ export default {
         this.showVolumeHud = false
       }, 1400)
     },
+    // Same stale-copy problem as volume: the hotkeys mutate PlayerUi's playbackRate,
+    // not this component's, so the pill and the speed menu would show the old value.
+    onPlayerPlaybackRate({ playbackRate } = {}) {
+      if (typeof playbackRate !== 'number' || isNaN(playbackRate)) return
+      const wasShowing = this.isPlaybackRateModified
+      this.playbackRate = playbackRate
+      // When the pill is appearing (or leaving) its own transition is the feedback.
+      // Pulsing on top would fight that transition for the transform property.
+      if (!wasShowing || !this.isPlaybackRateModified) return
+      this.ratePulse = true
+      clearTimeout(this.ratePulseTimeout)
+      this.ratePulseTimeout = setTimeout(() => {
+        this.ratePulse = false
+      }, 260)
+    },
     onPlayerJump({ direction, amount } = {}) {
       if (direction !== 'backward' && direction !== 'forward') return
       this.jumpBurst = { direction, amount }
@@ -626,8 +643,6 @@ export default {
       }
     },
     handleKeydown(e) {
-      const target = e.target
-      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
       if (e.key === 'Escape') {
         // Only intercept Escape to close the chapter panel; otherwise let the
         // global player hotkey handler (layouts/default.vue) close the player.
@@ -638,13 +653,10 @@ export default {
         }
         // Space (play/pause) is handled by the global player-hotkey system.
         // Handling it here too would double-toggle and cancel itself out.
-      } else if ((e.key === ',' || e.key === '<') && !isTyping) {
-        e.preventDefault()
-        this.seek(Math.max(0, this.currentTime - 10))
-      } else if ((e.key === '.' || e.key === '>') && !isTyping) {
-        e.preventDefault()
-        this.seek(Math.min(this.duration, this.currentTime + 10))
       }
+      // , and . used to seek +/-10s from here. They now step the playback rate
+      // through the global hotkey system, which the arrow keys already cover
+      // seeking for - at the user's configured jump amount rather than a fixed 10s.
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
@@ -672,10 +684,13 @@ export default {
     window.addEventListener('resize', this.updateCoverWidth)
     this.$eventBus.$on('player-jump', this.onPlayerJump)
     this.$eventBus.$on('player-volume', this.onPlayerVolume)
+    this.$eventBus.$on('player-playback-rate', this.onPlayerPlaybackRate)
   },
   beforeDestroy() {
     clearTimeout(this.jumpBurstTimeout)
     clearTimeout(this.volumeHudTimeout)
+    clearTimeout(this.ratePulseTimeout)
+    this.$eventBus.$off('player-playback-rate', this.onPlayerPlaybackRate)
     this.$eventBus.$off('player-jump', this.onPlayerJump)
     this.$eventBus.$off('player-volume', this.onPlayerVolume)
     window.removeEventListener('keydown', this.handleKeydown)
@@ -750,7 +765,12 @@ export default {
 
 /* Speed pill: springs in when the rate leaves 1x, collapses away when it returns */
 .speed-pill {
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+/* Transition-driven, not a keyframe: repeated key presses just hold the scale
+   instead of restarting an animation mid-flight */
+.speed-pill-pulse {
+  transform: scale(1.12);
 }
 .speed-pill-btn,
 .speed-pill-value {
@@ -858,6 +878,9 @@ export default {
   .speed-pill-enter-active,
   .speed-pill-leave-active {
     transition: opacity 0.16s ease !important;
+  }
+  .speed-pill-pulse {
+    transform: none;
   }
   .speed-pill-enter,
   .speed-pill-leave-to {

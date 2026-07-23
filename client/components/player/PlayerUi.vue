@@ -186,6 +186,9 @@ export default {
     },
     jumpBackwardAmount() {
       return this.$store.getters['user/getUserSetting']('jumpBackwardAmount') || 10
+    },
+    playbackRateStep() {
+      return this.playbackRateIncrementDecrement || 0.1
     }
   },
   methods: {
@@ -241,14 +244,25 @@ export default {
       }
     },
     increasePlaybackRate() {
-      if (this.playbackRate >= 10) return
-      this.playbackRate = Number((this.playbackRate + this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.applyPlaybackRate(this.playbackRate + this.playbackRateStep)
     },
     decreasePlaybackRate() {
-      if (this.playbackRate <= 0.5) return
-      this.playbackRate = Number((this.playbackRate - this.playbackRateIncrementDecrement || 0.1).toFixed(2))
-      this.setPlaybackRate(this.playbackRate)
+      this.applyPlaybackRate(this.playbackRate - this.playbackRateStep)
+    },
+    // Previously `rate + increment || 0.1`, which parses as `(rate + increment) || 0.1`
+    // because + binds tighter than ||. The fallback guarded the sum instead of the
+    // increment, so an undefined increment set the rate to 0.1 rather than stepping it.
+    applyPlaybackRate(rate) {
+      const newRate = Math.min(10, Math.max(0.5, Number(rate.toFixed(2))))
+      if (newRate !== this.playbackRate) {
+        this.playbackRate = newRate
+        // playbackRateChanged, not setPlaybackRate: the hotkeys used to skip
+        // persistence, so a rate set by keyboard was lost on reload while the
+        // same change made from the menu survived.
+        this.playbackRateChanged(newRate)
+      }
+      // Emitted even when clamped, so the pill still reacts at the bounds
+      this.$eventBus.$emit('player-playback-rate', { playbackRate: newRate })
     },
     playbackRateChanged(playbackRate) {
       this.setPlaybackRate(playbackRate)
@@ -370,6 +384,9 @@ export default {
       else if (action === this.$hotkeys.AudioPlayer.SHOW_CHAPTERS) this.showChapters()
       else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE) this.increasePlaybackRate()
       else if (action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE) this.decreasePlaybackRate()
+      else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE_STEP || action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE_STEP_ALT) this.increasePlaybackRate()
+      else if (action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE_STEP || action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE_STEP_ALT) this.decreasePlaybackRate()
+      else if (action === this.$hotkeys.AudioPlayer.SHOW_SHORTCUTS) this.$emit('showShortcuts')
       else if (action === this.$hotkeys.AudioPlayer.CLOSE) this.closePlayer()
     }
   },
