@@ -1,6 +1,6 @@
 const SupportedFileTypes = {
   image: ['png', 'jpg', 'jpeg', 'webp'],
-  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'oga', 'mp4', 'aac', 'wma', 'aiff', 'aif','wav', 'webm', 'webma', 'mka', 'awb', 'caf', 'mpeg', 'mpg'],
+  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'oga', 'mp4', 'aac', 'wma', 'aiff', 'aif', 'wav', 'webm', 'webma', 'mka', 'awb', 'caf', 'mpeg', 'mpg'],
   ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   info: ['nfo'],
   text: ['txt'],
@@ -54,7 +54,10 @@ const KeyNames = {
   39: 'ArrowRight',
   40: 'ArrowDown',
   76: 'KeyL',
-  77: 'KeyM'
+  77: 'KeyM',
+  188: 'Comma',
+  190: 'Period',
+  191: 'Slash'
 }
 const Hotkeys = {
   AudioPlayer: {
@@ -67,6 +70,13 @@ const Hotkeys = {
     SHOW_CHAPTERS: 'KeyL',
     INCREASE_PLAYBACK_RATE: 'Shift-ArrowUp',
     DECREASE_PLAYBACK_RATE: 'Shift-ArrowDown',
+    // , and . step the rate too. The shifted aliases are there because < and >
+    // are the same physical keys and are easy to hit with shift still held.
+    INCREASE_PLAYBACK_RATE_STEP: 'Period',
+    DECREASE_PLAYBACK_RATE_STEP: 'Comma',
+    INCREASE_PLAYBACK_RATE_STEP_ALT: 'Shift-Period',
+    DECREASE_PLAYBACK_RATE_STEP_ALT: 'Shift-Comma',
+    SHOW_SHORTCUTS: 'Shift-Slash',
     CLOSE: 'Escape'
   },
   EReader: {
