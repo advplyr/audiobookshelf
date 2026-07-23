@@ -1127,6 +1127,7 @@
   "ToastSelectAtLeastOneUser": "Select at least one user",
   "ToastSendEbookToDeviceFailed": "Failed to send ebook to device",
   "ToastSendEbookToDeviceSuccess": "Ebook sent to device \"{0}\"",
+  "ToastSeriesDuplicateName": "A series with that name already exists in this library",
   "ToastSeriesSubmitFailedSameName": "Cannot add two series with the same name",
   "ToastSeriesUpdateFailed": "Series update failed",
   "ToastSeriesUpdateSuccess": "Series update success",
