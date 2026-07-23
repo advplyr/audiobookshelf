@@ -2,7 +2,7 @@ const uuidv4 = require('uuid').v4
 const Path = require('path')
 const sequelize = require('sequelize')
 const { LogLevel } = require('../utils/constants')
-const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
+const { getTitleIgnorePrefix, areEquivalent, cleanStringForSearch } = require('../utils/index')
 const parseNameString = require('../utils/parsers/parseNameString')
 const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
 const globals = require('../utils/globals')
@@ -471,6 +471,18 @@ class BookScanner {
 
     let duration = 0
     scannedAudioFiles.forEach((af) => (duration += !isNaN(af.duration) ? Number(af.duration) : 0))
+
+    // Check for a missing library item in this library that identity-matches this folder (e.g. a renamed/moved
+    // folder whose inodes changed) and reuse it instead of creating a duplicate, so progress/playlists/collections/
+    // RSS feeds keyed to the old item id are not stranded
+    const missingItemMatch = await this.findMissingBookLibraryItemMatch(libraryItemData.libraryId, bookMetadata, scannedAudioFiles, duration, libraryScan)
+    if (missingItemMatch) {
+      libraryScan.addLog(LogLevel.INFO, `Missing library item "${missingItemMatch.relPath}" matched new folder "${libraryItemData.relPath}" by metadata, reusing existing item`)
+      await libraryItemData.checkLibraryItemData(missingItemMatch, libraryScan)
+      const { libraryItem } = await this.rescanExistingBookLibraryItem(missingItemMatch, libraryItemData, librarySettings, libraryScan)
+      return libraryItem
+    }
+
     const bookObject = {
       ...bookMetadata,
       audioFiles: scannedAudioFiles,
@@ -645,6 +657,111 @@ class BookScanner {
     }
 
     return libraryItem
+  }
+
+  /**
+   * Find an unambiguous missing library item in this library that identity-matches new book metadata, so a
+   * renamed/moved folder with new inodes can be reused instead of creating a duplicate library item.
+   * Tiers are tried in order and the first tier to produce a result is used:
+   *  1. Both sides have a non-empty ASIN that matches (case-insensitive, trimmed) and duration is within 5s
+   *  2. Only when a side has no ASIN to compare: normalized title and normalized author names match and duration is within 5s
+   *  3. Metadata-independent file fingerprint: same audio file count, identical multiset of audio file sizes, and duration within 5s
+   * If a tier matches more than one candidate the match is ambiguous and adoption is skipped entirely.
+   * @param {string} libraryId
+   * @param {BookMetadataObject} bookMetadata
+   * @param {import('../models/Book').AudioFileObject[]} scannedAudioFiles
+   * @param {number} duration
+   * @param {LibraryScan} libraryScan
+   * @returns {Promise<import('../models/LibraryItem')>} null if no unambiguous match
+   */
+  async findMissingBookLibraryItemMatch(libraryId, bookMetadata, scannedAudioFiles, duration, libraryScan) {
+    // Query from the book side: the polymorphic libraryItem to book association does not eager-load
+    // (library item queries elsewhere use getMedia for the same reason), but book to libraryItem does
+    const missingItemBooks = await Database.bookModel.findAll({
+      include: [
+        {
+          model: Database.libraryItemModel,
+          required: true,
+          where: {
+            libraryId,
+            mediaType: 'book',
+            isMissing: true
+          }
+        },
+        {
+          model: Database.authorModel,
+          through: { attributes: [] }
+        }
+      ]
+    })
+    if (!missingItemBooks.length) return null
+
+    const newAsin = bookMetadata.asin ? cleanStringForSearch(bookMetadata.asin) : ''
+    const newTitle = cleanStringForSearch(bookMetadata.title)
+    const newAuthorsKey = bookMetadata.authors
+      .map((au) => cleanStringForSearch(au))
+      .sort()
+      .join('|')
+    const newAudioFileSizes = scannedAudioFiles.map((af) => af.metadata.size).sort((a, b) => a - b)
+
+    // Candidates where an ASIN comparison is possible (both sides non-empty) are decided by tier 1 alone and are
+    // never considered for tier 2/3 - a differing ASIN is a confident signal that it is a different book/edition
+    const asinComparableCandidates = []
+    const otherCandidates = []
+    for (const book of missingItemBooks) {
+      if (!book.libraryItem) continue
+      if (Math.abs((book.duration || 0) - duration) > 5) continue
+
+      const candidateAsin = book.asin ? cleanStringForSearch(book.asin) : ''
+      if (newAsin && candidateAsin) {
+        if (newAsin === candidateAsin) asinComparableCandidates.push(book)
+      } else {
+        otherCandidates.push(book)
+      }
+    }
+
+    if (asinComparableCandidates.length) {
+      if (asinComparableCandidates.length > 1) {
+        libraryScan.addLog(LogLevel.DEBUG, `Found ${asinComparableCandidates.length} missing library items matching new folder "${bookMetadata.title}" by ASIN - skipping adoption as ambiguous`)
+        return null
+      }
+      return asinComparableCandidates[0].libraryItem
+    }
+
+    const titleAuthorMatches = otherCandidates.filter((book) => {
+      const candidateAuthorsKey = (book.authors || [])
+        .map((au) => cleanStringForSearch(au.name))
+        .sort()
+        .join('|')
+      return cleanStringForSearch(book.title) === newTitle && candidateAuthorsKey === newAuthorsKey
+    })
+    if (titleAuthorMatches.length) {
+      if (titleAuthorMatches.length > 1) {
+        libraryScan.addLog(LogLevel.DEBUG, `Found ${titleAuthorMatches.length} missing library items matching new folder "${bookMetadata.title}" by title/author - skipping adoption as ambiguous`)
+        return null
+      }
+      return titleAuthorMatches[0].libraryItem
+    }
+
+    // File fingerprint requires at least one audio file - an empty size multiset would trivially match any
+    // missing ebook-only item with the same (zero) duration
+    if (!newAudioFileSizes.length) return null
+
+    const fingerprintMatches = otherCandidates.filter((book) => {
+      const candidateAudioFiles = book.audioFiles || []
+      if (candidateAudioFiles.length !== newAudioFileSizes.length) return false
+      const candidateSizes = candidateAudioFiles.map((af) => af.metadata.size).sort((a, b) => a - b)
+      return candidateSizes.every((size, i) => size === newAudioFileSizes[i])
+    })
+    if (fingerprintMatches.length) {
+      if (fingerprintMatches.length > 1) {
+        libraryScan.addLog(LogLevel.DEBUG, `Found ${fingerprintMatches.length} missing library items matching new folder "${bookMetadata.title}" by file fingerprint - skipping adoption as ambiguous`)
+        return null
+      }
+      return fingerprintMatches[0].libraryItem
+    }
+
+    return null
   }
 
   /**
