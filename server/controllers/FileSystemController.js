@@ -88,7 +88,7 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    const { directory, folderPath } = req.body
+    const { folderPath, directory, fileName } = req.body
     if (!directory?.length || typeof directory !== 'string' || !folderPath?.length || typeof folderPath !== 'string') {
       Logger.error(`[FileSystemController] Invalid request body: ${JSON.stringify(req.body)}`)
       return res.status(400).json({
@@ -113,7 +113,7 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    let filepath = Path.join(libraryFolder.path, directory)
+    let filepath = Path.join(libraryFolder.path, directory, fileName)
     filepath = fileUtils.filePathToPOSIX(filepath)
 
     // Ensure filepath is inside library folder (prevents directory traversal)
