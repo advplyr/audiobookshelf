@@ -56,6 +56,7 @@
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
       @showPlayerQueueItems="showPlayerQueueItemsModal = true"
+      @showShortcuts="showShortcutsModal = !showShortcutsModal"
     />
 
     <transition name="player-fullscreen-fade">
@@ -96,6 +97,8 @@
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :z-index="110" :timer-set="sleepTimerSet" :timer-type="sleepTimerType" :remaining="sleepTimerRemaining" :has-chapters="!!chapters.length" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
 
     <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :z-index="110" />
+
+    <modals-player-shortcuts-modal v-model="showShortcutsModal" />
   </div>
 </template>
 
@@ -114,6 +117,7 @@ export default {
       currentTime: 0,
       showSleepTimerModal: false,
       showPlayerQueueItemsModal: false,
+      showShortcutsModal: false,
       sleepTimerSet: false,
       sleepTimerRemaining: 0,
       sleepTimerType: null,
@@ -654,9 +658,7 @@ export default {
 }
 .player-fullscreen-fade-enter-active,
 .player-fullscreen-fade-leave-active {
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 .player-fullscreen-fade-enter,
 .player-fullscreen-fade-leave-to {
