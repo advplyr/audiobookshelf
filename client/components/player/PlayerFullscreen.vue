@@ -49,6 +49,21 @@
             </div>
           </div>
 
+          <!-- Volume HUD, mirrored opposite the FAB stack. Only the arrow-key hotkeys raise it -
+               the slider in the stack is its own feedback. The -translate-y-1/2 centering lives on
+               this wrapper so the transition below is free to animate transform. -->
+          <div class="absolute z-30 top-1/2 -translate-y-1/2 right-full pr-5 pointer-events-none">
+            <transition name="volume-hud">
+              <div v-if="showVolumeHud" class="flex flex-col items-center gap-2 w-11 py-3 rounded-full bg-black/55 backdrop-blur-md ring-1 ring-white/15">
+                <span class="material-symbols text-xl leading-none">{{ volumeIcon }}</span>
+                <div class="relative w-1.5 h-28 rounded-full bg-white/20 overflow-hidden">
+                  <div class="volume-hud-fill absolute bottom-0 left-0 w-full bg-white rounded-full" :style="{ height: volumePercent + '%' }" />
+                </div>
+                <span class="font-mono text-[11px] font-semibold tabular-nums leading-none">{{ volumePercent }}</span>
+              </div>
+            </transition>
+          </div>
+
           <!-- pl-5 (not ml-5) so the gap between cover and stack is part of the hover target -->
           <div class="fab-stack absolute z-30 top-1/2 -translate-y-1/2 left-full pl-5 flex flex-col items-center gap-1.5 pointer-events-none group-hover:pointer-events-auto">
             <div class="fab-slot flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/15">
@@ -218,7 +233,9 @@ export default {
       MAX_PLAYBACK_RATE: 10,
       jumpBurst: null,
       jumpBurstKey: 0,
-      jumpBurstTimeout: null
+      jumpBurstTimeout: null,
+      showVolumeHud: false,
+      volumeHudTimeout: null
     }
   },
   computed: {
@@ -309,6 +326,15 @@ export default {
     },
     playbackRateIncrementDecrement() {
       return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
+    },
+    volumePercent() {
+      return Math.round((this.volume || 0) * 100)
+    },
+    // Mirrors controls/VolumeControl so the HUD and the slider icon agree
+    volumeIcon() {
+      if (!this.volume) return 'volume_mute'
+      else if (this.volume <= 0.5) return 'volume_down'
+      return 'volume_up'
     },
     isPlaybackRateModified() {
       return this._playbackRate !== 1
@@ -462,6 +488,17 @@ export default {
     jumpForward() {
       this.$eventBus.$emit('player-jump', { direction: 'forward', amount: this.jumpForwardAmount })
       this.$emit('jumpForward')
+    },
+    // Hotkeys mutate PlayerUi's volume, not this component's, so without this the
+    // FAB slider would drift out of sync with what you actually hear.
+    onPlayerVolume({ volume } = {}) {
+      if (typeof volume !== 'number' || isNaN(volume)) return
+      this.volume = volume
+      this.showVolumeHud = true
+      clearTimeout(this.volumeHudTimeout)
+      this.volumeHudTimeout = setTimeout(() => {
+        this.showVolumeHud = false
+      }, 1400)
     },
     onPlayerJump({ direction, amount } = {}) {
       if (direction !== 'backward' && direction !== 'forward') return
@@ -634,10 +671,13 @@ export default {
     window.addEventListener('keydown', this.handleKeydown)
     window.addEventListener('resize', this.updateCoverWidth)
     this.$eventBus.$on('player-jump', this.onPlayerJump)
+    this.$eventBus.$on('player-volume', this.onPlayerVolume)
   },
   beforeDestroy() {
     clearTimeout(this.jumpBurstTimeout)
+    clearTimeout(this.volumeHudTimeout)
     this.$eventBus.$off('player-jump', this.onPlayerJump)
+    this.$eventBus.$off('player-volume', this.onPlayerVolume)
     window.removeEventListener('keydown', this.handleKeydown)
     window.removeEventListener('resize', this.updateCoverWidth)
     window.removeEventListener('mousemove', this.onRingDragMove)
@@ -690,6 +730,22 @@ export default {
 .chapter-panel-leave-to {
   margin-right: -24rem; /* -w-96 */
   opacity: 0;
+}
+
+/* Volume HUD: slides out from behind the artwork, fill tracks the level */
+.volume-hud-fill {
+  transition: height 0.16s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.volume-hud-enter-active {
+  transition: opacity 0.18s ease, transform 0.34s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.volume-hud-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.volume-hud-enter,
+.volume-hud-leave-to {
+  opacity: 0;
+  transform: translateX(14px) scale(0.92);
 }
 
 /* Speed pill: springs in when the rate leaves 1x, collapses away when it returns */
@@ -788,6 +844,17 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .volume-hud-fill {
+    transition: none !important;
+  }
+  .volume-hud-enter-active,
+  .volume-hud-leave-active {
+    transition: opacity 0.18s ease !important;
+  }
+  .volume-hud-enter,
+  .volume-hud-leave-to {
+    transform: none;
+  }
   .speed-pill-enter-active,
   .speed-pill-leave-active {
     transition: opacity 0.16s ease !important;

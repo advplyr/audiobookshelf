@@ -214,14 +214,19 @@ export default {
       this.$emit('jumpForward')
     },
     increaseVolume() {
-      if (this.volume >= 1) return
-      this.volume = Math.min(1, this.volume + 0.1)
-      this.setVolume(this.volume)
+      this.applyVolume(this.volume + 0.1)
     },
     decreaseVolume() {
-      if (this.volume <= 0) return
-      this.volume = Math.max(0, this.volume - 0.1)
-      this.setVolume(this.volume)
+      this.applyVolume(this.volume - 0.1)
+    },
+    // No early return at the bounds: pressing up at 100% should still show the
+    // indicator rather than looking like a dropped keystroke.
+    applyVolume(volume) {
+      // Rounded because repeated 0.1 steps drift (0.7000000000000001)
+      const newVolume = Math.round(Math.min(1, Math.max(0, volume)) * 100) / 100
+      this.volume = newVolume
+      this.setVolume(newVolume)
+      this.$eventBus.$emit('player-volume', { volume: newVolume })
     },
     setVolume(volume) {
       this.$emit('setVolume', volume)
@@ -229,6 +234,10 @@ export default {
     toggleMute() {
       if (this.$refs.volumeControl && this.$refs.volumeControl.toggleMute) {
         this.$refs.volumeControl.toggleMute()
+        // Volume lands via the child's input event, so read it back after the tick
+        this.$nextTick(() => {
+          this.$eventBus.$emit('player-volume', { volume: this.volume })
+        })
       }
     },
     increasePlaybackRate() {
