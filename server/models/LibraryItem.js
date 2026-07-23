@@ -491,11 +491,7 @@ class LibraryItem extends Model {
       }
       Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${newestAuthorsResult.elapsedSeconds}s`)
     } else if (library.isPodcast) {
-      const [newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([
-        timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)),
-        timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)),
-        timed(() => libraryFilters.getMediaFinished(library, user, include, limit))
-      ])
+      const [newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)), timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)), timed(() => libraryFilters.getMediaFinished(library, user, include, limit))])
 
       const newestEpisodesPayload = newestEpisodesResult.payload
       // "Newest Episodes" shelf
@@ -1014,6 +1010,9 @@ class LibraryItem extends Model {
       throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
     }
 
+    const computedNumFiles = Number(this.dataValues?.computedNumFiles)
+    const numFiles = Number.isFinite(computedNumFiles) ? computedNumFiles : this.libraryFiles?.length || 0
+
     return {
       id: this.id,
       ino: this.ino,
@@ -1032,7 +1031,7 @@ class LibraryItem extends Model {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toOldJSONMinified(),
-      numFiles: this.libraryFiles.length,
+      numFiles,
       size: this.size
     }
   }
