@@ -72,7 +72,7 @@
           <p v-else-if="authors.length" class="text-gray-300 truncate mt-1 text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
-          <p class="font-mono text-xs text-gray-400 mt-2">{{ $secondsToTimestamp(displayRingTime / _playbackRate) }} <span class="text-gray-600">/</span> {{ $secondsToTimestamp(duration / _playbackRate) }}</p>
+          <p class="font-mono text-lg text-gray-300 mt-2">{{ $secondsToTimestamp(displayRingTime / _playbackRate) }} <span class="text-gray-600">/</span> {{ $secondsToTimestamp(duration / _playbackRate) }}</p>
         </div>
       </div>
 
@@ -109,11 +109,12 @@
           </div>
 
           <div class="flex items-center gap-2.5">
-            <p ref="chapterCurrentTimestamp" class="font-mono text-xs text-gray-400 leading-none shrink-0 w-16 text-right">00:00:00</p>
+            <!-- -mt-1 offsets the 8px chapter-tick strip the track bar renders below its 10px bar, so the timestamps center on the bar itself -->
+            <p ref="chapterCurrentTimestamp" class="font-mono text-base text-gray-300 leading-none shrink-0 w-24 text-right -mt-1">00:00:00</p>
             <div class="grow min-w-0">
               <player-track-bar ref="chapterTrackBar" rounded :loading="loading" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
             </div>
-            <p ref="chapterRemainingTimestamp" class="font-mono text-xs text-gray-400 leading-none shrink-0 w-16">00:00:00</p>
+            <p ref="chapterRemainingTimestamp" class="font-mono text-base text-gray-300 leading-none shrink-0 w-24 -mt-1">00:00:00</p>
           </div>
 
           <player-playback-controls white-play-button no-tooltips class="mt-1" :loading="loading" :seek-loading="seekLoading" :paused="paused" :hasNextChapter="hasNextChapter" :hasNextItemInQueue="hasNextItemInQueue" @prevChapter="prevChapter" @next="goToNext" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @playPause="playPause" />
