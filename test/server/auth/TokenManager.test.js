@@ -1,5 +1,6 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
+const { Op } = require('sequelize')
 
 const Database = require('../../../server/Database')
 const jwt = require('../../../server/libs/jsonwebtoken')
@@ -63,6 +64,79 @@ describe('TokenManager', () => {
       await tokenManager.jwtAuthCheck(decoded, done)
 
       expect(done.calledWith(null, user)).to.be.true
+    })
+  })
+
+  describe('invalidateJwtSessionsForUser', () => {
+    const targetUser = { id: userId, username: 'testuser' }
+    const currentSession = {
+      id: 'session-current',
+      userId,
+      refreshToken: 'refresh-current'
+    }
+
+    /** Minimal req/res for session invalidation (ApiRouter provides auth on real requests). */
+    function makeReq({ requestUserId = userId, refreshToken = null, cookieRefreshToken = null } = {}) {
+      return {
+        user: { id: requestUserId },
+        cookies: cookieRefreshToken ? { refresh_token: cookieRefreshToken } : {},
+        headers: refreshToken ? { 'x-refresh-token': refreshToken } : {}
+      }
+    }
+
+    let sessionFindOne
+    let sessionDestroy
+    let rotateStub
+
+    beforeEach(() => {
+      sessionFindOne = sinon.stub().resolves(currentSession)
+      sessionDestroy = sinon.stub().resolves(1)
+      sinon.stub(Database, 'sessionModel').get(() => ({
+        findOne: sessionFindOne,
+        destroy: sessionDestroy
+      }))
+      rotateStub = sinon.stub(tokenManager, 'rotateTokensForSession').resolves({
+        accessToken: 'access-new',
+        refreshToken: 'refresh-new'
+      })
+    })
+
+    it('self password change: keeps current session, deletes others', async () => {
+      const req = makeReq({ refreshToken: 'refresh-current' })
+      const res = { cookie: sinon.spy() }
+
+      const result = await tokenManager.invalidateJwtSessionsForUser(targetUser, req, res)
+
+      // Found this device's session using the x-refresh-token header
+      expect(sessionFindOne.calledOnce).to.be.true
+      const findWhere = sessionFindOne.firstCall.args[0].where
+      expect(findWhere.userId).to.equal(userId)
+      expect(findWhere[Op.or]).to.deep.equal([{ refreshToken: 'refresh-current' }, { lastRefreshToken: 'refresh-current' }])
+
+      // Rotated in place (no grace period) so the caller keeps a valid session
+      expect(rotateStub.calledOnceWith(currentSession, targetUser, req, res, false)).to.be.true
+
+      // Deleted all other sessions, but not this one
+      expect(sessionDestroy.calledOnce).to.be.true
+      const destroyWhere = sessionDestroy.firstCall.args[0].where
+      expect(destroyWhere.userId).to.equal(userId)
+      expect(destroyWhere.id[Op.ne]).to.equal(currentSession.id)
+
+      expect(result).to.deep.equal({ accessToken: 'access-new', refreshToken: 'refresh-new' })
+    })
+
+    it('admin password reset: deletes all target sessions', async () => {
+      const req = makeReq({ requestUserId: 'admin-id', refreshToken: 'refresh-current' })
+      const res = { cookie: sinon.spy() }
+
+      const result = await tokenManager.invalidateJwtSessionsForUser(targetUser, req, res)
+
+      // Token rotation did not happen because target is a different user
+      expect(sessionFindOne.called).to.be.false
+      expect(rotateStub.called).to.be.false
+
+      expect(sessionDestroy.calledOnceWith(sinon.match({ where: { userId } }))).to.be.true
+      expect(result).to.equal(null)
     })
   })
 })

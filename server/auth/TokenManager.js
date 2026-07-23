@@ -464,14 +464,19 @@ class TokenManager {
    * @param {import('../models/User')} user
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   * @returns {Promise<{ accessToken:string, refreshToken:string }|null>} new tokens for the current session if kept alive
    */
   async invalidateJwtSessionsForUser(user, req, res) {
-    const currentRefreshToken = req.cookies.refresh_token
+    const currentRefreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
     if (req.user.id === user.id && currentRefreshToken) {
       // Current user is the same as the user to invalidate sessions for
       // So rotate token for current session
-      const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
+      const currentSession = await Database.sessionModel.findOne({
+        where: {
+          userId: user.id,
+          [Op.or]: [{ refreshToken: currentRefreshToken }, { lastRefreshToken: currentRefreshToken }]
+        }
+      })
       if (currentSession) {
         const newTokens = await this.rotateTokensForSession(currentSession, user, req, res, false)
 
@@ -485,7 +490,10 @@ class TokenManager {
           }
         })
 
-        return newTokens.accessToken
+        return {
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken
+        }
       } else {
         Logger.error(`[TokenManager] No session found to rotate tokens`)
       }

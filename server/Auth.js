@@ -81,7 +81,7 @@ class Auth {
    * @param {import('./models/User')} user
    * @param {Request} req
    * @param {Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   * @returns {Promise<{ accessToken:string, refreshToken:string }|null>} new tokens for the current session if kept alive
    */
   async invalidateJwtSessionsForUser(user, req, res) {
     return this.tokenManager.invalidateJwtSessionsForUser(user, req, res)
