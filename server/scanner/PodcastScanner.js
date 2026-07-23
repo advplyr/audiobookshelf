@@ -477,12 +477,49 @@ class PodcastScanner {
 
         libraryScan.addLog(LogLevel.DEBUG, `Success saving abmetadata to "${metadataFilePath}"`)
 
+        if (storeMetadataWithItem && libraryItem.media.podcastEpisodes?.length) {
+          await this.writeEpisodeMetadata(libraryItem, libraryItem.media.podcastEpisodes, libraryScan)
+        }
+
         return metadataLibraryFile
       })
       .catch((error) => {
         libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
         return null
       })
+  }
+
+  async writeEpisodeMetadata(libraryItem, episodes, libraryScan) {
+    for (const ep of episodes) {
+      if (!ep.audioFile?.metadata?.path) continue
+
+      const metaPath = ep.audioFile.metadata.path.replace(/\.[^.]+$/, '.json')
+      const data = {
+        title: ep.title,
+        subtitle: ep.subtitle,
+        season: ep.season,
+        episode: ep.episode,
+        episodeType: ep.episodeType,
+        pubDate: ep.pubDate,
+        publishedAt: ep.publishedAt,
+        description: ep.description,
+        chapters: ep.chapters || []
+      }
+
+      try {
+        await fsExtra.writeFile(metaPath, JSON.stringify(data, null, 2))
+        libraryScan.addLog(LogLevel.DEBUG, `Saved episode meta: ${metaPath}`)
+
+        const exists = libraryItem.libraryFiles.find((f) => f.metadata.path === filePathToPOSIX(metaPath))
+        if (!exists) {
+          const lf = new LibraryFile()
+          await lf.setDataFromPath(metaPath, Path.basename(metaPath))
+          libraryItem.libraryFiles.push(lf.toJSON())
+        }
+      } catch (err) {
+        libraryScan.addLog(LogLevel.ERROR, `Failed writing ${metaPath}: ${err.message}`)
+      }
+    }
   }
 }
 module.exports = new PodcastScanner()
