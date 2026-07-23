@@ -1,6 +1,7 @@
 const axios = require('axios').default
 const Logger = require('../Logger')
 const { isValidASIN } = require('../utils/index')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class Audible {
   #responseTimeout = 10000
@@ -66,8 +67,10 @@ class Audible {
     }
 
     return {
-      title,
-      subtitle: subtitle || null,
+      // Audible metadata can contain HTML entities (e.g. `&quot;`, `&amp;`) that are otherwise
+      // shown literally in titles/subtitles. Decode them at the ingestion boundary. See #5340
+      title: title ? htmlSanitizer.stripAllTags(title) : title,
+      subtitle: subtitle ? htmlSanitizer.stripAllTags(subtitle) : null,
       author: authors ? authors.map(({ name }) => name).join(', ') : null,
       narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
       publisher: publisherName,
