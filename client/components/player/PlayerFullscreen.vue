@@ -129,6 +129,27 @@
         </div>
 
         <div class="flex items-center gap-2.5 justify-self-end pr-1">
+          <!-- Only surfaces once the rate is off 1x - the speed menu on the artwork stays the primary control -->
+          <transition name="speed-pill">
+            <div v-if="isPlaybackRateModified" class="speed-pill flex items-center h-8 pl-0.5 pr-0.5 rounded-full bg-accent/15 text-accent">
+              <ui-tooltip direction="top" :text="$strings.ButtonSlower || 'Slower'">
+                <button :aria-label="$strings.ButtonSlower || 'Slower'" :disabled="!canDecrementPlaybackRate" class="speed-pill-btn flex items-center justify-center w-7 h-7 rounded-full hover:bg-accent/25 disabled:opacity-40 disabled:hover:bg-transparent" @click.stop="decrementPlaybackRate">
+                  <span class="material-symbols text-base">remove</span>
+                </button>
+              </ui-tooltip>
+
+              <ui-tooltip direction="top" :text="$strings.ButtonResetToDefault || 'Reset to default'">
+                <button :aria-label="$strings.ButtonResetToDefault || 'Reset to default'" class="speed-pill-value font-mono text-xs font-semibold tabular-nums px-1.5 h-7 rounded-full hover:bg-accent/25" @click.stop="resetPlaybackRate">{{ playbackRateDisplay }}x</button>
+              </ui-tooltip>
+
+              <ui-tooltip direction="top" :text="$strings.ButtonFaster || 'Faster'">
+                <button :aria-label="$strings.ButtonFaster || 'Faster'" :disabled="!canIncrementPlaybackRate" class="speed-pill-btn flex items-center justify-center w-7 h-7 rounded-full hover:bg-accent/25 disabled:opacity-40 disabled:hover:bg-transparent" @click.stop="incrementPlaybackRate">
+                  <span class="material-symbols text-base">add</span>
+                </button>
+              </ui-tooltip>
+            </div>
+          </transition>
+
           <button v-if="sleepTimerSet" :aria-label="$strings.LabelSleepTimer" class="flex items-center gap-1 h-8 pl-2 pr-2.5 rounded-full bg-warning/15 text-warning hover:bg-warning/25" @click.stop="$emit('showSleepTimer')">
             <span class="material-symbols text-lg">snooze</span>
             <span class="font-mono text-xs font-semibold">{{ sleepTimerRemainingString }}</span>
@@ -193,6 +214,8 @@ export default {
       ringSamples: [],
       isDraggingRing: false,
       dragPercent: null,
+      MIN_PLAYBACK_RATE: 0.5, // must match controls/PlaybackSpeedControl
+      MAX_PLAYBACK_RATE: 10,
       jumpBurst: null,
       jumpBurstKey: 0,
       jumpBurstTimeout: null
@@ -286,6 +309,25 @@ export default {
     },
     playbackRateIncrementDecrement() {
       return this.$store.getters['user/getUserSetting']('playbackRateIncrementDecrement')
+    },
+    isPlaybackRateModified() {
+      return this._playbackRate !== 1
+    },
+    // Mirrors PlaybackSpeedControl's formatting so the pill and the menu never disagree
+    playbackRateDisplay() {
+      if (this.playbackRateIncrementDecrement == 0.05) return this._playbackRate.toFixed(2)
+      const numDecimals = String(this._playbackRate).split('.')[1]?.length || 0
+      if (numDecimals <= 1) return this._playbackRate.toFixed(1)
+      return this._playbackRate.toFixed(2)
+    },
+    canIncrementPlaybackRate() {
+      return this._playbackRate + this.playbackRateStep <= this.MAX_PLAYBACK_RATE
+    },
+    canDecrementPlaybackRate() {
+      return this._playbackRate - this.playbackRateStep >= this.MIN_PLAYBACK_RATE
+    },
+    playbackRateStep() {
+      return this.playbackRateIncrementDecrement || 0.1
     },
     sleepTimerRemainingString() {
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
@@ -442,6 +484,24 @@ export default {
       this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
         console.error('Failed to update settings', err)
       })
+    },
+    // The pill applies + persists in one step, unlike the menu which persists on close
+    applyPlaybackRate(rate) {
+      const clamped = Math.min(this.MAX_PLAYBACK_RATE, Math.max(this.MIN_PLAYBACK_RATE, Number(rate.toFixed(2))))
+      if (clamped === this._playbackRate) return
+      this.playbackRate = clamped
+      this.playbackRateChanged(clamped)
+    },
+    incrementPlaybackRate() {
+      if (!this.canIncrementPlaybackRate) return
+      this.applyPlaybackRate(this._playbackRate + this.playbackRateStep)
+    },
+    decrementPlaybackRate() {
+      if (!this.canDecrementPlaybackRate) return
+      this.applyPlaybackRate(this._playbackRate - this.playbackRateStep)
+    },
+    resetPlaybackRate() {
+      this.applyPlaybackRate(1)
     },
     seek(time) {
       this.$emit('seek', time)
@@ -632,6 +692,26 @@ export default {
   opacity: 0;
 }
 
+/* Speed pill: springs in when the rate leaves 1x, collapses away when it returns */
+.speed-pill {
+  transition: background-color 0.15s ease;
+}
+.speed-pill-btn,
+.speed-pill-value {
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+.speed-pill-enter-active {
+  transition: opacity 0.2s ease, transform 0.32s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+.speed-pill-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.speed-pill-enter,
+.speed-pill-leave-to {
+  opacity: 0;
+  transform: translateY(6px) scale(0.88);
+}
+
 /* Jump feedback burst: dark scrim wipes in from the side that was jumped toward,
    pill springs up then fades. Whole thing is done in ~0.6s and self-removes. */
 .jump-burst {
@@ -708,6 +788,14 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .speed-pill-enter-active,
+  .speed-pill-leave-active {
+    transition: opacity 0.16s ease !important;
+  }
+  .speed-pill-enter,
+  .speed-pill-leave-to {
+    transform: none;
+  }
   .jump-burst-icon {
     animation: none !important;
   }
