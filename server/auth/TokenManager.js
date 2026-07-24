@@ -506,6 +506,25 @@ class TokenManager {
   }
 
   /**
+   * Destroy all JWT sessions for the user that owns this refresh token
+   *
+   * @param {string} refreshToken
+   */
+  async invalidateAllSessionsForRefreshToken(refreshToken) {
+    if (!refreshToken) return
+
+    const session = await Database.sessionModel.findOne({
+      where: {
+        [Op.or]: [{ refreshToken: refreshToken }, { lastRefreshToken: refreshToken }]
+      }
+    })
+    if (!session) return
+
+    const numDeleted = await Database.sessionModel.destroy({ where: { userId: session.userId } })
+    Logger.info(`[TokenManager] Invalidated all JWT sessions for user ${session.userId}, ${numDeleted} deleted`)
+  }
+
+  /**
    * Invalidate a refresh token - used for logout
    *
    * @param {string} refreshToken
