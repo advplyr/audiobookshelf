@@ -69,8 +69,9 @@
         </app-settings-content>
       </div>
 
-      <div class="py-4 mt-8 flex">
-        <ui-btn color="bg-primary flex items-center text-lg" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
+      <div class="py-4 mt-8 flex flex-wrap gap-2">
+        <ui-btn v-if="!isGuest" color="bg-primary flex items-center text-lg" :disabled="loggingOut" @click="logout(true)"> <span class="material-symbols mr-4 icon-text">devices</span>{{ $strings.ButtonLogoutAllDevices }} </ui-btn>
+        <ui-btn color="bg-primary flex items-center text-lg" :disabled="loggingOut" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
 
       <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
@@ -87,6 +88,7 @@ export default {
       newPassword: null,
       confirmPassword: null,
       changingPassword: false,
+      loggingOut: false,
       selectedLanguage: '',
       newEReaderDevice: {
         name: '',
@@ -135,7 +137,7 @@ export default {
     updateLocalLanguage(lang) {
       this.$setLanguageCode(lang)
     },
-    logout() {
+    logout(allDevices = false) {
       // Disconnect from socket
       if (this.$root.socket) {
         console.log('Disconnecting from socket', this.$root.socket.id)
@@ -149,8 +151,10 @@ export default {
       this.$store.commit('libraries/setUserPlaylists', [])
       this.$store.commit('libraries/setCollections', [])
 
+      this.loggingOut = true
+      const url = allDevices ? '/logout?allDevices=1' : '/logout'
       this.$axios
-        .$post('/logout')
+        .$post(url)
         .then((logoutPayload) => {
           const redirect_url = logoutPayload.redirect_url
 
@@ -162,6 +166,9 @@ export default {
         })
         .catch((error) => {
           console.error(error)
+        })
+        .finally(() => {
+          this.loggingOut = false
         })
     },
     resetForm() {
