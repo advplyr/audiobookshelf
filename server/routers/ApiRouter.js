@@ -171,6 +171,7 @@ class ApiRouter {
     // Current User Routes (Me)
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
+    this.router.get('/me/sessions', MeController.getSessions.bind(this))
     this.router.get('/me/progress', MeController.getAllMediaProgress.bind(this))
     this.router.get('/me/bookmarks', MeController.getAllBookmarks.bind(this))
     this.router.get('/me/bookmarks/:libraryItemId', MeController.getBookmarksForLibraryItem.bind(this))

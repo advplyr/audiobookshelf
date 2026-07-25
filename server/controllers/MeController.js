@@ -1,10 +1,12 @@
 const { Request, Response } = require('express')
+const { Op } = require('sequelize')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
 const { toNumber, isNullOrNaN } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
+const parseUserAgent = require('../utils/parsers/parseUserAgent')
 
 /**
  * @typedef RequestUserObject
@@ -24,6 +26,40 @@ class MeController {
    */
   getCurrentUser(req, res) {
     res.json(req.user.toOldJSONForBrowser())
+  }
+
+  /**
+   * GET: /api/me/sessions
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getSessions(req, res) {
+    if (req.user.isGuest) {
+      return res.json({ sessions: [] })
+    }
+
+    const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
+    const sessions = await Database.sessionModel.findAll({
+      where: {
+        userId: req.user.id,
+        expiresAt: { [Op.gt]: new Date() }
+      },
+      order: [['updatedAt', 'DESC']]
+    })
+
+    res.json({
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        // For display convenience
+        deviceInfo: parseUserAgent(session.userAgent),
+        createdAt: session.createdAt?.valueOf() ?? null,
+        updatedAt: session.updatedAt?.valueOf() ?? null,
+        current: !!refreshToken && (session.refreshToken === refreshToken || session.lastRefreshToken === refreshToken)
+      }))
+    })
   }
 
   /**
