@@ -46,6 +46,7 @@
   "ButtonLatest": "最新",
   "ButtonLibrary": "媒体库",
   "ButtonLogout": "注销",
+  "ButtonLogoutAllDevices": "登出所有设备",
   "ButtonLookup": "查找",
   "ButtonManageTracks": "管理音轨",
   "ButtonMapChapterTitles": "映射章节标题",
