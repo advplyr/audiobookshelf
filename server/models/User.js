@@ -602,6 +602,7 @@ class User extends Model {
    */
   toOldJSONForBrowser(hideRootToken = false, minimal = false) {
     const seriesHideFromContinueListening = this.extraData?.seriesHideFromContinueListening || []
+    const hiddenSeries = this.extraData?.hiddenSeries || []
     const librariesAccessible = this.permissions?.librariesAccessible || []
     const itemTagsSelected = this.permissions?.itemTagsSelected || []
     const permissions = { ...this.permissions }
@@ -620,6 +621,7 @@ class User extends Model {
       isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
+      hiddenSeries: [...hiddenSeries],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -939,6 +941,30 @@ class User extends Model {
     if (!seriesHideFromContinueListening.includes(seriesId)) return false
     seriesHideFromContinueListening = seriesHideFromContinueListening.filter((sid) => sid !== seriesId)
     this.extraData.seriesHideFromContinueListening = seriesHideFromContinueListening
+    this.changed('extraData', true)
+    await this.save()
+    return true
+  }
+
+  /**
+   *
+   * @param {string} seriesId
+   * @param {boolean} makeHidden
+   * @returns {Promise<boolean>}
+   */
+  async hideSeries(seriesId, makeHidden) {
+    if (!this.extraData) this.extraData = {}
+    let hiddenSeries = this.extraData.hiddenSeries || []
+
+    if (makeHidden) {
+      if (hiddenSeries.includes(seriesId)) return false
+      hiddenSeries.push(seriesId)
+    } else {
+      if (!hiddenSeries.includes(seriesId)) return false
+      hiddenSeries = hiddenSeries.filter((sid) => sid !== seriesId)
+    }
+
+    this.extraData.hiddenSeries = hiddenSeries
     this.changed('extraData', true)
     await this.save()
     return true
