@@ -103,7 +103,7 @@
 
       <div class="py-4 mt-8 flex flex-wrap gap-2">
         <ui-btn v-if="!isGuest" color="bg-primary flex items-center text-lg" :disabled="loggingOut" @click="logout(true)"> <span class="material-symbols mr-4 icon-text">devices</span>{{ $strings.ButtonLogoutAllDevices }} </ui-btn>
-        <ui-btn color="bg-primary flex items-center text-lg" :disabled="loggingOut" @click="logout"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
+        <ui-btn color="bg-primary flex items-center text-lg" :disabled="loggingOut" @click="logout(false)"><span class="material-symbols mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
 
       <modals-emails-user-e-reader-device-modal v-model="showEReaderDeviceModal" :existing-devices="revisedEreaderDevices" :ereader-device="selectedEReaderDevice" @update="ereaderDevicesUpdated" />
