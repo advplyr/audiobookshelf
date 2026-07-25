@@ -65,54 +65,44 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly,
     }
   })
 
-  // Step 3: Group media files (or non-media files if includeNonMediaFiles is true) in library items
+  // Step 3: Group media files (or non-media files if includeNonMediaFiles is true) into library items.
+  //
+  // Each file's own directory is its natural group (so every subfolder becomes its own book), except
+  // when the deepest path segment is a CD/Disc split, in which case the file belongs to the book one
+  // level up. Deciding the group from the file's own path - instead of walking up and merging into
+  // whichever ancestor happens to already be registered - keeps a loose file sitting next to book
+  // subfolders (e.g. a stray track directly in a series folder) from swallowing every book beneath it.
   const libraryItemGroup = {}
   mediaFileItems.forEach((item) => {
-    const dirparts = item.reldirpath.split('/').filter((p) => !!p)
-    const numparts = dirparts.length
-    let _path = ''
-
-    if (!dirparts.length) {
+    if (!item.reldirpath) {
       // Media file in root
       libraryItemGroup[item.name] = item.name
-    } else {
-      // Iterate over directories in path
-      for (let i = 0; i < numparts; i++) {
-        const dirpart = dirparts.shift()
-        _path = Path.posix.join(_path, dirpart)
+      return
+    }
 
-        if (libraryItemGroup[_path]) {
-          // Directory already has files, add file
-          const relpath = Path.posix.join(dirparts.join('/'), item.name)
-          libraryItemGroup[_path].push(relpath)
-          return
-        } else if (!dirparts.length) {
-          // This is the last directory, create group
-          libraryItemGroup[_path] = [item.name]
-          return
-        } else if (dirparts.length === 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[0])) {
-          // Next directory is the last and is a CD dir, create group
-          libraryItemGroup[_path] = [Path.posix.join(dirparts[0], item.name)]
-          return
-        }
-      }
+    const dirparts = item.reldirpath.split('/').filter((p) => !!p)
+    const isCdFolder = dirparts.length > 1 && /^(cd|dis[ck])\s*\d{1,3}$/i.test(dirparts[dirparts.length - 1])
+    const groupPath = isCdFolder ? dirparts.slice(0, -1).join('/') : item.reldirpath
+    const relpath = Path.posix.join(Path.posix.relative(groupPath, item.reldirpath), item.name)
+
+    if (libraryItemGroup[groupPath]) {
+      libraryItemGroup[groupPath].push(relpath)
+    } else {
+      libraryItemGroup[groupPath] = [relpath]
     }
   })
 
-  // Step 4: Add other files into library item groups
+  // Step 4: Add other files into library item groups, preferring the most specific (deepest) group
+  // that owns the file - e.g. a cover.jpg belongs to its own book folder, not a shallower ancestor
+  // that only happens to be a registered group too.
   otherFileItems.forEach((item) => {
-    const dirparts = item.reldirpath.split('/')
-    const numparts = dirparts.length
-    let _path = ''
+    const dirparts = item.reldirpath ? item.reldirpath.split('/').filter((p) => !!p) : []
 
-    // Iterate over directories in path
-    for (let i = 0; i < numparts; i++) {
-      const dirpart = dirparts.shift()
-      _path = Path.posix.join(_path, dirpart)
-      if (libraryItemGroup[_path]) {
-        // Directory is audiobook group
-        const relpath = Path.posix.join(dirparts.join('/'), item.name)
-        libraryItemGroup[_path].push(relpath)
+    for (let i = dirparts.length; i > 0; i--) {
+      const ancestorPath = dirparts.slice(0, i).join('/')
+      if (libraryItemGroup[ancestorPath]) {
+        const relpath = Path.posix.join(dirparts.slice(i).join('/'), item.name)
+        libraryItemGroup[ancestorPath].push(relpath)
         return
       }
     }
