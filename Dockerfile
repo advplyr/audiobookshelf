@@ -69,5 +69,8 @@ ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["node", "-e", "const http = require('http'); const request = http.get({ hostname: '127.0.0.1', port: process.env.PORT || 80, path: '/healthcheck' }, (response) => { response.resume(); process.exit(response.statusCode === 200 ? 0 : 1) }); request.on('error', () => process.exit(1))"]
+
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "index.js"]
