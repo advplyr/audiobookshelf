@@ -399,16 +399,8 @@ class LibraryItemController {
       query: { width, height, format, raw }
     } = req
 
-    if (req.query.ts) {
-      // The ts query param is the library item's updatedAt timestamp, so this exact URL will
-      // only ever resolve to this exact image. It's safe (and unauthenticated/public) to cache
-      // it for a long time.
-      res.set('Cache-Control', 'public, max-age=31536000, immutable')
-    } else {
-      // No cache-busting timestamp was provided, so this same URL could resolve to a different
-      // image later on. Still cache briefly instead of not caching at all.
-      res.set('Cache-Control', 'public, max-age=3600')
-    }
+    // ts is the library item's updatedAt, so this URL only ever resolves to one image - cache it for a long time
+    if (req.query.ts) res.set('Cache-Control', 'public, max-age=31536000, immutable')
 
     const libraryItemId = req.params.id
     if (!libraryItemId) {
