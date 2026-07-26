@@ -777,6 +777,7 @@
   "MessageConfirmDeleteSession": "Are you sure you want to delete this session?",
   "MessageConfirmEmbedMetadataInAudioFiles": "Are you sure you want to embed metadata in {0} audio files?",
   "MessageConfirmForceReScan": "Are you sure you want to force re-scan?",
+  "MessageConfirmLogoutDevice": "Are you sure you want to log out of \"{0}\"?",
   "MessageConfirmMarkAllEpisodesFinished": "Are you sure you want to mark all episodes as finished?",
   "MessageConfirmMarkAllEpisodesNotFinished": "Are you sure you want to mark all episodes as not finished?",
   "MessageConfirmMarkItemFinished": "Are you sure you want to mark \"{0}\" as finished?",

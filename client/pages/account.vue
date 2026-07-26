@@ -77,7 +77,8 @@
             <tr>
               <th class="text-left">{{ $strings.LabelDeviceInfo }}</th>
               <th class="text-left hidden sm:table-cell w-36">{{ $strings.LabelIpAddress }}</th>
-              <th class="text-left w-32 sm:w-40">{{ $strings.LabelLastUpdate }}</th>
+              <th class="text-left w-30 sm:w-40">{{ $strings.LabelLastUpdate }}</th>
+              <th class="w-12"></th>
             </tr>
             <tr v-for="session in authSessions" :key="session.id">
               <td class="max-w-0">
@@ -91,13 +92,23 @@
               <td class="hidden sm:table-cell w-36">
                 <p class="text-sm text-gray-100 truncate" :title="session.ipAddress">{{ session.ipAddress || '-' }}</p>
               </td>
-              <td class="w-32 sm:w-40">
+              <td class="w-30 sm:w-40">
                 <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
                   <p class="text-xs sm:text-sm text-gray-100">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
                 </ui-tooltip>
               </td>
+              <td class="w-12">
+                <div class="flex justify-end items-center h-10">
+                  <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" :disabled="deletingSessionId === session.id || loadingAuthSessions" @click="deleteAuthSessionClick(session)" />
+                </div>
+              </td>
             </tr>
           </table>
+          <div v-if="authSessionsNumPages > 1" class="flex items-center justify-end py-1">
+            <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="loadingAuthSessions || authSessionsPage === 0" @click="prevAuthSessionsPage" />
+            <p class="text-sm mx-1">{{ $getString('LabelPaginationPageXOfY', [authSessionsPage + 1, authSessionsNumPages]) }}</p>
+            <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="loadingAuthSessions || authSessionsPage >= authSessionsNumPages - 1" @click="nextAuthSessionsPage" />
+          </div>
         </app-settings-content>
       </div>
 
@@ -122,6 +133,11 @@ export default {
       changingPassword: false,
       loggingOut: false,
       authSessions: [],
+      authSessionsPage: 0,
+      authSessionsNumPages: 0,
+      authSessionsItemsPerPage: 10,
+      loadingAuthSessions: false,
+      deletingSessionId: null,
       selectedLanguage: '',
       newEReaderDevice: {
         name: '',
@@ -285,14 +301,66 @@ export default {
     ereaderDevicesUpdated(ereaderDevices) {
       this.ereaderDevices = ereaderDevices
     },
-    loadAuthSessions() {
+    loadAuthSessions(page = 0) {
+      if (this.loadingAuthSessions) return
+      if (page < 0) return
+      if (this.authSessionsNumPages > 0 && page > this.authSessionsNumPages - 1) return
+
+      this.loadingAuthSessions = true
       this.$axios
-        .$get('/api/me/sessions')
+        .$get(`/api/me/sessions?page=${page}&itemsPerPage=${this.authSessionsItemsPerPage}`)
         .then((data) => {
           this.authSessions = data.sessions || []
+          this.authSessionsPage = data.page ?? page
+          this.authSessionsNumPages = data.numPages ?? 0
         })
         .catch((error) => {
           console.error('Failed to load sessions', error)
+        })
+        .finally(() => {
+          this.loadingAuthSessions = false
+        })
+    },
+    prevAuthSessionsPage() {
+      if (this.authSessionsPage <= 0) return
+      this.loadAuthSessions(this.authSessionsPage - 1)
+    },
+    nextAuthSessionsPage() {
+      if (this.authSessionsPage >= this.authSessionsNumPages - 1) return
+      this.loadAuthSessions(this.authSessionsPage + 1)
+    },
+    deleteAuthSessionClick(session) {
+      this.$store.commit('globals/setConfirmPrompt', {
+        message: this.$getString('MessageConfirmLogoutDevice', [this.getSessionDeviceLabel(session)]),
+        callback: (confirmed) => {
+          if (confirmed) this.deleteAuthSession(session)
+        },
+        type: 'yesNo'
+      })
+    },
+    deleteAuthSession(session) {
+      // Call logout instead for current session
+      if (session.current) {
+        this.logout(false)
+        return
+      }
+
+      this.deletingSessionId = session.id
+      this.$axios
+        .$delete(`/api/me/sessions/${session.id}`)
+        .then(() => {
+          if (this.authSessions.length === 1 && this.authSessionsPage > 0) {
+            this.loadAuthSessions(this.authSessionsPage - 1)
+          } else {
+            this.loadAuthSessions(this.authSessionsPage)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to delete session', error)
+          this.$toast.error(this.$strings.ToastFailedToDelete)
+        })
+        .finally(() => {
+          this.deletingSessionId = null
         })
     },
     getSessionDeviceLabel(session) {
