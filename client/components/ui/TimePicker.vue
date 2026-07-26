@@ -167,12 +167,16 @@ export default {
       if (!this.focusedDigit || !evt.key) return
 
       if (evt.key === 'ArrowLeft') {
+        evt.preventDefault()
         return this.shiftFocusLeft()
       } else if (evt.key === 'ArrowRight') {
+        evt.preventDefault()
         return this.shiftFocusRight()
       } else if (evt.key === 'ArrowUp') {
+        evt.preventDefault()
         return this.increaseFocused()
       } else if (evt.key === 'ArrowDown') {
+        evt.preventDefault()
         return this.decreaseFocused()
       } else if (evt.key === 'Enter' || evt.key === 'Escape' || evt.key === 'Tab') {
         return this.removeFocus()
