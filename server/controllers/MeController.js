@@ -100,7 +100,7 @@ class MeController {
     await Database.sessionModel.destroy({ where: { id: session.id } })
     Logger.info(`[MeController] User ${req.user.username} deleted auth session ${session.id}`)
 
-    res.json({ success: true })
+    res.sendStatus(200)
   }
 
   /**
