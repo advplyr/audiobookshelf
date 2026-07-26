@@ -4,7 +4,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
-const { toNumber, isNullOrNaN } = require('../utils/index')
+const { toNumber, isNullOrNaN, isUUID } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
 const parseUserAgent = require('../utils/parsers/parseUserAgent')
 
@@ -69,6 +69,38 @@ class MeController {
         current: !!refreshToken && (session.refreshToken === refreshToken || session.lastRefreshToken === refreshToken)
       }))
     })
+  }
+
+  /**
+   * DELETE: /api/me/sessions/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async deleteSession(req, res) {
+    if (req.user.isGuest) {
+      return res.sendStatus(403)
+    }
+
+    if (!isUUID(req.params.id)) {
+      return res.sendStatus(400)
+    }
+
+    const session = await Database.sessionModel.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      }
+    })
+
+    if (!session) {
+      return res.sendStatus(404)
+    }
+
+    await Database.sessionModel.destroy({ where: { id: session.id } })
+    Logger.info(`[MeController] User ${req.user.username} deleted auth session ${session.id}`)
+
+    res.json({ success: true })
   }
 
   /**

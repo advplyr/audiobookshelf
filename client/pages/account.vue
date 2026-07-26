@@ -77,7 +77,8 @@
             <tr>
               <th class="text-left">{{ $strings.LabelDeviceInfo }}</th>
               <th class="text-left hidden sm:table-cell w-36">{{ $strings.LabelIpAddress }}</th>
-              <th class="text-left w-32 sm:w-40">{{ $strings.LabelLastUpdate }}</th>
+              <th class="text-left w-30 sm:w-40">{{ $strings.LabelLastUpdate }}</th>
+              <th class="w-12"></th>
             </tr>
             <tr v-for="session in authSessions" :key="session.id">
               <td class="max-w-0">
@@ -91,10 +92,15 @@
               <td class="hidden sm:table-cell w-36">
                 <p class="text-sm text-gray-100 truncate" :title="session.ipAddress">{{ session.ipAddress || '-' }}</p>
               </td>
-              <td class="w-32 sm:w-40">
+              <td class="w-30 sm:w-40">
                 <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
                   <p class="text-xs sm:text-sm text-gray-100">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
                 </ui-tooltip>
+              </td>
+              <td class="w-12">
+                <div class="flex justify-end items-center h-10">
+                  <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" :disabled="deletingSessionId === session.id || loadingAuthSessions" @click="deleteAuthSessionClick(session)" />
+                </div>
               </td>
             </tr>
           </table>
@@ -131,6 +137,7 @@ export default {
       authSessionsNumPages: 0,
       authSessionsItemsPerPage: 10,
       loadingAuthSessions: false,
+      deletingSessionId: null,
       selectedLanguage: '',
       newEReaderDevice: {
         name: '',
@@ -321,6 +328,40 @@ export default {
     nextAuthSessionsPage() {
       if (this.authSessionsPage >= this.authSessionsNumPages - 1) return
       this.loadAuthSessions(this.authSessionsPage + 1)
+    },
+    deleteAuthSessionClick(session) {
+      this.$store.commit('globals/setConfirmPrompt', {
+        message: this.$getString('MessageConfirmLogoutDevice', [this.getSessionDeviceLabel(session)]),
+        callback: (confirmed) => {
+          if (confirmed) this.deleteAuthSession(session)
+        },
+        type: 'yesNo'
+      })
+    },
+    deleteAuthSession(session) {
+      // Call logout instead for current session
+      if (session.current) {
+        this.logout(false)
+        return
+      }
+
+      this.deletingSessionId = session.id
+      this.$axios
+        .$delete(`/api/me/sessions/${session.id}`)
+        .then(() => {
+          if (this.authSessions.length === 1 && this.authSessionsPage > 0) {
+            this.loadAuthSessions(this.authSessionsPage - 1)
+          } else {
+            this.loadAuthSessions(this.authSessionsPage)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to delete session', error)
+          this.$toast.error(this.$strings.ToastFailedToDelete)
+        })
+        .finally(() => {
+          this.deletingSessionId = null
+        })
     },
     getSessionDeviceLabel(session) {
       const deviceInfo = session.deviceInfo
