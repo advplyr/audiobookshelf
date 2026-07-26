@@ -98,6 +98,11 @@
               </td>
             </tr>
           </table>
+          <div v-if="authSessionsNumPages > 1" class="flex items-center justify-end py-1">
+            <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="loadingAuthSessions || authSessionsPage === 0" @click="prevAuthSessionsPage" />
+            <p class="text-sm mx-1">{{ $getString('LabelPaginationPageXOfY', [authSessionsPage + 1, authSessionsNumPages]) }}</p>
+            <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="loadingAuthSessions || authSessionsPage >= authSessionsNumPages - 1" @click="nextAuthSessionsPage" />
+          </div>
         </app-settings-content>
       </div>
 
@@ -122,6 +127,10 @@ export default {
       changingPassword: false,
       loggingOut: false,
       authSessions: [],
+      authSessionsPage: 0,
+      authSessionsNumPages: 0,
+      authSessionsItemsPerPage: 10,
+      loadingAuthSessions: false,
       selectedLanguage: '',
       newEReaderDevice: {
         name: '',
@@ -285,15 +294,33 @@ export default {
     ereaderDevicesUpdated(ereaderDevices) {
       this.ereaderDevices = ereaderDevices
     },
-    loadAuthSessions() {
+    loadAuthSessions(page = 0) {
+      if (this.loadingAuthSessions) return
+      if (page < 0) return
+      if (this.authSessionsNumPages > 0 && page > this.authSessionsNumPages - 1) return
+
+      this.loadingAuthSessions = true
       this.$axios
-        .$get('/api/me/sessions')
+        .$get(`/api/me/sessions?page=${page}&itemsPerPage=${this.authSessionsItemsPerPage}`)
         .then((data) => {
           this.authSessions = data.sessions || []
+          this.authSessionsPage = data.page ?? page
+          this.authSessionsNumPages = data.numPages ?? 0
         })
         .catch((error) => {
           console.error('Failed to load sessions', error)
         })
+        .finally(() => {
+          this.loadingAuthSessions = false
+        })
+    },
+    prevAuthSessionsPage() {
+      if (this.authSessionsPage <= 0) return
+      this.loadAuthSessions(this.authSessionsPage - 1)
+    },
+    nextAuthSessionsPage() {
+      if (this.authSessionsPage >= this.authSessionsNumPages - 1) return
+      this.loadAuthSessions(this.authSessionsPage + 1)
     },
     getSessionDeviceLabel(session) {
       const deviceInfo = session.deviceInfo

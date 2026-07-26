@@ -35,21 +35,30 @@ class MeController {
    * @param {Response} res
    */
   async getSessions(req, res) {
+    const page = Math.max(0, toNumber(req.query.page, 0))
+    const itemsPerPage = Math.max(1, toNumber(req.query.itemsPerPage, 10))
+
     if (req.user.isGuest) {
-      return res.json({ sessions: [] })
+      return res.json({ sessions: [], total: 0, numPages: 0, page, itemsPerPage })
     }
 
     const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
-    const sessions = await Database.sessionModel.findAll({
+    const { rows, count } = await Database.sessionModel.findAndCountAll({
       where: {
         userId: req.user.id,
         expiresAt: { [Op.gt]: new Date() }
       },
-      order: [['updatedAt', 'DESC']]
+      order: [['updatedAt', 'DESC']],
+      limit: itemsPerPage,
+      offset: itemsPerPage * page
     })
 
     res.json({
-      sessions: sessions.map((session) => ({
+      total: count,
+      numPages: Math.ceil(count / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions: rows.map((session) => ({
         id: session.id,
         ipAddress: session.ipAddress,
         userAgent: session.userAgent,
