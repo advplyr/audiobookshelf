@@ -230,6 +230,9 @@ export default {
       return this.store.getters['globals/getPlaceholderCoverSrc']
     },
     bookCoverSrc() {
+      if (this.recentEpisode?.coverPath) {
+        return `${this.store.state.routerBasePath}/api/podcasts/${this.libraryItemId}/episode/${this.recentEpisode.id}/cover?ts=${this.recentEpisode.updatedAt}`
+      }
       return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
     },
     libraryItemId() {
@@ -872,7 +875,7 @@ export default {
           subtitle: this.mediaMetadata.title,
           caption: this.recentEpisode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: this.recentEpisode.audioFile.duration || null,
-          coverPath: this.media.coverPath || null
+          coverPath: this.recentEpisode.coverPath || this.media.coverPath || null
         }
       } else {
         queueItem = {
@@ -1032,7 +1035,7 @@ export default {
                   subtitle: this.mediaMetadata.title,
                   caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
                   duration: episode.audioFile.duration || null,
-                  coverPath: this.media.coverPath || null
+                  coverPath: episode.coverPath || this.media.coverPath || null
                 })
               }
             }

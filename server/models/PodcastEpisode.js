@@ -45,6 +45,10 @@ class PodcastEpisode extends Model {
     /** @type {Object} */
     this.extraData
     /** @type {string} */
+    this.coverPath
+    /** @type {string} */
+    this.imageURL
+    /** @type {string} */
     this.podcastId
     /** @type {Date} */
     this.createdAt
@@ -75,7 +79,8 @@ class PodcastEpisode extends Model {
       podcastId,
       audioFile: audioFile.toJSON(),
       chapters: [],
-      extraData: {}
+      extraData: {},
+      imageURL: rssPodcastEpisode.image || null
     }
     if (rssPodcastEpisode.guid) {
       podcastEpisode.extraData.guid = rssPodcastEpisode.guid
@@ -117,7 +122,9 @@ class PodcastEpisode extends Model {
 
         audioFile: DataTypes.JSON,
         chapters: DataTypes.JSON,
-        extraData: DataTypes.JSON
+        extraData: DataTypes.JSON,
+        coverPath: DataTypes.STRING,
+        imageURL: DataTypes.STRING
       },
       {
         sequelize,
@@ -156,6 +163,22 @@ class PodcastEpisode extends Model {
 
   get duration() {
     return this.audioFile?.duration || 0
+  }
+
+  /**
+   * Check if episode has a custom cover
+   * @returns {boolean}
+   */
+  hasCover() {
+    return !!this.coverPath
+  }
+
+  /**
+   * Get the cover path for this episode
+   * @returns {string|null}
+   */
+  getCoverPath() {
+    return this.coverPath || null
   }
 
   /**
@@ -223,7 +246,9 @@ class PodcastEpisode extends Model {
       audioFile: structuredClone(this.audioFile),
       publishedAt: this.publishedAt?.valueOf() || null,
       addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf()
+      updatedAt: this.updatedAt.valueOf(),
+      coverPath: this.coverPath || null,
+      imageURL: this.imageURL || null
     }
   }
 

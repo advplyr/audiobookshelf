@@ -8,7 +8,7 @@
     <div ref="wrapper" class="p-4 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
       <div class="flex mb-4">
         <div class="w-12 h-12">
-          <covers-book-cover :library-item="libraryItem" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+          <covers-book-cover :library-item="libraryItem" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :cover-src="episodeCoverSrc" />
         </div>
         <div class="grow px-2">
           <p class="text-base mb-1">{{ podcastTitle }}</p>
@@ -102,6 +102,12 @@ export default {
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    episodeCoverSrc() {
+      if (this.episode?.coverPath) {
+        return `${this.$store.state.routerBasePath}/api/podcasts/${this.libraryItem.id}/episode/${this.episode.id}/cover?ts=${this.episode.updatedAt}`
+      }
+      return null
     }
   },
   methods: {
