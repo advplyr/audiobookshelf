@@ -75,7 +75,7 @@ See [library docs](https://audiobookshelf.org/docs/category/libraries) for suppo
 
 # Installation
 
-See [install docs](https://www.audiobookshelf.org/docs)
+See [install docs](https://audiobookshelf.org/docs/category/installation)
 
 <br />
 
