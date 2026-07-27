@@ -777,6 +777,7 @@
   "MessageConfirmDeleteSession": "你确定要删除此会话吗？",
   "MessageConfirmEmbedMetadataInAudioFiles": "你确定要将元数据嵌入到 {0} 个音频文件中吗？",
   "MessageConfirmForceReScan": "你确定要强制重新扫描吗？",
+  "MessageConfirmLogoutDevice": "确定要注销 \"{0}\" 吗？",
   "MessageConfirmMarkAllEpisodesFinished": "你确定要将所有剧集都标记为已完成吗？",
   "MessageConfirmMarkAllEpisodesNotFinished": "你确定要将所有剧集都标记为未完成吗？",
   "MessageConfirmMarkItemFinished": "你确定要将 “{0}” 标记为已完成吗？",
