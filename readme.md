@@ -12,6 +12,8 @@
   </p>
 </div>
 
+## ⚠️ Frontend pull requests are not being reviewed or merged for the existing Vue frontend. The frontend is currently being rewritten and migrated to React and should be available soon.
+
 # About
 
 Audiobookshelf is a self-hosted audiobook and podcast server.
@@ -93,8 +95,7 @@ See [contributing docs](https://audiobookshelf.org/docs/contributing/general/)
 
 ### Localization
 
-Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations).
-<a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/abs-web-client/multi-auto.svg" alt="Translation status" /> </a>
+Thank you to [Weblate](https://hosted.weblate.org/engage/audiobookshelf/) for hosting our localization infrastructure pro-bono. If you want to see Audiobookshelf in your language, please help us localize. Additional information on helping with the translations [here](https://www.audiobookshelf.org/faq#how-do-i-help-with-translations). <a href="https://hosted.weblate.org/engage/audiobookshelf/"> <img src="https://hosted.weblate.org/widget/audiobookshelf/abs-web-client/multi-auto.svg" alt="Translation status" /> </a>
 
 <br />
 
@@ -191,4 +192,3 @@ If you are using VSCode, this project includes a couple of pre-defined targets t
 - `Debug server`—Run the server.
 - `Debug client (nuxt)`—Run the client with live reload.
 - `Debug server and client (nuxt)`—Runs both the preceding two debug targets.
-
