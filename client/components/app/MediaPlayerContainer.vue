@@ -218,7 +218,11 @@ export default {
       this.showSleepTimerModal = false
 
       this.sleepTimerType = time.timerType
-      if (this.sleepTimerType === this.$constants.SleepTimerTypes.COUNTDOWN) {
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER) {
+        // Sync lastChapterId to the current chapter so the timer doesn't
+        // fire immediately when the user enables it mid-chapter.
+        this.lastChapterId = this.currentChapter?.id ?? null
+      } else if (this.sleepTimerType === this.$constants.SleepTimerTypes.COUNTDOWN) {
         this.runSleepTimer(time)
       }
     },
@@ -295,6 +299,11 @@ export default {
     },
     seek(time) {
       this.playerHandler.seek(time)
+      // After a manual seek, re-anchor lastChapterId so that landing in a
+      // different chapter is not mistaken for a chapter-boundary crossing.
+      if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
+        this.lastChapterId = this.currentChapter?.id ?? null
+      }
     },
     playbackTimeUpdate(time) {
       // When updating progress from another session
