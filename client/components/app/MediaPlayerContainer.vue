@@ -243,7 +243,8 @@ export default {
       // Track chapter transitions by comparing current chapter with last chapter
       if (this.lastChapterId !== this.currentChapter.id) {
         // Chapter changed - if we had a previous chapter, this means we crossed a boundary
-        if (this.lastChapterId) {
+        //To prevent the value of id from being judged as false when it is 0.
+        if (this.lastChapterId !== null && this.lastChapterId !== undefined) {
           this.sleepTimerEnd()
         }
         this.lastChapterId = this.currentChapter.id
