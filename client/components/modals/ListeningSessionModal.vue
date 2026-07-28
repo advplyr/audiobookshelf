@@ -7,7 +7,8 @@
     </template>
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center">
-        <p class="text-base text-gray-200">{{ _session.displayTitle }}</p>
+        <nuxt-link v-if="_session.libraryItemId" :to="`/item/${_session.libraryItemId}`" class="text-base text-gray-200 hover:underline" @click.native="show = false">{{ _session.displayTitle }}</nuxt-link>
+        <p v-else class="text-base text-gray-200">{{ _session.displayTitle }}</p>
         <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">{{ $getString('LabelByAuthor', [_session.displayAuthor]) }}</p>
       </div>
 
