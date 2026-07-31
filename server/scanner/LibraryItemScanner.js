@@ -66,7 +66,7 @@ class LibraryItemScanner {
     if (libraryItemDataUpdated || wasUpdated) {
       SocketAuthority.libraryItemEmitter('item_updated', expandedLibraryItem)
 
-      await this.checkAuthorsAndSeriesRemovedFromBooks(library.id, scanLogger)
+      await this.finalizeAuthorsAndSeriesFromScan(library.id, scanLogger)
 
       return ScanResult.UPDATED
     }
@@ -76,12 +76,13 @@ class LibraryItemScanner {
   }
 
   /**
-   * Remove empty authors and series
+   * Emit author book count updates, then remove empty authors/series left after the scan
    * @param {string} libraryId
    * @param {ScanLogger} scanLogger
    * @returns {Promise}
    */
-  async checkAuthorsAndSeriesRemovedFromBooks(libraryId, scanLogger) {
+  async finalizeAuthorsAndSeriesFromScan(libraryId, scanLogger) {
+    await BookScanner.emitAuthorsNumBooksUpdated(libraryId, scanLogger)
     if (scanLogger.authorsRemovedFromBooks.length) {
       await BookScanner.checkAuthorsRemovedFromBooks(libraryId, scanLogger)
     }
@@ -215,7 +216,10 @@ class LibraryItemScanner {
     scanLogger.verbose = true
     scanLogger.setData('libraryItem', libraryItemScanData.relPath)
 
-    return this.scanNewLibraryItem(libraryItemScanData, library.settings, scanLogger)
+    const newLibraryItem = await this.scanNewLibraryItem(libraryItemScanData, library.settings, scanLogger)
+    // Watcher path does not go through full-library scan cleanup — emit author book count updates here
+    await BookScanner.emitAuthorsNumBooksUpdated(library.id, scanLogger)
+    return newLibraryItem
   }
 }
 module.exports = new LibraryItemScanner()

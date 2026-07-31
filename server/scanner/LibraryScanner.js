@@ -234,8 +234,7 @@ class LibraryScanner {
       SocketAuthority.libraryItemsEmitter('items_updated', libraryItemsUpdated)
     }
 
-    // Authors and series that were removed from books should be removed if they are now empty
-    await LibraryItemScanner.checkAuthorsAndSeriesRemovedFromBooks(libraryScan.libraryId, libraryScan)
+    if (this.shouldCancelScan(libraryScan)) return true
 
     // Update missing library items
     if (libraryItemIdsMissing.length) {
@@ -280,6 +279,9 @@ class LibraryScanner {
         SocketAuthority.libraryItemsEmitter('items_added', newLibraryItems)
       }
     }
+
+    // Author book count updates and empty authors/series cleanup after all items are processed
+    await LibraryItemScanner.finalizeAuthorsAndSeriesFromScan(libraryScan.libraryId, libraryScan)
 
     libraryScan.addLog(LogLevel.INFO, `Scan completed. ${libraryScan.resultStats}`)
     return false

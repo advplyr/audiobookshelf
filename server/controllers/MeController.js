@@ -1,10 +1,12 @@
 const { Request, Response } = require('express')
+const { Op } = require('sequelize')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { sort } = require('../libs/fastSort')
-const { toNumber, isNullOrNaN } = require('../utils/index')
+const { toNumber, isNullOrNaN, isUUID } = require('../utils/index')
 const userStats = require('../utils/queries/userStats')
+const parseUserAgent = require('../utils/parsers/parseUserAgent')
 
 /**
  * @typedef RequestUserObject
@@ -24,6 +26,124 @@ class MeController {
    */
   getCurrentUser(req, res) {
     res.json(req.user.toOldJSONForBrowser())
+  }
+
+  /**
+   * GET: /api/me/sessions
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getSessions(req, res) {
+    const page = Math.max(0, toNumber(req.query.page, 0))
+    const itemsPerPage = Math.max(1, toNumber(req.query.itemsPerPage, 10))
+
+    if (req.user.isGuest) {
+      return res.json({ sessions: [], total: 0, numPages: 0, page, itemsPerPage })
+    }
+
+    const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
+    const { rows, count } = await Database.sessionModel.findAndCountAll({
+      where: {
+        userId: req.user.id,
+        expiresAt: { [Op.gt]: new Date() }
+      },
+      order: [['updatedAt', 'DESC']],
+      limit: itemsPerPage,
+      offset: itemsPerPage * page
+    })
+
+    res.json({
+      total: count,
+      numPages: Math.ceil(count / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions: rows.map((session) => ({
+        id: session.id,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        // For display convenience
+        deviceInfo: parseUserAgent(session.userAgent),
+        createdAt: session.createdAt?.valueOf() ?? null,
+        updatedAt: session.updatedAt?.valueOf() ?? null,
+        current: !!refreshToken && (session.refreshToken === refreshToken || session.lastRefreshToken === refreshToken)
+      }))
+    })
+  }
+
+  /**
+   * DELETE: /api/me/sessions/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async deleteSession(req, res) {
+    if (req.user.isGuest) {
+      return res.sendStatus(403)
+    }
+
+    if (!isUUID(req.params.id)) {
+      return res.sendStatus(400)
+    }
+
+    const session = await Database.sessionModel.findOne({
+      where: {
+        id: req.params.id,
+        userId: req.user.id
+      }
+    })
+
+    if (!session) {
+      return res.sendStatus(404)
+    }
+
+    await Database.sessionModel.destroy({ where: { id: session.id } })
+    Logger.info(`[MeController] User ${req.user.username} deleted auth session ${session.id}`)
+
+    res.sendStatus(200)
+  }
+
+  /**
+   * GET: /api/me/progress
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  getAllMediaProgress(req, res) {
+    const mediaProgress = req.user.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || []
+    res.json({ mediaProgress })
+  }
+
+  /**
+   * GET: /api/me/bookmarks
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  getAllBookmarks(req, res) {
+    const bookmarks = req.user.bookmarks?.map((bookmark) => ({ ...bookmark })) || []
+    res.json({ bookmarks })
+  }
+
+  /**
+   * GET: /api/me/bookmarks/:libraryItemId
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getBookmarksForLibraryItem(req, res) {
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.libraryItemId)
+    if (!libraryItem) {
+      return res.sendStatus(404)
+    }
+
+    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to access bookmarks for library item "${req.params.libraryItemId}" without access`)
+      return res.sendStatus(403)
+    }
+
+    const bookmarks = req.user.bookmarks?.filter((bookmark) => bookmark.libraryItemId === libraryItem.id).map((bookmark) => ({ ...bookmark })) || []
+    res.json({ bookmarks })
   }
 
   /**
@@ -308,6 +428,8 @@ class MeController {
    * User change password. Requires current password.
    * Guest users cannot change password.
    *
+   * Invalidates all other JWT sessions for the user. If using x-refresh-token, returns new tokens for the current session.
+   *
    * @this import('../routers/ApiRouter')
    *
    * @param {RequestWithUser} req
@@ -328,6 +450,24 @@ class MeController {
 
     if (result.error) {
       return res.status(400).send(result.error)
+    }
+
+    const shouldReturnTokens = !!req.headers['x-refresh-token']
+    const newTokens = await this.auth.invalidateJwtSessionsForUser(req.user, req, res)
+
+    if (newTokens?.accessToken) {
+      Logger.info(`[MeController] Invalidated other JWT sessions for user ${req.user.username} after password change`)
+      if (shouldReturnTokens) {
+        return res.json({
+          success: true,
+          user: {
+            accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken
+          }
+        })
+      }
+    } else {
+      Logger.info(`[MeController] Invalidated all JWT sessions for user ${req.user.username} after password change`)
     }
 
     res.sendStatus(200)

@@ -4,6 +4,7 @@ const OpenIDClient = require('openid-client')
 const axios = require('axios')
 const Database = require('../Database')
 const Logger = require('../Logger')
+const { getRequestOrigin } = require('../utils/requestUtils')
 
 /**
  * OpenID Connect authentication strategy
@@ -289,8 +290,8 @@ class OidcAuthStrategy {
     const sessionKey = strategy._key
 
     try {
-      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
-      const hostUrl = new URL(`${protocol}://${req.get('host')}`)
+      const { origin } = getRequestOrigin(req)
+      const hostUrl = new URL(origin)
       const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
 
       // Only allow code flow (for mobile clients)
@@ -394,11 +395,10 @@ class OidcAuthStrategy {
       let postLogoutRedirectUri = null
 
       if (authMethod === 'openid') {
-        const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
-        const host = req.get('host')
+        const { origin } = getRequestOrigin(req)
         // TODO: ABS does currently not support subfolders for installation
         // If we want to support it we need to include a config for the serverurl
-        postLogoutRedirectUri = `${protocol}://${host}${global.RouterBasePath}/login`
+        postLogoutRedirectUri = `${origin}${global.RouterBasePath}/login`
       }
       // else for openid-mobile we keep postLogoutRedirectUri on null
       //  nice would be to redirect to the app here, but for example Authentik does not implement
@@ -515,42 +515,33 @@ class OidcAuthStrategy {
     if (!callbackUrl) return false
 
     try {
-      // Handle relative URLs - these are always safe if they start with router base path
-      if (callbackUrl.startsWith('/')) {
-        // Only allow relative paths that start with the router base path
-        if (callbackUrl.startsWith(global.RouterBasePath + '/')) {
-          return true
-        }
+      // Reject protocol-relative (//host) and backslash-prefixed (/\host) values,
+      // which browsers resolve to a cross-origin absolute URL.
+      if (callbackUrl.startsWith('//') || callbackUrl.startsWith('/\\')) {
+        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL: ${callbackUrl}`)
+        return false
+      }
+
+      const { origin: serverOrigin } = getRequestOrigin(req)
+      const resolvedUrl = callbackUrl.startsWith('/') ? new URL(callbackUrl, serverOrigin) : new URL(callbackUrl)
+
+      if (resolvedUrl.origin !== serverOrigin) {
+        Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callbackUrl} (expected ${serverOrigin})`)
+        return false
+      }
+
+      const pathname = decodeURIComponent(resolvedUrl.pathname)
+      if (pathname.startsWith('//') || pathname.startsWith('/\\')) {
+        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL path: ${callbackUrl}`)
+        return false
+      }
+
+      if (!resolvedUrl.pathname.startsWith(global.RouterBasePath + '/')) {
         Logger.warn(`[OidcAuth] Rejected callback URL outside router base path: ${callbackUrl}`)
         return false
       }
 
-      // For absolute URLs, ensure they point to the same origin
-      const callbackUrlObj = new URL(callbackUrl)
-      // NPM appends both http and https in x-forwarded-proto sometimes, so we need to check for both
-      const xfp = (req.get('x-forwarded-proto') || '').toLowerCase()
-      const currentProtocol =
-        req.secure ||
-        xfp
-          .split(',')
-          .map((s) => s.trim())
-          .includes('https')
-          ? 'https'
-          : 'http'
-      const currentHost = req.get('host')
-
-      // Check if protocol and host match exactly
-      if (callbackUrlObj.protocol === currentProtocol + ':' && callbackUrlObj.host === currentHost) {
-        // Additional check: ensure path starts with router base path
-        if (callbackUrlObj.pathname.startsWith(global.RouterBasePath + '/')) {
-          return true
-        }
-        Logger.warn(`[OidcAuth] Rejected same-origin callback URL outside router base path: ${callbackUrl}`)
-        return false
-      }
-
-      Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callbackUrl} (expected ${currentProtocol}://${currentHost})`)
-      return false
+      return true
     } catch (error) {
       Logger.error(`[OidcAuth] Invalid callback URL format: ${callbackUrl}`, error)
       return false

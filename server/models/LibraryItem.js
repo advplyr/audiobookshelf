@@ -1004,6 +1004,11 @@ class LibraryItem extends Model {
     }
   }
 
+  /**
+   * Minified library item JSON for list/shelf endpoints.
+   * `toOldJSONExpanded()` must be a strict superset: every key here must exist in expanded
+   * with the same value semantics. Only additive changes to expanded; never remove or rename keys.
+   */
   toOldJSONMinified() {
     if (!this.media) {
       throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
@@ -1032,30 +1037,18 @@ class LibraryItem extends Model {
     }
   }
 
+  /**
+   * Expanded library item JSON for item detail and socket events.
+   * Must be a strict superset of `toOldJSONMinified()` — built by spreading minified, then adding expanded-only fields.
+   */
   toOldJSONExpanded() {
     return {
-      id: this.id,
-      ino: this.ino,
-      oldLibraryItemId: this.extraData?.oldLibraryItemId || null,
-      libraryId: this.libraryId,
-      folderId: this.libraryFolderId,
-      path: this.path,
-      relPath: this.relPath,
-      isFile: this.isFile,
-      mtimeMs: this.mtime?.valueOf(),
-      ctimeMs: this.ctime?.valueOf(),
-      birthtimeMs: this.birthtime?.valueOf(),
-      addedAt: this.createdAt.valueOf(),
-      updatedAt: this.updatedAt.valueOf(),
+      ...this.toOldJSONMinified(),
       lastScan: this.lastScan?.valueOf(),
       scanVersion: this.lastScanVersion,
-      isMissing: !!this.isMissing,
-      isInvalid: !!this.isInvalid,
-      mediaType: this.mediaType,
       media: this.media.toOldJSONExpanded(this.id),
       // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
-      libraryFiles: this.getLibraryFilesJson(),
-      size: this.size
+      libraryFiles: this.getLibraryFilesJson()
     }
   }
 }

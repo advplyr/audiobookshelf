@@ -437,6 +437,17 @@ class PodcastController {
         }
 
         updatePayload[key] = req.body[key]
+      } else if (key === 'enclosure') {
+        const enclosure = req.body.enclosure
+        if (enclosure === null) {
+          updatePayload.enclosureURL = null
+          updatePayload.enclosureSize = null
+          updatePayload.enclosureType = null
+        } else if (typeof enclosure === 'object' && typeof enclosure.url === 'string') {
+          updatePayload.enclosureURL = enclosure.url
+          updatePayload.enclosureType = typeof enclosure.type === 'string' ? enclosure.type : null
+          updatePayload.enclosureSize = enclosure.length !== undefined && enclosure.length !== null ? enclosure.length : null
+        }
       } else if (key === 'chapters' && Array.isArray(req.body[key]) && req.body[key].every((ch) => typeof ch === 'object' && ch.title && ch.start)) {
         updatePayload[key] = req.body[key]
       } else if (key === 'publishedAt' && typeof req.body[key] === 'number') {
