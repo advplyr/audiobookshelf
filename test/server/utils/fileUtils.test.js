@@ -3,7 +3,12 @@ const expect = chai.expect
 const sinon = require('sinon')
 const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('fs')
+const fsextra = require('../../../server/libs/fsExtra')
 const Logger = require('../../../server/Logger')
+
+/**
+ * @typedef {import('../../../server/libs/fsExtra').fsExtra} fsextra
+ */
 
 describe('fileUtils', () => {
   it('shouldIgnoreFile', () => {
@@ -39,6 +44,46 @@ describe('fileUtils', () => {
     })
   })
 
+  describe('fsextra', () => {
+    let statStub
+
+    beforeEach(() => {
+      // two files with same indoe but different device ID
+      const mockStats = new Map([
+        ['/test/file1.mp3', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '100' }],
+        ['/mnt/other/file2.txt', { isDirectory: () => false, size: 512, mtimeMs: Date.now(), ino: '1', dev: '200' }]
+      ])
+
+      statStub = sinon.stub(fsextra, 'stat')
+      statStub.callsFake((path) => {
+        const normalizedPath = fileUtils.filePathToPOSIX(path).replace(/\/$/, '')
+        const stats = mockStats.get(normalizedPath)
+        if (stats) {
+          return stats
+        } else {
+          new Error(`ENOENT: no such file or directory, stat '${normalizedPath}'`)
+        }
+      })
+    })
+
+    after(() => {
+      fsextra.stat.restore()
+      sinon.restore()
+    })
+
+    it('shouldGetDeviceIdForFile', async () => {
+      const id = await fileUtils.getDeviceId('/test/file1.mp3')
+
+      expect(id).to.be.an('string')
+
+      const id2 = await fileUtils.getDeviceId('/mnt/other/file2.txt')
+
+      expect(id2).to.be.an('string')
+
+      expect(id).to.not.equal(id2)
+    })
+  })
+
   describe('recurseFiles', () => {
     let readdirStub, realpathStub, statStub
 
@@ -53,7 +98,7 @@ describe('fileUtils', () => {
       ])
 
       const mockStats = new Map([
-        ['/test/file1.mp3', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1' }],
+        ['/test/file1.mp3', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '1', dev: '100' }],
         ['/test/subfolder', { isDirectory: () => true, size: 0, mtimeMs: Date.now(), ino: '2' }],
         ['/test/subfolder/file2.m4b', { isDirectory: () => false, size: 1024, mtimeMs: Date.now(), ino: '3' }],
         ['/test/ignoreme', { isDirectory: () => true, size: 0, mtimeMs: Date.now(), ino: '4' }],
@@ -98,6 +143,9 @@ describe('fileUtils', () => {
     })
 
     afterEach(() => {
+      fs.stat.restore()
+      fs.realpath.restore()
+      fs.readdir.restore()
       sinon.restore()
     })
 
@@ -105,6 +153,7 @@ describe('fileUtils', () => {
       const files = await fileUtils.recurseFiles('/test')
       expect(files).to.be.an('array')
       expect(files).to.have.lengthOf(3)
+      expect(statStub.called).to.be.true
 
       expect(files[0]).to.deep.equal({
         name: 'file1.mp3',
