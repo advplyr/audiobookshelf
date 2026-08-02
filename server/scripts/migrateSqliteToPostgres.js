@@ -8,6 +8,13 @@ const DATABASE_URL = process.env.DATABASE_URL
 const PG_SCHEMA = process.env.PG_SCHEMA || 'public'
 const BATCH_SIZE = Number(process.env.MIGRATION_BATCH_SIZE || 500)
 const DRY_RUN = String(process.env.DRY_RUN || 'false').toLowerCase() === 'true'
+const ALLOW_DESTRUCTIVE_TARGET = String(process.env.ALLOW_DESTRUCTIVE_TARGET || 'false').toLowerCase() === 'true'
+
+const integerBounds = {
+  smallint: { min: -32768n, max: 32767n },
+  integer: { min: -2147483648n, max: 2147483647n },
+  bigint: { min: -9223372036854775808n, max: 9223372036854775807n }
+}
 
 const preferredOrder = [
   'migrationsMeta',
@@ -117,22 +124,34 @@ async function findOverlongVarcharValues(sqliteDb, tablesToMigrate, pgColumnsByT
   return issues
 }
 
-function isIntegerCompatible(value) {
-  if (value === null || value === undefined) return true
-
+function parseIntegerValue(value) {
   if (typeof value === 'number') {
-    return Number.isFinite(value) && Number.isInteger(value)
+    if (!Number.isSafeInteger(value)) return null
+    return BigInt(value)
   }
 
   if (typeof value === 'string') {
     const trimmed = value.trim()
-    if (!trimmed) return false
-    if (!/^-?\d+$/.test(trimmed)) return false
-    const parsed = Number(trimmed)
-    return Number.isFinite(parsed)
+    if (!trimmed || !/^-?\d+$/.test(trimmed)) return null
+    try {
+      return BigInt(trimmed)
+    } catch (error) {
+      return null
+    }
   }
 
-  return false
+  return null
+}
+
+function isIntegerCompatible(value, dataType = 'bigint') {
+  if (value === null || value === undefined) return true
+
+  const parsed = parseIntegerValue(value)
+  if (parsed === null) return false
+
+  const bounds = integerBounds[dataType]
+  if (!bounds) return false
+  return parsed >= bounds.min && parsed <= bounds.max
 }
 
 async function findIntegerTypeIssues(sqliteDb, tablesToMigrate, pgColumnsByTable) {
@@ -161,7 +180,7 @@ async function findIntegerTypeIssues(sqliteDb, tablesToMigrate, pgColumnsByTable
       let badCount = 0
       let sampleValue = null
       for (const row of rows) {
-        if (!isIntegerCompatible(row.value)) {
+        if (!isIntegerCompatible(row.value, dataType)) {
           badCount += 1
           if (sampleValue === null) sampleValue = row.value
         }
@@ -231,10 +250,12 @@ function convertValue(value, pgColumn) {
   }
 
   if ((dataType === 'smallint' || dataType === 'integer' || dataType === 'bigint') && value !== null && value !== undefined) {
-    if (typeof value === 'number') return value
-    if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) {
-      return Number(value)
+    if (!isIntegerCompatible(value, dataType)) return value
+    if (dataType === 'bigint' && typeof value === 'string') {
+      return value.trim()
     }
+    if (typeof value === 'number') return value
+    return Number(value)
   }
 
   return value
@@ -353,6 +374,10 @@ async function main() {
     }
 
     if (!DRY_RUN) {
+      if (!ALLOW_DESTRUCTIVE_TARGET) {
+        throw new Error('Migration writes are destructive. Set ALLOW_DESTRUCTIVE_TARGET=true after confirming the target database can be truncated.')
+      }
+
       await pg.query('BEGIN')
       await pg.query('SET session_replication_role = replica')
 

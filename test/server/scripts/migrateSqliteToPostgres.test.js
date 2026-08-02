@@ -128,11 +128,14 @@ describe('migrateSqliteToPostgres script helpers', () => {
     expect(isIntegerCompatible('10')).to.equal(true)
     expect(isIntegerCompatible(10.5)).to.equal(false)
     expect(isIntegerCompatible('10.5')).to.equal(false)
+    expect(isIntegerCompatible('32768', 'smallint')).to.equal(false)
+    expect(isIntegerCompatible('9007199254740993', 'bigint')).to.equal(true)
   })
 
   it('should coerce integer-like strings for postgres integer columns', () => {
     expect(convertValue('42', { data_type: 'integer' })).to.equal(42)
-    expect(convertValue('-7', { data_type: 'bigint' })).to.equal(-7)
+    expect(convertValue('-7', { data_type: 'bigint' })).to.equal('-7')
+    expect(convertValue('9007199254740993', { data_type: 'bigint' })).to.equal('9007199254740993')
     expect(convertValue('4.2', { data_type: 'integer' })).to.equal('4.2')
   })
 
