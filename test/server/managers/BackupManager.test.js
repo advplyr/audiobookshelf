@@ -76,6 +76,7 @@ describe('BackupManager', () => {
     ])
     expect(execFileStub.firstCall.args[1].join(' ')).to.not.include('secretpass')
     expect(execFileStub.firstCall.args[2].env.PGPASSWORD).to.equal('secretpass')
+    expect(execFileStub.firstCall.args[2].timeout).to.be.a('number')
   })
 
   it('should restore Postgres dumps in one transaction and clean existing objects', async () => {

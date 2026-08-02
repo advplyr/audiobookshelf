@@ -657,6 +657,8 @@ class BackupManager {
 
       const options = {
         maxBuffer: 10 * 1024 * 1024,
+        // Kill after 30 mins (e.g. lock waits) - a killed restore rolls back via --single-transaction
+        timeout: 30 * 60 * 1000,
         env: connection.env
       }
       childProcess.execFile(command, [...args, ...connection.args], options, (error, stdout, stderr) => {
