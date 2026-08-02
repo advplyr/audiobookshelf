@@ -1,6 +1,7 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
 
+const Database = require('../../../../server/Database')
 const Logger = require('../../../../server/Logger')
 const libraryFilters = require('../../../../server/utils/queries/libraryFilters')
 const libraryItemsBookFilters = require('../../../../server/utils/queries/libraryItemsBookFilters')
@@ -12,6 +13,7 @@ describe('libraryFilters shelf resilience', () => {
   })
 
   it('should return empty discover shelf when discover query fails', async () => {
+    sinon.stub(Database, 'isPostgresDialect').returns(true)
     sinon.stub(libraryItemsBookFilters, 'getDiscoverLibraryItems').rejects(new Error('discover failed'))
     const errorStub = sinon.stub(Logger, 'error')
 
@@ -22,6 +24,7 @@ describe('libraryFilters shelf resilience', () => {
   })
 
   it('should return empty in-progress shelf when a query fails', async () => {
+    sinon.stub(Database, 'isPostgresDialect').returns(true)
     sinon.stub(libraryItemsBookFilters, 'getFilteredLibraryItems').rejects(new Error('progress failed'))
     const errorStub = sinon.stub(Logger, 'error')
 
@@ -32,6 +35,7 @@ describe('libraryFilters shelf resilience', () => {
   })
 
   it('should return empty continue-series shelf when a query fails', async () => {
+    sinon.stub(Database, 'isPostgresDialect').returns(true)
     sinon.stub(libraryItemsBookFilters, 'getContinueSeriesLibraryItems').rejects(new Error('continue failed'))
     const errorStub = sinon.stub(Logger, 'error')
 
@@ -42,6 +46,7 @@ describe('libraryFilters shelf resilience', () => {
   })
 
   it('should return empty newest podcast episodes shelf when a query fails', async () => {
+    sinon.stub(Database, 'isPostgresDialect').returns(true)
     sinon.stub(libraryItemsPodcastFilters, 'getFilteredPodcastEpisodes').rejects(new Error('podcast failed'))
     const errorStub = sinon.stub(Logger, 'error')
 
@@ -49,6 +54,21 @@ describe('libraryFilters shelf resilience', () => {
 
     expect(result).to.deep.equal({ libraryItems: [], count: 0 })
     expect(errorStub.calledWithMatch('[LibraryFilters] Failed to load newest-podcast-episodes shelf for library "library-1"')).to.equal(true)
+  })
+
+  it('should rethrow shelf query errors on sqlite to keep upstream behavior', async () => {
+    sinon.stub(Database, 'isPostgresDialect').returns(false)
+    sinon.stub(libraryItemsBookFilters, 'getDiscoverLibraryItems').rejects(new Error('discover failed'))
+
+    let error
+    try {
+      await libraryFilters.getLibraryItemsToDiscover({ mediaType: 'book', id: 'library-1' }, { id: 'user-1' }, [], 10)
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).to.be.an('error')
+    expect(error.message).to.equal('discover failed')
   })
 
   it('should keep discover shelf mapping behavior when query succeeds', async () => {

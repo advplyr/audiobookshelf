@@ -14,6 +14,8 @@ async function withShelfFallback(scope, fallbackValue, action) {
   try {
     return await action()
   } catch (error) {
+    // Only postgres shelves fall back to empty results - on sqlite keep upstream behavior of surfacing the error
+    if (!Database.isPostgresDialect()) throw error
     Logger.error(`[LibraryFilters] Failed to load ${scope}`, error)
     return fallbackValue
   }
