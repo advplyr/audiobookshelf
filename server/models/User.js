@@ -18,12 +18,16 @@ class UserCache {
   }
 
   getByEmail(email) {
-    const user = this.cache.find((u) => u.email === email)
+    if (!email) return null
+    const normalizedEmail = email.toLowerCase()
+    const user = this.cache.find((u) => u.email && u.email.toLowerCase() === normalizedEmail)
     return user
   }
 
   getByUsername(username) {
-    const user = this.cache.find((u) => u.username === username)
+    if (!username) return null
+    const normalizedUsername = username.toLowerCase()
+    const user = this.cache.find((u) => u.username && u.username.toLowerCase() === normalizedUsername)
     return user
   }
 

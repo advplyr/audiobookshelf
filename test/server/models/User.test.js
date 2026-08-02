@@ -43,6 +43,38 @@ describe('User model', () => {
       expect(options.where.attribute.args[0].col).to.equal('email')
       expect(options.where.logic).to.equal('example.user@example.com')
     })
+
+    it('should hit the user cache for mixed-case username lookups', async () => {
+      User.sequelize = {
+        models: {
+          mediaProgress: {}
+        }
+      }
+      const cachedUser = { id: 'cache-test-user-1', username: 'CacheTestUser', email: 'cachetest@example.com', extraData: {} }
+      const findOneStub = sinon.stub(User, 'findOne').resolves(cachedUser)
+
+      await User.getUserByUsername('CacheTestUser')
+      await User.getUserByUsername('cachetestuser')
+      await User.getUserByUsername('CACHETESTUSER')
+
+      expect(findOneStub.callCount).to.equal(1)
+    })
+
+    it('should hit the user cache for mixed-case email lookups', async () => {
+      User.sequelize = {
+        models: {
+          mediaProgress: {}
+        }
+      }
+      const cachedUser = { id: 'cache-test-user-2', username: 'CacheEmailUser', email: 'CacheMail@Example.com', extraData: {} }
+      const findOneStub = sinon.stub(User, 'findOne').resolves(cachedUser)
+
+      await User.getUserByEmail('CacheMail@Example.com')
+      await User.getUserByEmail('cachemail@example.com')
+      await User.getUserByEmail('CACHEMAIL@EXAMPLE.COM')
+
+      expect(findOneStub.callCount).to.equal(1)
+    })
   })
 
   describe('getUserByIdOrOldId', () => {
