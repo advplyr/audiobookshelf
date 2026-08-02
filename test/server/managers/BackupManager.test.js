@@ -42,9 +42,9 @@ describe('BackupManager', () => {
     })
   })
 
-  it('should create Postgres dumps with pg_dump and preserve the connection URL', async () => {
+  it('should create Postgres dumps with pg_dump without exposing credentials in argv', async () => {
     Database.dialect = 'postgres'
-    Database.dbPath = 'postgresql://localhost:5432/audiobookshelf'
+    Database.dbPath = 'postgresql://absuser:secretpass@localhost:5432/audiobookshelf'
     global.ConfigPath = os.tmpdir()
 
     const execFileStub = sinon.stub(childProcess, 'execFile').callsFake((command, args, options, callback) => {
@@ -65,14 +65,22 @@ describe('BackupManager', () => {
       '--no-acl',
       '--file',
       dumpPath,
+      '--host',
+      'localhost',
       '--dbname',
-      Database.dbPath
+      'audiobookshelf',
+      '--port',
+      '5432',
+      '--username',
+      'absuser'
     ])
+    expect(execFileStub.firstCall.args[1].join(' ')).to.not.include('secretpass')
+    expect(execFileStub.firstCall.args[2].env.PGPASSWORD).to.equal('secretpass')
   })
 
   it('should restore Postgres dumps in one transaction and clean existing objects', async () => {
     Database.dialect = 'postgres'
-    Database.dbPath = 'postgresql://localhost:5432/audiobookshelf'
+    Database.dbPath = 'postgresql://absuser:secretpass@localhost:5432/audiobookshelf'
 
     const execFileStub = sinon.stub(childProcess, 'execFile').callsFake((command, args, options, callback) => {
       callback(null, '', '')
@@ -89,10 +97,66 @@ describe('BackupManager', () => {
       '--single-transaction',
       '--no-owner',
       '--no-acl',
+      '/config/absdatabase-postgres-temp.dump',
+      '--host',
+      'localhost',
       '--dbname',
-      Database.dbPath,
-      '/config/absdatabase-postgres-temp.dump'
+      'audiobookshelf',
+      '--port',
+      '5432',
+      '--username',
+      'absuser'
     ])
+    expect(execFileStub.firstCall.args[1].join(' ')).to.not.include('secretpass')
+    expect(execFileStub.firstCall.args[2].env.PGPASSWORD).to.equal('secretpass')
+  })
+
+  it('should redact database credentials from failed pg command errors', async () => {
+    Database.dialect = 'postgres'
+    Database.dbPath = 'postgresql://absuser:secretpass@localhost:5432/audiobookshelf'
+    global.ConfigPath = os.tmpdir()
+
+    sinon.stub(childProcess, 'execFile').callsFake((command, args, options, callback) => {
+      const error = new Error('Command failed: pg_dump --dbname postgresql://absuser:secretpass@localhost/audiobookshelf\npg_dump: error: password authentication failed')
+      error.cmd = 'pg_dump --dbname postgresql://absuser:secretpass@localhost/audiobookshelf'
+      callback(error, '', 'connection using password secretpass failed')
+    })
+    const manager = new BackupManager()
+    const backup = new Backup()
+    backup.id = '2026-08-02T0130'
+
+    let error
+    try {
+      await manager.backupPostgresDb(backup)
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).to.be.an('error')
+    expect(error.message).to.not.include('secretpass')
+    expect(error.cmd).to.not.include('secretpass')
+    expect(error.stderr).to.not.include('secretpass')
+    expect(error.message).to.include('***')
+  })
+
+  it('should reject pg commands when DATABASE_URL is not a valid URI', async () => {
+    Database.dialect = 'postgres'
+    Database.dbPath = 'not a connection uri'
+    global.ConfigPath = os.tmpdir()
+
+    const manager = new BackupManager()
+    const backup = new Backup()
+    backup.id = '2026-08-02T0130'
+
+    let error
+    try {
+      await manager.backupPostgresDb(backup)
+    } catch (caughtError) {
+      error = caughtError
+    }
+
+    expect(error).to.be.an('error')
+    expect(error.message).to.include('valid postgres connection URI')
   })
 
   it('should reject SQLite backup open errors without an uncaught sqlite event', async () => {

@@ -588,6 +588,31 @@ class BackupManager {
     })
   }
 
+  /**
+   * Build pg_dump/pg_restore connection arguments from DATABASE_URL without
+   * exposing credentials in argv. execFile error messages and the host process
+   * list include argv, so the password is passed via PGPASSWORD env instead.
+   */
+  getPostgresConnection() {
+    let dbUrl
+    try {
+      dbUrl = new URL(Database.dbPath)
+    } catch (error) {
+      throw new Error('DATABASE_URL must be a valid postgres connection URI to run backups')
+    }
+
+    const args = ['--host', dbUrl.hostname, '--dbname', decodeURIComponent(dbUrl.pathname.replace(/^\//, ''))]
+    if (dbUrl.port) args.push('--port', dbUrl.port)
+    if (dbUrl.username) args.push('--username', decodeURIComponent(dbUrl.username))
+
+    // Redact both the percent-encoded and decoded password from any error output
+    const decodedPassword = dbUrl.password ? decodeURIComponent(dbUrl.password) : null
+    const secrets = dbUrl.password ? [dbUrl.password, decodedPassword] : []
+    const env = decodedPassword ? { ...process.env, PGPASSWORD: decodedPassword } : process.env
+
+    return { args, env, secrets }
+  }
+
   backupPostgresDb(backup) {
     const dbFilePath = Path.join(global.ConfigPath, `absdatabase.${backup.id}.postgres.dump`)
     return this.runPostgresCommand('pg_dump', [
@@ -595,9 +620,7 @@ class BackupManager {
       '--no-owner',
       '--no-acl',
       '--file',
-      dbFilePath,
-      '--dbname',
-      Database.dbPath
+      dbFilePath
     ])
       .then(() => dbFilePath)
       .catch(async (error) => {
@@ -614,17 +637,33 @@ class BackupManager {
       '--single-transaction',
       '--no-owner',
       '--no-acl',
-      '--dbname',
-      Database.dbPath,
       dbFilePath
     ])
   }
 
   runPostgresCommand(command, args) {
     return new Promise((resolve, reject) => {
-      childProcess.execFile(command, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      let connection
+      try {
+        connection = this.getPostgresConnection()
+      } catch (error) {
+        return reject(error)
+      }
+
+      const redact = (text) => {
+        if (typeof text !== 'string') return text
+        return connection.secrets.reduce((redacted, secret) => redacted.split(secret).join('***'), text)
+      }
+
+      const options = {
+        maxBuffer: 10 * 1024 * 1024,
+        env: connection.env
+      }
+      childProcess.execFile(command, [...args, ...connection.args], options, (error, stdout, stderr) => {
         if (error) {
-          error.stderr = stderr
+          error.message = redact(error.message)
+          if (error.cmd) error.cmd = redact(error.cmd)
+          error.stderr = redact(stderr)
           return reject(error)
         }
         resolve({ stdout, stderr })
