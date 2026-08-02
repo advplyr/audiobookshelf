@@ -928,6 +928,9 @@ WHERE EXISTS (
    * It adds triggers to update libraryItems.title[IgnorePrefix] when (books|podcasts).title[IgnorePrefix] is updated
    */
   async addTriggers() {
+    if (this.isPostgresDialect()) {
+      return this.addPostgresTriggers()
+    }
     if (!this.isSqliteDialect()) {
       Logger.info(`[Database] Skipping sqlite-only triggers for dialect ${this.dialect}`)
       return
@@ -1022,6 +1025,121 @@ WHERE EXISTS (
               SET (${columnNames}) = (${authorNamesSubQuery})
             WHERE mediaId IN (SELECT bookId FROM ${bookAuthors} WHERE authorId = NEW.id);
         END;
+      `)
+    }
+
+    await addBookAuthorsTriggerIfNotExists('insert')
+    await addBookAuthorsTriggerIfNotExists('delete')
+    await addAuthorsUpdateTriggerIfNotExists()
+  }
+
+  /**
+   * Postgres equivalent of the sqlite libraryItems denormalization triggers above.
+   * Identifiers are unquoted (and therefore folded to lowercase by postgres) to match
+   * the quoteIdentifiers: false strategy used for the postgres dialect.
+   */
+  async addPostgresTriggers() {
+    Logger.info('[Database] Adding postgres denormalization triggers')
+
+    await this.addPostgresTitleTriggerIfNotExists('books', 'title')
+    await this.addPostgresTitleTriggerIfNotExists('books', 'titleIgnorePrefix')
+    await this.addPostgresTitleTriggerIfNotExists('podcasts', 'title')
+    await this.addPostgresTitleTriggerIfNotExists('podcasts', 'titleIgnorePrefix')
+    await this.addPostgresAuthorNamesTriggersIfNotExist()
+  }
+
+  async postgresTriggerExists(triggerName) {
+    const [[{ count }]] = await this.sequelize.query(`SELECT COUNT(*) as count FROM pg_trigger WHERE NOT tgisinternal AND tgname = '${triggerName}'`)
+    return Number(count) > 0
+  }
+
+  async addPostgresTitleTriggerIfNotExists(sourceTable, sourceColumn) {
+    const foldedColumn = sourceColumn.toLowerCase()
+    const action = `update_libraryItems_${sourceColumn}`
+    const fromSource = sourceTable === 'books' ? '' : `_from_${sourceTable}_${sourceColumn}`
+    const triggerName = this.convertToSnakeCase(`${action}${fromSource}`)
+    const functionName = `${triggerName}_fn`
+
+    if (await this.postgresTriggerExists(triggerName)) return // Trigger already exists
+
+    Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+    await this.sequelize.query(`
+      CREATE OR REPLACE FUNCTION ${functionName}() RETURNS trigger AS $func$
+      BEGIN
+        UPDATE libraryitems
+          SET ${foldedColumn} = NEW.${foldedColumn}
+        WHERE mediaid = NEW.id;
+        RETURN NEW;
+      END;
+      $func$ LANGUAGE plpgsql
+    `)
+    await this.sequelize.query(`
+      CREATE TRIGGER ${triggerName}
+        AFTER UPDATE OF ${foldedColumn} ON ${sourceTable}
+        FOR EACH ROW
+        EXECUTE FUNCTION ${functionName}()
+    `)
+  }
+
+  async addPostgresAuthorNamesTriggersIfNotExist() {
+    // string_agg is the postgres equivalent of sqlite GROUP_CONCAT; both return NULL for an empty set
+    const authorNamesSubQuery = (bookIdExpression) => `
+        SELECT string_agg(authors.name, ', ' ORDER BY bookauthors.createdat ASC), string_agg(authors.lastfirst, ', ' ORDER BY bookauthors.createdat ASC)
+        FROM authors JOIN bookauthors ON authors.id = bookauthors.authorid
+        WHERE bookauthors.bookid = ${bookIdExpression}
+    `
+
+    const addBookAuthorsTriggerIfNotExists = async (action) => {
+      const modifiedRecord = action === 'delete' ? 'OLD' : 'NEW'
+      const triggerName = this.convertToSnakeCase(`update_libraryItems_authorNames_on_bookAuthors_${action}`)
+      const functionName = `${triggerName}_fn`
+
+      if (await this.postgresTriggerExists(triggerName)) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE OR REPLACE FUNCTION ${functionName}() RETURNS trigger AS $func$
+        BEGIN
+          UPDATE libraryitems
+            SET (authornamesfirstlast, authornameslastfirst) = (${authorNamesSubQuery(`${modifiedRecord}.bookid`)})
+          WHERE mediaid = ${modifiedRecord}.bookid;
+          RETURN ${modifiedRecord};
+        END;
+        $func$ LANGUAGE plpgsql
+      `)
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER ${action.toUpperCase()} ON bookauthors
+          FOR EACH ROW
+          EXECUTE FUNCTION ${functionName}()
+      `)
+    }
+
+    const addAuthorsUpdateTriggerIfNotExists = async () => {
+      const triggerName = this.convertToSnakeCase('update_libraryItems_authorNames_on_authors_update')
+      const functionName = `${triggerName}_fn`
+
+      if (await this.postgresTriggerExists(triggerName)) return // Trigger already exists
+
+      Logger.info(`[Database] Adding trigger ${triggerName}`)
+
+      await this.sequelize.query(`
+        CREATE OR REPLACE FUNCTION ${functionName}() RETURNS trigger AS $func$
+        BEGIN
+          UPDATE libraryitems
+            SET (authornamesfirstlast, authornameslastfirst) = (${authorNamesSubQuery('libraryitems.mediaid')})
+          WHERE mediaid IN (SELECT bookid FROM bookauthors WHERE authorid = NEW.id);
+          RETURN NEW;
+        END;
+        $func$ LANGUAGE plpgsql
+      `)
+      await this.sequelize.query(`
+        CREATE TRIGGER ${triggerName}
+          AFTER UPDATE OF name ON authors
+          FOR EACH ROW
+          EXECUTE FUNCTION ${functionName}()
       `)
     }
 

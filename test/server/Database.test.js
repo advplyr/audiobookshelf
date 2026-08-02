@@ -98,4 +98,63 @@ describe('Database', () => {
       expect(hasTables).to.equal(false)
     })
   })
+
+  describe('addPostgresTriggers', () => {
+    function captureQueries(existingTriggers = []) {
+      const queries = []
+      Database.sequelize = {
+        query: async (sql) => {
+          queries.push(sql)
+          const count = existingTriggers.filter((name) => sql.includes(`tgname = '${name}'`)).length
+          return [[{ count }]]
+        }
+      }
+      return queries
+    }
+
+    it('should create title and author names triggers with folded lowercase identifiers', async () => {
+      const queries = captureQueries()
+
+      await Database.addPostgresTriggers()
+
+      const functions = queries.filter((sql) => sql.includes('CREATE OR REPLACE FUNCTION'))
+      const triggers = queries.filter((sql) => sql.includes('CREATE TRIGGER'))
+      expect(functions.length).to.equal(7)
+      expect(triggers.length).to.equal(7)
+
+      const allDdl = [...functions, ...triggers].join('\n')
+      // No camelCase identifiers may leak into postgres DDL - unquoted identifiers fold to lowercase
+      expect(allDdl).to.not.match(/libraryItems|bookAuthors|mediaId|titleIgnorePrefix|authorNames|bookId|authorId|lastFirst|createdAt/)
+
+      const authorTrigger = triggers.find((sql) => sql.includes('update_library_items_author_names_on_authors_update'))
+      expect(authorTrigger).to.include('AFTER UPDATE OF name ON authors')
+
+      const insertFn = functions.find((sql) => sql.includes('update_library_items_author_names_on_book_authors_insert_fn'))
+      expect(insertFn).to.include("string_agg(authors.name, ', ' ORDER BY bookauthors.createdat ASC)")
+      expect(insertFn).to.include('WHERE mediaid = NEW.bookid')
+
+      const deleteFn = functions.find((sql) => sql.includes('update_library_items_author_names_on_book_authors_delete_fn'))
+      expect(deleteFn).to.include('WHERE mediaid = OLD.bookid')
+    })
+
+    it('should skip triggers that already exist', async () => {
+      const queries = captureQueries(['update_library_items_title'])
+
+      await Database.addPostgresTriggers()
+
+      const titleFn = queries.find((sql) => sql.includes('update_library_items_title_fn'))
+      expect(titleFn).to.equal(undefined)
+      const otherFns = queries.filter((sql) => sql.includes('CREATE OR REPLACE FUNCTION'))
+      expect(otherFns.length).to.equal(6)
+    })
+
+    it('should dispatch to postgres triggers from addTriggers', async () => {
+      Database.dialect = 'postgres'
+      const queries = captureQueries()
+
+      await Database.addTriggers()
+
+      expect(queries.some((sql) => sql.includes('CREATE TRIGGER'))).to.equal(true)
+    })
+  })
 })
