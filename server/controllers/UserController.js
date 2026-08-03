@@ -432,14 +432,20 @@ class UserController {
    * @param {Response} res
    */
   async getListeningSessions(req, res) {
-    var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
-
+    const startedAt = Date.now()
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
+    Logger.debug(
+      `[UserController] /api/users/${req.params.id}/listening-sessions reqUser="${req.user.id}" page=${page} itemsPerPage=${itemsPerPage} start`
+    )
+    const payload = await this.getUserListeningSessionsPageHelper(
+      req.params.id,
+      page,
+      itemsPerPage
+    )
 
-    const start = page * itemsPerPage
     // Map user to sessions to match the format of the sessions endpoint
-    const sessions = listeningSessions.slice(start, start + itemsPerPage).map((session) => {
+    payload.sessions = payload.sessions.map((session) => {
       return {
         ...session,
         user: {
@@ -449,13 +455,9 @@ class UserController {
       }
     })
 
-    const payload = {
-      total: listeningSessions.length,
-      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
-      page,
-      itemsPerPage,
-      sessions
-    }
+    Logger.debug(
+      `[UserController] /api/users/${req.params.id}/listening-sessions reqUser="${req.user.id}" page=${page} itemsPerPage=${itemsPerPage} total=${payload.total} returned=${payload.sessions.length} in ${Date.now() - startedAt}ms`
+    )
 
     res.json(payload)
   }
@@ -469,7 +471,18 @@ class UserController {
    * @param {Response} res
    */
   async getListeningStats(req, res) {
-    var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
+    const startedAt = Date.now()
+    const minified = req.query.minified === '1' || req.query.minified === 'true'
+    Logger.debug(
+      `[UserController] /api/users/${req.params.id}/listening-stats reqUser="${req.user.id}" start`
+    )
+    var listeningStats = await this.getUserListeningStatsHelpers(req.params.id, {
+      includeItems: !minified,
+      includeRecentSessions: !minified
+    })
+    Logger.debug(
+      `[UserController] /api/users/${req.params.id}/listening-stats reqUser="${req.user.id}" minified=${minified} totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
+    )
     res.json(listeningStats)
   }
 

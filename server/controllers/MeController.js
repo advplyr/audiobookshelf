@@ -155,21 +155,23 @@ class MeController {
    * @param {Response} res
    */
   async getListeningSessions(req, res) {
-    const listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
-
+    const startedAt = Date.now()
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
 
-    const start = page * itemsPerPage
-    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+    Logger.debug(
+      `[MeController] /api/me/listening-sessions user="${req.user.id}" page=${page} itemsPerPage=${itemsPerPage} start`
+    )
 
-    const payload = {
-      total: listeningSessions.length,
-      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+    const payload = await this.getUserListeningSessionsPageHelper(
+      req.user.id,
       page,
-      itemsPerPage,
-      sessions
-    }
+      itemsPerPage
+    )
+
+    Logger.debug(
+      `[MeController] /api/me/listening-sessions user="${req.user.id}" page=${page} itemsPerPage=${itemsPerPage} total=${payload.total} returned=${payload.sessions.length} in ${Date.now() - startedAt}ms`
+    )
 
     res.json(payload)
   }
@@ -183,6 +185,7 @@ class MeController {
    * @param {Response} res
    */
   async getItemListeningSessions(req, res) {
+    const startedAt = Date.now()
     const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.libraryItemId)
     const episode = await Database.podcastEpisodeModel.findByPk(req.params.episodeId)
 
@@ -198,21 +201,23 @@ class MeController {
     }
 
     const mediaItemId = episode?.id || libraryItem.mediaId
-    let listeningSessions = await this.getUserItemListeningSessionsHelper(req.user.id, mediaItemId)
-
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
     const page = toNumber(req.query.page, 0)
 
-    const start = page * itemsPerPage
-    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+    Logger.debug(
+      `[MeController] /api/me/item/listening-sessions user="${req.user.id}" libraryItem="${req.params.libraryItemId}" episode="${req.params.episodeId || ''}" page=${page} itemsPerPage=${itemsPerPage} start`
+    )
 
-    const payload = {
-      total: listeningSessions.length,
-      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+    const payload = await this.getUserListeningSessionsPageHelper(
+      req.user.id,
       page,
       itemsPerPage,
-      sessions
-    }
+      mediaItemId
+    )
+
+    Logger.debug(
+      `[MeController] /api/me/item/listening-sessions user="${req.user.id}" libraryItem="${req.params.libraryItemId}" episode="${req.params.episodeId || ''}" page=${page} itemsPerPage=${itemsPerPage} total=${payload.total} returned=${payload.sessions.length} in ${Date.now() - startedAt}ms`
+    )
 
     res.json(payload)
   }
@@ -226,7 +231,16 @@ class MeController {
    * @param {Response} res
    */
   async getListeningStats(req, res) {
-    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
+    const startedAt = Date.now()
+    const minified = req.query.minified === '1' || req.query.minified === 'true'
+    Logger.debug(`[MeController] /api/me/listening-stats user="${req.user.id}" start`)
+    const listeningStats = await this.getUserListeningStatsHelpers(req.user.id, {
+      includeItems: !minified,
+      includeRecentSessions: !minified
+    })
+    Logger.debug(
+      `[MeController] /api/me/listening-stats user="${req.user.id}" minified=${minified} totalTime=${listeningStats?.totalTime || 0} recentSessions=${listeningStats?.recentSessions?.length || 0} items=${Object.keys(listeningStats?.items || {}).length} in ${Date.now() - startedAt}ms`
+    )
     res.json(listeningStats)
   }
 

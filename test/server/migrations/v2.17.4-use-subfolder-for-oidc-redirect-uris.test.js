@@ -30,11 +30,16 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(logger.info.calledWith('[2.17.4 migration] UPGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris')).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] OIDC is enabled, adding authOpenIDSubfolderForRedirectURLs to server settings')).to.be.true
       expect(queryInterface.sequelize.query.calledTwice).to.be.true
-      expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
       expect(
-        queryInterface.sequelize.query.calledWith('UPDATE settings SET value = :value WHERE key = "server-settings";', {
+        queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+          replacements: { settingsKey: 'server-settings' }
+        })
+      ).to.be.true
+      expect(
+        queryInterface.sequelize.query.calledWith('UPDATE settings SET value = :value WHERE key = :settingsKey;', {
           replacements: {
-            value: JSON.stringify({ authActiveAuthMethods: ['openid'], authOpenIDSubfolderForRedirectURLs: '' })
+            value: JSON.stringify({ authActiveAuthMethods: ['openid'], authOpenIDSubfolderForRedirectURLs: '' }),
+            settingsKey: 'server-settings'
           }
         })
       ).to.be.true
@@ -49,8 +54,29 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(logger.info.calledWith('[2.17.4 migration] UPGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris')).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] OIDC is not enabled, no action required')).to.be.true
       expect(queryInterface.sequelize.query.calledOnce).to.be.true
-      expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
+      expect(
+        queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+          replacements: { settingsKey: 'server-settings' }
+        })
+      ).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] UPGRADE END: 2.17.4-use-subfolder-for-oidc-redirect-uris')).to.be.true
+    })
+
+    it('should handle already-parsed object server settings', async () => {
+      queryInterface.sequelize.query.onFirstCall().resolves([[{ value: { authActiveAuthMethods: ['openid'] } }]])
+      queryInterface.sequelize.query.onSecondCall().resolves()
+
+      await up({ context })
+
+      expect(queryInterface.sequelize.query.calledTwice).to.be.true
+      expect(
+        queryInterface.sequelize.query.calledWith('UPDATE settings SET value = :value WHERE key = :settingsKey;', {
+          replacements: {
+            value: JSON.stringify({ authActiveAuthMethods: ['openid'], authOpenIDSubfolderForRedirectURLs: '' }),
+            settingsKey: 'server-settings'
+          }
+        })
+      ).to.be.true
     })
 
     it('should throw an error if server settings cannot be parsed', async () => {
@@ -60,7 +86,11 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
         await up({ context })
       } catch (error) {
         expect(queryInterface.sequelize.query.calledOnce).to.be.true
-        expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
+        expect(
+          queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+            replacements: { settingsKey: 'server-settings' }
+          })
+        ).to.be.true
         expect(logger.error.calledWith('[2.17.4 migration] Error parsing server settings:')).to.be.true
         expect(error).to.be.instanceOf(Error)
       }
@@ -73,7 +103,11 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
         await up({ context })
       } catch (error) {
         expect(queryInterface.sequelize.query.calledOnce).to.be.true
-        expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
+        expect(
+          queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+            replacements: { settingsKey: 'server-settings' }
+          })
+        ).to.be.true
         expect(logger.error.calledWith('[2.17.4 migration] Server settings not found')).to.be.true
         expect(error).to.be.instanceOf(Error)
       }
@@ -90,11 +124,16 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(logger.info.calledWith('[2.17.4 migration] DOWNGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris ')).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] Removing authOpenIDSubfolderForRedirectURLs from server settings')).to.be.true
       expect(queryInterface.sequelize.query.calledTwice).to.be.true
-      expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
       expect(
-        queryInterface.sequelize.query.calledWith('UPDATE settings SET value = :value WHERE key = "server-settings";', {
+        queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+          replacements: { settingsKey: 'server-settings' }
+        })
+      ).to.be.true
+      expect(
+        queryInterface.sequelize.query.calledWith('UPDATE settings SET value = :value WHERE key = :settingsKey;', {
           replacements: {
-            value: JSON.stringify({})
+            value: JSON.stringify({}),
+            settingsKey: 'server-settings'
           }
         })
       ).to.be.true
@@ -109,7 +148,11 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(logger.info.calledWith('[2.17.4 migration] DOWNGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris ')).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] authOpenIDSubfolderForRedirectURLs not found in server settings, no action required')).to.be.true
       expect(queryInterface.sequelize.query.calledOnce).to.be.true
-      expect(queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = "server-settings";')).to.be.true
+      expect(
+        queryInterface.sequelize.query.calledWith('SELECT value FROM settings WHERE key = :settingsKey;', {
+          replacements: { settingsKey: 'server-settings' }
+        })
+      ).to.be.true
       expect(logger.info.calledWith('[2.17.4 migration] DOWNGRADE END: 2.17.4-use-subfolder-for-oidc-redirect-uris ')).to.be.true
     })
   })

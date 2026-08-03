@@ -720,6 +720,11 @@ class LibraryItem extends Model {
    * @param {import('../Database').sequelize} sequelize
    */
   static init(sequelize) {
+    const titleIndexField = sequelize.getDialect() === 'postgres' ? 'title' : { name: 'title', collate: 'NOCASE' }
+    const titleIgnorePrefixIndexField = sequelize.getDialect() === 'postgres' ? 'titleIgnorePrefix' : { name: 'titleIgnorePrefix', collate: 'NOCASE' }
+    const authorNamesFirstLastIndexField = sequelize.getDialect() === 'postgres' ? 'authorNamesFirstLast' : { name: 'authorNamesFirstLast', collate: 'NOCASE' }
+    const authorNamesLastFirstIndexField = sequelize.getDialect() === 'postgres' ? 'authorNamesLastFirst' : { name: 'authorNamesLastFirst', collate: 'NOCASE' }
+
     super.init(
       {
         id: {
@@ -768,16 +773,16 @@ class LibraryItem extends Model {
             fields: ['libraryId', 'mediaType', 'createdAt']
           },
           {
-            fields: ['libraryId', 'mediaType', { name: 'title', collate: 'NOCASE' }]
+            fields: ['libraryId', 'mediaType', titleIndexField]
           },
           {
-            fields: ['libraryId', 'mediaType', { name: 'titleIgnorePrefix', collate: 'NOCASE' }]
+            fields: ['libraryId', 'mediaType', titleIgnorePrefixIndexField]
           },
           {
-            fields: ['libraryId', 'mediaType', { name: 'authorNamesFirstLast', collate: 'NOCASE' }]
+            fields: ['libraryId', 'mediaType', authorNamesFirstLastIndexField]
           },
           {
-            fields: ['libraryId', 'mediaType', { name: 'authorNamesLastFirst', collate: 'NOCASE' }]
+            fields: ['libraryId', 'mediaType', authorNamesLastFirstIndexField]
           },
           {
             fields: ['libraryId', 'mediaId', 'mediaType']

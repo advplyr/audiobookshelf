@@ -34,6 +34,16 @@ describe('migration-v2.17.3-fk-constraints', () => {
       await queryInterface.dropAllTables()
     })
 
+    it('should skip sqlite-specific migration on non-sqlite dialect', async () => {
+      sinon.stub(queryInterface.sequelize, 'getDialect').returns('postgres')
+      const queryStub = sinon.stub(queryInterface.sequelize, 'query').resolves([])
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      expect(queryStub.called).to.equal(false)
+      expect(loggerInfoStub.calledWith(sinon.match('[2.17.3 migration] Skipping sqlite-specific foreign key rewrite on non-sqlite dialect'))).to.equal(true)
+    })
+
     it('should fix table foreign key constraints', async () => {
       // Create tables with missing foreign key constraints: libraryItems, feeds, mediaItemShares, playbackSessions, playlistMediaItems, mediaProgresses
       await queryInterface.sequelize.query('CREATE TABLE `libraryItems` (`id` UUID UNIQUE PRIMARY KEY, `libraryId` UUID REFERENCES `libraries` (`id`), `libraryFolderId` UUID REFERENCES `libraryFolders` (`id`));')

@@ -527,54 +527,128 @@ class ApiRouter {
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
+  async getUserListeningSessionsPageHelper(userId, page = 0, itemsPerPage = 10, mediaItemId = null) {
+    const where = { userId }
+    if (mediaItemId) where.mediaItemId = mediaItemId
+
+    const start = page * itemsPerPage
+    const [total, sessions] = await Promise.all([
+      Database.countPlaybackSessions(where),
+      Database.getPlaybackSessions(where, {
+        limit: itemsPerPage,
+        offset: start,
+        order: [['updatedAt', 'DESC']]
+      })
+    ])
+
+    return {
+      total,
+      numPages: Math.ceil(total / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+  }
+
   async getUserItemListeningSessionsHelper(userId, mediaItemId) {
     const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
-  async getUserListeningStatsHelpers(userId) {
+  async getUserListeningStatsHelpers(userId, options = {}) {
+    const startedAt = Date.now()
     const today = date.format(new Date(), 'YYYY-MM-DD')
+    const includeItems = options.includeItems !== false
+    const includeRecentSessions = options.includeRecentSessions !== false
+    const getSessionField = (session, key) => {
+      if (!session || typeof session !== 'object') return undefined
+      if (session[key] !== undefined) return session[key]
 
-    const listeningSessions = await this.getUserListeningSessionsHelper(userId)
+      const lowerKey = key.toLowerCase()
+      if (session[lowerKey] !== undefined) return session[lowerKey]
+
+      return undefined
+    }
+    const getSessionObjectField = (session, key) => {
+      const value = getSessionField(session, key)
+      if (!value) return null
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch (error) {
+          return null
+        }
+      }
+      return value
+    }
+
+    const tasks = [Database.getPlaybackSessionsForStats({ userId })]
+    if (includeRecentSessions) {
+      tasks.push(
+        Database.getPlaybackSessions({ userId }, {
+          limit: 10,
+          offset: 0,
+          order: [['updatedAt', 'DESC']]
+        })
+      )
+    }
+    const [listeningSessions, recentSessions = []] = await Promise.all(tasks)
+
     const listeningStats = {
       totalTime: 0,
-      items: {},
       days: {},
       dayOfWeek: {},
-      today: 0,
-      recentSessions: listeningSessions.slice(0, 10)
+      today: 0
     }
+    if (includeItems) listeningStats.items = {}
+    if (includeRecentSessions) listeningStats.recentSessions = recentSessions
     listeningSessions.forEach((s) => {
-      let sessionTimeListening = s.timeListening
-      if (typeof sessionTimeListening == 'string') {
-        sessionTimeListening = Number(sessionTimeListening)
-      }
+      const extraData = getSessionObjectField(s, 'extraData')
+      const libraryItemId = extraData?.libraryItemId || extraData?.libraryitemid || null
+      const sessionDate = getSessionField(s, 'date')
+      const sessionDayOfWeek = getSessionField(s, 'dayOfWeek')
+      const sessionUpdatedAt = getSessionField(s, 'updatedAt')
+      const sessionMediaMetadata = getSessionObjectField(s, 'mediaMetadata')
+      const numericListening = Number(getSessionField(s, 'timeListening'))
+      const sessionTimeListening = Number.isFinite(numericListening)
+        ? numericListening
+        : 0
 
-      if (s.dayOfWeek) {
-        if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
-        listeningStats.dayOfWeek[s.dayOfWeek] += sessionTimeListening
+      if (sessionDayOfWeek) {
+        if (!listeningStats.dayOfWeek[sessionDayOfWeek]) listeningStats.dayOfWeek[sessionDayOfWeek] = 0
+        listeningStats.dayOfWeek[sessionDayOfWeek] += sessionTimeListening
       }
-      if (s.date && sessionTimeListening > 0) {
-        if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
-        listeningStats.days[s.date] += sessionTimeListening
+      if (sessionDate && sessionTimeListening > 0) {
+        if (!listeningStats.days[sessionDate]) listeningStats.days[sessionDate] = 0
+        listeningStats.days[sessionDate] += sessionTimeListening
 
-        if (s.date === today) {
+        if (sessionDate === today) {
           listeningStats.today += sessionTimeListening
         }
       }
-      if (!listeningStats.items[s.libraryItemId]) {
-        listeningStats.items[s.libraryItemId] = {
-          id: s.libraryItemId,
-          timeListening: sessionTimeListening,
-          mediaMetadata: s.mediaMetadata,
-          lastUpdate: s.lastUpdate
+      if (!libraryItemId) {
+        listeningStats.totalTime += sessionTimeListening
+        return
+      }
+
+      if (includeItems) {
+        if (!listeningStats.items[libraryItemId]) {
+          listeningStats.items[libraryItemId] = {
+            id: libraryItemId,
+            timeListening: sessionTimeListening,
+            mediaMetadata: sessionMediaMetadata,
+            lastUpdate: sessionUpdatedAt
+          }
+        } else {
+          listeningStats.items[libraryItemId].timeListening += sessionTimeListening
         }
-      } else {
-        listeningStats.items[s.libraryItemId].timeListening += sessionTimeListening
       }
 
       listeningStats.totalTime += sessionTimeListening
     })
+    Logger.debug(
+      `[ApiRouter] Listening stats for user "${userId}" aggregated ${listeningSessions.length} sessions in ${Date.now() - startedAt}ms includeItems=${includeItems} includeRecentSessions=${includeRecentSessions}`
+    )
     return listeningStats
   }
 }

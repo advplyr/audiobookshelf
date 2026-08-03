@@ -24,6 +24,7 @@ const libraryFilters = require('../utils/queries/libraryFilters')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 const authorFilters = require('../utils/queries/authorFilters')
 const zipHelpers = require('../utils/zipHelpers')
+const { isPostgres, noCaseSortExpression, jsonArrayExpand } = require('../utils/sqlDialectHelpers')
 
 /**
  * @typedef RequestUserObject
@@ -1039,9 +1040,9 @@ class LibraryController {
     let order = undefined
     const direction = payload.sortDesc ? 'DESC' : 'ASC'
     if (payload.sortBy === 'name') {
-      order = [[Sequelize.literal('name COLLATE NOCASE'), direction]]
+      order = [[Sequelize.literal(noCaseSortExpression('name', Database.sequelize)), direction]]
     } else if (payload.sortBy === 'lastFirst') {
-      order = [[Sequelize.literal('lastFirst COLLATE NOCASE'), direction]]
+      order = [[Sequelize.literal(noCaseSortExpression('lastFirst', Database.sequelize)), direction]]
     } else if (payload.sortBy === 'addedAt') {
       order = [['createdAt', direction]]
     } else if (payload.sortBy === 'updatedAt') {
@@ -1338,16 +1339,23 @@ class LibraryController {
 
     const fileExt = req.query.ext === 'abs' ? 'abs' : 'json'
     const metadataFilename = `metadata.${fileExt}`
+    const metadataFilenameCountQuery = isPostgres(Database.sequelize)
+      ? `(SELECT count(*) FROM ${jsonArrayExpand('libraryFiles', Database.sequelize, { textValues: false })} WHERE json_each.value #>> '{metadata,filename}' = :metadataFilename)`
+      : `(SELECT count(*) FROM ${jsonArrayExpand('libraryFiles', Database.sequelize, { textValues: false })} WHERE json_valid(libraryFiles) AND json_extract(json_each.value, "$.metadata.filename") = :metadataFilename)`
+
     const libraryItemsWithMetadata = await Database.libraryItemModel.findAll({
       attributes: ['id', 'libraryFiles'],
       where: [
         {
           libraryId: req.library.id
         },
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(libraryFiles) AND json_extract(json_each.value, "$.metadata.filename") = "${metadataFilename}")`), {
+        Sequelize.where(Sequelize.literal(metadataFilenameCountQuery), {
           [Sequelize.Op.gte]: 1
         })
-      ]
+      ],
+      replacements: {
+        metadataFilename
+      }
     })
     if (!libraryItemsWithMetadata.length) {
       Logger.info(`[LibraryController] No ${metadataFilename} files found to remove`)

@@ -52,16 +52,52 @@ class PlaybackSession extends Model {
     this.createdAt
   }
 
-  static async getOldPlaybackSessions(where = null) {
+  static async getOldPlaybackSessions(where = null, options = {}) {
+    const {
+      limit = null,
+      offset = null,
+      order = [['updatedAt', 'DESC']],
+      includeDevice = true
+    } = options
+
     const playbackSessions = await this.findAll({
       where,
-      include: [
-        {
-          model: this.sequelize.models.device
-        }
-      ]
+      limit,
+      offset,
+      order,
+      include: includeDevice
+        ? [
+            {
+              model: this.sequelize.models.device
+            }
+          ]
+        : undefined
     })
     return playbackSessions.map((session) => this.getOldPlaybackSession(session))
+  }
+
+  static countWithWhere(where = null) {
+    return this.count({ where })
+  }
+
+  static getPlaybackSessionsForStats(where = null) {
+    return this.findAll({
+      where,
+      order: [['updatedAt', 'DESC']],
+      attributes: [
+        'mediaItemId',
+        'mediaItemType',
+        'displayTitle',
+        'displayAuthor',
+        'timeListening',
+        'mediaMetadata',
+        'date',
+        'dayOfWeek',
+        'updatedAt',
+        'extraData'
+      ],
+      raw: true
+    })
   }
 
   static async getById(sessionId) {
@@ -190,7 +226,7 @@ class PlaybackSession extends Model {
         currentTime: DataTypes.FLOAT,
         serverVersion: DataTypes.STRING,
         coverPath: DataTypes.STRING,
-        timeListening: DataTypes.INTEGER,
+        timeListening: DataTypes.FLOAT,
         mediaMetadata: DataTypes.JSON,
         date: DataTypes.STRING,
         dayOfWeek: DataTypes.STRING,
@@ -237,18 +273,20 @@ class PlaybackSession extends Model {
       if (!Array.isArray(findResult)) findResult = [findResult]
 
       for (const instance of findResult) {
+        const values = instance?.dataValues
+
         if (instance.mediaItemType === 'book' && instance.book !== undefined) {
           instance.mediaItem = instance.book
-          instance.dataValues.mediaItem = instance.dataValues.book
+          if (values) values.mediaItem = values.book
         } else if (instance.mediaItemType === 'podcastEpisode' && instance.podcastEpisode !== undefined) {
           instance.mediaItem = instance.podcastEpisode
-          instance.dataValues.mediaItem = instance.dataValues.podcastEpisode
+          if (values) values.mediaItem = values.podcastEpisode
         }
         // To prevent mistakes:
         delete instance.book
-        delete instance.dataValues.book
+        if (values) delete values.book
         delete instance.podcastEpisode
-        delete instance.dataValues.podcastEpisode
+        if (values) delete values.podcastEpisode
       }
     })
   }

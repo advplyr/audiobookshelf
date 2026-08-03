@@ -22,8 +22,10 @@ async function up({ context: { queryInterface, logger } }) {
 
   if (await queryInterface.tableExists('sessions')) {
     const tableDescription = await queryInterface.describeTable('sessions')
+    // Postgres folds unquoted identifiers to lowercase, so match column names case-insensitively
+    const hasColumn = (name) => Object.keys(tableDescription).some((column) => column.toLowerCase() === name.toLowerCase())
 
-    if (!tableDescription.lastRefreshToken) {
+    if (!hasColumn('lastRefreshToken')) {
       logger.info(`${loggerPrefix} Adding lastRefreshToken column to sessions table`)
       await queryInterface.addColumn('sessions', 'lastRefreshToken', {
         type: queryInterface.sequelize.Sequelize.DataTypes.STRING,
@@ -33,7 +35,7 @@ async function up({ context: { queryInterface, logger } }) {
       logger.info(`${loggerPrefix} lastRefreshToken column already exists in sessions table`)
     }
 
-    if (!tableDescription.lastRefreshTokenExpiresAt) {
+    if (!hasColumn('lastRefreshTokenExpiresAt')) {
       logger.info(`${loggerPrefix} Adding lastRefreshTokenExpiresAt column to sessions table`)
       await queryInterface.addColumn('sessions', 'lastRefreshTokenExpiresAt', {
         type: queryInterface.sequelize.Sequelize.DataTypes.DATE,
@@ -60,15 +62,17 @@ async function down({ context: { queryInterface, logger } }) {
 
   if (await queryInterface.tableExists('sessions')) {
     const tableDescription = await queryInterface.describeTable('sessions')
+    // Postgres folds unquoted identifiers to lowercase, so match column names case-insensitively
+    const hasColumn = (name) => Object.keys(tableDescription).some((column) => column.toLowerCase() === name.toLowerCase())
 
-    if (tableDescription.lastRefreshToken) {
+    if (hasColumn('lastRefreshToken')) {
       logger.info(`${loggerPrefix} Removing lastRefreshToken column from sessions table`)
       await queryInterface.removeColumn('sessions', 'lastRefreshToken')
     } else {
       logger.info(`${loggerPrefix} lastRefreshToken column does not exist in sessions table`)
     }
 
-    if (tableDescription.lastRefreshTokenExpiresAt) {
+    if (hasColumn('lastRefreshTokenExpiresAt')) {
       logger.info(`${loggerPrefix} Removing lastRefreshTokenExpiresAt column from sessions table`)
       await queryInterface.removeColumn('sessions', 'lastRefreshTokenExpiresAt')
     } else {

@@ -19,12 +19,21 @@ async function up({ context: { queryInterface, logger } }) {
   logger.info('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique ')
 
   // Run reindex nocase to fix potential corruption issues due to the bad sqlite extension introduced in v2.12.0
-  logger.info('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues')
-  await queryInterface.sequelize.query('REINDEX NOCASE;')
+  if (queryInterface.sequelize.getDialect() === 'sqlite') {
+    logger.info('[2.15.0 migration] Reindexing NOCASE indices to fix potential hidden corruption issues')
+    await queryInterface.sequelize.query('REINDEX NOCASE;')
+  } else {
+    logger.info('[2.15.0 migration] Skipping NOCASE reindex on non-sqlite dialect')
+  }
 
   // Check if the unique index already exists
   const seriesIndexes = await queryInterface.showIndex('Series')
-  if (seriesIndexes.some((index) => index.name === 'unique_series_name_per_library')) {
+  if (
+    seriesIndexes.some((index) => {
+      const indexName = index?.name || index?.indexName || ''
+      return String(indexName).toLowerCase() === 'unique_series_name_per_library'
+    })
+  ) {
     logger.info('[2.15.0 migration] Unique index on Series.name and Series.libraryId already exists')
     logger.info('[2.15.0 migration] UPGRADE END: 2.15.0-series-column-unique ')
     return
@@ -181,11 +190,20 @@ async function up({ context: { queryInterface, logger } }) {
   logger.info(`[2.15.0 migration] Deduplication complete`)
 
   // Create a unique index based on the name and library ID for the `Series` table
-  await queryInterface.addIndex('Series', ['name', 'libraryId'], {
-    unique: true,
-    name: 'unique_series_name_per_library'
-  })
-  logger.info('[2.15.0 migration] Added unique index on Series.name and Series.libraryId')
+  try {
+    await queryInterface.addIndex('Series', ['name', 'libraryId'], {
+      unique: true,
+      name: 'unique_series_name_per_library'
+    })
+    logger.info('[2.15.0 migration] Added unique index on Series.name and Series.libraryId')
+  } catch (error) {
+    const alreadyExists =
+      (error?.name === 'SequelizeDatabaseError' && /already exists/i.test(error?.message || '')) ||
+      error?.original?.code === '42P07'
+    if (!alreadyExists) throw error
+
+    logger.info('[2.15.0 migration] Unique index on Series.name and Series.libraryId already exists')
+  }
 
   logger.info('[2.15.0 migration] UPGRADE END: 2.15.0-series-column-unique ')
 }

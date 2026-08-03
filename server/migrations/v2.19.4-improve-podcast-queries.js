@@ -26,6 +26,12 @@ async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific migration on non-sqlite dialect`)
+    logger.info(`${loggerPrefix} UPGRADE END: ${migrationName}`)
+    return
+  }
+
   // Add numEpisodes column to podcasts table
   await addColumn(queryInterface, logger, 'podcasts', 'numEpisodes', { type: queryInterface.sequelize.Sequelize.INTEGER, allowNull: false, defaultValue: 0 })
 
@@ -59,6 +65,12 @@ async function up({ context: { queryInterface, logger } }) {
 async function down({ context: { queryInterface, logger } }) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
+
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific rollback on non-sqlite dialect`)
+    logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
+    return
+  }
 
   // Remove triggers from libraryItems
   await removeTrigger(queryInterface, logger, 'podcasts', 'title', 'libraryItems', 'title')
