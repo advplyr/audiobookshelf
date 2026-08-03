@@ -937,6 +937,7 @@
   "MessageTaskScanNoChangesNeeded": "No changes needed",
   "MessageTaskScanningFileChanges": "Scanning file changes in \"{0}\"",
   "MessageTaskScanningLibrary": "Scanning \"{0}\" library",
+  "MessageTaskBatchScanningLibraryItems": "Re-scanning {0} library items",
   "MessageTaskTargetDirectoryNotWritable": "Target directory is not writable",
   "MessageThinking": "Thinking...",
   "MessageUploaderItemFailed": "Failed to upload",

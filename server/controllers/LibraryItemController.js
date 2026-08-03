@@ -19,6 +19,7 @@ const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
 const CoverManager = require('../managers/CoverManager')
 const ShareManager = require('../managers/ShareManager')
+const TaskManager = require('../managers/TaskManager')
 
 /**
  * @typedef RequestUserObject
@@ -833,18 +834,63 @@ class LibraryItemController {
       return res.sendStatus(400)
     }
 
+    const libraryId = libraryItems[0].libraryId
+    const library = await Database.libraryModel.findByPk(libraryId, { attributes: ['id', 'name'] })
+
     res.sendStatus(200)
 
-    const libraryId = libraryItems[0].libraryId
-    for (const libraryItem of libraryItems) {
-      if (libraryItem.isFile) {
-        Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
-      } else {
-        await LibraryItemScanner.scanLibraryItem(libraryItem.id)
-      }
+    const itemCount = libraryItems.length
+    const taskData = {
+      libraryId,
+      libraryName: library?.name || '',
+      itemCount
+    }
+    const taskTitleString = {
+      text: `Re-scanning ${itemCount} library items`,
+      key: 'MessageTaskBatchScanningLibraryItems',
+      subs: [String(itemCount)]
+    }
+    const task = TaskManager.createAndAddTask('batch-item-scan', taskTitleString, null, true, taskData)
+    const startedAt = Date.now()
+    const scanResults = {
+      updated: 0,
+      missing: 0,
+      added: 0
     }
 
-    await Database.resetLibraryIssuesFilterData(libraryId)
+    try {
+      for (const libraryItem of libraryItems) {
+        if (libraryItem.isFile) {
+          Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
+          continue
+        }
+        const result = await LibraryItemScanner.scanLibraryItem(libraryItem.id)
+        if (result === ScanResult.UPDATED) {
+          scanResults.updated++
+        } else if (result === ScanResult.REMOVED) {
+          scanResults.missing++
+        } else if (result === ScanResult.ADDED) {
+          scanResults.added++
+        }
+      }
+
+      await Database.resetLibraryIssuesFilterData(libraryId)
+
+      task.data.scanResults = {
+        ...scanResults,
+        elapsed: Date.now() - startedAt
+      }
+      task.setFinished(null, true)
+    } catch (error) {
+      Logger.error(`[LibraryItemController] Batch scan failed`, error)
+      const taskFailedString = {
+        text: 'Failed',
+        key: 'MessageTaskFailed'
+      }
+      task.setFailed(taskFailedString)
+    }
+
+    TaskManager.taskFinished(task)
   }
 
   /**
