@@ -100,6 +100,91 @@ class MiscController {
   }
 
   /**
+   * POST: /api/upload/chunk
+   * Handle chunked upload
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async handleChunkUpload(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
+      return res.sendStatus(403)
+    }
+    if (!req.files || !Object.values(req.files).length) {
+      Logger.error('Invalid request, no files')
+      return res.sendStatus(400)
+    }
+
+    const { fileId, chunkIndex, totalChunks, filename, library: libraryId, folder: folderId, title, author, series } = req.body
+
+    if (!fileId || chunkIndex === undefined || !totalChunks || !filename || !libraryId || !folderId || !title) {
+      return res.status(400).send('Invalid request body for chunk upload')
+    }
+
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    if (!req.user.checkCanAccessLibrary(library.id)) {
+      Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
+      return res.sendStatus(403)
+    }
+
+    const tmpDir = Path.join(global.MetadataPath, 'tmp', 'uploads', fileId)
+    await fs.ensureDir(tmpDir)
+
+    const file = Object.values(req.files)[0]
+    const chunkPath = Path.join(tmpDir, `${fileId}_${chunkIndex}`)
+
+    try {
+      await file.mv(chunkPath)
+
+      // Reassembly logic
+      if (parseInt(chunkIndex) === parseInt(totalChunks) - 1) {
+        const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+        if (!folder) return res.status(404).send('Folder not found')
+
+        const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+        const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
+        const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+        await fs.ensureDir(outputDirectory)
+
+        const finalFilePath = Path.join(outputDirectory, sanitizeFilename(filename))
+        const writeStream = fs.createWriteStream(finalFilePath)
+
+        for (let i = 0; i < totalChunks; i++) {
+          const currentChunkPath = Path.join(tmpDir, `${fileId}_${i}`)
+          const data = await fs.readFile(currentChunkPath)
+          if (!writeStream.write(data)) {
+            await new Promise((resolve) => writeStream.once('drain', resolve))
+          }
+        }
+
+        writeStream.end()
+
+        writeStream.on('finish', async () => {
+          Logger.info(`Successfully merged ${totalChunks} chunks for file ${filename}`)
+          await fs.remove(tmpDir) // Cleanup
+          res.sendStatus(200)
+        })
+
+        writeStream.on('error', async (error) => {
+          Logger.error(`Error merging chunks for file ${filename}`, error)
+          await fs.remove(tmpDir).catch((e) => Logger.error('Failed to clean up temp dir on merge error', e)) // Cleanup on error
+          res.status(500).send('Error merging file')
+        })
+      } else {
+        res.sendStatus(200) // Chunk saved, waiting for more
+      }
+    } catch (error) {
+      Logger.error(`Failed to move chunk ${chunkIndex} for file ${fileId}`, error)
+      await fs.remove(tmpDir).catch((e) => Logger.error('Failed to clean up temp dir on chunk error', e)) // Cleanup
+      return res.status(500).send('Failed to save chunk')
+    }
+  }
+
+  /**
    * GET: /api/tasks
    * Get tasks for task manager
    *

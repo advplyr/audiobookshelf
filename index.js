@@ -1,3 +1,9 @@
+// Node 25 compatibility: SlowBuffer is removed
+const buffer = require('buffer')
+if (!buffer.SlowBuffer) {
+  buffer.SlowBuffer = buffer.Buffer
+}
+
 const optionDefinitions = [
   { name: 'config', alias: 'c', type: String },
   { name: 'metadata', alias: 'm', type: String },
