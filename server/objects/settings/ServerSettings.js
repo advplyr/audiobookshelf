@@ -56,6 +56,11 @@ class ServerSettings {
     this.language = 'en-us'
     this.allowedOrigins = []
 
+    /** @type {boolean} If true, users can rate and review library items */
+    this.enableReviews = true
+    /** @type {boolean} If true, the Ratings page link is shown in the library sidebar */
+    this.showReviewsInSidebar = true
+
     this.logLevel = Logger.logLevel
 
     this.version = packageJson.version
@@ -123,6 +128,9 @@ class ServerSettings {
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
     this.allowedOrigins = settings.allowedOrigins || []
+
+    this.enableReviews = settings.enableReviews !== false
+    this.showReviewsInSidebar = settings.showReviewsInSidebar !== false
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
@@ -235,6 +243,8 @@ class ServerSettings {
       timeFormat: this.timeFormat,
       language: this.language,
       allowedOrigins: this.allowedOrigins,
+      enableReviews: this.enableReviews,
+      showReviewsInSidebar: this.showReviewsInSidebar,
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
