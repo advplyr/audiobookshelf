@@ -307,37 +307,87 @@ export default {
       }
     },
     async uploadItem(item) {
-      var form = new FormData()
-      form.set('title', item.title)
-      if (!this.selectedLibraryIsPodcast) {
-        form.set('author', item.author || '')
-        form.set('series', item.series || '')
-      }
-      form.set('library', this.selectedLibraryId)
-      form.set('folder', this.selectedFolderId)
+      const chunkSize = 5 * 1024 * 1024
+      const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const totalBytes = item.files.reduce((sum, file) => sum + file.size, 0)
+      let sentBytes = 0
 
-      var index = 0
-      item.files.forEach((file) => {
-        form.set(`${index++}`, file)
-      })
+      for (let fileIndex = 0; fileIndex < item.files.length; fileIndex++) {
+        const file = item.files[fileIndex]
+        const numChunks = Math.max(1, Math.ceil(file.size / chunkSize))
 
-      const config = {
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.lengthComputable) {
-            const progress = {
-              loaded: progressEvent.loaded,
-              total: progressEvent.total
-            }
-            this.updateItemCardProgress(item.index, progress)
+        let uploadedChunks = []
+        try {
+          const existing = await this.$axios.$get(`/api/upload/chunk/${uploadId}/${fileIndex}`)
+          uploadedChunks = existing.chunks || []
+        } catch (error) {
+          uploadedChunks = []
+        }
+
+        for (let chunkIndex = 0; chunkIndex < numChunks; chunkIndex++) {
+          const start = chunkIndex * chunkSize
+          const end = Math.min(file.size, start + chunkSize)
+          if (uploadedChunks.includes(chunkIndex)) {
+            sentBytes += end - start
+            this.updateItemCardProgress(item.index, { loaded: sentBytes, total: totalBytes })
+            continue
           }
+
+          const form = new FormData()
+          form.set('uploadId', uploadId)
+          form.set('fileIndex', `${fileIndex}`)
+          form.set('chunkIndex', `${chunkIndex}`)
+          form.set('numChunks', `${numChunks}`)
+          form.set('chunk', file.slice(start, end), file.name)
+
+          let attempt = 0
+          while (true) {
+            try {
+              await this.$axios.$post('/api/upload/chunk', form, {
+                onUploadProgress: (progressEvent) => {
+                  if (progressEvent.lengthComputable) {
+                    this.updateItemCardProgress(item.index, { loaded: sentBytes + progressEvent.loaded, total: totalBytes })
+                  }
+                }
+              })
+              break
+            } catch (error) {
+              attempt++
+              if (attempt >= 5) {
+                console.error('Failed to upload chunk', error)
+                this.$toast.error(error.response?.data || 'Oops, something went wrong...')
+                return false
+              }
+              await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+            }
+          }
+
+          sentBytes += end - start
+          this.updateItemCardProgress(item.index, { loaded: sentBytes, total: totalBytes })
         }
       }
 
+      const payload = {
+        uploadId,
+        title: item.title,
+        library: this.selectedLibraryId,
+        folder: this.selectedFolderId,
+        files: item.files.map((file, index) => ({
+          index,
+          name: file.name,
+          numChunks: Math.max(1, Math.ceil(file.size / chunkSize))
+        }))
+      }
+      if (!this.selectedLibraryIsPodcast) {
+        payload.author = item.author || ''
+        payload.series = item.series || ''
+      }
+
       return this.$axios
-        .$post('/api/upload', form, config)
+        .$post('/api/upload/finalize', payload)
         .then(() => true)
         .catch((error) => {
-          console.error('Failed to upload item', error)
+          console.error('Failed to finalize upload', error)
           this.$toast.error(error.response?.data || 'Oops, something went wrong...')
           return false
         })

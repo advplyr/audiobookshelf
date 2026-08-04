@@ -15,6 +15,52 @@ const { sanitizeFilename } = require('../utils/fileUtils')
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
 
+function getUploadsRoot() {
+  return process.env.UPLOAD_TEMP_DIR || Path.join(global.MetadataPath, 'uploads')
+}
+
+function getUploadSessionDir(uploadId) {
+  if (!uploadId || typeof uploadId !== 'string' || !/^[a-z0-9-]+$/i.test(uploadId)) {
+    return null
+  }
+  return Path.join(getUploadsRoot(), uploadId)
+}
+
+function getUploadChunkDir(uploadId, fileIndex) {
+  const sessionDir = getUploadSessionDir(uploadId)
+  if (!sessionDir || !/^\d+$/.test(`${fileIndex}`)) {
+    return null
+  }
+  return Path.join(sessionDir, `${Number(fileIndex)}`)
+}
+
+async function assembleChunks(chunkDir, numChunks, destPath) {
+  for (let i = 0; i < numChunks; i++) {
+    if (!(await fs.pathExists(Path.join(chunkDir, `${i}`)))) {
+      return false
+    }
+  }
+  const writeStream = fs.createWriteStream(destPath)
+  try {
+    for (let i = 0; i < numChunks; i++) {
+      const chunkPath = Path.join(chunkDir, `${i}`)
+      await new Promise((resolve, reject) => {
+        const readStream = fs.createReadStream(chunkPath)
+        readStream.on('error', reject)
+        readStream.on('end', resolve)
+        readStream.pipe(writeStream, { end: false })
+      })
+    }
+  } finally {
+    writeStream.end()
+  }
+  await new Promise((resolve, reject) => {
+    writeStream.on('close', resolve)
+    writeStream.on('error', reject)
+  })
+  return true
+}
+
 /**
  * @typedef RequestUserObject
  * @property {import('../models/User')} user
@@ -96,6 +142,124 @@ class MiscController {
         })
     }
 
+    res.sendStatus(200)
+  }
+
+  /**
+   * GET: /api/upload/chunk/:uploadId/:fileIndex
+   * List chunk indices already stored for a file, so the client can resume
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getUploadChunks(req, res) {
+    if (!req.user.canUpload) {
+      return res.sendStatus(403)
+    }
+    const chunkDir = getUploadChunkDir(req.params.uploadId, req.params.fileIndex)
+    if (!chunkDir) {
+      return res.status(400).send('Invalid upload reference')
+    }
+    if (!(await fs.pathExists(chunkDir))) {
+      return res.json({ chunks: [] })
+    }
+    const entries = await fs.readdir(chunkDir)
+    const chunks = entries.map((name) => Number(name)).filter((n) => Number.isInteger(n))
+    res.json({ chunks })
+  }
+
+  /**
+   * POST: /api/upload/chunk
+   * Receive a single chunk of a resumable upload
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async handleUploadChunk(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
+      return res.sendStatus(403)
+    }
+    if (!req.files || !req.files.chunk) {
+      return res.status(400).send('No chunk in request')
+    }
+    const { uploadId, fileIndex, chunkIndex } = req.body
+    const chunkDir = getUploadChunkDir(uploadId, fileIndex)
+    if (!chunkDir || !/^\d+$/.test(`${chunkIndex}`)) {
+      return res.status(400).send('Invalid chunk request')
+    }
+    await fs.ensureDir(chunkDir)
+    await req.files.chunk.mv(Path.join(chunkDir, `${Number(chunkIndex)}`))
+    res.sendStatus(200)
+  }
+
+  /**
+   * POST: /api/upload/finalize
+   * Assemble all received chunks into files and move them to the library folder
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async handleUploadFinalize(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
+      return res.sendStatus(403)
+    }
+
+    let { uploadId, title, author, series, folder: folderId, library: libraryId, files } = req.body
+    if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string' || !Array.isArray(files) || !files.length) {
+      return res.status(400).send('Invalid request body')
+    }
+    const sessionDir = getUploadSessionDir(uploadId)
+    if (!sessionDir) {
+      return res.status(400).send('Invalid upload reference')
+    }
+    if (!series || typeof series !== 'string') {
+      series = null
+    }
+    if (!author || typeof author !== 'string') {
+      author = null
+    }
+
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+
+    if (!req.user.checkCanAccessLibrary(library.id)) {
+      Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
+      return res.sendStatus(403)
+    }
+
+    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+    if (!folder) {
+      return res.status(404).send('Folder not found')
+    }
+
+    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
+    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+
+    await fs.ensureDir(outputDirectory)
+
+    Logger.info(`Assembling ${files.length} uploaded files to`, outputDirectory)
+
+    for (const file of files) {
+      const chunkDir = getUploadChunkDir(uploadId, file.index)
+      const numChunks = Number(file.numChunks)
+      if (!chunkDir || !file.name || typeof file.name !== 'string' || !Number.isInteger(numChunks) || numChunks < 1) {
+        await fs.remove(sessionDir)
+        return res.status(400).send('Invalid file entry')
+      }
+      const destPath = Path.join(outputDirectory, sanitizeFilename(file.name))
+      const assembled = await assembleChunks(chunkDir, numChunks, destPath)
+      if (!assembled) {
+        await fs.remove(sessionDir)
+        return res.status(400).send('Missing chunks')
+      }
+    }
+
+    await fs.remove(sessionDir)
     res.sendStatus(200)
   }
 
