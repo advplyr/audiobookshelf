@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "chai": "^4.3.10",
-    "mocha": "^10.2.0",
+    "mocha": "^11.8.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1"
