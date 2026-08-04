@@ -71,13 +71,13 @@ const Utils = {
         poll: (targetPath, timeout = constants_1.POLLING_TIMEOUT) => {
             return ripstat_1.default(targetPath, timeout).catch(Utils.lang.noop);
         },
-        readdir: async (rootPath, ignore, depth = Infinity, signal, readdirMap) => {
+        readdir: async (rootPath, ignore, depth = Infinity, signal, readdirMap, followSymlinks = false) => {
             if (readdirMap && depth === 1 && rootPath in readdirMap) { // Reusing cached data
                 const result = readdirMap[rootPath];
                 return [result.directories, result.files];
             }
             else { // Retrieving fresh data
-                const result = await tiny_readdir_1.default(rootPath, { depth, ignore, signal });
+                const result = await tiny_readdir_1.default(rootPath, { depth, ignore, signal, followSymlinks });
                 return [result.directories, result.files];
             }
         }

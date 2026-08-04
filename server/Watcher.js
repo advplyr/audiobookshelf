@@ -67,7 +67,8 @@ class FolderWatcher extends EventEmitter {
       renameTimeout: 2000,
       recursive: true,
       ignoreInitial: true,
-      persistent: true
+      persistent: true,
+      followSymlinks: true
     })
     watcher
       .on('add', (path) => {
