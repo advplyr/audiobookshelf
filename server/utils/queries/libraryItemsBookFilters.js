@@ -1096,6 +1096,7 @@ module.exports = {
 
     const matchTitle = textSearchQuery.matchExpression('book.title')
     const matchSubtitle = textSearchQuery.matchExpression('book.subtitle')
+    const exactTitleMatch = `book.title COLLATE NOCASE = ${Database.sequelize.escape(query)}`
 
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
@@ -1143,6 +1144,7 @@ module.exports = {
       ],
       subQuery: false,
       distinct: true,
+      order: [[Sequelize.literal(exactTitleMatch), 'DESC']],
       limit,
       offset
     })
