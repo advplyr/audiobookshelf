@@ -1,0 +1,9 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = audiobookshelf
+
+[Action]
+Description = Restarting audiobookshelf...
+When = PostTransaction
+Exec = /usr/bin/systemctl try-restart audiobookshelf.service
