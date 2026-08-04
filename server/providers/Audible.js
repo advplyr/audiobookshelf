@@ -16,7 +16,8 @@ class Audible {
       jp: '.co.jp',
       it: '.it',
       in: '.in',
-      es: '.es'
+      es: '.es',
+      br: '.com.br'
     }
   }
 
