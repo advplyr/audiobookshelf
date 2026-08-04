@@ -437,6 +437,10 @@ class LibraryItemController {
    * @param {Response} res
    */
   startPlaybackSession(req, res) {
+    if (!req.user.canStream) {
+      Logger.warn(`User "${req.user.username}" attempted to stream without permission`)
+      return res.sendStatus(403)
+    }
     if (!req.libraryItem.hasAudioTracks) {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
@@ -454,6 +458,10 @@ class LibraryItemController {
    * @param {Response} res
    */
   startEpisodePlaybackSession(req, res) {
+    if (!req.user.canStream) {
+      Logger.warn(`User "${req.user.username}" attempted to stream without permission`)
+      return res.sendStatus(403)
+    }
     if (!req.libraryItem.isPodcast) {
       Logger.error(`[LibraryItemController] startEpisodePlaybackSession invalid media type ${req.libraryItem.id}`)
       return res.sendStatus(400)
