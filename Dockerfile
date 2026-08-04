@@ -25,7 +25,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* /server/
 COPY /server /server/server
 
 RUN case "$TARGETPLATFORM" in \
