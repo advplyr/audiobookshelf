@@ -158,10 +158,55 @@ module.exports = {
           model: Database.bookSeriesModel,
           include: {
             model: Database.bookModel,
+            attributes: [
+              'id',
+              'title',
+              'subtitle',
+              'publishedYear',
+              'publishedDate',
+              'publisher',
+              'description',
+              'isbn',
+              'asin',
+              'language',
+              'explicit',
+              'abridged',
+              'coverPath',
+              'duration',
+              'narrators',
+              'ebookFile',
+              'tags',
+              'genres',
+              [
+                Sequelize.literal(`CASE
+                  WHEN json_valid(audioFiles) THEN (
+                    SELECT count(*)
+                    FROM json_each(audioFiles) af
+                    WHERE COALESCE(json_extract(af.value, '$.exclude'), 0) = 0
+                  )
+                  ELSE 0
+                END`),
+                'computedNumTracks'
+              ],
+              [Sequelize.literal('CASE WHEN json_valid(audioFiles) THEN json_array_length(audioFiles) ELSE 0 END'), 'computedNumAudioFiles'],
+              [Sequelize.literal('CASE WHEN json_valid(chapters) THEN json_array_length(chapters) ELSE 0 END'), 'computedNumChapters'],
+              [
+                Sequelize.literal(`(
+                  COALESCE((
+                    SELECT SUM(COALESCE(CAST(json_extract(af.value, '$.metadata.size') AS INTEGER), 0))
+                    FROM json_each(audioFiles) af
+                    WHERE json_valid(audioFiles)
+                  ), 0)
+                  + COALESCE(CAST(json_extract(ebookFile, '$.metadata.size') AS INTEGER), 0)
+                )`),
+                'computedMediaSize'
+              ]
+            ],
             where: userPermissionBookWhere.bookWhere,
             include: [
               {
-                model: Database.libraryItemModel
+                model: Database.libraryItemModel,
+                attributes: ['id', 'ino', 'extraData', 'libraryId', 'libraryFolderId', 'path', 'relPath', 'isFile', 'mtime', 'ctime', 'birthtime', 'createdAt', 'updatedAt', 'isMissing', 'isInvalid', 'mediaType', 'size', [Sequelize.literal('CASE WHEN json_valid(libraryFiles) THEN json_array_length(libraryFiles) ELSE 0 END'), 'computedNumFiles']]
               },
               {
                 model: Database.authorModel
