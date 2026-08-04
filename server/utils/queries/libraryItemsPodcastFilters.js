@@ -414,10 +414,10 @@ module.exports = {
       })
     }
 
-    // Search podcast episode title
+    // Search podcast episode title and description
     const podcastEpisodes = await Database.podcastEpisodeModel.findAll({
       where: [
-        Sequelize.literal(textSearchQuery.matchExpression('podcastEpisode.title')),
+        Sequelize.literal(`(${textSearchQuery.matchExpression('podcastEpisode.title')} OR ${textSearchQuery.matchExpression('podcastEpisode.description')})`),
         {
           '$podcast.libraryItem.libraryId$': library.id
         }
