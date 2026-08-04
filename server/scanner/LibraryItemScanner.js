@@ -192,6 +192,10 @@ class LibraryItemScanner {
     }
     if (newLibraryItem) {
       libraryScan.addLog(LogLevel.INFO, `Created new library item "${newLibraryItem.relPath}" with id "${newLibraryItem.id}"`)
+
+      if (newLibraryItem.mediaType === 'book') {
+        await Database.mediaProgressModel.relinkFromMissingItems(newLibraryItem)
+      }
     }
     return newLibraryItem
   }
