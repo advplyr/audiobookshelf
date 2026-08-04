@@ -80,6 +80,16 @@
             </ui-tooltip>
           </div>
 
+          <div role="article" :aria-label="$strings.LabelSettingsCarryFinishedToNewEditionsHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsCarryFinishedToNewEditions" v-model="newServerSettings.scannerCarryFinishedToNewEditions" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerCarryFinishedToNewEditions', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsCarryFinishedToNewEditionsHelp">
+              <p class="pl-4">
+                <span id="settings-carry-finished-to-new-editions">{{ $strings.LabelSettingsCarryFinishedToNewEditions }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div role="article" :aria-label="$strings.LabelSettingsEnableWatcherHelp" class="flex items-center py-2">
             <ui-toggle-switch :label="$strings.LabelSettingsEnableWatcher" v-model="scannerEnableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', !val)" />
             <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableWatcherHelp">

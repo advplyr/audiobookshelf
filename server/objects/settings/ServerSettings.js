@@ -17,6 +17,7 @@ class ServerSettings {
     this.scannerCoverProvider = 'google'
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
+    this.scannerCarryFinishedToNewEditions = false
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -96,6 +97,7 @@ class ServerSettings {
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
+    this.scannerCarryFinishedToNewEditions = !!settings.scannerCarryFinishedToNewEditions
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
@@ -213,6 +215,7 @@ class ServerSettings {
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
+      scannerCarryFinishedToNewEditions: this.scannerCarryFinishedToNewEditions,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       metadataFileFormat: this.metadataFileFormat,
