@@ -36,6 +36,18 @@ class LogManager {
     return global.ServerSettings.loggerDailyLogsToKeep || 7
   }
 
+  get loggerScannerLogsToKeep() {
+    return global.ServerSettings.loggerScannerLogsToKeep || 2
+  }
+
+  async enforceDailyLogRetention() {
+    if (this.loggerDailyLogsToKeep <= 0) return
+
+    while (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
+      await this.removeLogFile(this.dailyLogFiles[0])
+    }
+  }
+
   async ensureLogDirs() {
     try {
       await fs.ensureDir(this.DailyLogPath)
@@ -49,22 +61,15 @@ class LogManager {
   /**
    * 1. Ensure log directories exist
    * 2. Load daily log files
-   * 3. Remove old daily log files
-   * 4. Create/set current daily log file
+   * 3. Create/set current daily log file
+   * 4. Remove old daily log files
+   * 5. Log any buffered daily logs
    */
   async init() {
     await this.ensureLogDirs()
 
     // Load daily logs
     await this.scanLogFiles()
-
-    // Check remove extra daily logs
-    if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
-      const dailyLogFilesCopy = [...this.dailyLogFiles]
-      for (let i = 0; i < dailyLogFilesCopy.length - this.loggerDailyLogsToKeep; i++) {
-        await this.removeLogFile(dailyLogFilesCopy[i])
-      }
-    }
 
     // set current daily log file or create if does not exist
     const currentDailyLogFilename = DailyLog.getCurrentDailyLogFilename()
@@ -78,6 +83,9 @@ class LogManager {
     } else {
       this.dailyLogFiles.push(this.currentDailyLog.filename)
     }
+
+    // Check remove extra daily logs
+    await this.enforceDailyLogRetention()
 
     // Log buffered daily logs
     if (this.dailyLogBuffer.length) {
@@ -146,10 +154,13 @@ class LogManager {
     // Check log rolls to next day
     if (this.currentDailyLog.id !== DailyLog.getCurrentDateString()) {
       this.currentDailyLog = new DailyLog(this.DailyLogPath)
-      if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
-        // Remove oldest log
-        this.removeLogFile(this.dailyLogFiles[0])
+
+      // Track the new daily log file so retention works for long-running servers
+      if (!this.dailyLogFiles.includes(this.currentDailyLog.filename)) {
+        this.dailyLogFiles.push(this.currentDailyLog.filename)
       }
+
+      await this.enforceDailyLogRetention()
     }
 
     // Append log line to log file
@@ -178,6 +189,39 @@ class LogManager {
    */
   getMostRecentCurrentDailyLogs() {
     return this.currentDailyLog?.logs.slice(-5000) || ''
+  }
+
+  /**
+   * Keep the most recent N scan logs in metadata/logs/scans.
+   * Where N is the server setting `loggerScannerLogsToKeep`.
+   *
+   * @param {string} [logDir]
+   */
+  async purgeOldScanLogs(logDir = this.ScanLogPath) {
+    const scanLogsToKeep = this.loggerScannerLogsToKeep
+    if (scanLogsToKeep <= 0) return
+
+    let scanFiles
+    try {
+      scanFiles = await fs.readdir(logDir)
+    } catch (error) {
+      Logger.warn(TAG, `Failed to read scan log dir "${logDir}": ${error.message}`)
+      return
+    }
+
+    const scanLogFiles = (scanFiles || []).filter((f) => Path.extname(f) === '.txt').sort()
+    if (scanLogFiles.length <= scanLogsToKeep) return
+
+    const filesToRemove = scanLogFiles.slice(0, scanLogFiles.length - scanLogsToKeep)
+    for (const file of filesToRemove) {
+      const fullPath = Path.join(logDir, file)
+      try {
+        await fs.unlink(fullPath)
+        Logger.info(TAG, `Removed scan log "${fullPath}"`)
+      } catch (error) {
+        Logger.warn(TAG, `Failed to remove scan log "${fullPath}": ${error.message}`)
+      }
+    }
   }
 }
 module.exports = LogManager
