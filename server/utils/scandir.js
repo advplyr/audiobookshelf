@@ -39,6 +39,28 @@ function checkFilepathIsAudioFile(filepath) {
 module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
 /**
+ * Check if enough media files of an existing library item are found by inode in a scanned folder
+ * to consider it the same item. Covers an item folder that was recreated (so the folder inode
+ * changed) while the media files inside kept their inodes, e.g. files moved into a new folder.
+ * Requires at least half of the existing item's media files to be present in the scanned folder.
+ *
+ * @param {{ino:string, metadata:{ext:string}}[]} existingLibraryFiles - library files of the existing library item
+ * @param {string[]} scannedFileInos - inodes of the files found in the scanned folder
+ * @returns {boolean}
+ */
+function checkItemFilesMatchByIno(existingLibraryFiles, scannedFileInos) {
+  const existingMediaFileInos = (existingLibraryFiles || [])
+    .filter((lf) => isMediaFile('book', lf.metadata?.ext))
+    .map((lf) => lf.ino)
+    .filter((ino) => !!ino)
+  if (!existingMediaFileInos.length) return false
+  const scannedInoSet = new Set(scannedFileInos || [])
+  const numMatching = existingMediaFileInos.filter((ino) => scannedInoSet.has(ino)).length
+  return numMatching > 0 && numMatching * 2 >= existingMediaFileInos.length
+}
+module.exports.checkItemFilesMatchByIno = checkItemFilesMatchByIno
+
+/**
  * @param {string} mediaType
  * @param {import('./fileUtils').FilePathItem[]} fileItems
  * @param {boolean} audiobooksOnly
