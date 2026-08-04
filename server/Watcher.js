@@ -13,6 +13,8 @@ const { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs, shouldIgnoreFile } = r
  * @property {string} relPath
  * @property {string} folderId
  * @property {string} type
+ * @property {string} [oldPath] - Previous full path, only set for 'renamed' updates
+ * @property {string} [oldRelPath] - Previous path relative to the library folder, only set for 'renamed' updates
  */
 class FolderWatcher extends EventEmitter {
   constructor() {
@@ -218,14 +220,15 @@ class FolderWatcher extends EventEmitter {
    * Watcher detected file renamed
    *
    * @param {string} libraryId
-   * @param {string} path
+   * @param {string} pathFrom
+   * @param {string} pathTo
    */
   onFileRename(libraryId, pathFrom, pathTo) {
     if (this.checkShouldIgnorePath(pathTo)) {
       return
     }
     Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
-    this.addFileUpdate(libraryId, pathTo, 'renamed')
+    this.addFileUpdate(libraryId, pathTo, 'renamed', pathFrom)
   }
 
   /**
@@ -263,9 +266,10 @@ class FolderWatcher extends EventEmitter {
    * @param {string} libraryId
    * @param {string} path
    * @param {string} type
+   * @param {string} [oldPath] - Previous full path, only used for 'renamed' updates
    * @returns {boolean} - If file was added to pending updates
    */
-  addFileUpdate(libraryId, path, type) {
+  addFileUpdate(libraryId, path, type, oldPath = null) {
     if (this.pendingFilePaths.includes(path)) return false
 
     // Get file library
@@ -307,13 +311,18 @@ class FolderWatcher extends EventEmitter {
       }
       this.pendingTask = TaskManager.createAndAddTask('watcher-scan', taskTitleString, null, true, taskData)
     }
-    this.pendingFileUpdates.push({
+    const pendingFileUpdate = {
       path,
       relPath,
       folderId: folder.id,
       libraryId,
       type
-    })
+    }
+    if (oldPath) {
+      pendingFileUpdate.oldPath = oldPath
+      pendingFileUpdate.oldRelPath = oldPath.replace(folderPath, '')
+    }
+    this.pendingFileUpdates.push(pendingFileUpdate)
 
     this.handlePendingFileUpdatesTimeout()
     return true

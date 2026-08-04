@@ -415,7 +415,17 @@ class LibraryScanner {
         Logger.info(`[LibraryScanner] No important changes to scan for in folder "${folderId}"`)
         continue
       }
-      const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
+
+      // Map new relPath (as used in fileUpdateGroup) to the old relPath reported by the watcher for renamed files
+      const renamedPathsByRelPath = new Map()
+      folderGroups[folderId].fileUpdates.forEach((fileUpdate) => {
+        if (fileUpdate.type !== 'renamed' || !fileUpdate.oldRelPath) return
+        const relPath = fileUpdate.relPath.startsWith('/') ? fileUpdate.relPath.slice(1) : fileUpdate.relPath
+        const oldRelPath = fileUpdate.oldRelPath.startsWith('/') ? fileUpdate.oldRelPath.slice(1) : fileUpdate.oldRelPath
+        renamedPathsByRelPath.set(relPath, oldRelPath)
+      })
+
+      const folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup, renamedPathsByRelPath)
       Logger.debug(`[LibraryScanner] Folder scan results`, folderScanResults)
 
       // Tally results to share with client
@@ -489,9 +499,10 @@ class LibraryScanner {
    * @param {import('../models/Library')} library
    * @param {import('../models/LibraryFolder')} folder
    * @param {Record<string, string[]>} fileUpdateGroup
+   * @param {Map<string,string>} [renamedPathsByRelPath] - new relPath -> old relPath, from watcher rename events in this folder
    * @returns {Promise<Record<string,number>>}
    */
-  async scanFolderUpdates(library, folder, fileUpdateGroup) {
+  async scanFolderUpdates(library, folder, fileUpdateGroup, renamedPathsByRelPath = new Map()) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
     await libraryFilters.getFilterData(library.mediaType, library.id)
@@ -576,7 +587,7 @@ class LibraryScanner {
       let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
-        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
+        existingLibraryItem = (await findLibraryItemByRenameOldPath(library.id, folder, itemDir, fileUpdateGroup, renamedPathsByRelPath)) || (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
         if (existingLibraryItem) {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
@@ -658,6 +669,92 @@ function hasAudioFiles(fileUpdateGroup, itemDir) {
 
 function isSingleMediaFile(fileUpdateGroup, itemDir) {
   return itemDir === fileUpdateGroup[itemDir]
+}
+
+/**
+ * Given the new item dir and the relPath/oldRelPath pair reported by the watcher for a renamed file inside it,
+ * derive the old item dir by truncating oldRelPath the same number of path segments that were truncated from
+ * relPath to produce itemDir. Assumes the rename did not change the item's directory depth.
+ *
+ * @param {string} itemDir
+ * @param {string} relPath
+ * @param {string} oldRelPath
+ * @returns {string|null}
+ */
+function deriveOldItemDir(itemDir, relPath, oldRelPath) {
+  const depthDiff = relPath.split('/').length - itemDir.split('/').length
+  if (depthDiff <= 0) return oldRelPath
+
+  const oldRelPathParts = oldRelPath.split('/')
+  if (oldRelPathParts.length <= depthDiff) return null
+
+  return oldRelPathParts.slice(0, oldRelPathParts.length - depthDiff).join('/')
+}
+
+/**
+ * Build a dir and its ancestor dirs up to the library folder root, mirroring the potentialChildDirs
+ * built for the new item dir, so an old item dir can be matched at any of the same depths
+ *
+ * @param {string} folderPath
+ * @param {string} dir
+ * @returns {string[]}
+ */
+function getPotentialDirPaths(folderPath, dir) {
+  const dirParts = dir.split('/').slice(0, -1)
+  const potentialDirs = [Path.posix.join(folderPath, dir)]
+  for (let i = 0; i < dirParts.length; i++) {
+    potentialDirs.push(Path.posix.join(folderPath, dir.split('/').slice(0, -1 - i).join('/')))
+  }
+  return potentialDirs
+}
+
+/**
+ * Look for an existing library item at the pre-rename path reported by the watcher for this item dir.
+ * Checked before the inode-based matchers because the old path is authoritative rename information,
+ * while inode matching is a heuristic that can fail on filesystems/operations where inodes change
+ *
+ * @param {string} libraryId
+ * @param {import('../models/LibraryFolder')} folder
+ * @param {string} itemDir
+ * @param {Record<string, string[]|string>} fileUpdateGroup
+ * @param {Map<string,string>} renamedPathsByRelPath - new relPath -> old relPath, from watcher rename events
+ * @returns {Promise<import('../models/LibraryItem')|null>}
+ */
+async function findLibraryItemByRenameOldPath(libraryId, folder, itemDir, fileUpdateGroup, renamedPathsByRelPath) {
+  if (!renamedPathsByRelPath.size) return null
+
+  const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
+  const relPaths = isSingleMedia ? [itemDir] : fileUpdateGroup[itemDir].map((subpath) => Path.posix.join(itemDir, subpath))
+
+  let matchedRelPath = null
+  let oldRelPath = null
+  for (const relPath of relPaths) {
+    if (renamedPathsByRelPath.has(relPath)) {
+      matchedRelPath = relPath
+      oldRelPath = renamedPathsByRelPath.get(relPath)
+      break
+    }
+  }
+  if (!oldRelPath) return null
+
+  const oldItemDir = deriveOldItemDir(itemDir, matchedRelPath, oldRelPath)
+  if (!oldItemDir) return null
+
+  const folderPath = fileUtils.filePathToPOSIX(folder.path)
+  const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
+    libraryId: libraryId,
+    path: getPotentialDirPaths(folderPath, oldItemDir)
+  })
+  if (!existingLibraryItem) return null
+
+  // Guard against adopting an item whose old path is still present on disk (e.g. a copy, not a real move)
+  if (await fs.pathExists(existingLibraryItem.path)) {
+    Logger.debug(`[LibraryScanner] Found library item "${existingLibraryItem.media.title}" at watcher rename old path "${existingLibraryItem.path}" but that path still exists - not adopting`)
+    return null
+  }
+
+  Logger.debug(`[LibraryScanner] Found library item "${existingLibraryItem.media.title}" at watcher rename old path "${existingLibraryItem.path}"`)
+  return existingLibraryItem
 }
 
 async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
