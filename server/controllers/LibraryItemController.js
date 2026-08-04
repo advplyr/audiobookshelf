@@ -399,7 +399,8 @@ class LibraryItemController {
       query: { width, height, format, raw }
     } = req
 
-    if (req.query.ts) res.set('Cache-Control', 'private, max-age=86400')
+    // ts is the library item's updatedAt, so this URL only ever resolves to one image - cache it for a long time
+    if (req.query.ts) res.set('Cache-Control', 'public, max-age=31536000, immutable')
 
     const libraryItemId = req.params.id
     if (!libraryItemId) {

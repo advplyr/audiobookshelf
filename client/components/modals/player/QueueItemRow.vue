@@ -56,7 +56,7 @@ export default {
     },
     coverUrl() {
       if (!this.coverPath) return this.$store.getters['globals/getPlaceholderCoverSrc']
-      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId)
+      return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId, this.item.updatedAt)
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
