@@ -20,7 +20,7 @@
           <div class="flex px-4 py-2 items-center text-center border-b border-white/10 text-white/80">
             <div class="w-16 max-w-16 text-center">
               <p class="text-sm font-mono text-gray-400">
-                {{ this.$secondsToTimestamp(currentTime / playbackRate) }}
+                {{ this.$secondsToTimestamp(currentTime) }}
               </p>
             </div>
             <div class="grow px-2">

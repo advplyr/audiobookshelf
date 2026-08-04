@@ -383,6 +383,13 @@ export default class PlayerHandler {
     this.player.setPlaybackRate(playbackRate)
   }
 
+  setSmartSpeed(enabled, ratio = 2.5) {
+    if (this.player && this.player instanceof LocalAudioPlayer) {
+      this.player.smartSpeedRatio = ratio
+      this.player.setSmartSpeed(enabled)
+    }
+  }
+
   seek(time, shouldSync = true) {
     if (!this.player) return
     this.player.seek(time, this.playerPlaying)

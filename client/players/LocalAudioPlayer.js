@@ -1,5 +1,7 @@
 import Hls from 'hls.js'
 import EventEmitter from 'events'
+import SilenceMap from './smart-speed/SilenceMap'
+import TimeMapper from './smart-speed/TimeMapper'
 
 export default class LocalAudioPlayer extends EventEmitter {
   constructor(ctx) {
@@ -20,6 +22,16 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.defaultPlaybackRate = 1
 
     this.playableMimeTypes = []
+
+    this.audioContext = null
+    this.audioSourceNode = null
+    this.usingWebAudio = false
+
+    this.silenceMap = new SilenceMap()
+    this.silenceDetectorNode = null
+    this.timeMapper = new TimeMapper([], 1.0)
+    this.smartSpeedRatio = 2.0
+    this.enableSmartSpeed = false
 
     this.initialize()
   }
@@ -45,6 +57,8 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.player.addEventListener('error', this.evtError.bind(this))
     this.player.addEventListener('loadedmetadata', this.evtLoadedMetadata.bind(this))
     this.player.addEventListener('timeupdate', this.evtTimeupdate.bind(this))
+    this.player.addEventListener('waiting', this.evtWaiting.bind(this))
+    this.player.addEventListener('playing', this.evtPlaying.bind(this))
 
     var mimeTypes = [
       'audio/flac',
@@ -67,6 +81,94 @@ export default class LocalAudioPlayer extends EventEmitter {
       if (canPlay) this.playableMimeTypes.push(mt)
     })
     console.log(`[LocalPlayer] Supported mime types`, mimeTypeCanPlayMap, this.playableMimeTypes)
+    this.initWebAudio()
+  }
+
+  initWebAudio() {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextCtor) {
+      console.warn('[LocalPlayer] Web Audio API not supported, falling back to direct audio')
+      return
+    }
+    try {
+      this.audioContext = new AudioContextCtor()
+      this.audioSourceNode = this.audioContext.createMediaElementSource(this.player)
+      this.audioSourceNode.connect(this.audioContext.destination)
+      this.usingWebAudio = true
+      console.log('[LocalPlayer] Web Audio API pipeline initialised')
+    } catch (err) {
+      console.error('[LocalPlayer] Failed to initialise Web Audio API', err)
+      this.usingWebAudio = false
+    }
+  }
+
+  updateSmartSpeedRegions() {
+    this.timeMapper = new TimeMapper(this.silenceMap.getRegions(), this.smartSpeedRatio)
+    this.emit('timeSaved', this.timeMapper.totalTimeSaved())
+  }
+
+  async initSilenceDetector() {
+    if (!this.usingWebAudio || !this.audioContext) return
+    if (this.silenceDetectorNode) return
+
+    try {
+      await this.audioContext.audioWorklet.addModule('/smart-speed/SilenceDetectorProcessor.js')
+      this.silenceDetectorNode = new AudioWorkletNode(this.audioContext, 'silence-detector')
+
+      this.silenceDetectorNode.port.onmessage = (event) => {
+        const msg = event.data
+        if (msg.type === 'silence-start') {
+          // Map AudioContext time to Media time
+          const delayMs = this.audioContext.currentTime * 1000 - msg.time
+          this._silenceStartTime = this.player.currentTime * 1000 - delayMs
+
+          // Dynamically increase playback rate
+          if (this.enableSmartSpeed) {
+            this.player.playbackRate = this.defaultPlaybackRate * this.smartSpeedRatio
+          }
+        } else if (msg.type === 'silence-end') {
+          if (this.enableSmartSpeed) {
+            this.player.playbackRate = this.defaultPlaybackRate
+          }
+          if (this._silenceStartTime !== null) {
+            const delayMs = this.audioContext.currentTime * 1000 - msg.time
+            const silenceEndTime = this.player.currentTime * 1000 - delayMs
+            this.silenceMap.addRegion(this._silenceStartTime, silenceEndTime)
+            this._silenceStartTime = null
+            this.updateSmartSpeedRegions()
+          }
+        }
+      }
+
+      this.audioSourceNode.disconnect()
+      this.audioSourceNode.connect(this.silenceDetectorNode)
+      this.silenceDetectorNode.connect(this.audioContext.destination)
+
+      this._silenceStartTime = null
+      console.log('[LocalPlayer] Silence detector initialised')
+    } catch (err) {
+      console.warn('[LocalPlayer] Failed to initialise silence detector', err)
+      this.silenceDetectorNode = null
+    }
+  }
+
+  destroySilenceDetector() {
+    if (this.silenceDetectorNode) {
+      try {
+        this.silenceDetectorNode.disconnect()
+      } catch (err) {
+        // Ignore disconnect errors
+      }
+      this.silenceDetectorNode = null
+    }
+    this.silenceMap.reset()
+    this.updateSmartSpeedRegions()
+    this._silenceStartTime = null
+
+    // Reset playback rate in case we were in the middle of a silence region
+    if (this.player) {
+      this.player.playbackRate = this.defaultPlaybackRate
+    }
   }
 
   evtPlay() {
@@ -113,8 +215,22 @@ export default class LocalAudioPlayer extends EventEmitter {
     }
   }
 
+  evtWaiting() {
+    if (this.audioContext && this.audioContext.state === 'running') {
+      this.audioContext.suspend()
+    }
+  }
+
+  evtPlaying() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume()
+    }
+  }
+
   destroy() {
+    this.destroySilenceDetector()
     this.destroyHlsInstance()
+    this.destroyWebAudio()
     if (this.player) {
       this.player.remove()
     }
@@ -215,6 +331,8 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   loadCurrentTrack() {
     if (!this.currentTrack) return
+    this.silenceMap.reset()
+    this.updateSmartSpeedRegions()
     // When direct play track is loaded current time needs to be set
     this.trackStartTime = Math.max(0, this.startTime - (this.currentTrack.startOffset || 0))
     this.player.src = this.currentTrack.relativeContentUrl
@@ -231,6 +349,26 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.hlsInstance = null
   }
 
+  destroyWebAudio() {
+    if (this.audioSourceNode) {
+      try {
+        this.audioSourceNode.disconnect()
+      } catch (err) {
+        // Ignore disconnect errors
+      }
+      this.audioSourceNode = null
+    }
+    if (this.audioContext) {
+      try {
+        this.audioContext.close()
+      } catch (err) {
+        // Ignore close errors
+      }
+      this.audioContext = null
+    }
+    this.usingWebAudio = false
+  }
+
   async resetStream(startTime) {
     this.destroyHlsInstance()
     await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -245,7 +383,12 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   play() {
     this.playWhenReady = true
-    if (this.player) this.player.play()
+    if (this.player) {
+      if (this.usingWebAudio && this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume()
+      }
+      this.player.play()
+    }
   }
 
   pause() {
@@ -255,37 +398,79 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   getCurrentTime() {
     var currentTrackOffset = this.currentTrack.startOffset || 0
-    return this.player ? currentTrackOffset + this.player.currentTime : 0
+    if (!this.player) return 0
+
+    if (this.enableSmartSpeed) {
+      return this.timeMapper.audioToWallClock((currentTrackOffset + this.player.currentTime) * 1000) / 1000
+    }
+    return currentTrackOffset + this.player.currentTime
   }
 
   getDuration() {
     if (!this.audioTracks.length) return 0
     var lastTrack = this.audioTracks[this.audioTracks.length - 1]
-    return lastTrack.startOffset + lastTrack.duration
+    const duration = lastTrack.startOffset + lastTrack.duration
+    if (this.enableSmartSpeed) {
+      return this.timeMapper.audioToWallClock(duration * 1000) / 1000
+    }
+    return duration
   }
 
   setPlaybackRate(playbackRate) {
     if (!this.player) return
     this.defaultPlaybackRate = playbackRate
-    this.player.playbackRate = playbackRate
+
+    // If we're in the middle of a silence region, we should multiply the new rate
+    if (this.enableSmartSpeed && this._silenceStartTime !== null) {
+      this.player.playbackRate = playbackRate * this.smartSpeedRatio
+    } else {
+      this.player.playbackRate = playbackRate
+    }
+  }
+
+  async setSmartSpeed(enabled) {
+    this.enableSmartSpeed = enabled
+    if (enabled && this.usingWebAudio) {
+      await this.initSilenceDetector()
+    } else {
+      this.destroySilenceDetector()
+    }
   }
 
   seek(time, playWhenReady) {
     if (!this.player) return
 
+    var mappedTime = time
+
+    if (this.enableSmartSpeed) {
+      mappedTime = this.timeMapper.wallClockToAudio(time * 1000) / 1000
+    }
+
+    if (this.silenceDetectorNode) {
+      this.silenceDetectorNode.port.postMessage({ type: 'reset' })
+      this._silenceStartTime = null
+    }
+
+    this.silenceMap.reset()
+    this.updateSmartSpeedRegions()
     this.playWhenReady = playWhenReady
+
+    // Reset playback rate in case we were in a silence region
+    if (this.enableSmartSpeed && this.player.playbackRate !== this.defaultPlaybackRate) {
+      this.player.playbackRate = this.defaultPlaybackRate
+    }
 
     if (this.isHlsTranscode) {
       // Seeking HLS stream
-      var offsetTime = time - (this.currentTrack.startOffset || 0)
+      var offsetTime = mappedTime - (this.currentTrack.startOffset || 0)
       this.player.currentTime = Math.max(0, offsetTime)
     } else {
       // Seeking Direct play
-      if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
+      if (mappedTime < this.currentTrack.startOffset || mappedTime > this.currentTrack.startOffset + this.currentTrack.duration) {
         // Change Track
-        var trackIndex = this.audioTracks.findIndex((t) => time >= t.startOffset && time < t.startOffset + t.duration)
+        var trackIndex = this.audioTracks.findIndex((t) => mappedTime >= t.startOffset && mappedTime < t.startOffset + t.duration)
         if (trackIndex >= 0) {
-          this.startTime = time
+          this.startTime = mappedTime
           this.currentTrackIndex = trackIndex
 
           if (!this.player.paused) {
@@ -295,7 +480,7 @@ export default class LocalAudioPlayer extends EventEmitter {
           this.loadCurrentTrack()
         }
       } else {
-        var offsetTime = time - (this.currentTrack.startOffset || 0)
+        var offsetTime = mappedTime - (this.currentTrack.startOffset || 0)
         this.player.currentTime = Math.max(0, offsetTime)
       }
     }
