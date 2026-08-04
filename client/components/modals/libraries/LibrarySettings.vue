@@ -72,6 +72,17 @@
           </ui-tooltip>
         </div>
       </div>
+      <div class="p-2 w-full md:w-1/2">
+        <div class="flex items-center">
+          <ui-toggle-switch v-model="listenAgainOrdered" size="sm" @input="formUpdated" />
+          <ui-tooltip :text="$strings.LabelListenAgainOrderedHelp">
+            <p class="pl-4 text-sm">
+              {{ $strings.LabelListenAgainOrdered }}
+              <span class="material-symbols icon-text text-sm">info</span>
+            </p>
+          </ui-tooltip>
+        </div>
+      </div>
       <div v-if="isPodcastLibrary" class="p-2 w-full md:w-1/2">
         <ui-dropdown :label="$strings.LabelPodcastSearchRegion" v-model="podcastSearchRegion" :items="$podcastSearchRegionOptions" small class="max-w-72" menu-max-height="200px" @input="formUpdated" />
       </div>
@@ -114,7 +125,8 @@ export default {
       onlyShowLaterBooksInContinueSeries: false,
       podcastSearchRegion: 'us',
       markAsFinishedWhen: 'timeRemaining',
-      markAsFinishedValue: 10
+      markAsFinishedValue: 10,
+      listenAgainOrdered: false
     }
   },
   computed: {
@@ -172,7 +184,8 @@ export default {
           onlyShowLaterBooksInContinueSeries: !!this.onlyShowLaterBooksInContinueSeries,
           podcastSearchRegion: this.podcastSearchRegion,
           markAsFinishedTimeRemaining: markAsFinishedTimeRemaining,
-          markAsFinishedPercentComplete: markAsFinishedPercentComplete
+          markAsFinishedPercentComplete: markAsFinishedPercentComplete,
+          listenAgainOrdered: !!this.listenAgainOrdered
         }
       }
     },
@@ -194,6 +207,7 @@ export default {
         this.markAsFinishedWhen = 'timeRemaining'
       }
       this.markAsFinishedValue = this.librarySettings.markAsFinishedTimeRemaining || this.librarySettings.markAsFinishedPercentComplete || 10
+      this.listenAgainOrdered = !!this.librarySettings.listenAgainOrdered
     }
   },
   mounted() {
