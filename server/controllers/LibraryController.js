@@ -639,6 +639,62 @@ class LibraryController {
   }
 
   /**
+   * GET: /api/libraries/:id/folders
+   *
+   * Returns the indexed on-disk location of each accessible library item.
+   * The client derives intermediate directories from relPath, so absolute
+   * library paths never have to be exposed.
+   *
+   * @param {LibraryControllerRequest} req
+   * @param {Response} res
+   */
+  async getFolderTree(req, res) {
+    const libraryItems = await Database.libraryItemModel.findAll({
+      where: {
+        libraryId: req.library.id
+      },
+      attributes: ['id', 'libraryId', 'libraryFolderId', 'relPath', 'path', 'mediaId', 'mediaType', 'isMissing', 'isInvalid', 'updatedAt', 'authorNamesFirstLast'],
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['title', 'tags', 'explicit', 'coverPath']
+        },
+        {
+          model: Database.podcastModel,
+          attributes: ['title', 'author', 'tags', 'explicit', 'coverPath']
+        }
+      ]
+    })
+
+    const items = libraryItems
+      .filter((libraryItem) => !libraryItem.isMissing && !libraryItem.isInvalid && libraryItem.media && req.user.checkCanAccessLibraryItem(libraryItem))
+      .map((libraryItem) => {
+        // relPath is normally POSIX already. Normalize old Windows records too.
+        const relPath = (libraryItem.relPath || Path.basename(libraryItem.path || '')).replaceAll('\\', '/').replace(/^\/+|\/+$/g, '')
+        return {
+          id: libraryItem.id,
+          folderId: libraryItem.libraryFolderId,
+          relPath,
+          title: libraryItem.media.title || Path.posix.basename(relPath),
+          author: libraryItem.mediaType === 'book' ? libraryItem.authorNamesFirstLast || '' : libraryItem.media.author || '',
+          hasCover: !!libraryItem.media.coverPath,
+          updatedAt: libraryItem.updatedAt?.valueOf(),
+          mediaType: libraryItem.mediaType
+        }
+      })
+
+    naturalSort(items).asc((item) => item.relPath)
+
+    res.json({
+      folders: req.library.libraryFolders.map((folder) => ({
+        id: folder.id,
+        name: Path.basename(folder.path) || req.library.name
+      })),
+      items
+    })
+  }
+
+  /**
    * DELETE: /api/libraries/:id/issues
    * Remove all library items missing or invalid
    *
