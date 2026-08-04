@@ -194,14 +194,18 @@ export default {
             bValue = b[this.sortKey]
           }
 
-          // Sort episodes with no pub date as the oldest
+          // publishedAt is a numeric ms epoch (negative for pre-1970 broadcasts).
+          // Compare numerically so the leading "-" of negative epochs doesn't
+          // break Intl.Collator{numeric:true}, which only handles unsigned digit
+          // runs. Missing dates count as oldest.
           if (this.sortKey === 'publishedAt') {
-            if (!aValue) aValue = Number.MAX_VALUE
-            if (!bValue) bValue = Number.MAX_VALUE
+            const av = aValue == null ? Number.NEGATIVE_INFINITY : Number(aValue)
+            const bv = bValue == null ? Number.NEGATIVE_INFINITY : Number(bValue)
+            return av < bv ? -1 : av > bv ? 1 : 0
           }
 
           const primaryCompare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' })
-          if (primaryCompare !== 0 || this.sortKey === 'publishedAt') return primaryCompare
+          if (primaryCompare !== 0) return primaryCompare
 
           // When sorting by season, secondary sort is by episode number
           if (this.sortKey === 'season') {
@@ -212,11 +216,10 @@ export default {
             if (secondaryCompare !== 0) return secondaryCompare
           }
 
-          // Final sort by publishedAt
-          let aPubDate = a.publishedAt || Number.MAX_VALUE
-          let bPubDate = b.publishedAt || Number.MAX_VALUE
-
-          return String(aPubDate).localeCompare(String(bPubDate), undefined, { numeric: true, sensitivity: 'base' })
+          // Final tiebreaker: numeric publishedAt
+          const apa = a.publishedAt == null ? Number.NEGATIVE_INFINITY : Number(a.publishedAt)
+          const bpa = b.publishedAt == null ? Number.NEGATIVE_INFINITY : Number(b.publishedAt)
+          return apa < bpa ? -1 : apa > bpa ? 1 : 0
         })
     },
     episodesList() {
