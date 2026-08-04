@@ -3,6 +3,7 @@ const Path = require('path')
 const sequelize = require('sequelize')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
+const { normalizePublishedYear } = require('../utils/metadataUtils')
 const parseNameString = require('../utils/parsers/parseNameString')
 const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
 const globals = require('../utils/globals')
@@ -690,6 +691,9 @@ class BookScanner {
         libraryScan.addLog(LogLevel.ERROR, `Invalid metadata source "${metadataSource}"`)
       }
     }
+
+    // Metadata precedence may leave a full ISO date in the year-only field.
+    bookMetadata.publishedYear = normalizePublishedYear(bookMetadata.publishedYear)
 
     // Set cover from library file if one is found otherwise check audiofile
     if (libraryItemData.imageLibraryFiles.length) {
