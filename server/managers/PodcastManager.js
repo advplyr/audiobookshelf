@@ -256,8 +256,9 @@ class PodcastManager {
     SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
 
     if (this.currentDownload.isAutoDownload) {
-      // Notifications only for auto downloaded episodes
       NotificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
+    } else {
+      NotificationManager.onPodcastEpisodeManuallyDownloaded(libraryItem, podcastEpisode)
     }
 
     return true
