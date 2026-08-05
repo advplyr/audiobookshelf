@@ -2,6 +2,7 @@ const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
+const https = require('https')
 const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
@@ -15,6 +16,7 @@ const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
 const { getRequestOrigin } = require('./utils/requestUtils')
+const { resilientLookup } = require('./utils/resilientDns')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -87,6 +89,16 @@ class Server {
         global.DisableSsrfRequestFilter = (url) => whitelistedUrls.includes(new URL(url).hostname)
       }
     }
+
+    if (process.env.EXP_DNS_RESOLUTION === '1') {
+      // https://github.com/advplyr/audiobookshelf/pull/4885
+      Logger.info(`[Server] Experimental DNS Resolution Enabled`)
+
+      // Requests passing explicit agents (SSRF-filtered) get the same lookup via getAgentsForUrl
+      axios.defaults.httpAgent = new http.Agent({ lookup: resilientLookup })
+      axios.defaults.httpsAgent = new https.Agent({ lookup: resilientLookup })
+    }
+
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
 
