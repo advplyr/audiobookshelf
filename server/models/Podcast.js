@@ -451,6 +451,11 @@ class Podcast extends Model {
     }
   }
 
+  /**
+   * Minified podcast JSON for list/shelf endpoints.
+   * `toOldJSONExpanded()` must be a strict superset: every key here must exist in expanded
+   * with the same value semantics. Only additive changes to expanded; never remove or rename keys.
+   */
   toOldJSONMinified() {
     return {
       id: this.id,
@@ -468,6 +473,12 @@ class Podcast extends Model {
     }
   }
 
+  /**
+   * Expanded podcast JSON for item detail and socket events.
+   * Must be a strict superset of `toOldJSONMinified()` — built by spreading minified, then adding expanded-only fields.
+   *
+   * @param {string} libraryItemId
+   */
   toOldJSONExpanded(libraryItemId) {
     if (!libraryItemId) {
       throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
@@ -477,18 +488,9 @@ class Podcast extends Model {
     }
 
     return {
-      id: this.id,
-      libraryItemId: libraryItemId,
-      metadata: this.oldMetadataToJSONExpanded(),
-      coverPath: this.coverPath,
-      tags: [...(this.tags || [])],
-      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId)),
-      autoDownloadEpisodes: this.autoDownloadEpisodes,
-      autoDownloadSchedule: this.autoDownloadSchedule,
-      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
-      maxEpisodesToKeep: this.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
-      size: this.size
+      ...this.toOldJSONMinified(),
+      libraryItemId,
+      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId))
     }
   }
 }

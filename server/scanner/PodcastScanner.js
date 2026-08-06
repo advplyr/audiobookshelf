@@ -58,8 +58,12 @@ class PodcastScanner {
     /** @type {AudioFile[]} */
     let newAudioFiles = []
 
+    // Track episode add/remove/update so item_updated includes the current episode list
+    let hasEpisodeChanges = false
+
     if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== existingPodcastEpisodes.length) {
-      // Filter out and destroy episodes that were removed
+      // Filter out and destroy episodes that were removed.
+      // filter() returns a new array — reassign to media.podcastEpisodes before emit.
       const episodesToRemove = []
       existingPodcastEpisodes = existingPodcastEpisodes.filter((ep) => {
         if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
@@ -70,6 +74,7 @@ class PodcastScanner {
       })
 
       if (episodesToRemove.length) {
+        hasEpisodeChanges = true
         // Remove episodes from playlists and media progress
         const episodeIds = episodesToRemove.map((ep) => ep.id)
         await Database.playlistModel.removeMediaItemsFromPlaylists(episodeIds)
@@ -116,6 +121,7 @@ class PodcastScanner {
             AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(podcastEpisode, libraryScan)
             libraryScan.addLog(LogLevel.INFO, `Podcast episode "${podcastEpisode.title}" keys changed [${podcastEpisode.changed()?.join(', ')}]`)
             await podcastEpisode.save()
+            hasEpisodeChanges = true
           }
         }
 
@@ -155,8 +161,12 @@ class PodcastScanner {
         libraryScan.addLog(LogLevel.INFO, `New Podcast episode "${newPodcastEpisode.title}" added`)
         await newPodcastEpisode.save()
         existingPodcastEpisodes.push(newPodcastEpisode)
+        hasEpisodeChanges = true
       }
     }
+
+    // Keep association in sync for toOldJSONExpanded() / item_updated socket payload
+    media.podcastEpisodes = existingPodcastEpisodes
 
     let hasMediaChanges = false
     if (existingPodcastEpisodes.length !== media.numEpisodes) {
@@ -250,7 +260,7 @@ class PodcastScanner {
 
     return {
       libraryItem: existingLibraryItem,
-      wasUpdated: hasMediaChanges || libraryItemUpdated
+      wasUpdated: hasMediaChanges || libraryItemUpdated || hasEpisodeChanges
     }
   }
 
