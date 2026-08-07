@@ -42,7 +42,7 @@ class MiscController {
       return res.sendStatus(400)
     }
 
-    const files = Object.values(req.files)
+    const files = Object.values(req.files).flat()
     let { title, author, series, folder: folderId, library: libraryId } = req.body
     // Validate request body
     if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
