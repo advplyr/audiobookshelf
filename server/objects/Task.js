@@ -40,6 +40,9 @@ class Task {
     /** @type {boolean} client should keep the task visible after success */
     this.showSuccess = false
 
+    /** @type {number|null} percent complete (0-100), null if the action does not report progress */
+    this.progress = null
+
     /** @type {boolean} */
     this.isFailed = false
     /** @type {boolean} */
@@ -94,6 +97,15 @@ class Task {
     this.descriptionSubs = descriptionString?.subs || null
     this.showSuccess = showSuccess
     this.startedAt = Date.now()
+  }
+
+  /**
+   * Set task progress
+   *
+   * @param {number} progress percent complete (0-100)
+   */
+  setProgress(progress) {
+    this.progress = Math.min(100, Math.max(0, progress))
   }
 
   /**

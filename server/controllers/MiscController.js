@@ -108,9 +108,14 @@ class MiscController {
    */
   getTasks(req, res) {
     const includeArray = (req.query.include || '').split(',')
+    const includeProgress = includeArray.includes('progress') && req.user.isAdminOrUp
 
     const data = {
-      tasks: TaskManager.tasks.map((t) => t.toJSON())
+      tasks: TaskManager.tasks.map((t) => {
+        const taskJson = t.toJSON()
+        if (includeProgress) taskJson.progress = t.progress
+        return taskJson
+      })
     }
 
     if (includeArray.includes('queue')) {
