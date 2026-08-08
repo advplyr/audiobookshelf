@@ -344,6 +344,9 @@ class ApiRouter {
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
+    this.router.post('/upload/resumable', MiscController.initializeResumableUpload.bind(this))
+    this.router.patch('/upload/resumable/:uploadId/:fileId', MiscController.appendResumableUpload.bind(this))
+    this.router.post('/upload/resumable/:uploadId/complete', MiscController.completeResumableUpload.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
     this.router.patch('/sorting-prefixes', MiscController.updateSortingPrefixes.bind(this))

@@ -13,6 +13,7 @@ const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
 
 const TaskManager = require('../managers/TaskManager')
+const ResumableUploadManager = require('../managers/ResumableUploadManager')
 const adminStats = require('../utils/queries/adminStats')
 
 /**
@@ -97,6 +98,150 @@ class MiscController {
     }
 
     res.sendStatus(200)
+  }
+
+  async getResumableUploadTarget(req, res, payload) {
+    if (!req.user.canUpload) {
+      res.sendStatus(403)
+      return null
+    }
+
+    const { title, author, series, folder: folderId, library: libraryId } = payload
+    if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
+      res.status(400).send('Invalid request body')
+      return null
+    }
+
+    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
+    if (!library) {
+      res.status(404).send('Library not found')
+      return null
+    }
+    if (!req.user.checkCanAccessLibrary(library.id)) {
+      res.sendStatus(403)
+      return null
+    }
+
+    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+    if (!folder) {
+      res.status(404).send('Folder not found')
+      return null
+    }
+
+    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
+    return { library, outputDirectory: Path.join(folder.path, ...cleanedOutputDirectoryParts) }
+  }
+
+  /** POST: /api/upload/resumable */
+  async initializeResumableUpload(req, res) {
+    const payload = req.body || {}
+    const target = await this.getResumableUploadTarget(req, res, payload)
+    if (!target) return
+    if (!ResumableUploadManager.validateId(payload.uploadId) || !Array.isArray(payload.files) || !payload.files.length) {
+      return res.status(400).send('Invalid resumable upload')
+    }
+
+    if (payload.files.some((file) => !file || typeof file.name !== 'string')) {
+      return res.status(400).send('Invalid upload file')
+    }
+    const files = payload.files.map((file, index) => ({
+      id: String(index),
+      name: sanitizeFilename(file.name),
+      size: Number(file.size)
+    }))
+    if (files.some((file) => !file.name || !Number.isSafeInteger(file.size) || file.size < 0)) {
+      return res.status(400).send('Invalid upload file')
+    }
+    if (new Set(files.map((file) => file.name.toLowerCase())).size !== files.length) {
+      return res.status(400).send('Duplicate upload filenames')
+    }
+
+    const sessionData = {
+      uploadId: payload.uploadId,
+      libraryId: payload.library,
+      folderId: payload.folder,
+      title: payload.title,
+      author: payload.author || null,
+      series: payload.series || null,
+      outputDirectory: target.outputDirectory,
+      files
+    }
+    const existingSession = await ResumableUploadManager.readSession(req.user.id, payload.uploadId)
+    if (existingSession && JSON.stringify(existingSession) !== JSON.stringify(sessionData)) {
+      return res.status(409).send('Upload ID is already used for different files')
+    }
+    if (!existingSession) {
+      await ResumableUploadManager.createSession(req.user.id, payload.uploadId, sessionData)
+      for (const file of files) {
+        if (file.size === 0) await fs.ensureFile(ResumableUploadManager.getPartPath(req.user.id, payload.uploadId, file.id))
+      }
+    }
+
+    const offsets = await ResumableUploadManager.getOffsets(req.user.id, payload.uploadId, files)
+    return res.json({ uploadId: payload.uploadId, offsets })
+  }
+
+  /** PATCH: /api/upload/resumable/:uploadId/:fileId */
+  async appendResumableUpload(req, res) {
+    const { uploadId, fileId } = req.params
+    if (!req.user.canUpload) return res.sendStatus(403)
+    const session = await ResumableUploadManager.readSession(req.user.id, uploadId)
+    if (!session) return res.sendStatus(404)
+    const file = session.files.find((entry) => entry.id === fileId)
+    const offset = Number(req.headers['upload-offset'])
+    if (!file || !Number.isSafeInteger(offset) || offset < 0) return res.status(400).send('Invalid upload offset')
+
+    try {
+      const newOffset = await ResumableUploadManager.appendChunk(req.user.id, uploadId, file, offset, req)
+      return res.status(204).set('Upload-Offset', String(newOffset)).send()
+    } catch (error) {
+      if (error.code === 'OFFSET_MISMATCH') return res.status(409).set('Upload-Offset', String(error.offset)).send()
+      if (error.code === 'INVALID_CHUNK') return res.status(400).send(error.message)
+      Logger.error(`[MiscController] Resumable upload chunk failed`, error)
+      return res.status(500).send('Failed to save upload chunk')
+    }
+  }
+
+  /** POST: /api/upload/resumable/:uploadId/complete */
+  async completeResumableUpload(req, res) {
+    const { uploadId } = req.params
+    if (!req.user.canUpload) return res.sendStatus(403)
+    const session = await ResumableUploadManager.readSession(req.user.id, uploadId)
+    if (!session) return res.sendStatus(404)
+    const target = await this.getResumableUploadTarget(req, res, {
+      library: session.libraryId,
+      folder: session.folderId,
+      title: session.title,
+      author: session.author,
+      series: session.series
+    })
+    if (!target) return
+    if (target.outputDirectory !== session.outputDirectory) return res.status(409).send('Upload destination changed')
+
+    const offsets = await ResumableUploadManager.getOffsets(req.user.id, uploadId, session.files)
+    if (session.files.some((file, index) => offsets[index] !== file.size)) {
+      return res.status(409).json({ message: 'Upload is incomplete', offsets })
+    }
+    if (await fs.pathExists(session.outputDirectory)) return res.status(409).send('Upload destination already exists')
+
+    const stagingDirectory = `${session.outputDirectory}.upload-${uploadId}`
+    try {
+      await fs.remove(stagingDirectory)
+      await fs.ensureDir(stagingDirectory)
+      for (const file of session.files) {
+        const source = ResumableUploadManager.getPartPath(req.user.id, uploadId, file.id)
+        await fs.copy(source, Path.join(stagingDirectory, file.name), { overwrite: false, errorOnExist: true })
+      }
+      await fs.move(stagingDirectory, session.outputDirectory, { overwrite: false })
+      await ResumableUploadManager.removeSession(req.user.id, uploadId)
+      Logger.info(`Completed resumable upload of ${session.files.length} files to`, session.outputDirectory)
+      return res.sendStatus(200)
+    } catch (error) {
+      await fs.remove(stagingDirectory).catch(() => {})
+      Logger.error(`[MiscController] Failed to complete resumable upload`, error)
+      return res.status(500).send('Failed to finalize upload')
+    }
   }
 
   /**
