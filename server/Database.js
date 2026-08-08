@@ -949,10 +949,21 @@ WHERE EXISTS (
   }
 
   TextSearchQuery = class {
+    static PUNCTUATION_EQUIVALENTS = [
+      [`’`, `'`],
+      [`‘`, `'`],
+      [`“`, `"`],
+      [`”`, `"`],
+      [`！`, `!`],
+      [`？`, `?`],
+      [`，`, `,`],
+      [`：`, `:`]
+    ]
+
     constructor(sequelize, supportsUnaccent, query) {
       this.sequelize = sequelize
       this.supportsUnaccent = supportsUnaccent
-      this.query = query
+      this.query = this.normalizePunctuationJs(query)
       this.hasAccents = false
     }
 
@@ -962,6 +973,14 @@ WHERE EXISTS (
      * @param {string} value
      * @returns {string}
      */
+    normalizePunctuationJs(value) {
+      return this.constructor.PUNCTUATION_EQUIVALENTS.reduce((str, [from, to]) => str.split(from).join(to), value)
+    }
+
+    normalizePunctuationSql(expression) {
+      return this.constructor.PUNCTUATION_EQUIVALENTS.reduce((expr, [from, to]) => `REPLACE(${expr}, ${this.sequelize.escape(from)}, ${this.sequelize.escape(to)})`, expression)
+    }
+
     normalize(value) {
       return `unaccent(${value})`
     }
@@ -989,8 +1008,9 @@ WHERE EXISTS (
      */
     matchExpression(column) {
       const pattern = this.sequelize.escape(`%${this.query}%`)
-      if (!this.supportsUnaccent) return `${column} LIKE ${pattern}`
-      const normalizedColumn = this.hasAccents ? column : this.normalize(column)
+      const punctuationNormalizedColum = this.normalizePunctuationSql(column)
+      if (!this.supportsUnaccent) return `${punctuationNormalizedColum} LIKE ${pattern}`
+      const normalizedColumn = this.hasAccents ? punctuationNormalizedColum : this.normalize(punctuationNormalizedColum)
       return `${normalizedColumn} LIKE ${pattern}`
     }
   }
