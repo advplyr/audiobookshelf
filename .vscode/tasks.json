@@ -18,7 +18,7 @@
 			],
 			"type": "npm",
 			"script": "dev",
-			"detail": "nodemon --watch server index.js",
+			"detail": "node --watch-path=./server index.js",
 			"label": "Run server",
 			"group": {
 				"kind": "test",

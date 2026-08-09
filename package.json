@@ -5,7 +5,7 @@
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch server index.js -- --dev",
+    "dev": "node --watch-path=./server index.js --dev",
     "start": "node index.js",
     "start-dev": "node index.js --prod-with-dev-env",
     "client": "cd client && npm ci && npm run generate",
@@ -62,7 +62,6 @@
   "devDependencies": {
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
-    "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1"
   },
