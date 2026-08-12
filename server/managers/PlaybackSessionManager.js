@@ -125,6 +125,15 @@ class PlaybackSessionManager {
    * @returns
    */
   async syncLocalSession(user, sessionJson, deviceInfo) {
+    const timeListening = sessionJson.timeListening
+    if (timeListening == null || isNaN(timeListening) || !isFinite(timeListening) || timeListening < 0) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSession: Invalid timeListening value "${timeListening}"`)
+      return { id: sessionJson.id, success: false, error: 'Invalid timeListening value' }
+    }
+    if (sessionJson.duration && timeListening > sessionJson.duration) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSession: timeListening ${timeListening} exceeds duration ${sessionJson.duration}`)
+      return { id: sessionJson.id, success: false, error: 'timeListening exceeds duration' }
+    }
     // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getExpandedById(sessionJson.libraryItemId)
     const episode = sessionJson.episodeId && libraryItem && libraryItem.isPodcast ? libraryItem.media.podcastEpisodes.find((pe) => pe.id === sessionJson.episodeId) : null
@@ -371,6 +380,11 @@ class PlaybackSessionManager {
    * @returns {Promise<boolean>}
    */
   async syncSession(user, session, syncData) {
+    const timeListened = syncData.timeListened
+    if (timeListened == null || isNaN(timeListened) || timeListened < 0 || timeListened > 30) {
+      Logger.error(`[PlaybackSessionManager] syncSession: Invalid timeListened value "${timeListened}"`)
+      return false
+    }
     // TODO: Combine libraryItem query with library query
     const libraryItem = await Database.libraryItemModel.getExpandedById(session.libraryItemId)
     if (!libraryItem) {

@@ -236,16 +236,17 @@ class PlaybackSession {
   }
 
   addListeningTime(timeListened) {
-    if (!timeListened || isNaN(timeListened)) return
+  if (!timeListened || isNaN(timeListened)) return
+  if (timeListened < 0 || timeListened > 30) return
 
-    if (!this.date) {
-      // Set date info on first listening update
-      this.date = date.format(new Date(), 'YYYY-MM-DD')
-      this.dayOfWeek = date.format(new Date(), 'dddd')
-    }
+  if (!this.date) {
+    // Set date info on first listening update
+    this.date = date.format(new Date(), 'YYYY-MM-DD')
+    this.dayOfWeek = date.format(new Date(), 'dddd')
+  }
 
-    this.timeListening += Number.parseFloat(timeListened)
-    this.updatedAt = Date.now()
+  this.timeListening += Number.parseFloat(timeListened)
+  this.updatedAt = Date.now()
   }
 }
 module.exports = PlaybackSession
