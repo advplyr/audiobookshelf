@@ -17,6 +17,7 @@
 # About
 
 Audiobookshelf is a self-hosted audiobook and podcast server.
+Documentation updated by Shamia Akter Shanta
 
 ### Features
 
