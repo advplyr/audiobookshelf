@@ -38,7 +38,7 @@
   "author": "advplyr",
   "license": "GPL-3.0",
   "dependencies": {
-    "axios": "^0.27.2",
+    "axios": "^0.33.0",
     "cookie-parser": "^1.4.6",
     "express": "^4.17.1",
     "express-rate-limit": "^7.5.1",
