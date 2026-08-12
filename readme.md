@@ -15,7 +15,11 @@
 ## ⚠️ Frontend pull requests are not being reviewed or merged for the existing Vue frontend. The frontend is currently being rewritten and migrated to React and should be available soon.
 
 # About
+Section 1: Project Description
 
+In this part, I worked on the React client repository to fix a bug about user permissions and sessions (Issue #164). Before this fix, when someone updated a user's permissions, the active sessions did not close or update immediately. This was a problem because old sessions could still stay open for a while.
+
+To solve this, we updated the code in PR #167. Now, whenever a user's password or permissions are changed, the React client correctly forces the old sessions to close right away. This makes the application much safer and keeps the data synchronized between the frontend and backend.
 Audiobookshelf is a self-hosted audiobook and podcast server.
 
 ### Features
