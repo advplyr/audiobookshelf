@@ -1,7 +1,51 @@
 const Logger = require('../../Logger')
 const parseSeriesString = require('../parsers/parseSeriesString')
 
-function parseJsonMetadataText(text) {
+const mediaTypeKeys = {
+  book: {
+    tags: 'stringArray',
+    title: 'string',
+    subtitle: 'string',
+    authors: 'stringArray',
+    narrators: 'stringArray',
+    series: 'stringArray',
+    genres: 'stringArray',
+    publishedYear: 'string',
+    publishedDate: 'string',
+    publisher: 'string',
+    description: 'string',
+    isbn: 'string',
+    asin: 'string',
+    language: 'string',
+    explicit: 'boolean',
+    abridged: 'boolean'
+  },
+  podcast: {
+    tags: 'stringArray',
+    title: 'string',
+    author: 'string',
+    description: 'string',
+    releaseDate: 'string',
+    genres: 'stringArray',
+    feedURL: 'string',
+    imageURL: 'string',
+    itunesPageURL: 'string',
+    itunesId: 'string',
+    itunesArtistId: 'string',
+    asin: 'string',
+    language: 'string',
+    explicit: 'boolean',
+    podcastType: 'string'
+  }
+}
+
+/**
+ *
+ * @param {string} text
+ * @param {"book" | "podcast"} mediaType
+ * @returns {Object}
+ */
+function parseJsonMetadataText(text, mediaType) {
   try {
     const abmetadataData = JSON.parse(text)
 
@@ -19,28 +63,41 @@ function parseJsonMetadataText(text) {
     }
     delete abmetadataData.metadata
 
-    if (abmetadataData.series?.length) {
-      abmetadataData.series = [...new Set(abmetadataData.series.map((t) => t?.trim()).filter((t) => t))]
-      abmetadataData.series = abmetadataData.series.map((series) => parseSeriesString.parse(series))
+    const expectedKeys = mediaTypeKeys[mediaType]
+    if (!expectedKeys) {
+      Logger.error(`[abmetadataGenerator] Invalid media type "${mediaType}"`)
+      return null
     }
-    // clean tags & remove dupes
-    if (abmetadataData.tags?.length) {
-      abmetadataData.tags = [...new Set(abmetadataData.tags.map((t) => t?.trim()).filter((t) => t))]
+
+    const validated = {}
+    for (const key in expectedKeys) {
+      const expectedType = expectedKeys[key]
+      if (!(key in abmetadataData)) continue
+
+      const validatedValue = validateMetadataValue(key, abmetadataData[key], expectedType)
+      if (validatedValue !== undefined) {
+        validated[key] = validatedValue
+      }
     }
-    if (abmetadataData.chapters?.length) {
-      abmetadataData.chapters = cleanChaptersArray(abmetadataData.chapters, abmetadataData.title)
+
+    if (validated.series?.length) {
+      validated.series = validated.series.map((series) => parseSeriesString.parse(series)).filter(Boolean)
     }
-    // clean remove dupes
-    if (abmetadataData.authors?.length) {
-      abmetadataData.authors = [...new Set(abmetadataData.authors.map((t) => t?.trim()).filter((t) => t))]
+
+    if (mediaType === 'book' && 'chapters' in abmetadataData) {
+      if (abmetadataData.chapters === null) {
+        validated.chapters = []
+      } else if (Array.isArray(abmetadataData.chapters)) {
+        const cleanedChapters = cleanChaptersArray(abmetadataData.chapters, validated.title ?? abmetadataData.title)
+        if (cleanedChapters) {
+          validated.chapters = cleanedChapters
+        }
+      } else {
+        Logger.warn(`[abmetadataGenerator] Invalid metadata key "chapters" expected array, got ${typeof abmetadataData.chapters}`)
+      }
     }
-    if (abmetadataData.narrators?.length) {
-      abmetadataData.narrators = [...new Set(abmetadataData.narrators.map((t) => t?.trim()).filter((t) => t))]
-    }
-    if (abmetadataData.genres?.length) {
-      abmetadataData.genres = [...new Set(abmetadataData.genres.map((t) => t?.trim()).filter((t) => t))]
-    }
-    return abmetadataData
+
+    return validated
   } catch (error) {
     Logger.error(`[abmetadataGenerator] Invalid metadata.json JSON`, error)
     return null
@@ -48,6 +105,54 @@ function parseJsonMetadataText(text) {
 }
 module.exports.parseJson = parseJsonMetadataText
 
+/**
+ * @param {string} key
+ * @param {*} value
+ * @param {string} expectedType
+ * @returns {*|undefined} undefined excludes the key
+ */
+function validateMetadataValue(key, value, expectedType) {
+  if (expectedType === 'string') {
+    if (value === null) return null
+    if (typeof value === 'number') return String(value)
+    if (typeof value === 'string') return value
+    Logger.warn(`[abmetadataGenerator] Invalid metadata key "${key}" expected string, got ${typeof value}`)
+    return undefined
+  }
+
+  if (expectedType === 'boolean') {
+    if (value === null) return null
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase()
+      if (lower === 'true') return true
+      if (lower === 'false') return false
+    }
+    Logger.warn(`[abmetadataGenerator] Invalid metadata key "${key}" expected boolean, got ${typeof value}`)
+    return undefined
+  }
+
+  // Filter empty strings and deduplicate
+  if (expectedType === 'stringArray') {
+    if (value === null) return []
+    if (!Array.isArray(value)) {
+      Logger.warn(`[abmetadataGenerator] Invalid metadata key "${key}" expected string array, got ${typeof value}`)
+      return undefined
+    }
+
+    const cleanedArray = value.filter((t) => typeof t === 'string')
+    return [...new Set(cleanedArray.map((t) => t.trim()).filter((t) => t))]
+  }
+
+  Logger.warn(`[abmetadataGenerator] Unknown expected type "${expectedType}" for key "${key}"`)
+  return undefined
+}
+
+/**
+ * @param {Object[]} chaptersArray
+ * @param {string} mediaTitle
+ * @returns {Object[]}
+ */
 function cleanChaptersArray(chaptersArray, mediaTitle) {
   const chapters = []
   let index = 0

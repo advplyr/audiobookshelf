@@ -3,6 +3,7 @@ const Sequelize = require('sequelize')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 
@@ -31,12 +32,18 @@ class CollectionController {
   async create(req, res) {
     const reqBody = req.body || {}
 
+    const nameCleaned = htmlSanitizer.stripAllTags(reqBody.name)
+
     // Validation
-    if (!reqBody.name || !reqBody.libraryId) {
+    if (!nameCleaned || !reqBody.libraryId) {
       return res.status(400).send('Invalid collection data')
     }
     if (reqBody.description && typeof reqBody.description !== 'string') {
       return res.status(400).send('Invalid collection description')
+    }
+    if (!req.user.checkCanAccessLibrary(reqBody.libraryId)) {
+      Logger.warn(`[CollectionController] User "${req.user.username}" attempted to create collection in inaccessible library ${reqBody.libraryId}`)
+      return res.sendStatus(403)
     }
     const libraryItemIds = (reqBody.books || []).filter((b) => !!b && typeof b == 'string')
     if (!libraryItemIds.length) {
@@ -65,7 +72,7 @@ class CollectionController {
       newCollection = await Database.collectionModel.create(
         {
           libraryId: reqBody.libraryId,
-          name: reqBody.name,
+          name: nameCleaned,
           description: reqBody.description || null
         },
         { transaction }
@@ -106,8 +113,9 @@ class CollectionController {
    */
   async findAll(req, res) {
     const collectionsExpanded = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user)
+    const accessibleCollections = collectionsExpanded.filter((c) => req.user.checkCanAccessLibrary(c.libraryId))
     res.json({
-      collections: collectionsExpanded
+      collections: accessibleCollections
     })
   }
 
@@ -145,9 +153,12 @@ class CollectionController {
       collectionUpdatePayload.description = req.body.description
       wasUpdated = true
     }
-    if (req.body.name !== undefined && req.body.name !== req.collection.name) {
-      collectionUpdatePayload.name = req.body.name
-      wasUpdated = true
+    if (req.body.name !== undefined && typeof req.body.name === 'string') {
+      const nameCleaned = htmlSanitizer.stripAllTags(req.body.name)
+      if (nameCleaned !== req.collection.name) {
+        collectionUpdatePayload.name = nameCleaned
+        wasUpdated = true
+      }
     }
 
     if (wasUpdated) {
@@ -423,6 +434,10 @@ class CollectionController {
     if (req.params.id) {
       const collection = await Database.collectionModel.findByPk(req.params.id)
       if (!collection) {
+        return res.status(404).send('Collection not found')
+      }
+      if (!req.user.checkCanAccessLibrary(collection.libraryId)) {
+        Logger.warn(`[CollectionController] User "${req.user.username}" attempted to access collection ${collection.id} in inaccessible library ${collection.libraryId}`)
         return res.status(404).send('Collection not found')
       }
       req.collection = collection

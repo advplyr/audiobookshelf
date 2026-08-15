@@ -5,11 +5,10 @@ const { entities } = require('./htmlEntities')
  *
  * @param {string} html
  * @returns {string}
- * @throws {Error} if input is not a string
  */
 function sanitize(html) {
   if (typeof html !== 'string') {
-    throw new Error('sanitizeHtml: input must be a string')
+    return ''
   }
 
   const sanitizerOptions = {
@@ -27,6 +26,8 @@ function sanitize(html) {
 module.exports.sanitize = sanitize
 
 function stripAllTags(html, shouldDecodeEntities = true) {
+  if (typeof html !== 'string') return ''
+
   const sanitizerOptions = {
     allowedTags: [],
     disallowedTagsMode: 'discard'

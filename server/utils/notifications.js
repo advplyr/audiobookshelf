@@ -100,7 +100,7 @@ module.exports.notificationData = {
       variables: ['version'],
       defaults: {
         title: 'Test Notification on Abs {{version}}',
-        body: 'Test notificataion body for abs {{version}}.'
+        body: 'Test notification body for abs {{version}}.'
       },
       testData: {
         version: 'v' + version

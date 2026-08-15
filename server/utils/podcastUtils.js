@@ -217,6 +217,10 @@ function extractEpisodeData(item) {
     episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
 
+  if (episode.subtitle) {
+    episode.subtitle = htmlSanitizer.sanitize(episode.subtitle.trim())
+  }
+
   // Extract psc:chapters if duration is set
   episode.durationSeconds = episode.duration ? timestampToSeconds(episode.duration) : null
 
