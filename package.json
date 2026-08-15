@@ -60,11 +60,11 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "chai": "^4.3.10",
-    "mocha": "^10.2.0",
+    "chai": "^6.2.2",
+    "mocha": "^11.8.0",
     "nodemon": "^2.0.20",
-    "nyc": "^15.1.0",
-    "sinon": "^17.0.1"
+    "nyc": "^18.0.0",
+    "sinon": "^22.1.0"
   },
   "allowScripts": {
     "sqlite3@5.1.7": true
