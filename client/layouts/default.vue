@@ -27,6 +27,8 @@
 </template>
 
 <script>
+const { getMediaProgressState, mediaProgressStatesChanged } = require('@/utils/mediaProgressState')
+
 export default {
   middleware: 'authenticated',
   data() {
@@ -269,7 +271,9 @@ export default {
     },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
+        const progressStateChanged = mediaProgressStatesChanged(this.$store.state.user.user.mediaProgress, user.mediaProgress)
         this.$store.commit('user/setUser', user)
+        if (progressStateChanged) this.$eventBus.$emit('user-media-progress-state-changed')
       }
     },
     userOnline(user) {
@@ -291,7 +295,13 @@ export default {
       if (this.$refs.mediaPlayerContainer) this.$refs.mediaPlayerContainer.sessionClosedEvent(sessionId)
     },
     userMediaProgressUpdate(payload) {
+      const currentProgress = payload.data ? this.$store.getters['user/getUserMediaProgress'](payload.data.libraryItemId, payload.data.episodeId) : null
+      const currentProgressState = getMediaProgressState(currentProgress)
       this.$store.commit('user/updateMediaProgress', payload)
+
+      if (payload.data && currentProgressState !== getMediaProgressState(payload.data)) {
+        this.$eventBus.$emit('user-media-progress-state-changed')
+      }
 
       if (payload.data) {
         if (this.$store.getters['getIsMediaStreaming'](payload.data.libraryItemId, payload.data.episodeId) && this.$store.state.playbackSessionId !== payload.sessionId) {

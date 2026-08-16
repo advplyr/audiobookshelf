@@ -83,7 +83,8 @@ export default {
       lastTimestamp: 0,
       postScrollTimeout: null,
       currFirstEntityIndex: -1,
-      currLastEntityIndex: -1
+      currLastEntityIndex: -1,
+      entitiesGeneration: 0
     }
   },
   watch: {
@@ -328,6 +329,7 @@ export default {
       }
     },
     async fetchEntites(page = 0) {
+      const requestGeneration = this.entitiesGeneration
       const startIndex = page * this.booksPerFetch
 
       this.isFetchingEntities = true
@@ -346,6 +348,7 @@ export default {
       })
 
       this.isFetchingEntities = false
+      if (requestGeneration !== this.entitiesGeneration) return
       if (this.pendingReset) {
         this.pendingReset = false
         this.resetEntities()
@@ -424,6 +427,9 @@ export default {
         this.pendingReset = true
         return
       }
+      this.entitiesGeneration++
+      clearTimeout(this.scrollTimeout)
+      clearTimeout(this.postScrollTimeout)
       this.destroyEntityComponents()
       this.pagesLoaded = {}
       this.entities = []
@@ -432,6 +438,8 @@ export default {
       this.currentPage = 0
       this.isSelectionMode = false
       this.initialized = false
+      this.currFirstEntityIndex = -1
+      this.currLastEntityIndex = -1
 
       this.initSizeData()
       await this.loadPage(0)
@@ -567,6 +575,11 @@ export default {
           }
         }
       }
+    },
+    userMediaProgressStateChanged() {
+      const isBookProgressFilter = this.entityName === 'items' && this.filterBy?.startsWith('progress.')
+      const isSeriesProgressFilter = this.entityName === 'series' && this.seriesFilterBy?.startsWith('progress.')
+      if (isBookProgressFilter || isSeriesProgressFilter) this.resetEntities()
     },
     routeToBookshelfIfLastIssueRemoved() {
       if (this.totalEntities === 0) {
@@ -791,6 +804,7 @@ export default {
 
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('user-settings', this.settingsUpdated)
+      this.$eventBus.$on('user-media-progress-state-changed', this.userMediaProgressStateChanged)
 
       if (this.$root.socket) {
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -822,6 +836,7 @@ export default {
 
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('user-settings', this.settingsUpdated)
+      this.$eventBus.$off('user-media-progress-state-changed', this.userMediaProgressStateChanged)
 
       if (this.$root.socket) {
         this.$root.socket.off('item_updated', this.libraryItemUpdated)
@@ -847,9 +862,10 @@ export default {
     destroyEntityComponents() {
       for (const key in this.entityComponentRefs) {
         const ref = this.entityComponentRefs[key]
-        if (ref && ref.destroy) {
+        if (ref) {
           if (ref.$el) ref.$el.remove()
-          ref.destroy()
+          if (ref.destroy) ref.destroy()
+          else if (ref.$destroy) ref.$destroy()
         }
       }
       this.entityComponentRefs = {}
