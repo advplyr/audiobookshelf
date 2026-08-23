@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "outDir": "dist-server",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true
+  },
+  "include": [
+    "server/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist-server",
+    "client"
+  ]
+}

@@ -17,6 +17,7 @@ echo "--------------------"
 cd client
 rm -rf node_modules
 npm ci --unsafe-perm=true --allow-root
+npm run build:server
 npm run generate
 cd ..
 
@@ -48,7 +49,7 @@ Description: $DESCRIPTION"
 echo "$controlfile" > dist/debian/DEBIAN/control;
 
 # Package debian
-pkg -t node20-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
+pkg -t node20-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf dist-server/index.js
 
 fakeroot dpkg-deb -Zxz --build dist/debian
 
