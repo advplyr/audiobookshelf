@@ -16,7 +16,7 @@ echo "--------------------"
 
 cd client
 rm -rf node_modules
-npm ci --unsafe-perm=true --allow-root
+npm ci
 npm run generate
 cd ..
 
@@ -24,7 +24,7 @@ echo ">>> Building Server"
 echo "--------------------"
 
 rm -rf node_modules
-npm ci --unsafe-perm=true --allow-root
+npm ci
 npm run build:server
 
 echo ">>> Packaging"
