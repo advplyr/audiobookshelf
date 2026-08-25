@@ -253,6 +253,7 @@ class UserController {
     // Updating password
     if (updatePayload.password) {
       user.pash = await this.auth.localAuthStrategy.hashPassword(updatePayload.password)
+      shouldInvalidateJwtSessions = true
       hasUpdates = true
     }
 
@@ -331,14 +332,11 @@ class UserController {
         Logger.info(`[UserController] User ${user.username} has generated a new api token`)
       }
 
-      // Handle JWT session invalidation for username changes
+      // Handle JWT session invalidation for username/password changes
       if (shouldInvalidateJwtSessions) {
-        const newAccessToken = await this.auth.invalidateJwtSessionsForUser(user, req, res)
-        if (newAccessToken) {
-          user.accessToken = newAccessToken
-          // Refresh tokens are only returned for mobile clients
-          // Mobile apps currently do not use this API endpoint so always set to null
-          user.refreshToken = null
+        const newTokens = await this.auth.invalidateJwtSessionsForUser(user, req, res)
+        if (newTokens) {
+          // Note: for admin users changing their own password they should use MeController.updatePassword instead. This endpoint does not return tokens
           Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username} and rotated tokens for current session`)
         } else {
           Logger.info(`[UserController] Invalidated JWT sessions for user ${user.username}`)

@@ -309,11 +309,12 @@ module.exports = {
    * @param {Sequelize.WhereOptions} seriesWhere
    * @returns {object} { booksToExclude, bookSeriesToInclude }
    */
-  async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
+  async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere, replacements = {}) {
     const allSeries = await Database.seriesModel.findAll({
       attributes: ['id', 'name', [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']],
       distinct: true,
       subQuery: false,
+      replacements,
       where: seriesWhere,
       include: [
         {
@@ -581,7 +582,7 @@ module.exports = {
           ...bookIncludes
         ]
       }
-      const { booksToExclude, bookSeriesToInclude } = await this.getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere)
+      const { booksToExclude, bookSeriesToInclude } = await this.getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere, replacements)
       if (booksToExclude.length) {
         bookWhere.push({
           id: {

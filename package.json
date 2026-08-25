@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "2.35.1",
+  "version": "2.36.0",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
@@ -65,5 +65,8 @@
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1"
+  },
+  "allowScripts": {
+    "sqlite3@5.1.7": true
   }
 }

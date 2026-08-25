@@ -3,7 +3,7 @@
     <app-settings-content :header-text="$strings.HeaderEmailSettings" :description="''">
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
-          <a href="https://www.audiobookshelf.org/guides/send_to_ereader" target="_blank" class="inline-flex">
+          <a href="https://audiobookshelf.org/docs/documentation/libraries/book-library/ebooks" target="_blank" class="inline-flex">
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>
