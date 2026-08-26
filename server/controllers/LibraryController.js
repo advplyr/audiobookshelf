@@ -775,7 +775,7 @@ class LibraryController {
    * @param {LibraryControllerRequest} req
    * @param {Response} res - Series
    */
-  async getSeriesForLibrary(req, res) {
+    async getSeriesForLibrary(req, res) {
     const include = (req.query.include || '')
       .split(',')
       .map((v) => v.trim().toLowerCase())
@@ -787,12 +787,24 @@ class LibraryController {
     const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
 
     const seriesJson = series.toOldJSON()
+
+    seriesJson.totalDuration = libraryItemsInSeries.reduce((sum, li) => sum + (li.media?.duration || 0), 0)
+  
+
     if (include.includes('progress')) {
       const libraryItemsFinished = libraryItemsInSeries.filter((li) => !!req.user.getMediaProgress(li.media.id)?.isFinished)
+
+      const totalListened = libraryItemsInSeries.reduce((sum, li) => {
+        const progress = req.user.getMediaProgress(li.media.id)
+        if (!progress) return sum
+        return sum + (progress.isFinished ? li.media?.duration || 0 : progress.currentTime || 0)
+      }, 0)
+
       seriesJson.progress = {
         libraryItemIds: libraryItemsInSeries.map((li) => li.id),
         libraryItemIdsFinished: libraryItemsFinished.map((li) => li.id),
-        isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length
+        isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length,
+        totalListened
       }
     }
 
