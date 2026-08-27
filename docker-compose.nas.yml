@@ -1,0 +1,23 @@
+services:
+  audiobookshelf:
+    image: ghcr.io/boondawgy/audiobookshelf:custom
+    container_name: audiobookshelf
+
+    ports:
+      - "13378:80"
+
+    volumes:
+      - /mnt/@usb/sda2/Audiobooks:/audiobooks
+      - /mnt/@usb/sda2/Podcasts:/podcasts
+      - /mnt/@usb/sda2/Books:/books
+      - /volume1/appdata/audiobookshelf/metadata:/metadata
+      - /volume1/appdata/audiobookshelf/config:/config
+
+    networks:
+      - media_app_net
+
+    restart: unless-stopped
+
+networks:
+  media_app_net:
+    name: media_app_net

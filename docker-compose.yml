@@ -1,7 +1,7 @@
 ### EXAMPLE DOCKER COMPOSE ###
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    image: ghcr.io/boondawgy/audiobookshelf:custom
     # ABS runs on port 13378 by default. If you want to change
     # the port, only change the external port, not the internal port
     ports:
@@ -13,8 +13,9 @@ services:
       # and the path to the right of the colon is where the data is
       # available to ABS in Docker.
       # You can change these media directories or add as many as you want
-      - ./audiobooks:/audiobooks
-      - ./podcasts:/podcasts
+      - /Volumes/Media/Media/Audiobooks:/audiobooks
+      - /Volumes/Media/Media/Podcasts:/podcasts
+      - /Volumes/Media/Media/Books:/books
       # The metadata directory can be stored anywhere on your computer
       - ./metadata:/metadata
       # The config directory needs to be on the same physical machine
