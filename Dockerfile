@@ -39,7 +39,7 @@ RUN case "$TARGETPLATFORM" in \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
   rm /tmp/library.zip
 
-RUN npm ci --include=dev && npm run build:server && npm prune --omit=dev
+RUN npm ci --include=dev && npm run build:server && npm prune --omit=dev && rm -rf dist-server/test
 
 ### STAGE 2: Create minimal runtime image ###
 FROM node:20-alpine
