@@ -2,7 +2,7 @@ ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
 ### STAGE 0: Build client ###
-FROM node:20-alpine AS build-client
+FROM node:24-alpine AS build-client
 
 WORKDIR /client
 COPY /client /client
@@ -10,7 +10,7 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM node:20-alpine AS build-server
+FROM node:24-alpine AS build-server
 
 ARG NUSQLITE3_DIR
 ARG TARGETPLATFORM
@@ -42,7 +42,7 @@ RUN case "$TARGETPLATFORM" in \
 RUN npm ci --include=dev && npm run build:server && npm prune --omit=dev && rm -rf dist-server/test
 
 ### STAGE 2: Create minimal runtime image ###
-FROM node:20-alpine
+FROM node:24-alpine
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
