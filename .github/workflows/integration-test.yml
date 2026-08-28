@@ -41,7 +41,7 @@ jobs:
         run: npm ci && npm run build:server && npm prune --omit=dev
 
       - name: build binary
-        run: pkg -t node20-linux-x64 -o audiobookshelf dist-server/index.js
+        run: pkg --config package.json -t node20-linux-x64 -o audiobookshelf dist-server/index.js
 
       - name: run audiobookshelf
         run: |
