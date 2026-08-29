@@ -132,7 +132,7 @@ winget install -e --id Microsoft.VisualStudioCode
 
 <div>
 <details>
-<summary>Install the required software on MacOS with <a href=(https://snapcraft.io/)>homebrew</a></summary>
+<summary>Install the required software on macOS with <a href=(https://snapcraft.io/)>homebrew</a></summary>
 
 <p>
 
