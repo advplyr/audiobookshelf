@@ -24,7 +24,10 @@ function isMediaFile(mediaType, ext, audiobooksOnly = false) {
   return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
-function isScannableNonMediaFile(ext) {
+function isScannableNonMediaFile(ext, filename = '') {
+  const filenameLower = filename.toLowerCase()
+  if (filenameLower === 'ncc.html') return true
+
   if (!ext) return false
   const extclean = ext.slice(1).toLowerCase()
   return globals.TextFileTypes.includes(extclean) || globals.MetadataFileTypes.includes(extclean) || globals.SupportedImageTypes.includes(extclean)
@@ -58,7 +61,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly,
   /** @type {import('./fileUtils').FilePathItem[]} */
   const otherFileItems = []
   itemsFiltered.forEach((item) => {
-    if (isMediaFile(mediaType, item.extension, audiobooksOnly) || (includeNonMediaFiles && isScannableNonMediaFile(item.extension))) {
+    if (isMediaFile(mediaType, item.extension, audiobooksOnly) || (includeNonMediaFiles && isScannableNonMediaFile(item.extension, item.name))) {
       mediaFileItems.push(item)
     } else {
       otherFileItems.push(item)
