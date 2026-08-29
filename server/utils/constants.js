@@ -52,6 +52,7 @@ module.exports.AudioMimeType = {
   // TODO: Switch to `audio/matroska`? marked as deprecated in IANA registry
   // ref: https://datatracker.ietf.org/doc/html/rfc9559
   MKA: 'audio/x-matroska',
+  MKV: 'audio/x-matroska',
   AWB: 'audio/amr-wb',
   CAF: 'audio/x-caf',
   MPEG: 'audio/mpeg',
