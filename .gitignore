@@ -24,3 +24,4 @@ sw.*
 .idea/*
 tailwind.compiled.css
 tailwind.config.js
+.taskling

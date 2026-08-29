@@ -3,6 +3,9 @@ const expect = chai.expect
 const sinon = require('sinon')
 const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('fs')
+const http = require('http')
+const path = require('path')
+const os = require('os')
 const Logger = require('../../../server/Logger')
 
 describe('fileUtils', () => {
@@ -132,6 +135,87 @@ describe('fileUtils', () => {
         extension: '.m4b',
         deep: 1
       })
+    })
+  })
+
+  describe('downloadFile', () => {
+    let server
+    let serverPort
+    let tmpDir
+    let serveContent
+    let serveContentType
+    let serveStatusCode
+
+    before(async () => {
+      // Disable the SSRF filter so we can hit 127.0.0.1 in tests
+      global.DisableSsrfRequestFilter = () => true
+
+      server = http.createServer((req, res) => {
+        res.writeHead(serveStatusCode, {
+          'Content-Type': serveContentType,
+          'Content-Length': serveContent.length.toString()
+        })
+        res.end(serveContent)
+      })
+      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+      serverPort = server.address().port
+    })
+
+    after(async () => {
+      delete global.DisableSsrfRequestFilter
+      await new Promise((resolve) => server.close(resolve))
+    })
+
+    beforeEach(() => {
+      serveContent = Buffer.from('fake audio content for testing purposes')
+      serveContentType = 'audio/mpeg'
+      serveStatusCode = 200
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'abs-fileutils-test-'))
+      sinon.stub(Logger, 'debug')
+      sinon.stub(Logger, 'error')
+    })
+
+    afterEach(() => {
+      sinon.restore()
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    })
+
+    it('should download file and write it to the specified path', async () => {
+      const destPath = path.join(tmpDir, 'output.mp3')
+      await fileUtils.downloadFile(`http://127.0.0.1:${serverPort}/test.mp3`, destPath)
+      expect(fs.existsSync(destPath)).to.be.true
+      expect(fs.readFileSync(destPath).toString()).to.equal(serveContent.toString())
+    })
+
+    it('should write the exact number of bytes served', async () => {
+      serveContent = Buffer.alloc(8192, 0xff)
+      const destPath = path.join(tmpDir, 'exact.mp3')
+      await fileUtils.downloadFile(`http://127.0.0.1:${serverPort}/exact.mp3`, destPath)
+      expect(fs.statSync(destPath).size).to.equal(8192)
+    })
+
+    it('should reject when content type filter rejects the response content type', async () => {
+      const destPath = path.join(tmpDir, 'rejected.mp3')
+      let didReject = false
+      try {
+        await fileUtils.downloadFile(`http://127.0.0.1:${serverPort}/test.mp3`, destPath, (ct) => ct.includes('video/'))
+      } catch (e) {
+        didReject = true
+        expect(e.message).to.include('Invalid content type')
+      }
+      expect(didReject).to.be.true
+    })
+
+    it('should pass when content type filter accepts the response content type', async () => {
+      const destPath = path.join(tmpDir, 'accepted.mp3')
+      await fileUtils.downloadFile(`http://127.0.0.1:${serverPort}/test.mp3`, destPath, (ct) => ct.includes('audio/'))
+      expect(fs.existsSync(destPath)).to.be.true
+    })
+
+    it('should resolve with no content type filter provided', async () => {
+      const destPath = path.join(tmpDir, 'nofilter.mp3')
+      await fileUtils.downloadFile(`http://127.0.0.1:${serverPort}/test.mp3`, destPath)
+      expect(fs.existsSync(destPath)).to.be.true
     })
   })
 })
