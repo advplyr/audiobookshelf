@@ -55,6 +55,6 @@ module.exports.AudioMimeType = {
   MKV: 'audio/x-matroska',
   AWB: 'audio/amr-wb',
   CAF: 'audio/x-caf',
-  MPEG: 'audio/mpeg',
-  MPG: 'audio/mpeg'
+  MPEG: 'video/mpeg',
+  MPG: 'video/mpeg'
 }
