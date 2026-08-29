@@ -1,6 +1,6 @@
-const axios = require('axios').default
 const Logger = require('../Logger')
 const { isValidASIN } = require('../utils/index')
+const { fetchJson } = require('../utils/fetchUtils')
 
 class Audible {
   #responseTimeout = 10000
@@ -102,13 +102,10 @@ class Audible {
     var regionQuery = region ? `?region=${region}` : ''
     var url = `https://api.audnex.us/books/${asin}${regionQuery}`
     Logger.debug(`[Audible] ASIN url: ${url}`)
-    return axios
-      .get(url, {
-        timeout
-      })
-      .then((res) => {
-        if (!res?.data?.asin) return null
-        return res.data
+    return fetchJson(url, { timeout })
+      .then((data) => {
+        if (!data?.asin) return null
+        return data
       })
       .catch((error) => {
         Logger.error('[Audible] ASIN search error', error.message)
@@ -154,13 +151,10 @@ class Audible {
       const tld = region ? this.regionMap[region] : '.com'
       const url = `https://api.audible${tld}/1.0/catalog/products?${queryString}`
       Logger.debug(`[Audible] Search url: ${url}`)
-      items = await axios
-        .get(url, {
-          timeout
-        })
-        .then((res) => {
-          if (!res?.data?.products) return null
-          return Promise.all(res.data.products.map((result) => this.asinSearch(result.asin, region, timeout)))
+      items = await fetchJson(url, { timeout })
+        .then((data) => {
+          if (!data?.products) return null
+          return Promise.all(data.products.map((result) => this.asinSearch(result.asin, region, timeout)))
         })
         .catch((error) => {
           Logger.error('[Audible] query search error', error.message)

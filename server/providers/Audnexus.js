@@ -1,8 +1,8 @@
-const axios = require('axios').default
 const Throttle = require('p-throttle')
 const Logger = require('../Logger')
 const { levenshteinDistance } = require('../utils/index')
 const { isValidASIN } = require('../utils/index')
+const { fetchJson } = require('../utils/fetchUtils')
 
 /**
  * @typedef AuthorSearchObj
@@ -52,8 +52,8 @@ class Audnexus {
     const authorRequestUrl = `${this.baseUrl}/authors?${searchParams.toString()}`
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
-    return this._processRequest(this.limiter(() => axios.get(authorRequestUrl)))
-      .then((res) => res.data || [])
+    return this._processRequest(this.limiter(() => fetchJson(authorRequestUrl)))
+      .then((data) => data || [])
       .catch((error) => {
         Logger.error(`[Audnexus] Author ASIN request failed for ${name}`, error.message)
         return []
@@ -79,8 +79,8 @@ class Audnexus {
 
     Logger.info(`[Audnexus] Searching for author "${authorRequestUrl}"`)
 
-    return this._processRequest(this.limiter(() => axios.get(authorRequestUrl.toString())))
-      .then((res) => res.data)
+    return this._processRequest(this.limiter(() => fetchJson(authorRequestUrl.toString())))
+      .then((data) => data)
       .catch((error) => {
         Logger.error(`[Audnexus] Author request failed for ${asin}`, error.message)
         return null
@@ -155,8 +155,8 @@ class Audnexus {
     const chaptersRequestUrl = new URL(`${this.baseUrl}/books/${asin}/chapters`)
     if (region) chaptersRequestUrl.searchParams.set('region', region)
 
-    return this._processRequest(this.limiter(() => axios.get(chaptersRequestUrl.toString())))
-      .then((res) => res.data)
+    return this._processRequest(this.limiter(() => fetchJson(chaptersRequestUrl.toString())))
+      .then((data) => data)
       .catch((error) => {
         Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error.message)
         return null

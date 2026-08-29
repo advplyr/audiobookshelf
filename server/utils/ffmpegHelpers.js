@@ -1,11 +1,11 @@
-const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
+const { Readable } = require('node:stream')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
+const { safeFetchResponse } = require('./fetchUtils')
 
 function escapeSingleQuotes(path) {
   // A ' within a quoted string is escaped with '\'' in ffmpeg (see https://www.ffmpeg.org/ffmpeg-utils.html#Quoting-and-escaping)
@@ -116,17 +116,12 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     for (const userAgent of userAgents) {
       try {
-        response = await axios({
-          url: podcastEpisodeDownload.url,
-          method: 'GET',
-          responseType: 'stream',
+        response = await safeFetchResponse(podcastEpisodeDownload.url, {
           headers: {
             Accept: '*/*',
             'User-Agent': userAgent
           },
-          timeout: global.PodcastDownloadTimeout,
-          httpAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : ssrfFilter(podcastEpisodeDownload.url),
-          httpsAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : ssrfFilter(podcastEpisodeDownload.url)
+          timeout: global.PodcastDownloadTimeout
         })
 
         Logger.debug(`[ffmpegHelpers] Successfully connected with User-Agent: ${userAgent}`)
@@ -150,7 +145,10 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     }
 
     /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
-    const ffmpeg = Ffmpeg(response.data)
+    if (!response.body) {
+      return resolve({ success: false, isRequestError: true })
+    }
+    const ffmpeg = Ffmpeg(Readable.fromWeb(response.body))
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
     ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
 

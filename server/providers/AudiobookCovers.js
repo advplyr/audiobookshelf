@@ -1,5 +1,5 @@
-const axios = require('axios')
 const Logger = require('../Logger')
+const { fetchJson } = require('../utils/fetchUtils')
 
 class AudiobookCovers {
   #responseTimeout = 10000
@@ -15,14 +15,10 @@ class AudiobookCovers {
   async search(search, timeout = this.#responseTimeout) {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
-    const url = `https://api.audiobookcovers.com/cover/bytext/`
-    const params = new URLSearchParams([['q', search]])
-    const items = await axios
-      .get(url, {
-        params,
-        timeout
-      })
-      .then((res) => res?.data || [])
+    const url = new URL('https://api.audiobookcovers.com/cover/bytext/')
+    url.searchParams.set('q', search)
+    const items = await fetchJson(url, { timeout })
+      .then((data) => data || [])
       .catch((error) => {
         Logger.error('[AudiobookCovers] Cover search error', error.message)
         return []

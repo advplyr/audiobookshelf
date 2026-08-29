@@ -2,13 +2,14 @@ const child_process = require('child_process')
 const { promisify } = require('util')
 const exec = promisify(child_process.exec)
 const os = require('os')
-const axios = require('axios')
+const { Readable } = require('node:stream')
 const path = require('path')
 const which = require('../libs/which')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const fileUtils = require('../utils/fileUtils')
 const StreamZip = require('../libs/nodeStreamZip')
+const { fetchJson, fetchResponse } = require('../utils/fetchUtils')
 
 class ZippedAssetDownloader {
   constructor() {
@@ -38,10 +39,10 @@ class ZippedAssetDownloader {
     } else {
       // Get the release information
       const releaseUrl = this.getReleaseUrl(releaseTag)
-      const releaseResponse = await axios.get(releaseUrl, { headers: { 'User-Agent': 'axios' } })
+      const releaseData = await fetchJson(releaseUrl, { headers: { 'User-Agent': 'audiobookshelf' } })
 
       // Cache the assets information for the release tag
-      this.assetCache[releaseTag] = releaseResponse.data
+      this.assetCache[releaseTag] = releaseData
       Logger.debug(`[ZippedAssetDownloader] release ${releaseTag}: assets fetched from API.`)
     }
 
@@ -55,9 +56,10 @@ class ZippedAssetDownloader {
     const zipPath = path.join(destDir, 'temp.zip')
     const writer = fs.createWriteStream(zipPath)
 
-    const assetResponse = await axios({ url: assetUrl, responseType: 'stream' })
+    const assetResponse = await fetchResponse(assetUrl)
+    if (!assetResponse.body) throw new Error(`Empty response body for ${assetUrl}`)
 
-    assetResponse.data.pipe(writer)
+    Readable.fromWeb(assetResponse.body).pipe(writer)
 
     await new Promise((resolve, reject) => {
       writer.on('finish', () => {

@@ -1,5 +1,5 @@
-const axios = require('axios')
 const Logger = require('../Logger')
+const { fetchJson } = require('../utils/fetchUtils')
 
 class FantLab {
   #responseTimeout = 10000
@@ -40,12 +40,9 @@ class FantLab {
     }
     const url = `${this._baseUrl}/search-works?q=${searchString}&page=1&onlymatches=1`
     Logger.debug(`[FantLab] Search url: ${url}`)
-    const items = await axios
-      .get(url, {
-        timeout
-      })
-      .then((res) => {
-        return res.data || []
+    const items = await fetchJson(url, { timeout })
+      .then((data) => {
+        return data || []
       })
       .catch((error) => {
         Logger.error('[FantLab] search error', error.message)
@@ -69,12 +66,9 @@ class FantLab {
     }
 
     const url = `${this._baseUrl}/work/${work_id}/extended`
-    const bookData = await axios
-      .get(url, {
-        timeout
-      })
-      .then((resp) => {
-        return resp.data || null
+    const bookData = await fetchJson(url, { timeout })
+      .then((data) => {
+        return data || null
       })
       .catch((error) => {
         Logger.error(`[FantLab] work info request for url "${url}" error`, error.message)
@@ -185,12 +179,9 @@ class FantLab {
 
     const url = `${this._baseUrl}/edition/${editionId}`
 
-    const editionInfo = await axios
-      .get(url, {
-        timeout
-      })
-      .then((resp) => {
-        return resp.data || null
+    const editionInfo = await fetchJson(url, { timeout })
+      .then((data) => {
+        return data || null
       })
       .catch((error) => {
         Logger.error(`[FantLab] search cover from edition with url "${url}" error`, error.message)

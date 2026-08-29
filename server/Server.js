@@ -6,7 +6,6 @@ const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const cookieParser = require('cookie-parser')
-const axios = require('axios')
 
 const { version } = require('../package.json')
 
@@ -75,20 +74,6 @@ class Server {
       Logger.info(`[Server] Experimental Proxy Support Enabled, SSRF Request Filter was Disabled`)
       global.DisableSsrfRequestFilter = () => true
 
-      axios.defaults.maxRedirects = 0
-      axios.interceptors.response.use(
-        (response) => response,
-        (error) => {
-          if ([301, 302].includes(error.response?.status)) {
-            return axios({
-              ...error.config,
-              url: error.response.headers.location
-            })
-          }
-
-          return Promise.reject(error)
-        }
-      )
     } else if (process.env.DISABLE_SSRF_REQUEST_FILTER === '1') {
       Logger.info(`[Server] SSRF Request Filter Disabled`)
       global.DisableSsrfRequestFilter = () => true

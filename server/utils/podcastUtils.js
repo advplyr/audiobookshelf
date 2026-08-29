@@ -1,9 +1,8 @@
-const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
 const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const Fuse = require('../libs/fusejs')
+const { safeFetchResponse } = require('./fetchUtils')
 
 /**
  * @typedef RssPodcastChapter
@@ -363,35 +362,27 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     userAgent = 'audiobookshelf (+https://audiobookshelf.org; like iTMS) - CBC'
   }
 
-  return axios({
-    url: feedUrl,
-    method: 'GET',
+  return safeFetchResponse(feedUrl, {
     timeout: global.PodcastDownloadTimeout,
-    responseType: 'arraybuffer',
     headers: {
       Accept: 'application/rss+xml, application/xhtml+xml, application/xml, */*;q=0.8',
       'Accept-Encoding': 'gzip, compress, deflate',
       'User-Agent': userAgent
-    },
-    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
-    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
+    }
   })
-    .then(async (data) => {
+    .then(async (response) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
       //  See: https://github.com/advplyr/audiobookshelf/issues/1489
-      const contentType = data.headers?.['content-type'] || '' // e.g. text/xml; charset=iso-8859-1
-      if (contentType.toLowerCase().includes('iso-8859-1')) {
-        data.data = data.data.toString('latin1')
-      } else {
-        data.data = data.data.toString()
-      }
+      const contentType = response.headers.get('content-type') || '' // e.g. text/xml; charset=iso-8859-1
+      const encoding = contentType.toLowerCase().includes('iso-8859-1') ? 'latin1' : 'utf8'
+      const content = Buffer.from(await response.arrayBuffer()).toString(encoding)
 
-      if (!data?.data) {
+      if (!content) {
         Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
         return null
       }
       Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-      const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+      const payload = await this.parsePodcastRssFeedXml(content, excludeEpisodeMetadata)
       if (!payload) {
         return null
       }
@@ -402,14 +393,6 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       return payload.podcast
     })
     .catch((error) => {
-      // Check for failures due to redirecting from http to https. If original url was http, upgrade to https and try again
-      if (error.code === 'ERR_FR_REDIRECTION_FAILURE' && error.cause.code === 'ERR_INVALID_PROTOCOL') {
-        if (feedUrl.startsWith('http://') && error.request._options.protocol === 'https:') {
-          Logger.info('Redirection from http to https detected. Upgrading Request', error.request._options.href)
-          feedUrl = feedUrl.replace('http://', 'https://')
-          return this.getPodcastFeed(feedUrl, excludeEpisodeMetadata)
-        }
-      }
       Logger.error('[podcastUtils] getPodcastFeed Error', error)
       return null
     })

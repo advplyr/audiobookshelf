@@ -1,7 +1,7 @@
-const axios = require('axios')
 const packageJson = require('../../package.json')
 const Logger = require('../Logger')
 const { isNullOrNaN } = require('../utils/index')
+const { fetchJson } = require('../utils/fetchUtils')
 
 class MusicBrainz {
   constructor() { }
@@ -35,13 +35,10 @@ class MusicBrainz {
       limit: isNullOrNaN(options.limit) ? 15 : Number(options.limit),
       fmt: 'json'
     }
-    const config = {
-      headers: {
-        'User-Agent': this.userAgentString
-      }
-    }
-    return axios.get('https://musicbrainz.org/ws/2/recording', { params: query }, config).then((response) => {
-      return response.data.recordings || []
+    const url = new URL('https://musicbrainz.org/ws/2/recording')
+    for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value)
+    return fetchJson(url, { headers: { 'User-Agent': this.userAgentString } }).then((data) => {
+      return data.recordings || []
     }).catch((error) => {
       Logger.error(`[MusicBrainz] search request error`, error)
       return []

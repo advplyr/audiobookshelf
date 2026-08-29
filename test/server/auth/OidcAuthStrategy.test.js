@@ -69,6 +69,24 @@ describe('OidcAuthStrategy - isValidWebCallbackUrl', () => {
     expect(strategy.isValidWebCallbackUrl('not a url', mockReq())).to.equal(false)
   })
 
+  it('discovers an issuer on a private network', async () => {
+    const issuer = 'http://192.168.1.66:9000/application/o/audiobookshelf'
+    sinon.stub(global, 'fetch').resolves(new Response(JSON.stringify({
+      issuer,
+      authorization_endpoint: `${issuer}/authorize`,
+      token_endpoint: `${issuer}/token`,
+      userinfo_endpoint: `${issuer}/userinfo`,
+      end_session_endpoint: `${issuer}/logout`,
+      jwks_uri: `${issuer}/jwks`,
+      id_token_signing_alg_values_supported: ['RS256']
+    })))
+
+    const config = await strategy.getIssuerConfig(issuer)
+
+    expect(config.issuer).to.equal(issuer)
+    expect(global.fetch.calledWith(`${issuer}/.well-known/openid-configuration`)).to.be.true
+  })
+
   it('uses x-forwarded-proto when determining same-origin https URLs', () => {
     const req = mockReq({ xForwardedProto: 'https' })
     expect(strategy.isValidWebCallbackUrl('https://books.example.com/login', req)).to.equal(true)

@@ -1,10 +1,10 @@
 const { Request, Response } = require('express')
 const passport = require('passport')
 const OpenIDClient = require('openid-client')
-const axios = require('axios')
 const Database = require('../Database')
 const Logger = require('../Logger')
 const { getRequestOrigin } = require('../utils/requestUtils')
+const { fetchJson } = require('../utils/fetchUtils')
 
 /**
  * OpenID Connect authentication strategy
@@ -452,7 +452,7 @@ class OidcAuthStrategy {
     }
 
     try {
-      const { data } = await axios.get(configUrl.toString())
+      const data = await fetchJson(configUrl.toString())
       return {
         issuer: data.issuer,
         authorization_endpoint: data.authorization_endpoint,

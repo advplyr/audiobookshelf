@@ -1,6 +1,6 @@
-const axios = require('axios')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const { fetchJson } = require('../utils/fetchUtils')
 
 /**
  * @typedef iTunesSearchParams
@@ -54,13 +54,13 @@ class iTunes {
       limit: options.limit,
       country: options.country
     }
-    return axios
-      .get('https://itunes.apple.com/search', {
-        params: query,
-        timeout
-      })
-      .then((response) => {
-        return response.data.results || []
+    const url = new URL('https://itunes.apple.com/search')
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) url.searchParams.set(key, value)
+    }
+    return fetchJson(url, { timeout })
+      .then((data) => {
+        return data.results || []
       })
       .catch((error) => {
         Logger.error(`[iTunes] search request error`, error.message)

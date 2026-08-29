@@ -1,8 +1,8 @@
-const axios = require('axios')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const { notificationData } = require('../utils/notifications')
+const { fetchResponse } = require('../utils/fetchUtils')
 
 class NotificationManager {
   constructor() {
@@ -221,10 +221,14 @@ class NotificationManager {
 
   sendNotification(notification, eventData) {
     const payload = notification.getApprisePayload(eventData)
-    return axios
-      .post(Database.notificationSettings.appriseApiUrl, payload, { timeout: 6000 })
+    return fetchResponse(Database.notificationSettings.appriseApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      timeout: 6000
+    })
       .then((response) => {
-        Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=`, response.data)
+        Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=${response.status}`)
         return true
       })
       .catch((error) => {

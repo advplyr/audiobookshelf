@@ -1,11 +1,11 @@
-const axios = require('axios')
 const Path = require('path')
-const ssrfFilter = require('ssrf-req-filter')
+const { Readable, pipeline } = require('node:stream')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
+const { safeFetchResponse } = require('./fetchUtils')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -298,32 +298,29 @@ module.exports.getFilePathItemFromFileUpdate = (fileUpdate) => {
 module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
-    axios({
-      url,
-      method: 'GET',
-      responseType: 'stream',
+    safeFetchResponse(url, {
       headers: {
         'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
-      timeout: 30000,
-      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url),
-      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
+      timeout: 30000
     })
       .then((response) => {
         // Validate content type
-        if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
-          return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+        const contentType = response.headers.get('content-type') || ''
+        if (contentTypeFilter && !contentTypeFilter?.(contentType)) {
+          return reject(new Error(`Invalid content type "${contentType}"`))
         }
 
-        const totalSize = parseInt(response.headers['content-length'], 10)
+        const totalSize = parseInt(response.headers.get('content-length'), 10)
         let downloadedSize = 0
 
         // Write to filepath
         const writer = fs.createWriteStream(filepath)
-        response.data.pipe(writer)
+        if (!response.body) return reject(new Error(`Empty response body for ${url}`))
+        const stream = Readable.fromWeb(response.body)
 
         let lastProgress = 0
-        response.data.on('data', (chunk) => {
+        stream.on('data', (chunk) => {
           downloadedSize += chunk.length
           const progress = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0
           if (progress >= lastProgress + 5) {
@@ -332,8 +329,10 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
           }
         })
 
-        writer.on('finish', resolve)
-        writer.on('error', reject)
+        pipeline(stream, writer, (error) => {
+          if (error) return reject(error)
+          resolve()
+        })
       })
       .catch((err) => {
         Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)

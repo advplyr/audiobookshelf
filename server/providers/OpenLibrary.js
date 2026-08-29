@@ -1,4 +1,4 @@
-const axios = require('axios').default
+const { fetchJson } = require('../utils/fetchUtils')
 
 class OpenLibrary {
   #responseTimeout = 10000
@@ -15,13 +15,7 @@ class OpenLibrary {
    */
   get(uri, timeout = this.#responseTimeout) {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
-    return axios
-      .get(`${this.baseUrl}/${uri}`, {
-        timeout
-      })
-      .then((res) => {
-        return res.data
-      })
+    return fetchJson(`${this.baseUrl}/${uri}`, { timeout })
       .catch((error) => {
         console.error('Failed', error.message)
         return null

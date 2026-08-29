@@ -1,7 +1,7 @@
-const axios = require('axios').default
 const Database = require('../Database')
 const Logger = require('../Logger')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const { safeFetchJson } = require('../utils/fetchUtils')
 
 class CustomProviderAdapter {
   #responseTimeout = 10000
@@ -45,20 +45,19 @@ class CustomProviderAdapter {
     Logger.debug(`[CustomMetadataProvider] Search url: ${url}`)
 
     // Setup headers
-    const axiosOptions = {
+    const fetchOptions = {
       timeout
     }
     if (provider.authHeaderValue) {
-      axiosOptions.headers = {
+      fetchOptions.headers = {
         Authorization: provider.authHeaderValue
       }
     }
 
-    const matches = await axios
-      .get(url, axiosOptions)
-      .then((res) => {
-        if (!res?.data || !Array.isArray(res.data.matches)) return null
-        return res.data.matches
+    const matches = await safeFetchJson(url, { ...fetchOptions, allowPrivateNetwork: true })
+      .then((data) => {
+        if (!data || !Array.isArray(data.matches)) return null
+        return data.matches
       })
       .catch((error) => {
         Logger.error('[CustomMetadataProvider] Search error', error.message)

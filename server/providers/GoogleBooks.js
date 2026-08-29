@@ -1,5 +1,5 @@
-const axios = require('axios')
 const Logger = require('../Logger')
+const { fetchJson } = require('../utils/fetchUtils')
 
 class GoogleBooks {
   #responseTimeout = 10000
@@ -58,13 +58,10 @@ class GoogleBooks {
     }
     const url = `https://www.googleapis.com/books/v1/volumes?${queryString}`
     Logger.debug(`[GoogleBooks] Search url: ${url}`)
-    const items = await axios
-      .get(url, {
-        timeout
-      })
-      .then((res) => {
-        if (!res || !res.data || !res.data.items) return []
-        return res.data.items
+    const items = await fetchJson(url, { timeout })
+      .then((data) => {
+        if (!data?.items) return []
+        return data.items
       })
       .catch((error) => {
         Logger.error('[GoogleBooks] Volume search error', error.message)
