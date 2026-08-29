@@ -9,6 +9,10 @@
         <p v-if="isLibraryPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonLibrary }}</p>
         <span v-else class="material-symbols text-lg">import_contacts</span>
       </nuxt-link>
+      <nuxt-link :to="`/library/${currentLibraryId}/folders`" class="grow h-full flex justify-center items-center" :class="isFoldersPage ? 'bg-primary/80' : 'bg-primary/40'">
+        <p v-if="isFoldersPage" class="text-sm">{{ $strings.LabelFolders }}</p>
+        <span v-else class="material-symbols text-lg">folder</span>
+      </nuxt-link>
       <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="grow h-full flex justify-center items-center" :class="isPodcastLatestPage ? 'bg-primary/80' : 'bg-primary/40'">
         <p class="text-sm">{{ $strings.ButtonLatest }}</p>
       </nuxt-link>
@@ -37,7 +41,12 @@
     </div>
     <div id="toolbar" role="toolbar" aria-label="Library Toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-40 flex items-center justify-end md:justify-start px-2 md:px-8">
       <!-- Series books page -->
-      <template v-if="selectedSeries">
+      <template v-if="isFoldersPage">
+        <slot name="folders">
+          <p class="pl-2 text-base md:text-lg">{{ $strings.LabelFolders }}</p>
+        </slot>
+      </template>
+      <template v-else-if="selectedSeries">
         <p class="pl-2 text-base md:text-lg">
           {{ seriesName }}
         </p>
@@ -238,6 +247,9 @@ export default {
     },
     isLibraryPage() {
       return this.page === ''
+    },
+    isFoldersPage() {
+      return this.page === 'folders'
     },
     isSeriesPage() {
       return this.page === 'series'
