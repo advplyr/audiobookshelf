@@ -967,6 +967,20 @@ WHERE EXISTS (
     }
 
     /**
+     * Returns an expression that strips punctuation the older in-memory search ignored.
+     *
+     * @param {string} expression
+     * @returns {string}
+     */
+    stripPunctuation(expression) {
+      const punctuationChars = ["'", '.', '`', '"', ',']
+      punctuationChars.forEach((char) => {
+        expression = `replace(${expression}, ${this.sequelize.escape(char)}, '')`
+      })
+      return expression
+    }
+
+    /**
      * Initialize the text query.
      *
      */
@@ -983,15 +997,17 @@ WHERE EXISTS (
      * Get match expression for the specified column.
      * If the query contains accents, match against the column as-is (case-insensitive exact match).
      * otherwise match against a normalized column (case-insensitive match with accents removed).
+     * Punctuation is stripped from both sides in all cases.
      *
      * @param {string} column
      * @returns {string}
      */
     matchExpression(column) {
-      const pattern = this.sequelize.escape(`%${this.query}%`)
-      if (!this.supportsUnaccent) return `${column} LIKE ${pattern}`
+      const queryExpr = this.stripPunctuation(this.sequelize.escape(this.query))
+      const pattern = `'%' || ${queryExpr} || '%'`
+      if (!this.supportsUnaccent) return `${this.stripPunctuation(column)} LIKE ${pattern}`
       const normalizedColumn = this.hasAccents ? column : this.normalize(column)
-      return `${normalizedColumn} LIKE ${pattern}`
+      return `${this.stripPunctuation(normalizedColumn)} LIKE ${pattern}`
     }
   }
 }
