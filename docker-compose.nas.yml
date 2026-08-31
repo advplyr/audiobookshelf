@@ -1,7 +1,10 @@
 services:
   audiobookshelf:
     image: ghcr.io/boondawgy/audiobookshelf:custom
+    pull_policy: always
     container_name: audiobookshelf
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
 
     ports:
       - "13378:80"
@@ -14,10 +17,11 @@ services:
       - /volume1/appdata/audiobookshelf/config:/config
 
     networks:
-      - media_app_net
+      - media_services
 
     restart: unless-stopped
 
 networks:
-  media_app_net:
-    name: media_app_net
+  media_services:
+    name: media_services
+    external: true
