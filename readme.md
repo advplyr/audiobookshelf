@@ -77,6 +77,21 @@ See [library docs](https://audiobookshelf.org/docs/category/libraries) for suppo
 
 See [install docs](https://audiobookshelf.org/docs/category/installation)
 
+## Local Docker Deployment
+
+This repo includes two Compose files:
+
+- `docker-compose.yml` builds and runs Audiobookshelf locally.
+- `docker-compose.nas.yml` runs the custom GHCR image on the NAS and includes the
+  Watchtower label used by the shared updater.
+
+Local appdata is stored under `/Users/bensycamore/Local AppData/audiobookshelf`:
+
+- `metadata` is mounted to `/metadata`.
+- `config` is mounted to `/config`.
+
+NAS appdata uses the same structure under `/volume1/appdata/audiobookshelf`.
+
 <br />
 
 # Reverse Proxy Set Up

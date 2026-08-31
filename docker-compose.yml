@@ -19,10 +19,10 @@ services:
       - /Users/bensycamore/Local Media/Podcasts:/podcasts
       - /Users/bensycamore/Local Media/Books:/books
       # The metadata directory can be stored anywhere on your computer
-      - ./metadata:/metadata
+      - /Users/bensycamore/Local AppData/audiobookshelf/metadata:/metadata
       # The config directory needs to be on the same physical machine
       # you are running ABS on
-      - ./config:/config
+      - /Users/bensycamore/Local AppData/audiobookshelf/config:/config
     restart: unless-stopped
     # You can use the following user directive to run the ABS
     # docker container as a specific user. You will need to change
