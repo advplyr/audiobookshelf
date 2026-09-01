@@ -1,0 +1,430 @@
+components:
+  schemas:
+    ExternalAudiobookSearchResult:
+      type: object
+      description: |
+        A single result of the external audiobook search. The object contains all data returned by the
+        metadata provider (`BookFinder`) for that book, so additional fields beyond the ones listed here
+        are possible and depend on the configured provider. The complete object is passed on to the
+        external service unchanged.
+      additionalProperties: true
+      properties:
+        id:
+          description: Identifier of the result. The ASIN of the book if the provider returned one, otherwise generated.
+          type: string
+          example: 'B0BMSNBK3H'
+        provider:
+          description: The metadata provider the result came from, configured in the external service settings.
+          type: string
+          example: 'audible.de'
+        title:
+          description: The title of the book.
+          type: string
+          example: 'Der Hobbit'
+        subtitle:
+          description: The subtitle of the book. Will be null if the provider did not return one.
+          type: string
+          nullable: true
+          example: 'oder Hin und zurück'
+        author:
+          description: The author(s) of the book, comma separated.
+          type: string
+          example: 'J.R.R. Tolkien'
+        narrator:
+          description: The narrator(s) of the audiobook, comma separated.
+          type: string
+          example: 'Gert Heidenreich'
+        publisher:
+          description: The publisher of the audiobook.
+          type: string
+          example: 'HörbucHHamburg HHV GmbH'
+        publishedYear:
+          description: The year the audiobook was published.
+          type: string
+          example: '2012'
+        duration:
+          description: The duration of the audiobook in minutes.
+          type: number
+          example: 631
+        cover:
+          description: URL of the cover image.
+          type: string
+          example: 'https://m.media-amazon.com/images/I/91Q5NBhCPsL.jpg'
+        asin:
+          description: The Audible ASIN of the audiobook.
+          type: string
+          nullable: true
+          example: 'B0BMSNBK3H'
+        isbn:
+          description: The ISBN of the book.
+          type: string
+          nullable: true
+          example: '9783608939828'
+        description:
+          description: The description of the book, sanitized HTML.
+          type: string
+    ExternalAudiobookServiceRequest:
+      type: object
+      description: |
+        The payload Audiobookshelf sends to the configured external service when a user clicks a result
+        in the "External Audiobooks" section of the global search. The request is sent as
+        `POST <external service URL>` using the authentication configured in the "External Services"
+        settings (none, bearer token or basic auth).
+
+        `book` is the search result the client sent back when the user picked it, so the external service
+        should validate it instead of trusting it. All other fields are filled in by the server.
+      required:
+        - taskId
+        - callbackUrl
+        - callbackToken
+        - serverAddress
+        - user
+        - library
+        - book
+      properties:
+        taskId:
+          description: The id of the task created for this search. Used to report progress back to Audiobookshelf.
+          type: string
+          format: uuid
+          example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+        callbackUrl:
+          description: The URL the external service has to send its task updates to.
+          type: string
+          example: 'https://abs.example.com/public/external-search-tasks/e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+        callbackToken:
+          description: |
+            The token that authenticates the task updates of the external service. It is only valid for this
+            single task and becomes invalid as soon as the task is finished, failed or timed out.
+          type: string
+          format: uuid
+          example: '2b1f0f1f-8d4a-4d1a-9a5e-2a1c1f0d5b3e'
+        serverAddress:
+          description: |
+            The URL of the Audiobookshelf instance. Taken from the "Audiobookshelf URL" setting, or derived
+            from the request of the user if that setting is empty.
+          type: string
+          example: 'https://abs.example.com'
+        user:
+          description: The user that started the search.
+          type: object
+          properties:
+            id:
+              description: The id of the user.
+              type: string
+              example: 'root'
+            username:
+              description: The username of the user. Can be null.
+              type: string
+              nullable: true
+              example: 'daniel'
+        library:
+          description: The library that was active when the search was started.
+          type: object
+          properties:
+            id:
+              description: The id of the library.
+              type: string
+              example: 'lib_c1u6t4p45c35rf0nzd'
+            name:
+              description: The name of the library.
+              type: string
+              example: 'Audiobooks'
+        book:
+          $ref: '#/components/schemas/ExternalAudiobookSearchResult'
+    ExternalAudiobookTaskUpdate:
+      type: object
+      description: |
+        An update of a running external audiobook search task, sent by the external service to the
+        `callbackUrl` of the request. Every field except `status` is optional. Whenever both a plain text
+        and a key are given, the key wins if the Audiobookshelf client knows it, so the message can be
+        shown in the language of the user.
+      properties:
+        status:
+          description: |
+            The new status of the task. `running` keeps the task open and only updates it, `finished` and
+            `failed` end the task and remove it from the list of running tasks. Defaults to `running`.
+          type: string
+          enum: [running, finished, failed]
+          default: running
+          example: 'running'
+        description:
+          description: The progress message shown to the user, e.g. the download progress.
+          type: string
+          example: 'Downloading "Der Hobbit" - 83%'
+        descriptionKey:
+          description: Translation key of the progress message. Used instead of `description` if the client knows the key.
+          type: string
+          example: 'MessageTaskExternalSearchDescription'
+        descriptionSubs:
+          description: Values substituted into the translated progress message.
+          type: array
+          items:
+            type: string
+          example: ['Der Hobbit']
+        error:
+          description: The error message shown to the user. Required if `status` is `failed` and no `errorKey` is given.
+          type: string
+          example: 'No matching audiobook found'
+        errorKey:
+          description: Translation key of the error message. Used instead of `error` if the client knows the key.
+          type: string
+          example: 'MessageTaskExternalSearchServiceUnreachable'
+        errorSubs:
+          description: Values substituted into the translated error message.
+          type: array
+          items:
+            type: string
+        data:
+          description: Additional data merged into the data of the task. Only visible to the user that started the search.
+          type: object
+          additionalProperties: true
+          example: { progress: 83 }
+    ExternalAudiobookTask:
+      type: object
+      description: |
+        The task created for an external audiobook search. Tasks of this action carry a `userId` and are
+        therefore only sent to the user that started the search, never to other users.
+      properties:
+        id:
+          description: The id of the task.
+          type: string
+          format: uuid
+          example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+        action:
+          description: The action of the task. Always `external-audiobook-search` for external searches.
+          type: string
+          example: 'external-audiobook-search'
+        data:
+          description: Data of the task. Contains the library id and the title of the requested book, plus everything the external service added.
+          type: object
+          additionalProperties: true
+          example: { libraryId: 'lib_c1u6t4p45c35rf0nzd', title: 'Der Hobbit' }
+        userId:
+          description: The id of the user the task belongs to. Only this user is notified about the task.
+          type: string
+          example: 'root'
+        title:
+          description: The title of the task.
+          type: string
+          example: 'External audiobook search'
+        titleKey:
+          description: Translation key of the title.
+          type: string
+          example: 'MessageTaskExternalSearch'
+        titleSubs:
+          description: Values substituted into the translated title.
+          type: array
+          nullable: true
+          items:
+            type: string
+        description:
+          description: The description of the task, updated by the external service.
+          type: string
+          example: 'Downloading "Der Hobbit" - 83%'
+        descriptionKey:
+          description: Translation key of the description.
+          type: string
+          nullable: true
+        descriptionSubs:
+          description: Values substituted into the translated description.
+          type: array
+          nullable: true
+          items:
+            type: string
+        error:
+          description: The error message if the task failed.
+          type: string
+          nullable: true
+        errorKey:
+          description: Translation key of the error message.
+          type: string
+          nullable: true
+        errorSubs:
+          description: Values substituted into the translated error message.
+          type: array
+          nullable: true
+          items:
+            type: string
+        showSuccess:
+          description: Whether the client shows a success message when the task finished.
+          type: boolean
+          example: true
+        isFailed:
+          description: Whether the task failed.
+          type: boolean
+          example: false
+        isFinished:
+          description: Whether the task is finished.
+          type: boolean
+          example: false
+        startedAt:
+          description: The time (in ms since POSIX epoch) when the task was started.
+          type: integer
+          example: 1743072963509
+        finishedAt:
+          description: The time (in ms since POSIX epoch) when the task was finished.
+          type: integer
+          nullable: true
+  responses:
+    externalAudiobookTask200:
+      description: Successful response - the current state of the task
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ExternalAudiobookTask'
+paths:
+  /api/external-audiobooks/search:
+    get:
+      summary: Search external audiobooks
+      description: |
+        Search audiobooks that are not in the library yet. The query is checked with the metadata provider
+        configured in the "External Services" settings. Returns an empty array if the external audiobook
+        search is disabled or no query is given.
+      operationId: searchExternalAudiobooks
+      tags:
+        - External Audiobooks
+      parameters:
+        - in: query
+          name: q
+          description: The search query.
+          required: true
+          schema:
+            type: string
+          example: 'Der Hobbit'
+        - in: query
+          name: limit
+          description: The maximum number of results. Capped at 5.
+          schema:
+            type: integer
+            default: 5
+            maximum: 5
+      responses:
+        200:
+          description: Successful response - the results of the external search
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExternalAudiobookSearchResult'
+        400:
+          description: Bad request - the query parameter is invalid
+  /api/external-audiobooks/request:
+    post:
+      summary: Request an external audiobook
+      description: |
+        Request an audiobook found by the external search from the configured external service. Creates a
+        task for the requesting user, sends the request to the external service and returns the created
+        task. If the external service cannot be reached, the returned task is already failed.
+
+        The request that Audiobookshelf sends to the external service is documented as the callback of
+        this operation. The external service reports its progress back through
+        `PATCH /public/external-search-tasks/{id}`.
+      operationId: requestExternalAudiobook
+      tags:
+        - External Audiobooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - book
+                - libraryId
+              properties:
+                book:
+                  $ref: '#/components/schemas/ExternalAudiobookSearchResult'
+                libraryId:
+                  description: The id of the library the audiobook is requested for. The user has to have access to it.
+                  type: string
+                  example: 'lib_c1u6t4p45c35rf0nzd'
+      responses:
+        200:
+          $ref: '#/components/responses/externalAudiobookTask200'
+        400:
+          description: Bad request - the external audiobook search is disabled or the request body is invalid
+        403:
+          description: Forbidden - the user has no access to the library
+        404:
+          description: Not found - the library does not exist
+      callbacks:
+        externalService:
+          'https://your-external-service.example.com/request':
+            post:
+              summary: Request sent to the external service
+              description: |
+                The request Audiobookshelf sends to the URL configured in the "External Services" settings.
+                It is authenticated with the configured token or credentials (`Authorization: Bearer <token>`
+                or basic auth) and times out after 15 seconds.
+              operationId: externalServiceRequest
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ExternalAudiobookServiceRequest'
+              responses:
+                2XX:
+                  description: |
+                    The external service accepted the request. The audiobook itself is not expected in this
+                    response, progress is reported through the callback URL.
+                4XX:
+                  description: |
+                    The external service rejected the request. Any response that is not 2XX, and a request
+                    that runs into the 15 second timeout, fails the task immediately.
+  /public/external-search-tasks/{id}:
+    patch:
+      summary: Update an external audiobook search task
+      description: |
+        Report the progress of an external audiobook search back to Audiobookshelf. Called by the external
+        service, not by clients. The update is only shown to the user that started the search.
+
+        Authenticated with the `callbackToken` of the task as bearer token, not with a user token or API key.
+        The token is only valid until the task is finished, failed or timed out; Audiobookshelf fails a task
+        that was not updated for 30 minutes.
+      operationId: updateExternalSearchTask
+      tags:
+        - External Audiobooks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: The id of the task, sent to the external service as `taskId`.
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 'e4bb1afb-4a4f-4dd6-8be0-e615d233185b'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalAudiobookTaskUpdate'
+            examples:
+              progress:
+                summary: Report progress
+                value:
+                  status: 'running'
+                  description: 'Downloading "Der Hobbit" - 83%'
+              finished:
+                summary: Finish the task
+                value:
+                  status: 'finished'
+                  description: 'Download of "Der Hobbit" finished'
+              failed:
+                summary: Fail the task
+                value:
+                  status: 'failed'
+                  error: 'No matching audiobook found'
+      responses:
+        200:
+          $ref: '#/components/responses/externalAudiobookTask200'
+        400:
+          description: Bad request - unknown status, or status `failed` without `error` or `errorKey`
+        401:
+          description: Unauthorized - the callback token is wrong or not valid anymore
+        404:
+          description: Not found - the task does not exist anymore, e.g. because the server was restarted

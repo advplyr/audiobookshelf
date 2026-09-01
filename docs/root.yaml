@@ -77,6 +77,12 @@ paths:
     $ref: './controllers/PodcastController.yaml#/paths/~1api~1podcasts~1{id}~1episode~1{episodeId}'
   /api/series/{id}:
     $ref: './controllers/SeriesController.yaml#/paths/~1api~1series~1{id}'
+  /api/external-audiobooks/search:
+    $ref: './controllers/ExternalAudiobookController.yaml#/paths/~1api~1external-audiobooks~1search'
+  /api/external-audiobooks/request:
+    $ref: './controllers/ExternalAudiobookController.yaml#/paths/~1api~1external-audiobooks~1request'
+  /public/external-search-tasks/{id}:
+    $ref: './controllers/ExternalAudiobookController.yaml#/paths/~1public~1external-search-tasks~1{id}'
 tags:
   - name: Authors
     description: Author endpoints
@@ -90,3 +96,5 @@ tags:
     description: Notifications endpoints
   - name: Podcasts
     description: Podcast endpoints
+  - name: External Audiobooks
+    description: Endpoints for searching and requesting audiobooks from an external service
