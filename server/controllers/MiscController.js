@@ -109,8 +109,9 @@ class MiscController {
   getTasks(req, res) {
     const includeArray = (req.query.include || '').split(',')
 
+    // Tasks with a userId are only visible to that user
     const data = {
-      tasks: TaskManager.tasks.map((t) => t.toJSON())
+      tasks: TaskManager.tasks.filter((t) => !t.userId || t.userId === req.user.id).map((t) => t.toJSON())
     }
 
     if (includeArray.includes('queue')) {

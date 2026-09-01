@@ -253,9 +253,32 @@ export default {
       console.log('Task started', task)
       this.$store.commit('tasks/addUpdateTask', task)
     },
+    taskUpdated(task) {
+      console.log('Task updated', task)
+      this.$store.commit('tasks/addUpdateTask', task)
+    },
     taskFinished(task) {
       console.log('Task finished', task)
       this.$store.commit('tasks/addUpdateTask', task)
+
+      // External audiobook search tasks are only shown to the user that started them
+      if (task.action === 'external-audiobook-search') {
+        this.showTaskFinishedToast(task)
+      }
+    },
+    getTaskString(text, key, subs) {
+      if (key && this.$strings[key]) return this.$getString(key, subs)
+      return text || ''
+    },
+    showTaskFinishedToast(task) {
+      const title = this.getTaskString(task.title, task.titleKey, task.titleSubs)
+      const description = this.getTaskString(task.description, task.descriptionKey, task.descriptionSubs)
+      if (task.isFailed) {
+        const error = this.getTaskString(task.error, task.errorKey, task.errorSubs)
+        this.$toast.error(error || description || title)
+      } else {
+        this.$toast.success(description || title)
+      }
     },
     taskProgress(data) {
       this.$store.commit('tasks/updateTaskProgress', { libraryItemId: data.libraryItemId, progress: `${Math.round(data.progress)}%` })
@@ -458,6 +481,7 @@ export default {
 
       // Task Listeners
       this.socket.on('task_started', this.taskStarted)
+      this.socket.on('task_updated', this.taskUpdated)
       this.socket.on('task_finished', this.taskFinished)
       this.socket.on('metadata_embed_queue_update', this.metadataEmbedQueueUpdate)
       this.socket.on('track_started', this.trackStarted)

@@ -15,6 +15,8 @@ class Task {
     this.action = null // e.g. embed-metadata, encode-m4b, etc
     /** @type {Object} custom data */
     this.data = null // additional info for the action like libraryItemId
+    /** @type {string} optional. when set the task is only emitted to this user */
+    this.userId = null
 
     /** @type {string} */
     this.title = null
@@ -56,6 +58,7 @@ class Task {
       id: this.id,
       action: this.action,
       data: this.data ? { ...this.data } : {},
+      userId: this.userId,
       title: this.title,
       titleKey: this.titleKey,
       titleSubs: this.titleSubs,
@@ -81,11 +84,13 @@ class Task {
    * @param {TaskString|null} descriptionString
    * @param {boolean} showSuccess
    * @param {Object} [data]
+   * @param {string} [userId] when set the task is only emitted to this user
    */
-  setData(action, titleString, descriptionString, showSuccess, data = {}) {
+  setData(action, titleString, descriptionString, showSuccess, data = {}, userId = null) {
     this.id = uuidv4()
     this.action = action
     this.data = { ...data }
+    this.userId = userId || null
     this.title = titleString.text
     this.titleKey = titleString.key || null
     this.titleSubs = titleString.subs || null
@@ -94,6 +99,17 @@ class Task {
     this.descriptionSubs = descriptionString?.subs || null
     this.showSuccess = showSuccess
     this.startedAt = Date.now()
+  }
+
+  /**
+   * Update task description
+   *
+   * @param {TaskString} newDescriptionString
+   */
+  setDescription(newDescriptionString) {
+    this.description = newDescriptionString.text
+    this.descriptionKey = newDescriptionString.key || null
+    this.descriptionSubs = newDescriptionString.subs || null
   }
 
   /**
@@ -118,9 +134,7 @@ class Task {
    */
   setFinished(newDescriptionString = null, clearDescription = false) {
     if (newDescriptionString) {
-      this.description = newDescriptionString.text
-      this.descriptionKey = newDescriptionString.key || null
-      this.descriptionSubs = newDescriptionString.subs || null
+      this.setDescription(newDescriptionString)
     } else if (clearDescription) {
       this.description = null
       this.descriptionKey = null

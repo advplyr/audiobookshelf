@@ -27,6 +27,7 @@ const PodcastController = require('../controllers/PodcastController')
 const NotificationController = require('../controllers/NotificationController')
 const EmailController = require('../controllers/EmailController')
 const SearchController = require('../controllers/SearchController')
+const ExternalAudiobookController = require('../controllers/ExternalAudiobookController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
@@ -289,6 +290,14 @@ class ApiRouter {
     this.router.get('/search/authors', SearchController.findAuthor.bind(this))
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
     this.router.get('/search/providers', SearchController.getAllProviders.bind(this))
+
+    //
+    // External Audiobook Routes
+    //
+    this.router.get('/external-audiobooks/search', ExternalAudiobookController.search.bind(this))
+    this.router.post('/external-audiobooks/request', ExternalAudiobookController.requestAudiobook.bind(this))
+    this.router.get('/external-services', ExternalAudiobookController.getSettings.bind(this))
+    this.router.patch('/external-services', ExternalAudiobookController.updateSettings.bind(this))
 
     //
     // Cache Routes (Admin and up)

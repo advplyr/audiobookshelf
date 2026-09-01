@@ -2,7 +2,7 @@
   <div class="">
     <div class="w-full relative sm:w-80">
       <form role="search" @submit.prevent="submitSearch">
-        <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
+        <ui-text-input ref="input" v-model="search" :placeholder="$strings.PlaceholderSearch" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm bg-red-800" />
       </form>
       <button :aria-hidden="!search" class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
         <span v-if="!search" class="material-symbols" style="font-size: 1.2rem">&#xe8b6;</span>
@@ -92,6 +92,13 @@
               </nuxt-link>
             </li>
           </template>
+
+          <p v-if="externalResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelExternalAudiobooks }}</p>
+          <template v-for="item in externalResults">
+            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickExternalOption(item)">
+              <cards-external-search-card :item="item" />
+            </li>
+          </template>
         </template>
       </ul>
     </div>
@@ -116,6 +123,7 @@ export default {
       tagResults: [],
       genreResults: [],
       narratorResults: [],
+      externalResults: [],
       searchTimeout: null,
       lastSearch: null
     }
@@ -124,13 +132,30 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
+    externalSearchEnabled() {
+      return !!this.$store.getters['getServerSetting']('externalSearchEnabled')
+    },
     totalResults() {
-      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.genreResults.length + this.podcastResults.length + this.narratorResults.length + this.episodeResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.genreResults.length + this.podcastResults.length + this.narratorResults.length + this.episodeResults.length + this.externalResults.length
     }
   },
   methods: {
     clickOption() {
       this.clearResults()
+    },
+    async clickExternalOption(item) {
+      const libraryId = this.currentLibraryId
+      this.clearResults()
+      try {
+        await this.$axios.$post('/api/external-audiobooks/request', {
+          book: item,
+          libraryId
+        })
+        this.$toast.success(this.$getString('ToastExternalSearchStarted', [item.title]))
+      } catch (error) {
+        console.error('Failed to request external audiobook', error)
+        this.$toast.error(this.$strings.ToastExternalSearchFailed)
+      }
     },
     submitSearch() {
       if (!this.search) return
@@ -149,6 +174,7 @@ export default {
       this.tagResults = []
       this.genreResults = []
       this.narratorResults = []
+      this.externalResults = []
       this.showMenu = false
       this.isFetching = false
       this.isTyping = false
@@ -177,22 +203,31 @@ export default {
       }
       this.isFetching = true
 
-      const searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${encodeURIComponent(value)}&limit=3`).catch((error) => {
-        console.error('Search error', error)
-        return []
-      })
+      const [searchResults, externalResults] = await Promise.all([
+        this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${encodeURIComponent(value)}&limit=3`).catch((error) => {
+          console.error('Search error', error)
+          return []
+        }),
+        this.externalSearchEnabled
+          ? this.$axios.$get(`/api/external-audiobooks/search?q=${encodeURIComponent(value)}&limit=5`).catch((error) => {
+              console.error('External search error', error)
+              return []
+            })
+          : []
+      ])
 
       // Search was canceled
       if (!this.isFetching) return
 
-      this.podcastResults = searchResults.podcast || []
-      this.episodeResults = searchResults.episodes || []
-      this.bookResults = searchResults.book || []
-      this.authorResults = searchResults.authors || []
-      this.seriesResults = searchResults.series || []
-      this.tagResults = searchResults.tags || []
-      this.genreResults = searchResults.genres || []
-      this.narratorResults = searchResults.narrators || []
+      this.podcastResults = searchResults?.podcast || []
+      this.episodeResults = searchResults?.episodes || []
+      this.bookResults = searchResults?.book || []
+      this.authorResults = searchResults?.authors || []
+      this.seriesResults = searchResults?.series || []
+      this.tagResults = searchResults?.tags || []
+      this.genreResults = searchResults?.genres || []
+      this.narratorResults = searchResults?.narrators || []
+      this.externalResults = Array.isArray(externalResults) ? externalResults : []
 
       this.isFetching = false
       if (!this.showMenu) {

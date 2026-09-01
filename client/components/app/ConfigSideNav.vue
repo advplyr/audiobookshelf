@@ -114,6 +114,11 @@ export default {
           id: 'config-authentication',
           title: this.$strings.HeaderAuthentication,
           path: '/config/authentication'
+        },
+        {
+          id: 'config-external-services',
+          title: this.$strings.HeaderExternalServices,
+          path: '/config/external-services'
         }
       ]
 

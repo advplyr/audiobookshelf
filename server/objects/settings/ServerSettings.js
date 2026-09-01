@@ -49,6 +49,16 @@ class ServerSettings {
     this.sortingIgnorePrefix = false
     this.sortingPrefixes = ['the', 'a']
 
+    // External services
+    this.externalSearchEnabled = false
+    this.externalSearchUrl = null
+    this.externalSearchAuthType = 'none' // none | bearer | basic
+    this.externalSearchToken = null
+    this.externalSearchUsername = null
+    this.externalSearchPassword = null
+    this.externalSearchProvider = 'audible'
+    this.externalSearchServerAddress = null
+
     // Misc Flags
     this.chromecastEnabled = false
     this.dateFormat = 'MM/dd/yyyy'
@@ -119,6 +129,15 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.externalSearchEnabled = !!settings.externalSearchEnabled
+    this.externalSearchUrl = settings.externalSearchUrl || null
+    this.externalSearchAuthType = settings.externalSearchAuthType || 'none'
+    this.externalSearchToken = settings.externalSearchToken || null
+    this.externalSearchUsername = settings.externalSearchUsername || null
+    this.externalSearchPassword = settings.externalSearchPassword || null
+    this.externalSearchProvider = settings.externalSearchProvider || 'audible'
+    this.externalSearchServerAddress = settings.externalSearchServerAddress || null
+
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
@@ -231,6 +250,14 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      externalSearchEnabled: this.externalSearchEnabled,
+      externalSearchUrl: this.externalSearchUrl,
+      externalSearchAuthType: this.externalSearchAuthType,
+      externalSearchToken: this.externalSearchToken, // Do not return to client
+      externalSearchUsername: this.externalSearchUsername, // Do not return to client
+      externalSearchPassword: this.externalSearchPassword, // Do not return to client
+      externalSearchProvider: this.externalSearchProvider,
+      externalSearchServerAddress: this.externalSearchServerAddress,
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,
       language: this.language,
@@ -280,6 +307,13 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    delete json.externalSearchUrl
+    delete json.externalSearchAuthType
+    delete json.externalSearchToken
+    delete json.externalSearchUsername
+    delete json.externalSearchPassword
+    delete json.externalSearchProvider
+    delete json.externalSearchServerAddress
     json.timeZone = ServerSettings.getHostTimeZone()
     return json
   }
@@ -293,6 +327,19 @@ class ServerSettings {
    */
   get isOpenIDAuthSettingsValid() {
     return this.authOpenIDIssuerURL && this.authOpenIDAuthorizationURL && this.authOpenIDTokenURL && this.authOpenIDUserInfoURL && this.authOpenIDJwksURL && this.authOpenIDClientID && this.authOpenIDClientSecret && this.authOpenIDTokenSigningAlgorithm
+  }
+
+  get externalSearchSettings() {
+    return {
+      externalSearchEnabled: this.externalSearchEnabled,
+      externalSearchUrl: this.externalSearchUrl,
+      externalSearchAuthType: this.externalSearchAuthType,
+      externalSearchToken: this.externalSearchToken, // Do not return to non-admins
+      externalSearchUsername: this.externalSearchUsername, // Do not return to non-admins
+      externalSearchPassword: this.externalSearchPassword, // Do not return to non-admins
+      externalSearchProvider: this.externalSearchProvider,
+      externalSearchServerAddress: this.externalSearchServerAddress
+    }
   }
 
   get authenticationSettings() {
