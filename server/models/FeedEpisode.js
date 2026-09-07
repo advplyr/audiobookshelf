@@ -328,6 +328,9 @@ class FeedEpisode extends Model {
     if (this.description) {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
     }
+    if (this.subtitle) {
+      customElements.push({ 'itunes:subtitle': this.subtitle })
+    }
 
     return {
       title: this.title,
