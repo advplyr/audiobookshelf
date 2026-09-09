@@ -24,8 +24,46 @@ class MeController {
    * @param {RequestWithUser} req
    * @param {Response} res
    */
-  getCurrentUser(req, res) {
-    res.json(req.user.toOldJSONForBrowser())
+  async getCurrentUser(req, res) {
+    // Fetch media progress with associated media item to include display fields
+    // (same join used by UserController.findOne for /api/users/:id)
+    const mediaProgresses = await Database.mediaProgressModel.findAll({
+      where: {
+        userId: req.user.id
+      },
+      include: [
+        {
+          model: Database.bookModel,
+          attributes: ['id', 'title', 'coverPath', 'updatedAt']
+        },
+        {
+          model: Database.podcastEpisodeModel,
+          attributes: ['id', 'title'],
+          include: {
+            model: Database.podcastModel,
+            attributes: ['id', 'title', 'coverPath', 'updatedAt']
+          }
+        }
+      ]
+    })
+
+    const oldMediaProgresses = mediaProgresses.map((mp) => {
+      const oldMediaProgress = mp.getOldMediaProgress()
+      oldMediaProgress.displayTitle = mp.mediaItem?.title
+      if (mp.mediaItem?.podcast) {
+        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
+        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
+      } else if (mp.mediaItem) {
+        oldMediaProgress.coverPath = mp.mediaItem.coverPath
+        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
+      }
+      return oldMediaProgress
+    })
+
+    const userJson = req.user.toOldJSONForBrowser()
+    userJson.mediaProgress = oldMediaProgresses
+    res.json(userJson)
   }
 
   /**
