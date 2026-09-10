@@ -77,6 +77,8 @@ See [library docs](https://audiobookshelf.org/docs/category/libraries) for suppo
 
 See [install docs](https://audiobookshelf.org/docs/category/installation)
 
+You can also deploy Audiobookshelf with one click using the [official Easypanel template](https://easypanel.io/templates/audiobookshelf).
+
 <br />
 
 # Reverse Proxy Set Up
