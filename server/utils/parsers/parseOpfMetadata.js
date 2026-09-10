@@ -1,5 +1,5 @@
-const { xmlToJSON } = require('../index')
-const htmlSanitizer = require('../htmlSanitizer')
+const { xmlToJSON } = require('../index.js')
+const htmlSanitizer = require('../htmlSanitizer.js')
 
 /**
  * @typedef MetadataCreatorObject

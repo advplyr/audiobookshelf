@@ -1,10 +1,10 @@
 const { Request, Response, NextFunction } = require('express')
 const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
 
-const { toNumber } = require('../utils/index')
+const { toNumber } = require('../utils/index.js')
 
 /**
  * @typedef RequestUserObject

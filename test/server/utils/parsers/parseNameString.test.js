@@ -1,6 +1,6 @@
 const chai = require('chai')
 const expect = chai.expect
-const { parse, nameToLastFirst } = require('../../../../server/utils/parsers/parseNameString')
+const { parse, nameToLastFirst } = require('../../../../server/utils/parsers/parseNameString.js')
 
 describe('parseNameString', () => {
   describe('parse', () => {

@@ -2,12 +2,12 @@ const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 const sinon = require('sinon')
 
-const Database = require('../../../server/Database')
-const ApiRouter = require('../../../server/routers/ApiRouter')
-const LibraryItemController = require('../../../server/controllers/LibraryItemController')
-const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
-const Auth = require('../../../server/Auth')
-const Logger = require('../../../server/Logger')
+const Database = require('../../../server/Database.js')
+const ApiRouter = require('../../../server/routers/ApiRouter.js')
+const LibraryItemController = require('../../../server/controllers/LibraryItemController.js')
+const ApiCacheManager = require('../../../server/managers/ApiCacheManager.js')
+const Auth = require('../../../server/Auth.js')
+const Logger = require('../../../server/Logger.js')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */

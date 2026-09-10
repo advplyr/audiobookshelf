@@ -1,6 +1,6 @@
 const { LRUCache } = require('lru-cache')
-const Logger = require('../Logger')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
 
 class ApiCacheManager {
   defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: (item) => item.body.length + JSON.stringify(item.headers).length }

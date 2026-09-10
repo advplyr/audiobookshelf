@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const libraryItemsBookFilters = require('./libraryItemsBookFilters')
-const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
+const Database = require('../../Database.js')
+const libraryItemsBookFilters = require('./libraryItemsBookFilters.js')
+const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters.js')
 
 module.exports = {
   /**

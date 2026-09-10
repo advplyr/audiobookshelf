@@ -1,5 +1,5 @@
-const Logger = require('../Logger')
-const iTunes = require('../providers/iTunes')
+const Logger = require('../Logger.js')
+const iTunes = require('../providers/iTunes.js')
 
 class PodcastFinder {
   constructor() {

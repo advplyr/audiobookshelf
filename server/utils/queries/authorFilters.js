@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize')
-const Database = require('../../Database')
+const Database = require('../../Database.js')
 
 module.exports = {
   /**

@@ -2,9 +2,9 @@ const { expect } = require('chai')
 const sinon = require('sinon')
 
 // Load Database first so Auth resolves OidcAuthStrategy before the circular require completes.
-require('../../../server/Database')
-const OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy')
-const Logger = require('../../../server/Logger')
+require('../../../server/Database.js')
+const OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy.js')
+const Logger = require('../../../server/Logger.js')
 
 describe('OidcAuthStrategy - isValidWebCallbackUrl', () => {
   /** @type {OidcAuthStrategy} */

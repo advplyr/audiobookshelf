@@ -1,6 +1,6 @@
 const { performance, createHistogram } = require('perf_hooks')
 const util = require('util')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 const histograms = new Map()
 

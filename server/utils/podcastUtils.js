@@ -1,9 +1,9 @@
 const axios = require('axios')
 const ssrfFilter = require('ssrf-req-filter')
-const Logger = require('../Logger')
-const { xmlToJSON, timestampToSeconds } = require('./index')
-const htmlSanitizer = require('../utils/htmlSanitizer')
-const Fuse = require('../libs/fusejs')
+const Logger = require('../Logger.js')
+const { xmlToJSON, timestampToSeconds } = require('./index.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
+const Fuse = require('../libs/fusejs/index.js')
 
 /**
  * @typedef RssPodcastChapter

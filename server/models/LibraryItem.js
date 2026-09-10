@@ -1,12 +1,12 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
-const fsExtra = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const libraryFilters = require('../utils/queries/libraryFilters')
-const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
-const LibraryFile = require('../objects/files/LibraryFile')
-const Book = require('./Book')
-const Podcast = require('./Podcast')
+const fsExtra = require('../libs/fsExtra/index.js')
+const Logger = require('../Logger.js')
+const libraryFilters = require('../utils/queries/libraryFilters.js')
+const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils.js')
+const LibraryFile = require('../objects/files/LibraryFile.js')
+const Book = require('./Book.js')
+const Podcast = require('./Podcast.js')
 
 /**
  * @typedef LibraryFileObject

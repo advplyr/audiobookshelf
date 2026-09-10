@@ -1,11 +1,11 @@
 const Path = require('path')
 const os = require('os')
 const unrar = require('node-unrar-js')
-const Logger = require('../Logger')
-const fs = require('../libs/fsExtra')
-const StreamZip = require('../libs/nodeStreamZip')
-const Archive = require('../libs/libarchive/archive')
-const { isWritable } = require('./fileUtils')
+const Logger = require('../Logger.js')
+const fs = require('../libs/fsExtra/index.js')
+const StreamZip = require('../libs/nodeStreamZip/index.js')
+const Archive = require('../libs/libarchive/archive.js')
+const { isWritable } = require('./fileUtils.js')
 
 class AbstractComicBookExtractor {
   constructor(comicPath) {

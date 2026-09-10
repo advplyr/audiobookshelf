@@ -1,21 +1,21 @@
 const sqlite3 = require('sqlite3')
 const Path = require('path')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
 
-const cron = require('../libs/nodeCron')
-const fs = require('../libs/fsExtra')
-const archiver = require('../libs/archiver')
-const StreamZip = require('../libs/nodeStreamZip')
-const fileUtils = require('../utils/fileUtils')
+const cron = require('../libs/nodeCron/index.js')
+const fs = require('../libs/fsExtra/index.js')
+const archiver = require('../libs/archiver/index.js')
+const StreamZip = require('../libs/nodeStreamZip/index.js')
+const fileUtils = require('../utils/fileUtils.js')
 
 // Utils
-const { getFileSize } = require('../utils/fileUtils')
+const { getFileSize } = require('../utils/fileUtils.js')
 
-const Backup = require('../objects/Backup')
-const CacheManager = require('./CacheManager')
-const NotificationManager = require('./NotificationManager')
+const Backup = require('../objects/Backup.js')
+const CacheManager = require('./CacheManager.js')
+const NotificationManager = require('./NotificationManager.js')
 
 class BackupManager {
   constructor() {

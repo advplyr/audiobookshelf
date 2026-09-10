@@ -3,7 +3,7 @@
 //   accepts comma separated lists e.g. "Jon Smith, Jane Smith" or "Smith, Jon, Smith, Jane"
 //   can be separated by "&" e.g. "Jon Smith & Jane Smith" or "Smith, Jon & Smith, Jane"
 //
-const parseFullName = require('./parseFullName')
+const parseFullName = require('./parseFullName.js')
 
 function parseName(name) {
   var parts = parseFullName(name)

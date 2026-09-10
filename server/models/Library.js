@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 /**
  * @typedef LibrarySettingsObject

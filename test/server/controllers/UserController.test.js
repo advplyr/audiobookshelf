@@ -1,8 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
 
-const UserController = require('../../../server/controllers/UserController')
-const Logger = require('../../../server/Logger')
+const UserController = require('../../../server/controllers/UserController.js')
+const Logger = require('../../../server/Logger.js')
 
 describe('UserController - delete', () => {
   beforeEach(() => {

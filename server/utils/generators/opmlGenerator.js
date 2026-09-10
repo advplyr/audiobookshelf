@@ -1,5 +1,5 @@
-const xml = require('../../libs/xml')
-const escapeForXML = require('../../libs/xml/escapeForXML')
+const xml = require('../../libs/xml/index.js')
+const escapeForXML = require('../../libs/xml/escapeForXML.js')
 
 /**
  * Generate OPML file string for podcasts in a library

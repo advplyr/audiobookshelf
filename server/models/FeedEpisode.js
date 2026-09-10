@@ -1,9 +1,9 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
 const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
-const date = require('../libs/dateAndTime')
-const { secondsToTimestamp } = require('../utils')
+const Logger = require('../Logger.js')
+const date = require('../libs/dateAndTime/index.js')
+const { secondsToTimestamp } = require('../utils/index.js')
 
 class FeedEpisode extends Model {
   constructor(values, options) {

@@ -1,10 +1,10 @@
 const Sequelize = require('sequelize')
-const Logger = require('../../Logger')
-const Database = require('../../Database')
-const libraryItemsBookFilters = require('./libraryItemsBookFilters')
-const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
-const { createNewSortInstance } = require('../../libs/fastSort')
-const { profile } = require('../../utils/profiler')
+const Logger = require('../../Logger.js')
+const Database = require('../../Database.js')
+const libraryItemsBookFilters = require('./libraryItemsBookFilters.js')
+const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters.js')
+const { createNewSortInstance } = require('../../libs/fastSort/index.js')
+const { profile } = require('../../utils/profiler.js')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })

@@ -1,9 +1,9 @@
 const chai = require('chai')
 const expect = chai.expect
 const sinon = require('sinon')
-const fileUtils = require('../../../server/utils/fileUtils')
+const fileUtils = require('../../../server/utils/fileUtils.js')
 const fs = require('fs')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
 describe('fileUtils', () => {
   it('shouldIgnoreFile', () => {

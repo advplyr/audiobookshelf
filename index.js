@@ -9,18 +9,18 @@ const optionDefinitions = [
   { name: 'prod-with-dev-env', alias: 'r', type: Boolean }
 ]
 
-const commandLineArgs = require('./server/libs/commandLineArgs')
+const commandLineArgs = require('./server/libs/commandLineArgs/index.js')
 const options = commandLineArgs(optionDefinitions)
 
 const Path = require('path')
 process.env.NODE_ENV = options.dev ? 'development' : process.env.NODE_ENV || 'production'
 
-const server = require('./server/Server')
+const server = require('./server/Server.js')
 global.appRoot = __dirname
 
 const isDev = process.env.NODE_ENV !== 'production'
 if (isDev || options['prod-with-dev-env']) {
-  const devEnv = require('./dev').config
+  const devEnv = require('./dev.js').config
   if (devEnv.Port) process.env.PORT = devEnv.Port
   if (devEnv.ConfigPath) process.env.CONFIG_PATH = devEnv.ConfigPath
   if (devEnv.MetadataPath) process.env.METADATA_PATH = devEnv.MetadataPath

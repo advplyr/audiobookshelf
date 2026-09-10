@@ -1,9 +1,9 @@
 const Path = require('path')
 const packageJson = require('../../../package.json')
-const { BookshelfView } = require('../../utils/constants')
-const Logger = require('../../Logger')
-const User = require('../../models/User')
-const { sanitize } = require('../../utils/htmlSanitizer')
+const { BookshelfView } = require('../../utils/constants.js')
+const Logger = require('../../Logger.js')
+const User = require('../../models/User.js')
+const { sanitize } = require('../../utils/htmlSanitizer.js')
 
 class ServerSettings {
   constructor(settings) {

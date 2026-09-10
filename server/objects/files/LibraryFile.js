@@ -1,7 +1,7 @@
 const Path = require('path')
-const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileUtils')
-const globals = require('../../utils/globals')
-const FileMetadata = require('../metadata/FileMetadata')
+const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileUtils.js')
+const globals = require('../../utils/globals.js')
+const FileMetadata = require('../metadata/FileMetadata.js')
 
 class LibraryFile {
   constructor(file) {
