@@ -1,6 +1,6 @@
 const { DataTypes, Model, Op } = require('sequelize')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
 
 class Playlist extends Model {
   constructor(values, options) {

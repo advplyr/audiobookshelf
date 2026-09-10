@@ -1,8 +1,8 @@
 const Path = require('path')
 const uuid = require('uuid')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 const { parseString } = require('xml2js')
-const areEquivalent = require('./areEquivalent')
+const areEquivalent = require('./areEquivalent.js')
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
   str1 = String(str1)

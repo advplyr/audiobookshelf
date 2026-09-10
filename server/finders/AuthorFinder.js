@@ -1,9 +1,9 @@
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
+const fs = require('../libs/fsExtra/index.js')
+const Logger = require('../Logger.js')
 const Path = require('path')
-const Audnexus = require('../providers/Audnexus')
+const Audnexus = require('../providers/Audnexus.js')
 
-const { downloadImageFile } = require('../utils/fileUtils')
+const { downloadImageFile } = require('../utils/fileUtils.js')
 
 class AuthorFinder {
   constructor() {

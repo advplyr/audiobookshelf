@@ -1,8 +1,8 @@
 const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const PlaybackSession = require('../../models/PlaybackSession')
-const MediaProgress = require('../../models/MediaProgress')
-const fsExtra = require('../../libs/fsExtra')
+const Database = require('../../Database.js')
+const PlaybackSession = require('../../models/PlaybackSession.js')
+const MediaProgress = require('../../models/MediaProgress.js')
+const fsExtra = require('../../libs/fsExtra/index.js')
 
 module.exports = {
   /**

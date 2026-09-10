@@ -1,7 +1,7 @@
 const { DataTypes, Model, Op } = require('sequelize')
 const jwt = require('jsonwebtoken')
 const { LRUCache } = require('lru-cache')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 /**
  * @typedef {Object} ApiKeyPermissions

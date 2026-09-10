@@ -1,11 +1,11 @@
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
 
-const RssFeedManager = require('../managers/RssFeedManager')
+const RssFeedManager = require('../managers/RssFeedManager.js')
 
-const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters.js')
 
 /**
  * @typedef RequestUserObject

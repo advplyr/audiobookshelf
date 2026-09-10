@@ -1,7 +1,7 @@
 const Path = require('path')
 const chai = require('chai')
 const expect = chai.expect
-const scanUtils = require('../../../server/utils/scandir')
+const scanUtils = require('../../../server/utils/scandir.js')
 
 describe('scanUtils', async () => {
   it('should properly group files into potential book library items', async () => {

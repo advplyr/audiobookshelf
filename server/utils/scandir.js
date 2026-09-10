@@ -1,8 +1,8 @@
 const Path = require('path')
-const { filePathToPOSIX } = require('./fileUtils')
-const globals = require('./globals')
-const LibraryFile = require('../objects/files/LibraryFile')
-const parseNameString = require('./parsers/parseNameString')
+const { filePathToPOSIX } = require('./fileUtils.js')
+const globals = require('./globals.js')
+const LibraryFile = require('../objects/files/LibraryFile.js')
+const parseNameString = require('./parsers/parseNameString.js')
 
 /**
  * @typedef LibraryItemFilenameMetadata

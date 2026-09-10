@@ -1,8 +1,8 @@
 const Path = require('path')
-const fsExtra = require('../libs/fsExtra')
-const { readTextFile } = require('../utils/fileUtils')
-const { LogLevel } = require('../utils/constants')
-const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
+const fsExtra = require('../libs/fsExtra/index.js')
+const { readTextFile } = require('../utils/fileUtils.js')
+const { LogLevel } = require('../utils/constants.js')
+const abmetadataGenerator = require('../utils/generators/abmetadataGenerator.js')
 
 class AbsMetadataFileScanner {
   constructor() {}

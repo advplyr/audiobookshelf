@@ -1,6 +1,6 @@
 const express = require('express')
-const ShareController = require('../controllers/ShareController')
-const SessionController = require('../controllers/SessionController')
+const ShareController = require('../controllers/ShareController.js')
+const SessionController = require('../controllers/SessionController.js')
 
 class PublicRouter {
   constructor(playbackSessionManager) {

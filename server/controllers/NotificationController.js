@@ -1,7 +1,7 @@
 const { Request, Response, NextFunction } = require('express')
-const Database = require('../Database')
+const Database = require('../Database.js')
 const { version } = require('../../package.json')
-const NotificationManager = require('../managers/NotificationManager')
+const NotificationManager = require('../managers/NotificationManager.js')
 
 /**
  * @typedef RequestUserObject

@@ -1,5 +1,5 @@
 const axios = require('axios')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 class GoogleBooks {
   #responseTimeout = 10000

@@ -1,11 +1,11 @@
 const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const Logger = require('../../Logger')
-const authorFilters = require('./authorFilters')
+const Database = require('../../Database.js')
+const Logger = require('../../Logger.js')
+const authorFilters = require('./authorFilters.js')
 
-const ShareManager = require('../../managers/ShareManager')
-const { profile } = require('../profiler')
-const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+const ShareManager = require('../../managers/ShareManager.js')
+const { profile } = require('../profiler.js')
+const stringifySequelizeQuery = require('../stringifySequelizeQuery.js')
 const countCache = new Map()
 
 module.exports = {

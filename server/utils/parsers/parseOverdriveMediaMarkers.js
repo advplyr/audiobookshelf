@@ -1,5 +1,5 @@
 const xml2js = require('xml2js')
-const Logger = require('../../Logger')
+const Logger = require('../../Logger.js')
 
 // given the array of Overdrive Media Markers from generateOverdriveMediaMarkers()
 //  parse and clean them in to something a bit more usable

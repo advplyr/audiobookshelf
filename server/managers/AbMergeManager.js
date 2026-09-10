@@ -1,13 +1,13 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const TaskManager = require('./TaskManager')
-const Task = require('../objects/Task')
-const ffmpegHelpers = require('../utils/ffmpegHelpers')
-const Ffmpeg = require('../libs/fluentFfmpeg')
-const SocketAuthority = require('../SocketAuthority')
-const { isWritable, copyToExisting } = require('../utils/fileUtils')
-const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
+const fs = require('../libs/fsExtra/index.js')
+const Logger = require('../Logger.js')
+const TaskManager = require('./TaskManager.js')
+const Task = require('../objects/Task.js')
+const ffmpegHelpers = require('../utils/ffmpegHelpers.js')
+const Ffmpeg = require('../libs/fluentFfmpeg/index.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const { isWritable, copyToExisting } = require('../utils/fileUtils.js')
+const TrackProgressMonitor = require('../objects/TrackProgressMonitor.js')
 
 /**
  * @typedef AbMergeEncodeOptions

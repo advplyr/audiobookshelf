@@ -2,9 +2,9 @@ const { Request, Response } = require('express')
 const passport = require('passport')
 const OpenIDClient = require('openid-client')
 const axios = require('axios')
-const Database = require('../Database')
-const Logger = require('../Logger')
-const { getRequestOrigin } = require('../utils/requestUtils')
+const Database = require('../Database.js')
+const Logger = require('../Logger.js')
+const { getRequestOrigin } = require('../utils/requestUtils.js')
 
 /**
  * OpenID Connect authentication strategy

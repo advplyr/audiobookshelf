@@ -1,10 +1,10 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
+const fs = require('../libs/fsExtra/index.js')
 
-const Logger = require('../Logger')
-const DailyLog = require('../objects/DailyLog')
+const Logger = require('../Logger.js')
+const DailyLog = require('../objects/DailyLog.js')
 
-const { LogLevel } = require('../utils/constants')
+const { LogLevel } = require('../utils/constants.js')
 
 const TAG = '[LogManager]'
 

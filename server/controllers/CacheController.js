@@ -1,5 +1,5 @@
 const { Request, Response } = require('express')
-const CacheManager = require('../managers/CacheManager')
+const CacheManager = require('../managers/CacheManager.js')
 
 /**
  * @typedef RequestUserObject

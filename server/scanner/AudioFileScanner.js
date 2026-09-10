@@ -1,12 +1,12 @@
 const Path = require('path')
-const Logger = require('../Logger')
-const prober = require('../utils/prober')
-const { LogLevel } = require('../utils/constants')
-const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
-const parseNameString = require('../utils/parsers/parseNameString')
-const parseSeriesString = require('../utils/parsers/parseSeriesString')
-const LibraryItem = require('../models/LibraryItem')
-const AudioFile = require('../objects/files/AudioFile')
+const Logger = require('../Logger.js')
+const prober = require('../utils/prober.js')
+const { LogLevel } = require('../utils/constants.js')
+const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers.js')
+const parseNameString = require('../utils/parsers/parseNameString.js')
+const parseSeriesString = require('../utils/parsers/parseSeriesString.js')
+const LibraryItem = require('../models/LibraryItem.js')
+const AudioFile = require('../objects/files/AudioFile.js')
 
 class AudioFileScanner {
   constructor() {}

@@ -1,10 +1,10 @@
 const { Request, Response } = require('express')
 const Path = require('path')
-const Logger = require('../Logger')
-const fs = require('../libs/fsExtra')
-const { toNumber } = require('../utils/index')
-const fileUtils = require('../utils/fileUtils')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const fs = require('../libs/fsExtra/index.js')
+const { toNumber } = require('../utils/index.js')
+const fileUtils = require('../utils/fileUtils.js')
+const Database = require('../Database.js')
 
 /**
  * @typedef RequestUserObject
