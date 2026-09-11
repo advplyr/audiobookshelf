@@ -16,6 +16,8 @@ class PlaybackSession extends Model {
     this.displayTitle
     /** @type {string} */
     this.displayAuthor
+    /** @type {string} */
+    this.ipAddress
     /** @type {number} */
     this.duration
     /** @type {number} */
@@ -93,6 +95,7 @@ class PlaybackSession extends Model {
       displayAuthor: playbackSessionExpanded.displayAuthor,
       coverPath: playbackSessionExpanded.coverPath,
       duration: playbackSessionExpanded.duration,
+      ipAddress: playbackSessionExpanded.ipAddress,
       playMethod: playbackSessionExpanded.playMethod,
       mediaPlayer: playbackSessionExpanded.mediaPlayer,
       deviceInfo: playbackSessionExpanded.device?.getOldDevice() || null,
@@ -141,6 +144,7 @@ class PlaybackSession extends Model {
       displayTitle: oldPlaybackSession.displayTitle,
       displayAuthor: oldPlaybackSession.displayAuthor,
       duration: oldPlaybackSession.duration,
+      ipAddress: oldPlaybackSession.ipAddress,
       playMethod: oldPlaybackSession.playMethod,
       mediaPlayer: oldPlaybackSession.mediaPlayer,
       startTime: oldPlaybackSession.startTime,
@@ -184,6 +188,7 @@ class PlaybackSession extends Model {
         displayTitle: DataTypes.STRING,
         displayAuthor: DataTypes.STRING,
         duration: DataTypes.FLOAT,
+        ipAddress: DataTypes.STRING,
         playMethod: DataTypes.INTEGER,
         mediaPlayer: DataTypes.STRING,
         startTime: DataTypes.FLOAT,
