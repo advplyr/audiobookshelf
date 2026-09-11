@@ -1,5 +1,5 @@
 const { Request, Response, NextFunction } = require('express')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -126,7 +126,7 @@ class UserController {
       return res.status(400).send('Username already taken')
     }
 
-    const userId = uuidv4()
+    const userId = randomUUID()
     const pash = await this.auth.localAuthStrategy.hashPassword(req.body.password)
     const token = this.auth.generateAccessToken({ id: userId, username: req.body.username })
     const userType = req.body.type || 'user'

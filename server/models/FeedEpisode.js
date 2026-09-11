@@ -1,6 +1,6 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Logger = require('../Logger')
 const date = require('../libs/dateAndTime')
 const { secondsToTimestamp } = require('../utils')
@@ -56,7 +56,7 @@ class FeedEpisode extends Model {
    * @param {string} [existingEpisodeId]
    */
   static getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisodeId = null) {
-    const episodeId = existingEpisodeId || uuidv4()
+    const episodeId = existingEpisodeId || randomUUID()
     return {
       id: episodeId,
       title: episode.title,
@@ -142,7 +142,7 @@ class FeedEpisode extends Model {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     // Offset pubdate in 1 minute intervals to ensure correct order
     const timeOffset = offsetIndex * 60000
-    const episodeId = existingEpisodeId || uuidv4()
+    const episodeId = existingEpisodeId || randomUUID()
 
     // e.g. Track 1 will have a pub date before Track 2
     const audiobookPubDate = date.format(new Date(pubDateStart.valueOf() + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')

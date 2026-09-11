@@ -1,5 +1,6 @@
 const { Request, Response } = require('express')
 const uuid = require('uuid')
+const { randomUUID } = require('node:crypto')
 const Path = require('path')
 const { Op } = require('sequelize')
 const Logger = require('../Logger')
@@ -100,7 +101,7 @@ class ShareController {
         startTime = 0
       }
 
-      const shareSessionId = req.cookies.share_session_id || uuid.v4()
+      const shareSessionId = req.cookies.share_session_id || randomUUID()
       const clientDeviceInfo = {
         clientName: 'Abs Web Share',
         deviceId: shareSessionId

@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const sequelize = require('sequelize')
 const { LRUCache } = require('lru-cache')
 
@@ -190,7 +190,7 @@ class User extends Model {
    * @returns {Promise<User>}
    */
   static async createRootUser(username, pash, auth) {
-    const userId = uuidv4()
+    const userId = randomUUID()
 
     const token = auth.generateAccessToken({ id: userId, username })
 
@@ -309,7 +309,7 @@ class User extends Model {
    * @returns {Promise<User>}
    */
   static async createUserFromOpenIdUserInfo(userinfo) {
-    const userId = uuidv4()
+    const userId = randomUUID()
     // TODO: Ensure username is unique?
     const username = userinfo.preferred_username || userinfo.name || userinfo.sub
     const email = userinfo.email && userinfo.email_verified ? userinfo.email : null

@@ -1,5 +1,5 @@
 const Path = require('path')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
@@ -98,7 +98,7 @@ class LibraryScan {
    * @param {string} type
    */
   setData(library, type = 'scan') {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.type = type
     this.library = library
 

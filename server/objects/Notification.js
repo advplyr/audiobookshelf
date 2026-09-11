@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4
+const { randomUUID } = require('node:crypto')
 
 class Notification {
   constructor(notification = null) {
@@ -57,7 +57,7 @@ class Notification {
   }
 
   setData(payload) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.libraryId = payload.libraryId || null
     this.eventName = payload.eventName
     this.urls = payload.urls

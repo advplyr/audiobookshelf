@@ -1,5 +1,5 @@
 const { Request, Response, NextFunction } = require('express')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Logger = require('../Logger')
 const Database = require('../Database')
 
@@ -70,7 +70,7 @@ class ApiKeyController {
       return res.sendStatus(403)
     }
 
-    const keyId = uuidv4() // Generate key id ahead of time to use in JWT
+    const keyId = randomUUID() // Generate key id ahead of time to use in JWT
     const apiKey = await Database.apiKeyModel.generateApiKey(this.auth.tokenManager.TokenSecret, keyId, req.body.name, req.body.expiresIn)
 
     if (!apiKey) {

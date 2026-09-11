@@ -1,5 +1,5 @@
 const { Op } = require('sequelize')
-const uuid = require('uuid')
+const { randomUUID } = require('node:crypto')
 
 const Database = require('../Database')
 const Logger = require('../Logger')
@@ -136,7 +136,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
-      jti: uuid.v4(),
+      jti: randomUUID(),
       type: 'access'
     }
     const options = {
@@ -160,7 +160,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
-      jti: uuid.v4(),
+      jti: randomUUID(),
       type: 'refresh'
     }
     const options = {

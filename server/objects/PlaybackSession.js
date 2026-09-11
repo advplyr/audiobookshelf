@@ -1,5 +1,5 @@
 const date = require('../libs/dateAndTime')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const serverVersion = require('../../package.json').version
 const DeviceInfo = require('./DeviceInfo')
 
@@ -207,7 +207,7 @@ class PlaybackSession {
    * @param {*} episodeId
    */
   setData(libraryItem, userId, mediaPlayer, deviceInfo, startTime, episodeId = null) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.userId = userId
     this.libraryId = libraryItem.libraryId
     this.libraryItemId = libraryItem.id

@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Logger = require('../Logger')
 
 class ScanLogger {
@@ -34,7 +34,7 @@ class ScanLogger {
   }
 
   setData(type, name) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.type = type
     this.name = name
     this.startedAt = Date.now()

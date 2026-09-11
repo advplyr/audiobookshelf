@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Path = require('path')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix } = require('../utils/index')
@@ -334,7 +334,7 @@ class PodcastScanner {
     }
 
     const libraryItemObj = libraryItemData.libraryItemObject
-    libraryItemObj.id = uuidv4() // Generate library item id ahead of time to use for saving extracted cover image
+    libraryItemObj.id = randomUUID() // Generate library item id ahead of time to use for saving extracted cover image
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
     libraryItemObj.extraData = {}

@@ -1,6 +1,6 @@
 const { DataTypes, QueryInterface } = require('sequelize')
 const Path = require('path')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Logger = require('../../Logger')
 const fs = require('../../libs/fsExtra')
 const oldDbFiles = require('./oldDbFiles')
@@ -68,7 +68,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   // Migrate Book
   //
   const Book = {
-    id: uuidv4(),
+    id: randomUUID(),
     title: oldBook.metadata.title,
     titleIgnorePrefix: getTitleIgnorePrefix(oldBook.metadata.title),
     subtitle: oldBook.metadata.subtitle,
@@ -109,7 +109,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       bookAuthorsInserted.push(authorId)
 
       _newRecords.bookAuthor.push({
-        id: uuidv4(),
+        id: randomUUID(),
         authorId,
         bookId: Book.id
       })
@@ -130,7 +130,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       bookSeriesInserted.push(seriesId)
 
       _newRecords.bookSeries.push({
-        id: uuidv4(),
+        id: randomUUID(),
         sequence: oldBookSeries.sequence,
         seriesId: oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id],
         bookId: Book.id
@@ -162,7 +162,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
   // Migrate Podcast
   //
   const Podcast = {
-    id: uuidv4(),
+    id: randomUUID(),
     title: oldPodcastMetadata.title,
     titleIgnorePrefix: getTitleIgnorePrefix(oldPodcastMetadata.title),
     author: oldPodcastMetadata.author,
@@ -200,7 +200,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     oldEpisode.audioFile.index = 1
 
     const PodcastEpisode = {
-      id: uuidv4(),
+      id: randomUUID(),
       oldEpisodeId: oldEpisode.id,
       index: oldEpisode.index,
       season: oldEpisode.season || null,
@@ -267,7 +267,7 @@ function migrateLibraryItems(oldLibraryItems) {
     // Migrate LibraryItem
     //
     const LibraryItem = {
-      id: uuidv4(),
+      id: randomUUID(),
       oldLibraryItemId: oldLibraryItem.id,
       ino: oldLibraryItem.ino,
       path: oldLibraryItem.path,
@@ -336,7 +336,7 @@ function migrateLibraries(oldLibraries) {
     // Migrate Library
     //
     const Library = {
-      id: uuidv4(),
+      id: randomUUID(),
       oldLibraryId: oldLibrary.id,
       name: oldLibrary.name,
       displayOrder: oldLibrary.displayOrder,
@@ -355,7 +355,7 @@ function migrateLibraries(oldLibraries) {
     //
     for (const oldFolder of oldLibrary.folders) {
       const LibraryFolder = {
-        id: uuidv4(),
+        id: randomUUID(),
         path: oldFolder.fullPath,
         createdAt: oldFolder.addedAt,
         updatedAt: oldLibrary.lastUpdate,
@@ -400,7 +400,7 @@ function migrateAuthors(oldAuthors, oldLibraryItems) {
     for (const libraryId of librariesWithThisAuthor) {
       const lastFirst = oldAuthor.name ? parseNameString.nameToLastFirst(oldAuthor.name) : ''
       const Author = {
-        id: uuidv4(),
+        id: randomUUID(),
         name: oldAuthor.name,
         lastFirst,
         asin: oldAuthor.asin || null,
@@ -448,7 +448,7 @@ function migrateSeries(oldSerieses, oldLibraryItems) {
 
     for (const libraryId of librariesWithThisSeries) {
       const Series = {
-        id: uuidv4(),
+        id: randomUUID(),
         name: oldSeries.name,
         nameIgnorePrefix: getTitleIgnorePrefix(oldSeries.name),
         description: oldSeries.description || null,
@@ -504,7 +504,7 @@ function migrateUsers(oldUsers) {
       .filter((se) => se)
 
     const User = {
-      id: uuidv4(),
+      id: randomUUID(),
       username: oldUser.username,
       pash: oldUser.pash || null,
       type: oldUser.type || null,
@@ -545,7 +545,7 @@ function migrateUsers(oldUsers) {
       }
 
       const MediaProgress = {
-        id: uuidv4(),
+        id: randomUUID(),
         mediaItemId,
         mediaItemType,
         duration: oldMediaProgress.duration,
@@ -632,7 +632,7 @@ function migrateSessions(oldSessions) {
           extraData.browserName = oldDeviceInfo.browserName
         }
 
-        const id = uuidv4()
+        const id = randomUUID()
         const Device = {
           id,
           deviceId: deviceDeviceId,
@@ -663,7 +663,7 @@ function migrateSessions(oldSessions) {
     }
 
     const PlaybackSession = {
-      id: uuidv4(),
+      id: randomUUID(),
       mediaItemId, // Can be null
       mediaItemType,
       libraryId: oldDbIdMap.libraries[oldSession.libraryId] || null,
@@ -717,7 +717,7 @@ function migrateCollections(oldCollections) {
     }
 
     const Collection = {
-      id: uuidv4(),
+      id: randomUUID(),
       name: oldCollection.name,
       description: oldCollection.description,
       createdAt: oldCollection.createdAt,
@@ -730,7 +730,7 @@ function migrateCollections(oldCollections) {
     let order = 1
     BookIds.forEach((bookId) => {
       const CollectionBook = {
-        id: uuidv4(),
+        id: randomUUID(),
         createdAt: Collection.createdAt,
         bookId,
         collectionId: Collection.id,
@@ -783,7 +783,7 @@ function migratePlaylists(oldPlaylists) {
     }
 
     const Playlist = {
-      id: uuidv4(),
+      id: randomUUID(),
       name: oldPlaylist.name,
       description: oldPlaylist.description,
       createdAt: oldPlaylist.createdAt,
@@ -796,7 +796,7 @@ function migratePlaylists(oldPlaylists) {
     let order = 1
     MediaItemIds.forEach((mediaItemId) => {
       const PlaylistMediaItem = {
-        id: uuidv4(),
+        id: randomUUID(),
         mediaItemId,
         mediaItemType,
         createdAt: Playlist.createdAt,
@@ -855,7 +855,7 @@ function migrateFeeds(oldFeeds) {
     const oldFeedMeta = oldFeed.meta
 
     const Feed = {
-      id: uuidv4(),
+      id: randomUUID(),
       slug: oldFeed.slug,
       entityType: oldFeed.entityType,
       entityId,
@@ -885,7 +885,7 @@ function migrateFeeds(oldFeeds) {
     //
     for (const oldFeedEpisode of oldFeed.episodes) {
       const FeedEpisode = {
-        id: uuidv4(),
+        id: randomUUID(),
         title: oldFeedEpisode.title,
         author: oldFeedEpisode.author,
         description: oldFeedEpisode.description,

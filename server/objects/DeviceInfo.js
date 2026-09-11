@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const { stripAllTags } = require('../utils/htmlSanitizer')
 
 class DeviceInfo {
@@ -82,7 +82,7 @@ class DeviceInfo {
   }
 
   setData(ip, ua, clientDeviceInfo, serverVersion, userId) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.userId = userId
     this.deviceId = clientDeviceInfo?.deviceId || this.id
     this.ipAddress = ip || null

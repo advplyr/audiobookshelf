@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 
 /**
  * @typedef TaskString
@@ -83,7 +83,7 @@ class Task {
    * @param {Object} [data]
    */
   setData(action, titleString, descriptionString, showSuccess, data = {}) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.action = action
     this.data = { ...data }
     this.title = titleString.text

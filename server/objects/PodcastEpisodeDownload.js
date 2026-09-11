@@ -1,5 +1,5 @@
 const Path = require('path')
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
 const globals = require('../utils/globals')
 
@@ -105,7 +105,7 @@ class PodcastEpisodeDownload {
    * @param {*} libraryId
    */
   setData(rssPodcastEpisode, libraryItem, isAutoDownload, libraryId) {
-    this.id = uuidv4()
+    this.id = randomUUID()
     this.rssPodcastEpisode = rssPodcastEpisode
 
     const url = rssPodcastEpisode.enclosure.url

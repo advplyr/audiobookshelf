@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid').v4
+const { randomUUID } = require('node:crypto')
 const Path = require('path')
 const serverVersion = require('../../package.json').version
 const Logger = require('../Logger')
@@ -153,7 +153,7 @@ class PlaybackSessionManager {
     // TODO: Temp update local playback session id to uuidv4 & library item/book/episode ids
     if (sessionJson.id?.startsWith('play_local_')) {
       if (!this.oldPlaybackSessionMap[sessionJson.id]) {
-        const newSessionId = uuidv4()
+        const newSessionId = randomUUID()
         this.oldPlaybackSessionMap[sessionJson.id] = newSessionId
         sessionJson.id = newSessionId
       } else {

@@ -6,9 +6,9 @@ module.exports = (() => {
     return {
         save: (task) => {
             if(!task.options){
-                const uuid = require('uuid');
+                const { randomUUID } = require('node:crypto');
                 task.options = {};
-                task.options.name = uuid.v4();
+                task.options.name = randomUUID();
             }
             global.scheduledTasks.set(task.options.name, task);
         },
