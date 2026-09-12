@@ -118,6 +118,24 @@ describe('LibraryItemController', () => {
       expect(series2Exists).to.be.true
     })
 
+    it('should remove bookmarks for a deleted library item while preserving other bookmarks', async () => {
+      const user = await Database.userModel.create({
+        username: 'bookmark-user',
+        type: 'user',
+        bookmarks: [
+          { libraryItemId: libraryItem1Id, time: 10, title: 'Deleted' },
+          { libraryItemId: libraryItem2Id, time: 20, title: 'Kept' }
+        ],
+        permissions: {},
+        extraData: {}
+      })
+      const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItem1Id)
+
+      await LibraryItemController.delete.bind(apiRouter)({ query: {}, libraryItem }, { sendStatus: sinon.spy() })
+
+      expect((await Database.userModel.findByPk(user.id)).bookmarks).to.deep.equal([{ libraryItemId: libraryItem2Id, time: 20, title: 'Kept' }])
+    })
+
     it('should remove authors and series with no books on library item batch delete', async () => {
       // Batch delete library item 1
       const fakeReq = {
@@ -157,6 +175,38 @@ describe('LibraryItemController', () => {
       // Series 2 should not be removed because it still has Book 2
       const series2Exists = await Database.seriesModel.checkExistsById(series2Id)
       expect(series2Exists).to.be.true
+    })
+
+    it('should remove bookmarks for all deleted library items in a batch', async () => {
+      const user = await Database.userModel.create({
+        username: 'batch-bookmark-user',
+        type: 'user',
+        bookmarks: [
+          { libraryItemId: libraryItem1Id, time: 10, title: 'Deleted 1' },
+          { libraryItemId: libraryItem2Id, time: 20, title: 'Deleted 2' },
+          { libraryItemId: 'kept-item', time: 30, title: 'Kept' }
+        ],
+        permissions: {},
+        extraData: {}
+      })
+      const fakeReq = {
+        query: {},
+        user: {
+          username: 'test',
+          canDelete: true,
+          checkCanAccessLibraryItem: () => true
+        },
+        body: {
+          libraryItemIds: [libraryItem1Id, libraryItem2Id]
+        }
+      }
+      const fakeRes = {
+        sendStatus: sinon.spy()
+      }
+
+      await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect((await Database.userModel.findByPk(user.id)).bookmarks).to.deep.equal([{ libraryItemId: 'kept-item', time: 30, title: 'Kept' }])
     })
 
     it('should remove authors and series with no books on library item update media', async () => {

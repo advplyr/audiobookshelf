@@ -577,6 +577,7 @@ class LibraryItemController {
     }
 
     const libraryId = itemsToDelete[0].libraryId
+    const deletedLibraryItemIds = []
 
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
@@ -595,7 +596,7 @@ class LibraryItemController {
           authorIds.push(...libraryItem.media.authors.map((au) => au.id))
         }
       }
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, libraryItem.libraryId)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, libraryItem.libraryId, deletedLibraryItemIds)
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
@@ -609,6 +610,8 @@ class LibraryItemController {
         await this.checkRemoveAuthorsWithNoBooks(authorIds)
       }
     }
+
+    await Database.userModel.removeBookmarksForLibraryItems(deletedLibraryItemIds)
 
     await Database.resetLibraryIssuesFilterData(libraryId)
 
