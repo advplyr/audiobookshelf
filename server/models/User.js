@@ -628,7 +628,8 @@ class User extends Model {
       permissions: permissions,
       librariesAccessible: [...librariesAccessible],
       itemTagsSelected: [...itemTagsSelected],
-      hasOpenIDLink: !!this.authOpenIDSub
+      hasOpenIDLink: !!this.authOpenIDSub,
+      hideListeningActivity: !!this.extraData?.hideListeningActivity
     }
     if (minimal) {
       delete json.mediaProgress

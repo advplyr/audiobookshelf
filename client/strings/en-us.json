@@ -1165,5 +1165,16 @@
   "TooltipLockChapter": "Lock chapter (Shift+click for range)",
   "TooltipSubtractOneSecond": "Subtract 1 second",
   "TooltipUnlockAllChapters": "Unlock all chapters",
-  "TooltipUnlockChapter": "Unlock chapter (Shift+click for range)"
+  "TooltipUnlockChapter": "Unlock chapter (Shift+click for range)",
+  "ButtonCommunity": "Community",
+  "HeaderCommunity": "Community Listening",
+  "LabelEnableCommunityListeningStats": "Enable community listening stats",
+  "LabelHideListeningActivity": "Hide my listening activity from other users",
+  "LabelHideListeningActivityHelp": "Your listening sessions and progress will be excluded from all community statistics and activity.",
+  "LabelListeners": "listeners",
+  "LabelMostActiveListeners": "Most active listeners",
+  "LabelMostListenedBooks": "Most listened books",
+  "LabelRecentActivity": "Recent activity",
+  "LabelTopAuthors": "Top authors",
+  "LabelTotalListeningTime": "Total listening time"
 }

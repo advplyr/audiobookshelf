@@ -137,6 +137,13 @@
           <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
 
           <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
+          <section v-if="communityListeners" class="mt-8 border-t border-white/10 pt-6">
+            <h2 class="text-xl font-semibold">{{ $strings.HeaderCommunity }}</h2>
+            <p class="text-gray-300 mt-1">{{ communityListeners.listenerCount }} {{ $strings.LabelListeners }} · {{ communityListeners.finishedCount }} {{ $strings.LabelFinished }}</p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span v-for="listener in communityListeners.listeners" :key="listener.userId" class="bg-primary rounded px-3 py-1 text-sm">{{ listener.username }} — {{ listener.finished ? $strings.LabelFinished : `${listener.percent}%` }}</span>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -165,10 +172,12 @@ export default {
     if (store.state.libraries.currentLibraryId !== item.libraryId || !store.state.libraries.filterData) {
       await store.dispatch('libraries/fetch', item.libraryId)
     }
+    const communityListeners = store.getters['getServerSetting']('enableCommunityListeningStats') ? await app.$axios.$get(`/api/items/${params.id}/listeners`).catch(() => null) : null
     return {
       libraryItem: item,
       rssFeed: item.rssFeed || null,
-      mediaItemShare: item.mediaItemShare || null
+      mediaItemShare: item.mediaItemShare || null,
+      communityListeners
     }
   },
   data() {

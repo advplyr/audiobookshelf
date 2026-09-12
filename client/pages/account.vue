@@ -16,6 +16,10 @@
           <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguage }}</p>
           <ui-dropdown v-model="selectedLanguage" :items="$languageCodeOptions" small class="max-w-48" @input="updateLocalLanguage" />
         </div>
+        <div class="py-4">
+          <ui-checkbox v-model="hideListeningActivity" :label="$strings.LabelHideListeningActivity" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base" @input="updateCommunityPrivacy" />
+          <p class="text-xs text-gray-400 mt-2 ml-8">{{ $strings.LabelHideListeningActivityHelp }}</p>
+        </div>
 
         <div class="w-full h-px bg-white/10 my-4" />
 
@@ -146,7 +150,8 @@ export default {
       ereaderDevices: [],
       deletingDeviceName: null,
       selectedEReaderDevice: null,
-      showEReaderDeviceModal: false
+      showEReaderDeviceModal: false,
+      hideListeningActivity: false
     }
   },
   computed: {
@@ -189,6 +194,14 @@ export default {
     }
   },
   methods: {
+    async updateCommunityPrivacy(value) {
+      const data = await this.$axios.$patch('/api/me/community-settings', { hideListeningActivity: value }).catch((error) => {
+        console.error('Failed to update community privacy', error)
+        this.hideListeningActivity = !value
+        this.$toast.error(this.$strings.ToastFailedToUpdate)
+      })
+      if (data?.user) this.$store.commit('user/setUser', data.user)
+    },
     updateLocalLanguage(lang) {
       this.$setLanguageCode(lang)
     },
@@ -375,6 +388,7 @@ export default {
     }
   },
   mounted() {
+    this.hideListeningActivity = !!this.user.hideListeningActivity
     this.selectedLanguage = this.$languageCodes.current
     this.ereaderDevices = this.$store.state.libraries.ereaderDevices || []
     if (!this.isGuest) {

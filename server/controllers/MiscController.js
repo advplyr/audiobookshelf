@@ -138,6 +138,9 @@ class MiscController {
     if (!isObject(settingsUpdate)) {
       return res.status(400).send('Invalid settings update object')
     }
+    if (settingsUpdate.enableCommunityListeningStats !== undefined && typeof settingsUpdate.enableCommunityListeningStats !== 'boolean') {
+      return res.status(400).send('enableCommunityListeningStats must be a boolean')
+    }
     if (settingsUpdate.allowIframe == false && process.env.ALLOW_IFRAME === '1') {
       Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
       return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')

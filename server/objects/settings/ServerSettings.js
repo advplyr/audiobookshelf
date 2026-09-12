@@ -55,6 +55,7 @@ class ServerSettings {
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
     this.allowedOrigins = []
+    this.enableCommunityListeningStats = false
 
     this.logLevel = Logger.logLevel
 
@@ -123,6 +124,7 @@ class ServerSettings {
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
     this.allowedOrigins = settings.allowedOrigins || []
+    this.enableCommunityListeningStats = !!settings.enableCommunityListeningStats
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
@@ -235,6 +237,7 @@ class ServerSettings {
       timeFormat: this.timeFormat,
       language: this.language,
       allowedOrigins: this.allowedOrigins,
+      enableCommunityListeningStats: this.enableCommunityListeningStats,
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,

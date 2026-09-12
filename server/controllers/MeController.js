@@ -28,6 +28,19 @@ class MeController {
     res.json(req.user.toOldJSONForBrowser())
   }
 
+  /** PATCH: /api/me/community-settings */
+  async updateCommunitySettings(req, res) {
+    if (typeof req.body.hideListeningActivity !== 'boolean') {
+      return res.status(400).send('hideListeningActivity boolean required')
+    }
+    req.user.extraData = { ...(req.user.extraData || {}), hideListeningActivity: req.body.hideListeningActivity }
+    req.user.changed('extraData', true)
+    await req.user.save()
+    const user = req.user.toOldJSONForBrowser()
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', user)
+    res.json({ success: true, user })
+  }
+
   /**
    * GET: /api/me/sessions
    *

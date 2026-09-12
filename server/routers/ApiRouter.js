@@ -35,6 +35,7 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const CommunityController = require('../controllers/CommunityController')
 
 class ApiRouter {
   constructor(Server) {
@@ -83,6 +84,8 @@ class ApiRouter {
     this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
+    this.router.get('/libraries/:id/community-stats', LibraryController.middleware.bind(this), CommunityController.getLibraryStats.bind(this))
+    this.router.get('/libraries/:id/community-activity', LibraryController.middleware.bind(this), CommunityController.getLibraryActivity.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), LibraryController.getNarrators.bind(this))
     this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.updateNarrator.bind(this))
@@ -106,6 +109,7 @@ class ApiRouter {
     this.router.post('/items/batch/scan', LibraryItemController.batchScan.bind(this))
 
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
+    this.router.get('/items/:id/listeners', LibraryItemController.middleware.bind(this), CommunityController.getItemListeners.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
     this.router.get('/items/:id/download', LibraryItemController.middleware.bind(this), LibraryItemController.download.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
@@ -171,6 +175,7 @@ class ApiRouter {
     // Current User Routes (Me)
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
+    this.router.patch('/me/community-settings', MeController.updateCommunitySettings.bind(this))
     this.router.get('/me/sessions', MeController.getSessions.bind(this))
     this.router.delete('/me/sessions/:id', MeController.deleteSession.bind(this))
     this.router.get('/me/progress', MeController.getAllMediaProgress.bind(this))

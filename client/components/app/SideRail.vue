@@ -76,6 +76,12 @@
         <div v-show="isStatsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
+      <nuxt-link v-if="communityStatsEnabled" :to="`/library/${currentLibraryId}/community`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isCommunityPage ? 'bg-primary/80' : 'bg-bg/60'">
+        <span class="material-symbols text-2xl">diversity_3</span>
+        <p class="pt-1 text-center leading-4" style="font-size: 0.8rem">{{ $strings.ButtonCommunity }}</p>
+        <div v-show="isCommunityPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      </nuxt-link>
+
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="abs-icons icon-podcast text-xl"></span>
 
@@ -179,6 +185,12 @@ export default {
     },
     isStatsPage() {
       return this.$route.name === 'library-library-stats'
+    },
+    isCommunityPage() {
+      return this.$route.name === 'library-library-community'
+    },
+    communityStatsEnabled() {
+      return !!this.$store.getters['getServerSetting']('enableCommunityListeningStats')
     },
     libraryBookshelfPage() {
       return this.$route.name === 'library-library-bookshelf-id'

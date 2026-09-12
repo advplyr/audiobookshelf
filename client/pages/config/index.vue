@@ -35,6 +35,10 @@
               </p>
             </ui-tooltip>
           </div>
+          <div class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelEnableCommunityListeningStats" v-model="newServerSettings.enableCommunityListeningStats" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableCommunityListeningStats', val)" />
+            <p aria-hidden="true" class="pl-4">{{ $strings.LabelEnableCommunityListeningStats }}</p>
+          </div>
           <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
             <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="sortingPrefixesUpdated" :disabled="savingPrefixes" />
             <div class="flex justify-end py-1">
