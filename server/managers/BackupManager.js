@@ -126,11 +126,29 @@ class BackupManager {
     } catch (error) {
       // Not a valid zip file
       Logger.error('[BackupManager] Failed to read backup file - backup might not be a valid .zip file', tempPath, error)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(400).send('Failed to read backup file - backup might not be a valid .zip file')
     }
-    if (!Object.keys(entries).includes('absdatabase.sqlite')) {
+    if (!entries['absdatabase.sqlite']) {
       Logger.error(`[BackupManager] Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.`)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(500).send('Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.')
+    }
+
+    const detailsEntry = entries['details']
+    if (!detailsEntry) {
+      Logger.error('[BackupManager] Invalid backup - missing details entry')
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      return res.status(400).send('Invalid backup file - missing details entry')
+    }
+    if (detailsEntry.size > 1024 * 1024) {
+      Logger.error(`[BackupManager] Backup details entry too large: ${detailsEntry.size} bytes`)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      return res.status(400).send('Invalid backup file - details entry too large')
     }
 
     const data = await zip.entryData('details')
@@ -140,8 +158,12 @@ class BackupManager {
 
     if (!backup.serverVersion) {
       Logger.error(`[BackupManager] Invalid backup with no server version - might be a backup created before version 2.0.0`)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(500).send('Invalid backup. Might be a backup created before version 2.0.0.')
     }
+
+    await zip.close().catch(() => {})
 
     backup.fileSize = await getFileSize(backup.fullPath)
 
@@ -257,9 +279,24 @@ class BackupManager {
           let data = null
           try {
             zip = new StreamZip.async({ file: fullFilePath })
+            const entries = await zip.entries()
+
+            const detailsEntry = entries['details']
+            if (!detailsEntry) {
+              Logger.error(`[BackupManager] Backup "${fullFilePath}" missing details entry - skipping`)
+              await zip.close().catch(() => {})
+              continue
+            }
+            if (detailsEntry.size > 1024 * 1024) {
+              Logger.error(`[BackupManager] Backup "${fullFilePath}" details entry too large (${detailsEntry.size} bytes) - skipping`)
+              await zip.close().catch(() => {})
+              continue
+            }
+
             data = await zip.entryData('details')
           } catch (error) {
             Logger.error(`[BackupManager] Failed to unzip backup "${fullFilePath}"`, error)
+            if (zip) await zip.close().catch(() => {})
             continue
           }
 
