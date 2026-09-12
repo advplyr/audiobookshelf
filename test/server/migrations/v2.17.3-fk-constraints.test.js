@@ -1,8 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const { up } = require('../../../server/migrations/v2.17.3-fk-constraints')
+const { up } = require('../../../server/migrations/v2.17.3-fk-constraints.js')
 const { Sequelize, QueryInterface } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
 describe('migration-v2.17.3-fk-constraints', () => {
   let sequelize

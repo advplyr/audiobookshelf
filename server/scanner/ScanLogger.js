@@ -1,5 +1,5 @@
 const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 class ScanLogger {
   constructor() {

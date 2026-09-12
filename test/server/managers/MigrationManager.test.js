@@ -1,11 +1,11 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
 const { Sequelize } = require('sequelize')
-const fs = require('../../../server/libs/fsExtra')
-const Logger = require('../../../server/Logger')
-const MigrationManager = require('../../../server/managers/MigrationManager')
+const fs = require('../../../server/libs/fsExtra/index.js')
+const Logger = require('../../../server/Logger.js')
+const MigrationManager = require('../../../server/managers/MigrationManager.js')
 const path = require('path')
-const { Umzug, memoryStorage } = require('../../../server/libs/umzug')
+const { Umzug, memoryStorage } = require('../../../server/libs/umzug/index.js')
 
 describe('MigrationManager', () => {
   let sequelizeStub

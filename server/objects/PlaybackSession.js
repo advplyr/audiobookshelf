@@ -1,7 +1,7 @@
-const date = require('../libs/dateAndTime')
+const date = require('../libs/dateAndTime/index.js')
 const uuidv4 = require('uuid').v4
 const serverVersion = require('../../package.json').version
-const DeviceInfo = require('./DeviceInfo')
+const DeviceInfo = require('./DeviceInfo.js')
 
 class PlaybackSession {
   constructor(session) {

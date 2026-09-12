@@ -1,8 +1,8 @@
 const Path = require('path')
-const date = require('../libs/dateAndTime')
-const fs = require('../libs/fsExtra')
-const fileUtils = require('../utils/fileUtils')
-const Logger = require('../Logger')
+const date = require('../libs/dateAndTime/index.js')
+const fs = require('../libs/fsExtra/index.js')
+const fileUtils = require('../utils/fileUtils.js')
+const Logger = require('../Logger.js')
 
 class DailyLog {
   /**

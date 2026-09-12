@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
-const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters.js')
 /**
  * @typedef ChapterObject
  * @property {number} id

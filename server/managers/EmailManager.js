@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer')
-const Database = require('../Database')
-const Logger = require("../Logger")
+const Database = require('../Database.js')
+const Logger = require("../Logger.js")
 
 class EmailManager {
   constructor() { }

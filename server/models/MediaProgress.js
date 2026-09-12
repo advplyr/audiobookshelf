@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
-const { isNullOrNaN } = require('../utils')
+const Logger = require('../Logger.js')
+const { isNullOrNaN } = require('../utils/index.js')
 
 class MediaProgress extends Model {
   constructor(values, options) {

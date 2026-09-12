@@ -1,6 +1,6 @@
 const chai = require('chai')
 const sinon = require('sinon')
-const TrackProgressMonitor = require('../../../server/objects/TrackProgressMonitor')
+const TrackProgressMonitor = require('../../../server/objects/TrackProgressMonitor.js')
 
 const expect = chai.expect
 

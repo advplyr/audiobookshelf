@@ -2,13 +2,13 @@ const Path = require('path')
 const { Sequelize, Op } = require('sequelize')
 
 const packageJson = require('../package.json')
-const fs = require('./libs/fsExtra')
-const Logger = require('./Logger')
+const fs = require('./libs/fsExtra/index.js')
+const Logger = require('./Logger.js')
 
-const dbMigration = require('./utils/migrations/dbMigration')
-const Auth = require('./Auth')
+const dbMigration = require('./utils/migrations/dbMigration.js')
+const Auth = require('./Auth.js')
 
-const MigrationManager = require('./managers/MigrationManager')
+const MigrationManager = require('./managers/MigrationManager.js')
 
 class Database {
   constructor() {
@@ -320,31 +320,31 @@ class Database {
   }
 
   buildModels(force = false) {
-    require('./models/User').init(this.sequelize)
-    require('./models/Session').init(this.sequelize)
-    require('./models/ApiKey').init(this.sequelize)
-    require('./models/Library').init(this.sequelize)
-    require('./models/LibraryFolder').init(this.sequelize)
-    require('./models/Book').init(this.sequelize)
-    require('./models/Podcast').init(this.sequelize)
-    require('./models/PodcastEpisode').init(this.sequelize)
-    require('./models/LibraryItem').init(this.sequelize)
-    require('./models/MediaProgress').init(this.sequelize)
-    require('./models/Series').init(this.sequelize)
-    require('./models/BookSeries').init(this.sequelize)
-    require('./models/Author').init(this.sequelize)
-    require('./models/BookAuthor').init(this.sequelize)
-    require('./models/Collection').init(this.sequelize)
-    require('./models/CollectionBook').init(this.sequelize)
-    require('./models/Playlist').init(this.sequelize)
-    require('./models/PlaylistMediaItem').init(this.sequelize)
-    require('./models/Device').init(this.sequelize)
-    require('./models/PlaybackSession').init(this.sequelize)
-    require('./models/Feed').init(this.sequelize)
-    require('./models/FeedEpisode').init(this.sequelize)
-    require('./models/Setting').init(this.sequelize)
-    require('./models/CustomMetadataProvider').init(this.sequelize)
-    require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/User.js').init(this.sequelize)
+    require('./models/Session.js').init(this.sequelize)
+    require('./models/ApiKey.js').init(this.sequelize)
+    require('./models/Library.js').init(this.sequelize)
+    require('./models/LibraryFolder.js').init(this.sequelize)
+    require('./models/Book.js').init(this.sequelize)
+    require('./models/Podcast.js').init(this.sequelize)
+    require('./models/PodcastEpisode.js').init(this.sequelize)
+    require('./models/LibraryItem.js').init(this.sequelize)
+    require('./models/MediaProgress.js').init(this.sequelize)
+    require('./models/Series.js').init(this.sequelize)
+    require('./models/BookSeries.js').init(this.sequelize)
+    require('./models/Author.js').init(this.sequelize)
+    require('./models/BookAuthor.js').init(this.sequelize)
+    require('./models/Collection.js').init(this.sequelize)
+    require('./models/CollectionBook.js').init(this.sequelize)
+    require('./models/Playlist.js').init(this.sequelize)
+    require('./models/PlaylistMediaItem.js').init(this.sequelize)
+    require('./models/Device.js').init(this.sequelize)
+    require('./models/PlaybackSession.js').init(this.sequelize)
+    require('./models/Feed.js').init(this.sequelize)
+    require('./models/FeedEpisode.js').init(this.sequelize)
+    require('./models/Setting.js').init(this.sequelize)
+    require('./models/CustomMetadataProvider.js').init(this.sequelize)
+    require('./models/MediaItemShare.js').init(this.sequelize)
 
     return this.sequelize.sync({ force, alter: false })
   }
@@ -391,7 +391,7 @@ class Database {
     }
     // Build migrations
     if (this.serverSettings.buildNumber <= 0) {
-      await require('./utils/migrations/absMetadataMigration').migrate(this)
+      await require('./utils/migrations/absMetadataMigration.js').migrate(this)
     }
 
     await this.cleanDatabase()

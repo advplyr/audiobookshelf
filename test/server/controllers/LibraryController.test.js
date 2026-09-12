@@ -2,10 +2,10 @@ const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 const sinon = require('sinon')
 
-const Database = require('../../../server/Database')
-const LibraryController = require('../../../server/controllers/LibraryController')
-const zipHelpers = require('../../../server/utils/zipHelpers')
-const Logger = require('../../../server/Logger')
+const Database = require('../../../server/Database.js')
+const LibraryController = require('../../../server/controllers/LibraryController.js')
+const zipHelpers = require('../../../server/utils/zipHelpers.js')
+const Logger = require('../../../server/Logger.js')
 
 describe('LibraryController.downloadMultiple', () => {
   let library

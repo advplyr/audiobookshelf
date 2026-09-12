@@ -1,8 +1,8 @@
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
 
 /**
  * @typedef RequestUserObject

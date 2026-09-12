@@ -1,19 +1,19 @@
 const Sequelize = require('sequelize')
 const Path = require('path')
 const { Request, Response } = require('express')
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const Watcher = require('../Watcher')
+const fs = require('../libs/fsExtra/index.js')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const Watcher = require('../Watcher.js')
 
-const libraryItemFilters = require('../utils/queries/libraryItemFilters')
-const cron = require('../libs/nodeCron')
-const { isObject, getTitleIgnorePrefix } = require('../utils/index')
-const { sanitizeFilename } = require('../utils/fileUtils')
+const libraryItemFilters = require('../utils/queries/libraryItemFilters.js')
+const cron = require('../libs/nodeCron/index.js')
+const { isObject, getTitleIgnorePrefix } = require('../utils/index.js')
+const { sanitizeFilename } = require('../utils/fileUtils.js')
 
-const TaskManager = require('../managers/TaskManager')
-const adminStats = require('../utils/queries/adminStats')
+const TaskManager = require('../managers/TaskManager.js')
+const adminStats = require('../utils/queries/adminStats.js')
 
 /**
  * @typedef RequestUserObject

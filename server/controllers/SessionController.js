@@ -1,12 +1,12 @@
 const Path = require('path')
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const Database = require('../Database')
-const { toNumber, isUUID } = require('../utils/index')
-const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
-const { PlayMethod } = require('../utils/constants')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
+const { toNumber, isUUID } = require('../utils/index.js')
+const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils.js')
+const { PlayMethod } = require('../utils/constants.js')
 
-const ShareManager = require('../managers/ShareManager')
+const ShareManager = require('../managers/ShareManager.js')
 
 /**
  * @typedef RequestUserObject

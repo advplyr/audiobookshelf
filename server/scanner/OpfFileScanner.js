@@ -1,5 +1,5 @@
-const { parseOpfMetadataXML } = require('../utils/parsers/parseOpfMetadata')
-const { readTextFile } = require('../utils/fileUtils')
+const { parseOpfMetadataXML } = require('../utils/parsers/parseOpfMetadata.js')
+const { readTextFile } = require('../utils/fileUtils.js')
 
 class OpfFileScanner {
   constructor() {}

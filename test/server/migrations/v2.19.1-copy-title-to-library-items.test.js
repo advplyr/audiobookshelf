@@ -3,9 +3,9 @@ const sinon = require('sinon')
 const { expect } = chai
 
 const { DataTypes, Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
-const { up, down } = require('../../../server/migrations/v2.19.1-copy-title-to-library-items')
+const { up, down } = require('../../../server/migrations/v2.19.1-copy-title-to-library-items.js')
 
 describe('Migration v2.19.1-copy-title-to-library-items', () => {
   let sequelize

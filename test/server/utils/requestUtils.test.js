@@ -1,6 +1,6 @@
 const { expect } = require('chai')
 
-const { isRequestSecure, getRequestProtocol, getRequestOrigin } = require('../../../server/utils/requestUtils')
+const { isRequestSecure, getRequestProtocol, getRequestOrigin } = require('../../../server/utils/requestUtils.js')
 
 function mockReq({ secure = false, host = 'books.example.com', xForwardedProto = null } = {}) {
   return {

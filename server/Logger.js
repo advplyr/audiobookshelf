@@ -1,5 +1,5 @@
-const date = require('./libs/dateAndTime')
-const { LogLevel } = require('./utils/constants')
+const date = require('./libs/dateAndTime/index.js')
+const { LogLevel } = require('./utils/constants.js')
 const util = require('util')
 
 class Logger {

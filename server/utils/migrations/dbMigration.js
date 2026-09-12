@@ -1,10 +1,10 @@
 const { DataTypes, QueryInterface } = require('sequelize')
 const Path = require('path')
 const uuidv4 = require('uuid').v4
-const Logger = require('../../Logger')
-const fs = require('../../libs/fsExtra')
-const oldDbFiles = require('./oldDbFiles')
-const parseNameString = require('../parsers/parseNameString')
+const Logger = require('../../Logger.js')
+const fs = require('../../libs/fsExtra/index.js')
+const oldDbFiles = require('./oldDbFiles.js')
+const parseNameString = require('../parsers/parseNameString.js')
 
 const oldDbIdMap = {
   users: {},

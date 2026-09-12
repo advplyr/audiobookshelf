@@ -1,6 +1,6 @@
-const { createNewSortInstance } = require('../libs/fastSort')
-const Database = require('../Database')
-const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
+const { createNewSortInstance } = require('../libs/fastSort/index.js')
+const Database = require('../Database.js')
+const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index.js')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })

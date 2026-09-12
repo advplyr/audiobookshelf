@@ -1,11 +1,11 @@
 const Path = require('path')
 const EventEmitter = require('events')
-const Watcher = require('./libs/watcher/watcher')
-const Logger = require('./Logger')
-const Task = require('./objects/Task')
-const TaskManager = require('./managers/TaskManager')
+const Watcher = require('./libs/watcher/watcher.js')
+const Logger = require('./Logger.js')
+const Task = require('./objects/Task.js')
+const TaskManager = require('./managers/TaskManager.js')
 
-const { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs, shouldIgnoreFile } = require('./utils/fileUtils')
+const { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs, shouldIgnoreFile } = require('./utils/fileUtils.js')
 
 /**
  * @typedef PendingFileUpdate

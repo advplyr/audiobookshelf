@@ -1,6 +1,6 @@
-const { AudioMimeType } = require('../../utils/constants')
-const AudioMetaTags = require('../metadata/AudioMetaTags')
-const FileMetadata = require('../metadata/FileMetadata')
+const { AudioMimeType } = require('../../utils/constants.js')
+const AudioMetaTags = require('../metadata/AudioMetaTags.js')
+const FileMetadata = require('../metadata/FileMetadata.js')
 
 class AudioFile {
   constructor(data) {

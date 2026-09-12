@@ -1,8 +1,8 @@
 const Path = require('path')
-const Logger = require('../../Logger')
-const StreamZip = require('../../libs/nodeStreamZip')
-const parseOpfMetadata = require('./parseOpfMetadata')
-const { xmlToJSON } = require('../index')
+const Logger = require('../../Logger.js')
+const StreamZip = require('../../libs/nodeStreamZip/index.js')
+const parseOpfMetadata = require('./parseOpfMetadata.js')
+const { xmlToJSON } = require('../index.js')
 
 /**
  * Extract file from epub and return string content

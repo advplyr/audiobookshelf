@@ -1,12 +1,12 @@
 const { Request, Response } = require('express')
 const { Op } = require('sequelize')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const { sort } = require('../libs/fastSort')
-const { toNumber, isNullOrNaN, isUUID } = require('../utils/index')
-const userStats = require('../utils/queries/userStats')
-const parseUserAgent = require('../utils/parsers/parseUserAgent')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const { sort } = require('../libs/fastSort/index.js')
+const { toNumber, isNullOrNaN, isUUID } = require('../utils/index.js')
+const userStats = require('../utils/queries/userStats.js')
+const parseUserAgent = require('../utils/parsers/parseUserAgent.js')
 
 /**
  * @typedef RequestUserObject

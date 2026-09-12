@@ -1,15 +1,15 @@
-const fs = require('../libs/fsExtra')
+const fs = require('../libs/fsExtra/index.js')
 const Path = require('path')
-const Logger = require('../Logger')
-const readChunk = require('../libs/readChunk')
-const imageType = require('../libs/imageType')
+const Logger = require('../Logger.js')
+const readChunk = require('../libs/readChunk/index.js')
+const imageType = require('../libs/imageType/index.js')
 
-const globals = require('../utils/globals')
-const { downloadImageFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils')
-const { extractCoverArt } = require('../utils/ffmpegHelpers')
-const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
+const globals = require('../utils/globals.js')
+const { downloadImageFile, filePathToPOSIX, checkPathIsFile } = require('../utils/fileUtils.js')
+const { extractCoverArt } = require('../utils/ffmpegHelpers.js')
+const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata.js')
 
-const CacheManager = require('../managers/CacheManager')
+const CacheManager = require('../managers/CacheManager.js')
 
 class CoverManager {
   constructor() {}
