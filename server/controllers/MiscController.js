@@ -80,7 +80,12 @@ class MiscController {
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
-    await fs.ensureDir(outputDirectory)
+    try {
+      await fs.ensureDir(outputDirectory)
+    } catch (error) {
+      Logger.error('[MiscController] Failed to create upload directory', outputDirectory, error)
+      return res.sendStatus(500)
+    }
 
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
