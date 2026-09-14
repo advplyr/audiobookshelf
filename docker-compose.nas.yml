@@ -1,7 +1,8 @@
 services:
   audiobookshelf:
-    image: ghcr.io/boondawgy/audiobookshelf:custom
-    pull_policy: always
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: audiobookshelf
     labels:
       com.centurylinklabs.watchtower.enable: "true"
