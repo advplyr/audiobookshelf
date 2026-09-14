@@ -34,7 +34,8 @@ class NotificationManager {
       episodeId: episode.id,
       episodeTitle: episode.title,
       episodeSubtitle: episode.subtitle || '',
-      episodeDescription: episode.description || ''
+      episodeDescription: episode.description || '',
+      episodeFilePath: episode.audioFile?.metadata?.path || ''
     }
   }
 
