@@ -12,6 +12,7 @@ const cron = require('../libs/nodeCron')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const ServerSettings = require('../objects/settings/ServerSettings')
 const { sanitizeFilename } = require('../utils/fileUtils')
+const { sanitize } = require('../utils/htmlSanitizer')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
@@ -706,6 +707,7 @@ class MiscController {
         }
         let updatedValue = settingsUpdate[key]
         if (updatedValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') updatedValue = null
+        if (key === 'authLoginCustomMessage' && updatedValue) updatedValue = sanitize(updatedValue) || null
         let currentValue = currentAuthenticationSettings[key]
         if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
 
