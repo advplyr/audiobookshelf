@@ -346,7 +346,7 @@
   "LabelEncodingInfoEmbedded": "Metadane zostaną osadzone w ścieżkach audio w folderze z audiobookiem.",
   "LabelEncodingStartedNavigation": "Po uruchomieniu zadania możesz opuścić tę stronę.",
   "LabelEncodingTimeWarning": "Kodowanie może potrwać do 30 minut.",
-  "LabelEncodingWarningAdvancedSettings": "Ostrzeżenie: Nie aktualizuj tych ustawień, jeśli nie jesteś zaznajomiony ze sposobem działania ffmpeg i opcji konwersji.",
+  "LabelEncodingWarningAdvancedSettings": "Ostrzeżenie: Nie aktualizuj tych ustawień, jeśli nie znasz opcji kodowania ffmpeg.",
   "LabelEncodingWatcherDisabled": "Jeśli monitorowanie folderów jest wyłączone, należy ponownie przeskanować audiobooka.",
   "LabelEnd": "Zakończ",
   "LabelEndOfChapter": "Koniec rozdziału",
