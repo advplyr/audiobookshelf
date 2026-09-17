@@ -5,8 +5,8 @@
   "description": "Self-hosted audiobook and podcast server",
   "main": "dist-server/index.js",
   "scripts": {
-    "build:server": "node scripts/buildServer.js",
-    "dev": "nodemon --watch server --watch index.js --ext js,ts --exec \"npm run build:server && node dist-server/index.js\" -- --dev",
+    "build:server": "tsc -p tsconfig.server.json",
+    "dev": "nodemon --watch server --watch index.js --watch test --watch dev.js --ext js,ts --exec \"npm run build:server && node dist-server/index.js\" -- --dev",
     "start": "node dist-server/index.js",
     "start-dev": "node dist-server/index.js --prod-with-dev-env",
     "client": "cd client && npm ci && npm run generate",
