@@ -1,6 +1,7 @@
-const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
+const { DataTypes, Model, where, fn, col } = require('sequelize')
 
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
+const seriesSequenceOrder = require('../utils/queries/seriesSequenceOrder')
 
 class Series extends Model {
   constructor(values, options) {
@@ -161,7 +162,7 @@ class Series extends Model {
           }
         }
       ],
-      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]]
+      order: [[seriesSequenceOrder('bookSeries.sequence')]]
     })
   }
 
