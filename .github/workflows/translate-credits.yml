@@ -1,0 +1,25 @@
+name: Prepare translation credits
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  release-notes:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'weblate')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: translator-credits
+        uses: audiobookshelf/get-translator-credits@v1.1.0
+
+      - name: Show translator credits
+        run: |
+          printf '%s\n' "${{ steps.translator-credits.outputs.credits }}"

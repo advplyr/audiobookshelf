@@ -10,7 +10,9 @@ const Watcher = require('../Watcher')
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const cron = require('../libs/nodeCron')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
+const ServerSettings = require('../objects/settings/ServerSettings')
 const { sanitizeFilename } = require('../utils/fileUtils')
+const { sanitize } = require('../utils/htmlSanitizer')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
@@ -78,7 +80,12 @@ class MiscController {
     const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
     const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
 
-    await fs.ensureDir(outputDirectory)
+    try {
+      await fs.ensureDir(outputDirectory)
+    } catch (error) {
+      Logger.error('[MiscController] Failed to create upload directory', outputDirectory, error)
+      return res.sendStatus(500)
+    }
 
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
@@ -142,16 +149,23 @@ class MiscController {
       Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
       return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
     }
-    if (settingsUpdate.allowedOrigins && !Array.isArray(settingsUpdate.allowedOrigins)) {
+    const filteredUpdate = {}
+    for (const key in settingsUpdate) {
+      if (ServerSettings.patchableSettingsKeys.has(key)) {
+        filteredUpdate[key] = settingsUpdate[key]
+      }
+    }
+
+    if (filteredUpdate.allowedOrigins && !Array.isArray(filteredUpdate.allowedOrigins)) {
       return res.status(400).send('allowedOrigins must be an array')
     }
 
-    const madeUpdates = Database.serverSettings.update(settingsUpdate)
+    const madeUpdates = Database.serverSettings.update(filteredUpdate)
     if (madeUpdates) {
       await Database.updateServerSettings()
 
       // If backup schedule is updated - update backup manager
-      if (settingsUpdate.backupSchedule !== undefined) {
+      if (filteredUpdate.backupSchedule !== undefined) {
         this.backupManager.updateCronSchedule()
       }
     }
@@ -698,6 +712,7 @@ class MiscController {
         }
         let updatedValue = settingsUpdate[key]
         if (updatedValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') updatedValue = null
+        if (key === 'authLoginCustomMessage' && updatedValue) updatedValue = sanitize(updatedValue) || null
         let currentValue = currentAuthenticationSettings[key]
         if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
 

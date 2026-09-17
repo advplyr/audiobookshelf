@@ -422,21 +422,6 @@ class Book extends Model {
       hasUpdates = true
     }
 
-    // TODO: Remove support for updating audioFiles, chapters and ebookFile here
-    const arrayOfObjectsKeys = ['audioFiles', 'chapters']
-    arrayOfObjectsKeys.forEach((key) => {
-      if (Array.isArray(payload[key]) && !payload[key].some((item) => typeof item !== 'object') && JSON.stringify(this[key]) !== JSON.stringify(payload[key])) {
-        this[key] = payload[key]
-        this.changed(key, true)
-        hasUpdates = true
-      }
-    })
-    if (payload.ebookFile && JSON.stringify(this.ebookFile) !== JSON.stringify(payload.ebookFile)) {
-      this.ebookFile = payload.ebookFile
-      this.changed('ebookFile', true)
-      hasUpdates = true
-    }
-
     if (hasUpdates) {
       Logger.debug(`[Book] "${this.title}" changed keys:`, this.changed())
       await this.save()

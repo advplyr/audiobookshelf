@@ -5,7 +5,31 @@ const Logger = require('../../Logger')
 const User = require('../../models/User')
 const { sanitize } = require('../../utils/htmlSanitizer')
 
+const PATCHABLE_SETTINGS_KEYS = new Set([
+  'scannerParseSubtitle',
+  'scannerFindCovers',
+  'scannerCoverProvider',
+  'scannerPreferMatchedMetadata',
+  'scannerDisableWatcher',
+  'storeCoverWithItem',
+  'storeMetadataWithItem',
+  'allowIframe',
+  'allowedOrigins',
+  'backupSchedule',
+  'backupsToKeep',
+  'maxBackupSize',
+  'logLevel',
+  'homeBookshelfView',
+  'bookshelfView',
+  'dateFormat',
+  'timeFormat',
+  'language',
+  'chromecastEnabled',
+  'sortingIgnorePrefix'
+])
+
 class ServerSettings {
+  static patchableSettingsKeys = PATCHABLE_SETTINGS_KEYS
   constructor(settings) {
     this.id = 'server-settings'
     /** @type {string} JWT secret key ONLY used when JWT_SECRET_KEY is not set in ENV */
@@ -341,24 +365,9 @@ class ServerSettings {
   update(payload) {
     let hasUpdates = false
     for (const key in payload) {
-      if (key === 'authLoginCustomMessage') {
-        payload[key] = sanitize(payload[key])
-      }
-      if (key === 'sortingPrefixes') {
-        // Sorting prefixes are updated with the /api/sorting-prefixes endpoint
-        continue
-      } else if (key === 'authActiveAuthMethods') {
-        if (!payload[key]?.length) {
-          Logger.error(`[ServerSettings] Invalid authActiveAuthMethods`, payload[key])
-          continue
-        }
-        this.authActiveAuthMethods.sort()
-        payload[key].sort()
-        if (payload[key].join() !== this.authActiveAuthMethods.join()) {
-          this.authActiveAuthMethods = payload[key]
-          hasUpdates = true
-        }
-      } else if (this[key] !== payload[key]) {
+      if (!PATCHABLE_SETTINGS_KEYS.has(key)) continue
+
+      if (this[key] !== payload[key]) {
         if (key === 'logLevel') {
           Logger.setLogLevel(payload[key])
         }

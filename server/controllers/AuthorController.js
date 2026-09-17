@@ -427,6 +427,7 @@ class AuthorController {
   async middleware(req, res, next) {
     const author = await Database.authorModel.findByPk(req.params.id)
     if (!author) return res.sendStatus(404)
+    if (!req.user.checkCanAccessLibrary(author.libraryId)) return res.sendStatus(404)
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[AuthorController] User "${req.user.username}" attempted to delete without permission`)
