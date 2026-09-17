@@ -18,7 +18,9 @@ export const state = () => ({
     authorSortBy: 'name',
     authorSortDesc: false,
     jumpForwardAmount: 10,
-    jumpBackwardAmount: 10
+    jumpBackwardAmount: 10,
+    enableSmartSpeed: false,
+    smartSpeedRatio: 2.5
   }
 })
 
@@ -199,5 +201,17 @@ export const mutations = {
     if (!settings) return
     localStorage.setItem('userSettings', JSON.stringify(settings))
     state.settings = settings
+  },
+  SET_SMART_SPEED_ENABLED(state, enabled) {
+    state.settings.enableSmartSpeed = enabled !== undefined ? enabled : !state.settings.enableSmartSpeed
+    localStorage.setItem('userSettings', JSON.stringify(state.settings))
+  },
+  SET_SMART_SPEED_RATIO(state, ratio) {
+    let clampedRatio = Number(ratio)
+    if (isNaN(clampedRatio)) clampedRatio = 2.5
+    if (clampedRatio < 1.5) clampedRatio = 1.5
+    if (clampedRatio > 5.0) clampedRatio = 5.0
+    state.settings.smartSpeedRatio = clampedRatio
+    localStorage.setItem('userSettings', JSON.stringify(state.settings))
   }
 }
