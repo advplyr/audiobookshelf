@@ -25,7 +25,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* tsconfig.server.json /server
 COPY /server /server/server
 
 RUN case "$TARGETPLATFORM" in \
@@ -38,7 +38,7 @@ RUN case "$TARGETPLATFORM" in \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
   rm /tmp/library.zip
 
-RUN npm ci --only=production
+RUN npm ci --include=dev && npm run build:server && npm prune --omit=dev
 
 ### STAGE 2: Create minimal runtime image ###
 FROM node:20-alpine
@@ -70,4 +70,4 @@ ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "index.js"]
+CMD ["node", "dist-server/index.js"]

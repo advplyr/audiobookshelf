@@ -3,33 +3,34 @@
   "version": "2.36.1",
   "buildNumber": 1,
   "description": "Self-hosted audiobook and podcast server",
-  "main": "index.js",
+  "main": "dist-server/index.js",
   "scripts": {
-    "dev": "nodemon --watch server index.js -- --dev",
-    "start": "node index.js",
-    "start-dev": "node index.js --prod-with-dev-env",
+    "build:server": "tsc -p tsconfig.server.json",
+    "dev": "nodemon --watch server --watch index.js --watch test --watch dev.js --ext js,ts --exec \"npm run build:server && node dist-server/index.js\" -- --dev",
+    "start": "node dist-server/index.js",
+    "start-dev": "node dist-server/index.js --prod-with-dev-env",
     "client": "cd client && npm ci && npm run generate",
-    "prod": "npm run client && npm ci && node index.js",
-    "build-win": "npm run client && pkg -t node20-win-x64 -o ./dist/win/audiobookshelf -C GZip .",
-    "build-win-no-compress": "npm run client && pkg -t node20-win-x64 -o ./dist/win/audiobookshelf .",
+    "prod": "npm run client && npm ci && npm run build:server && npm run start",
+    "build-win": "npm run client && npm run build:server && pkg --config package.json -t node20-win-x64 -o ./dist/win/audiobookshelf -C GZip dist-server/index.js",
+    "build-win-no-compress": "npm run client && npm run build:server && pkg --config package.json -t node20-win-x64 -o ./dist/win/audiobookshelf dist-server/index.js",
     "build-linux": "build/linuxpackager",
     "docker": "docker buildx build --platform linux/amd64,linux/arm64 --push .  -t advplyr/audiobookshelf",
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "deploy-linux": "node deploy/linux",
-    "test": "mocha",
-    "coverage": "nyc mocha"
+    "test": "npm run build:server && mocha dist-server/test",
+    "coverage": "npm run build:server && nyc mocha dist-server/test"
   },
-  "bin": "index.js",
+  "bin": "dist-server/index.js",
   "pkg": {
     "assets": [
       "client/dist/**/*",
       "node_modules/sqlite3/lib/binding/**/*.node",
-      "server/migrations/*.js"
+      "dist-server/server/migrations/*.js"
     ],
     "scripts": [
-      "index.js",
-      "server/**/*.js"
+      "dist-server/index.js",
+      "dist-server/server/**/*.js"
     ]
   },
   "mocha": {
@@ -60,11 +61,13 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "@types/node": "^20.17.0",
     "chai": "^4.3.10",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
-    "sinon": "^17.0.1"
+    "sinon": "^17.0.1",
+    "typescript": "^5.7.3"
   },
   "allowScripts": {
     "sqlite3@5.1.7": true

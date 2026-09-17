@@ -16,7 +16,7 @@ const Path = require('path')
 process.env.NODE_ENV = options.dev ? 'development' : process.env.NODE_ENV || 'production'
 
 const server = require('./server/Server')
-global.appRoot = __dirname
+global.appRoot = Path.basename(__dirname) === 'dist-server' ? Path.resolve(__dirname, '..') : __dirname
 
 const isDev = process.env.NODE_ENV !== 'production'
 if (isDev || options['prod-with-dev-env']) {
@@ -32,9 +32,7 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
   if (devEnv.AllowedDevOrigins) {
-    process.env.ALLOWED_DEV_ORIGINS = Array.isArray(devEnv.AllowedDevOrigins)
-      ? devEnv.AllowedDevOrigins.join(',')
-      : String(devEnv.AllowedDevOrigins)
+    process.env.ALLOWED_DEV_ORIGINS = Array.isArray(devEnv.AllowedDevOrigins) ? devEnv.AllowedDevOrigins.join(',') : String(devEnv.AllowedDevOrigins)
   }
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath ?? '/audiobookshelf'
