@@ -18,18 +18,11 @@ class NotificationManager {
    *
    * @param {import('../models/LibraryItem')} libraryItem
    * @param {import('../models/PodcastEpisode')} episode
+   * @returns {Promise<object>}
    */
-  async onPodcastEpisodeDownloaded(libraryItem, episode) {
-    if (!Database.notificationSettings.isUseable) return
-
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onPodcastEpisodeDownloaded')) {
-      Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: No active notifications`)
-      return
-    }
-
-    Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.title}`)
+  async getPodcastEpisodeDownloadedEventData(libraryItem, episode) {
     const library = await Database.libraryModel.findByPk(libraryItem.libraryId)
-    const eventData = {
+    return {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,
       libraryName: library?.name || 'Unknown',
@@ -41,9 +34,45 @@ class NotificationManager {
       episodeId: episode.id,
       episodeTitle: episode.title,
       episodeSubtitle: episode.subtitle || '',
-      episodeDescription: episode.description || ''
+      episodeDescription: episode.description || '',
+      episodeFilePath: episode.audioFile?.metadata?.path || ''
     }
+  }
+
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')} episode
+   */
+  async onPodcastEpisodeDownloaded(libraryItem, episode) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onPodcastEpisodeDownloaded')) {
+      Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.title}`)
+    const eventData = await this.getPodcastEpisodeDownloadedEventData(libraryItem, episode)
     this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
+  }
+
+  /**
+   *
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')} episode
+   */
+  async onPodcastEpisodeManuallyDownloaded(libraryItem, episode) {
+    if (!Database.notificationSettings.isUseable) return
+
+    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onPodcastEpisodeManuallyDownloaded')) {
+      Logger.debug(`[NotificationManager] onPodcastEpisodeManuallyDownloaded: No active notifications`)
+      return
+    }
+
+    Logger.debug(`[NotificationManager] onPodcastEpisodeManuallyDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.title}`)
+    const eventData = await this.getPodcastEpisodeDownloadedEventData(libraryItem, episode)
+    this.triggerNotification('onPodcastEpisodeManuallyDownloaded', eventData)
   }
 
   /**
