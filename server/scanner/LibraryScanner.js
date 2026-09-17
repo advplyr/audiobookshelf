@@ -176,6 +176,17 @@ class LibraryScanner {
         libraryItemData = libraryItemDataFound.find((lid) => ItemToItemInoMatch(lid, existingLibraryItem) || ItemToFileInoMatch(lid, existingLibraryItem) || ItemToFileInoMatch(existingLibraryItem, lid))
         if (libraryItemData) {
           libraryScan.addLog(LogLevel.INFO, `Library item with path "${existingLibraryItem.path}" was not found, but library item inode "${existingLibraryItem.ino}" was found at path "${libraryItemData.path}"`)
+        } else if (!(await fs.pathExists(existingLibraryItem.path))) {
+          // Last fallback for an item folder that was recreated, match it by the inodes of its media files.
+          //   Only for items whose folder is gone, otherwise a hardlinked copy of an item that is still in
+          //   place would take that item over instead of becoming an item of its own
+          const itemFileInoMatches = libraryItemDataFound.filter((lid) => ItemToItemFileInoMatch(lid, existingLibraryItem, libraryScan.libraryMediaType))
+          if (itemFileInoMatches.length === 1) {
+            libraryItemData = itemFileInoMatches[0]
+            libraryScan.addLog(LogLevel.INFO, `Library item with path "${existingLibraryItem.path}" was not found, but the inodes of its media files were found at path "${libraryItemData.path}"`)
+          } else if (itemFileInoMatches.length > 1) {
+            libraryScan.addLog(LogLevel.WARN, `Library item with path "${existingLibraryItem.path}" matched the media file inodes of ${itemFileInoMatches.length} scanned folders - not matching`)
+          }
         }
       }
 
@@ -576,7 +587,12 @@ class LibraryScanner {
       let updatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
         const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
-        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
+        existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia))
+        if (!existingLibraryItem && !isSingleMedia) {
+          // Inodes and sizes of the files in this update group, shared by the two matchers below
+          const scannedFiles = await getScannedFileInos(fullPath, fileUpdateGroup[itemDir])
+          existingLibraryItem = (await findLibraryItemByFileToItemInoMatch(library.id, scannedFiles)) || (await findLibraryItemByFilesToItemFilesInoMatch(library.id, fullPath, scannedFiles, library.mediaType))
+        }
         if (existingLibraryItem) {
           // Update library item paths for scan
           existingLibraryItem.path = fullPath
@@ -652,6 +668,18 @@ function ItemToItemInoMatch(libraryItem1, libraryItem2) {
   return libraryItem1.ino === libraryItem2.ino
 }
 
+function ItemToItemFileInoMatch(libraryItemScanData, existingLibraryItem, mediaType) {
+  // check if a scanned folder holds the media files of an existing folder item, for item folders that
+  //   were recreated while the files inside kept their inodes. Single file items are already covered
+  //   by ItemToFileInoMatch
+  if (libraryItemScanData.isFile || existingLibraryItem.isFile) return false
+  return scanUtils.checkItemFilesMatchByIno(
+    existingLibraryItem.libraryFiles,
+    libraryItemScanData.libraryFiles.map((lf) => ({ ino: lf.ino, size: lf.metadata?.size })),
+    mediaType
+  )
+}
+
 function hasAudioFiles(fileUpdateGroup, itemDir) {
   return isSingleMediaFile(fileUpdateGroup, itemDir) ? scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) : fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
 }
@@ -693,14 +721,19 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
   return existingLibraryItem
 }
 
-async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles) {
-  if (isSingleMedia) return null
-  // check if it was moved from the root folder by comparing the ino to the ino of the scanned files
-  let itemFileInos = []
+// get the inode and size of each file in a file update group
+async function getScannedFileInos(fullPath, itemFiles) {
+  const scannedFiles = []
   for (const itemFile of itemFiles) {
-    const ino = await fileUtils.getIno(Path.posix.join(fullPath, itemFile))
-    if (ino) itemFileInos.push(ino)
+    const fileTimestamps = await fileUtils.getFileTimestampsWithIno(Path.posix.join(fullPath, itemFile))
+    if (fileTimestamps?.ino) scannedFiles.push({ ino: fileTimestamps.ino, size: fileTimestamps.size })
   }
+  return scannedFiles
+}
+
+async function findLibraryItemByFileToItemInoMatch(libraryId, scannedFiles) {
+  // check if it was moved from the root folder by comparing the ino to the ino of the scanned files
+  const itemFileInos = scannedFiles.map((sf) => sf.ino)
   if (!itemFileInos.length) return null
   const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
     libraryId: libraryId,
@@ -710,4 +743,44 @@ async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingle
   })
   if (existingLibraryItem) Logger.debug(`[LibraryScanner] Found library item with inode matching one of "${itemFileInos.join(',')}" at path "${existingLibraryItem.path}"`)
   return existingLibraryItem
+}
+
+async function findLibraryItemByFilesToItemFilesInoMatch(libraryId, fullPath, scannedFiles, mediaType) {
+  if (!scannedFiles.length) return null
+  // check if this folder is an existing folder item that was recreated by comparing the inos of the scanned files to the library files of existing items
+  const candidates = await Database.libraryItemModel.findAll({
+    attributes: ['id', 'path', 'libraryFiles'],
+    where: [
+      {
+        libraryId: libraryId,
+        isFile: false
+      },
+      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" IN (:inodes))'), {
+        [sequelize.Op.gt]: 0
+      })
+    ],
+    replacements: {
+      inodes: scannedFiles.map((sf) => sf.ino)
+    }
+  })
+
+  const matches = []
+  for (const candidate of candidates) {
+    if (!scanUtils.checkItemFilesMatchByIno(candidate.libraryFiles, scannedFiles, mediaType)) continue
+    // Do not match an item whose folder still exists, e.g. the scanned files are hardlinks of an item that is still in place
+    if (await fs.pathExists(candidate.path)) {
+      Logger.debug(`[LibraryScanner] Library item with library files matching inodes of "${fullPath}" still exists at path "${candidate.path}" - not matching`)
+      continue
+    }
+    matches.push(candidate)
+  }
+
+  if (!matches.length) return null
+  if (matches.length > 1) {
+    Logger.warn(`[LibraryScanner] Files in "${fullPath}" matched the media file inodes of ${matches.length} library items - not matching`)
+    return null
+  }
+
+  Logger.debug(`[LibraryScanner] Found library item with library files matching inodes of files in "${fullPath}" at path "${matches[0].path}"`)
+  return Database.libraryItemModel.findOneExpanded({ id: matches[0].id })
 }
