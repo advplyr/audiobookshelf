@@ -17,6 +17,12 @@ async function up({ context: { queryInterface, logger } }) {
   // Upwards migration script
   logger.info('[2.15.1 migration] UPGRADE BEGIN: 2.15.1-reindex-nocase ')
 
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info('[2.15.1 migration] Skipping NOCASE reindex on non-sqlite dialect')
+    logger.info('[2.15.1 migration] UPGRADE END: 2.15.1-reindex-nocase ')
+    return
+  }
+
   // Run reindex nocase to fix potential corruption issues due to the bad sqlite extension introduced in v2.12.0
   logger.info('[2.15.1 migration] Reindexing NOCASE indices to fix potential hidden corruption issues')
   await queryInterface.sequelize.query('REINDEX NOCASE;')

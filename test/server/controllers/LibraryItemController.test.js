@@ -34,6 +34,22 @@ describe('LibraryItemController', () => {
     await Database.sequelize.sync({ force: true })
   })
 
+  describe('middleware', () => {
+    it('should reject a malformed library item id before querying postgres', async () => {
+      const getExpandedByIdStub = sinon.stub(Database.libraryItemModel, 'getExpandedById')
+      const sendStatus = sinon.spy()
+
+      await LibraryItemController.middleware(
+        { params: { id: 'undefined' } },
+        { sendStatus },
+        sinon.spy()
+      )
+
+      expect(sendStatus.calledOnceWithExactly(400)).to.equal(true)
+      expect(getExpandedByIdStub.called).to.equal(false)
+    })
+  })
+
   describe('checkRemoveAuthorsAndSeries', () => {
     let libraryItem1Id
     let libraryItem2Id

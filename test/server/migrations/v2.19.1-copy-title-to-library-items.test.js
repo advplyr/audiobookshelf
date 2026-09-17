@@ -47,6 +47,18 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
   })
 
   describe('up', () => {
+    it('should skip sqlite-specific migration on non-sqlite dialect', async () => {
+      sinon.stub(queryInterface.sequelize, 'getDialect').returns('postgres')
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      const table = await queryInterface.describeTable('libraryItems')
+      expect(table).to.have.property('id')
+      expect(table).to.not.have.property('title')
+      expect(table).to.not.have.property('titleIgnorePrefix')
+      expect(loggerInfoStub.calledWith(sinon.match('[2.19.1 migration] skipping sqlite-specific migration on non-sqlite dialect'))).to.be.true
+    })
+
     it('should copy title and titleIgnorePrefix to libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 

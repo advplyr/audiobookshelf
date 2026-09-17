@@ -39,6 +39,11 @@ const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAut
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
 async function up({ context: { queryInterface, logger } }) {
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific migration on non-sqlite dialect`)
+    return
+  }
+
   const helper = new MigrationHelper(queryInterface, logger)
 
   // Upwards migration script
@@ -72,6 +77,11 @@ async function up({ context: { queryInterface, logger } }) {
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
 async function down({ context: { queryInterface, logger } }) {
+  if (queryInterface.sequelize.getDialect() !== 'sqlite') {
+    logger.info(`${loggerPrefix} skipping sqlite-specific rollback on non-sqlite dialect`)
+    return
+  }
+
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 

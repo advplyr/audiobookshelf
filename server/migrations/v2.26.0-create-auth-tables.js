@@ -35,9 +35,9 @@ async function up({ context: { queryInterface, logger } }) {
         primaryKey: true
       },
       ipAddress: DataTypes.STRING,
-      userAgent: DataTypes.STRING,
+      userAgent: DataTypes.TEXT,
       refreshToken: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false
       },
       expiresAt: {

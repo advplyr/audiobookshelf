@@ -88,6 +88,23 @@ describe('migration-v2.15.0-series-column-unique', () => {
       await queryInterface.dropTable('Series')
       await queryInterface.dropTable('BookSeries')
     })
+
+    it('should skip NOCASE reindex on postgres dialect', async () => {
+      sinon.stub(queryInterface.sequelize, 'getDialect').returns('postgres')
+      const originalQuery = queryInterface.sequelize.query.bind(queryInterface.sequelize)
+      const queryStub = sinon.stub(queryInterface.sequelize, 'query').callsFake((sql, options) => {
+        if (sql === 'REINDEX NOCASE;') {
+          throw new Error('Unexpected NOCASE reindex in postgres mode')
+        }
+        return originalQuery(sql, options)
+      })
+
+      await up({ context: { queryInterface, logger: Logger } })
+
+      expect(queryStub.neverCalledWith('REINDEX NOCASE;')).to.be.true
+      expect(loggerInfoStub.calledWith(sinon.match('[2.15.0 migration] Skipping NOCASE reindex on non-sqlite dialect'))).to.be.true
+    })
+
     it('upgrade with no duplicate series', async () => {
       // Add some entries to the Series table using the UUID for the ids
       await queryInterface.bulkInsert('Series', [

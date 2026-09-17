@@ -62,9 +62,10 @@ class Session extends Model {
           primaryKey: true
         },
         ipAddress: DataTypes.STRING,
-        userAgent: DataTypes.STRING,
+        // TEXT: JWT refresh tokens/user agents can exceed varchar(255) on postgres.
+        userAgent: DataTypes.TEXT,
         refreshToken: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: false
         },
         expiresAt: {
@@ -72,7 +73,7 @@ class Session extends Model {
           allowNull: false
         },
         lastRefreshToken: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: true
         },
         lastRefreshTokenExpiresAt: {

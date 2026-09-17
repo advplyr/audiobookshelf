@@ -20,10 +20,8 @@ async function up({ context: { queryInterface, logger } }) {
   // Create index for bookAuthors
   logger.info('[2.15.2 migration] Creating index for bookAuthors')
   const bookAuthorsIndexes = await queryInterface.showIndex('bookAuthors')
-  if (!bookAuthorsIndexes.some((index) => index.name === 'bookAuthor_authorId')) {
-    await queryInterface.addIndex('bookAuthors', ['authorId'], {
-      name: 'bookAuthor_authorId'
-    })
+  if (!hasIndex(bookAuthorsIndexes, 'bookAuthor_authorId')) {
+    await addIndexIfMissing(queryInterface, 'bookAuthors', ['authorId'], 'bookAuthor_authorId', logger)
   } else {
     logger.info('[2.15.2 migration] Index bookAuthor_authorId already exists')
   }
@@ -31,25 +29,21 @@ async function up({ context: { queryInterface, logger } }) {
   // Create index for bookSeries
   logger.info('[2.15.2 migration] Creating index for bookSeries')
   const bookSeriesIndexes = await queryInterface.showIndex('bookSeries')
-  if (!bookSeriesIndexes.some((index) => index.name === 'bookSeries_seriesId')) {
-    await queryInterface.addIndex('bookSeries', ['seriesId'], {
-      name: 'bookSeries_seriesId'
-    })
+  if (!hasIndex(bookSeriesIndexes, 'bookSeries_seriesId')) {
+    await addIndexIfMissing(queryInterface, 'bookSeries', ['seriesId'], 'bookSeries_seriesId', logger)
   } else {
     logger.info('[2.15.2 migration] Index bookSeries_seriesId already exists')
   }
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
-  await queryInterface.removeIndex('podcastEpisodes', 'podcast_episodes_created_at')
+  await removeIndexIfExists(queryInterface, 'podcastEpisodes', 'podcast_episodes_created_at', logger)
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating index for podcastEpisode and createdAt')
   const podcastEpisodesIndexes = await queryInterface.showIndex('podcastEpisodes')
-  if (!podcastEpisodesIndexes.some((index) => index.name === 'podcastEpisode_createdAt_podcastId')) {
-    await queryInterface.addIndex('podcastEpisodes', ['createdAt', 'podcastId'], {
-      name: 'podcastEpisode_createdAt_podcastId'
-    })
+  if (!hasIndex(podcastEpisodesIndexes, 'podcastEpisode_createdAt_podcastId')) {
+    await addIndexIfMissing(queryInterface, 'podcastEpisodes', ['createdAt', 'podcastId'], 'podcastEpisode_createdAt_podcastId', logger)
   } else {
     logger.info('[2.15.2 migration] Index podcastEpisode_createdAt_podcastId already exists')
   }
@@ -78,7 +72,7 @@ async function down({ context: { queryInterface, logger } }) {
 
   // Delete existing podcastEpisode index
   logger.info('[2.15.2 migration] Deleting existing podcastEpisode index')
-  await queryInterface.removeIndex('podcastEpisodes', 'podcastEpisode_createdAt_podcastId')
+  await removeIndexIfExists(queryInterface, 'podcastEpisodes', 'podcastEpisode_createdAt_podcastId', logger)
 
   // Create index for podcastEpisode and createdAt
   logger.info('[2.15.2 migration] Creating original index for podcastEpisode createdAt')
@@ -91,3 +85,33 @@ async function down({ context: { queryInterface, logger } }) {
 }
 
 module.exports = { up, down }
+
+async function removeIndexIfExists(queryInterface, tableName, indexName, logger) {
+  const indexes = await queryInterface.showIndex(tableName)
+  const hasIndexWithName = hasIndex(indexes, indexName)
+
+  if (!hasIndexWithName) {
+    logger.info(`[2.15.2 migration] Index ${indexName} does not exist, skipping removeIndex`)
+    return
+  }
+
+  await queryInterface.removeIndex(tableName, indexName)
+}
+
+function hasIndex(indexes, indexName) {
+  const expected = String(indexName || '').toLowerCase()
+  return indexes.some((index) => String(index?.name || index?.indexName || '').toLowerCase() === expected)
+}
+
+async function addIndexIfMissing(queryInterface, tableName, fields, indexName, logger) {
+  try {
+    await queryInterface.addIndex(tableName, fields, { name: indexName })
+  } catch (error) {
+    const alreadyExists =
+      (error?.name === 'SequelizeDatabaseError' && /already exists/i.test(error?.message || '')) ||
+      error?.original?.code === '42P07'
+    if (!alreadyExists) throw error
+
+    logger.info(`[2.15.2 migration] Index ${indexName} already exists`)
+  }
+}

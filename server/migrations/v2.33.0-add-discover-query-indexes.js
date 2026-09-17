@@ -45,8 +45,8 @@ async function down({ context: { queryInterface, logger } }) {
 }
 
 async function addIndexIfMissing(queryInterface, logger, index) {
-  const existing = await queryInterface.showIndex(index.table)
-  if (existing.some((i) => i.name === index.name)) {
+  const existing = await showIndexNames(queryInterface, index.table)
+  if (existing.some((name) => name.toLowerCase() === index.name.toLowerCase())) {
     logger.info(`${loggerPrefix} index ${index.name} already exists on ${index.table}`)
     return
   }
@@ -60,8 +60,8 @@ async function addIndexIfMissing(queryInterface, logger, index) {
 }
 
 async function removeIndexIfExists(queryInterface, logger, index) {
-  const existing = await queryInterface.showIndex(index.table)
-  if (!existing.some((i) => i.name === index.name)) {
+  const existing = await showIndexNames(queryInterface, index.table)
+  if (!existing.some((name) => name.toLowerCase() === index.name.toLowerCase())) {
     logger.info(`${loggerPrefix} index ${index.name} does not exist on ${index.table}`)
     return
   }
@@ -69,6 +69,23 @@ async function removeIndexIfExists(queryInterface, logger, index) {
   logger.info(`${loggerPrefix} removing index ${index.name}`)
   await queryInterface.removeIndex(index.table, index.name)
   logger.info(`${loggerPrefix} removed index ${index.name}`)
+}
+
+/**
+ * Sequelize showIndex matches the table name case-sensitively, but postgres folds
+ * unquoted identifiers to lowercase, so query pg_indexes directly on postgres.
+ *
+ * @returns {Promise<string[]>} index names on the table
+ */
+async function showIndexNames(queryInterface, table) {
+  if (queryInterface.sequelize.getDialect() === 'postgres') {
+    const [rows] = await queryInterface.sequelize.query('SELECT indexname AS name FROM pg_indexes WHERE schemaname = current_schema() AND tablename = $1', {
+      bind: [table.toLowerCase()]
+    })
+    return rows.map((row) => row.name)
+  }
+  const existing = await queryInterface.showIndex(table)
+  return existing.map((row) => row.name)
 }
 
 module.exports = { up, down }

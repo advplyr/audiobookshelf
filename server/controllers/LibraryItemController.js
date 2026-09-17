@@ -8,7 +8,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const zipHelpers = require('../utils/zipHelpers')
-const { reqSupportsWebp, clampPositiveInt } = require('../utils/index')
+const { reqSupportsWebp, clampPositiveInt, isUUID } = require('../utils/index')
 const { ScanResult, AudioMimeType } = require('../utils/constants')
 const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
@@ -1214,6 +1214,10 @@ class LibraryItemController {
    * @param {NextFunction} next
    */
   async middleware(req, res, next) {
+    if (!isUUID(req.params.id)) {
+      return res.sendStatus(400)
+    }
+
     req.libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 

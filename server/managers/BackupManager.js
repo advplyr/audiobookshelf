@@ -1,3 +1,4 @@
+const childProcess = require('child_process')
 const sqlite3 = require('sqlite3')
 const Path = require('path')
 const Logger = require('../Logger')
@@ -45,6 +46,30 @@ class BackupManager {
 
   get maxBackupSize() {
     return global.ServerSettings.maxBackupSize || Infinity
+  }
+
+  get databaseBackupConfig() {
+    if (Database.isPostgresDialect()) {
+      return {
+        dialect: 'postgres',
+        entryName: 'absdatabase.postgres.dump'
+      }
+    }
+
+    return {
+      dialect: 'sqlite',
+      entryName: 'absdatabase.sqlite'
+    }
+  }
+
+  getBackupDialect(backup) {
+    if (backup.key === 'postgres') return 'postgres'
+    if (backup.key === 'sqlite' || !backup.key) return 'sqlite'
+    return null
+  }
+
+  getBackupEntryName(dialect) {
+    return dialect === 'postgres' ? 'absdatabase.postgres.dump' : 'absdatabase.sqlite'
   }
 
   async init() {
@@ -130,13 +155,6 @@ class BackupManager {
       await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(400).send('Failed to read backup file - backup might not be a valid .zip file')
     }
-    if (!entries['absdatabase.sqlite']) {
-      Logger.error(`[BackupManager] Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.`)
-      await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
-      return res.status(500).send('Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.')
-    }
-
     const detailsEntry = entries['details']
     if (!detailsEntry) {
       Logger.error('[BackupManager] Invalid backup - missing details entry')
@@ -151,10 +169,26 @@ class BackupManager {
       return res.status(400).send('Invalid backup file - details entry too large')
     }
 
-    const data = await zip.entryData('details')
-    const details = data.toString('utf8').split('\n')
+    let backup
+    try {
+      const data = await zip.entryData('details')
+      const details = data.toString('utf8').split('\n')
+      backup = new Backup({ details, fullPath: tempPath })
+    } catch (error) {
+      Logger.error(`[BackupManager] Invalid backup with no readable details file`, tempPath, error)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      return res.status(400).send('Invalid backup file. Missing readable details.')
+    }
 
-    const backup = new Backup({ details, fullPath: tempPath })
+    const backupDialect = this.getBackupDialect(backup)
+    const databaseEntryName = this.getBackupEntryName(backupDialect)
+    if (!backupDialect || !entries[databaseEntryName]) {
+      Logger.error(`[BackupManager] Invalid backup with no ${databaseEntryName} file - unsupported database backup.`)
+      await zip.close().catch(() => {})
+      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      return res.status(500).send(`Invalid backup file. Does not include ${databaseEntryName}.`)
+    }
 
     if (!backup.serverVersion) {
       Logger.error(`[BackupManager] Invalid backup with no server version - might be a backup created before version 2.0.0`)
@@ -204,8 +238,24 @@ class BackupManager {
 
     const entries = await zip.entries()
 
+    const backupDialect = this.getBackupDialect(backup)
+    const currentDialect = Database.isPostgresDialect() ? 'postgres' : 'sqlite'
+    if (!backupDialect) {
+      await zip.close()
+      return res.status(500).send('Invalid backup file. Unsupported database backup format.')
+    }
+
+    if (backupDialect !== currentDialect) {
+      await zip.close()
+      return res.status(400).send(`Cannot apply a ${backupDialect} backup while using the ${currentDialect} database.`)
+    }
+
+    if (backupDialect === 'postgres') {
+      return this.requestApplyPostgresBackup(apiCacheManager, backup, zip, entries, res)
+    }
+
     // Ensure backup has an absdatabase.sqlite file
-    if (!Object.keys(entries).includes('absdatabase.sqlite')) {
+    if (!Object.keys(entries).includes(this.getBackupEntryName(backupDialect))) {
       Logger.error(`[BackupManager] Cannot apply old backup ${backup.fullPath}`)
       await zip.close()
       return res.status(500).send('Invalid backup file. Does not include absdatabase.sqlite. This might be from an older Audiobookshelf server.')
@@ -266,6 +316,70 @@ class BackupManager {
     SocketAuthority.emitter('backup_applied')
   }
 
+  async requestApplyPostgresBackup(apiCacheManager, backup, zip, entries, res) {
+    const databaseEntryName = this.getBackupEntryName('postgres')
+    if (!Object.keys(entries).includes(databaseEntryName)) {
+      Logger.error(`[BackupManager] Cannot apply Postgres backup ${backup.fullPath}`)
+      await zip.close()
+      return res.status(500).send(`Invalid backup file. Does not include ${databaseEntryName}.`)
+    }
+
+    const tempDumpPath = Path.join(global.ConfigPath, 'absdatabase-postgres-temp.dump')
+    let reconnected = false
+    let zipClosed = false
+
+    const closeZip = async () => {
+      if (zipClosed) return
+      zipClosed = true
+      await zip.close()
+    }
+
+    try {
+      await fs.remove(tempDumpPath)
+      await zip.extract(databaseEntryName, tempDumpPath)
+
+      if (!(await fs.pathExists(tempDumpPath))) {
+        await closeZip()
+        return res.status(500).send('Failed to extract Postgres database dump from backup')
+      }
+
+      await Database.disconnect()
+      await this.restorePostgresDb(tempDumpPath)
+
+      await fs.ensureDir(this.ItemsMetadataPath)
+      await zip.extract('metadata-items/', this.ItemsMetadataPath)
+      await fs.ensureDir(this.AuthorsMetadataPath)
+      await zip.extract('metadata-authors/', this.AuthorsMetadataPath)
+      await closeZip()
+
+      await Database.reconnect()
+      reconnected = true
+
+      await apiCacheManager.reset()
+      await CacheManager.purgeAll()
+
+      res.sendStatus(200)
+      SocketAuthority.emitter('backup_applied')
+    } catch (error) {
+      Logger.error(`[BackupManager] Failed to apply Postgres backup`, error)
+      try {
+        await closeZip()
+      } catch (closeError) {
+        Logger.error(`[BackupManager] Failed to close Postgres backup archive`, closeError)
+      }
+      if (!reconnected) {
+        try {
+          await Database.reconnect()
+        } catch (reconnectError) {
+          Logger.error(`[BackupManager] Failed to reconnect after Postgres backup apply`, reconnectError)
+        }
+      }
+      return res.status(500).send(`Failed to apply Postgres backup: ${error?.message || 'Unknown Error'}`)
+    } finally {
+      await fs.remove(tempDumpPath)
+    }
+  }
+
   async loadBackups() {
     try {
       const filesInDir = await fs.readdir(this.backupPath)
@@ -276,7 +390,7 @@ class BackupManager {
           const fullFilePath = Path.join(this.backupPath, filename)
 
           let zip = null
-          let data = null
+          let backup = null
           try {
             zip = new StreamZip.async({ file: fullFilePath })
             const entries = await zip.entries()
@@ -293,16 +407,23 @@ class BackupManager {
               continue
             }
 
-            data = await zip.entryData('details')
+            const data = await zip.entryData('details')
+            const details = data.toString('utf8').split('\n')
+
+            backup = new Backup({ details, fullPath: fullFilePath })
+            const backupDialect = this.getBackupDialect(backup)
+            const databaseEntryName = this.getBackupEntryName(backupDialect)
+
+            if (!backupDialect || !entries[databaseEntryName]) {
+              Logger.error(`[BackupManager] Unsupported database backup format found "${backup.filename}"`)
+              await zip.close().catch(() => {})
+              continue
+            }
           } catch (error) {
             Logger.error(`[BackupManager] Failed to unzip backup "${fullFilePath}"`, error)
             if (zip) await zip.close().catch(() => {})
             continue
           }
-
-          const details = data.toString('utf8').split('\n')
-
-          const backup = new Backup({ details, fullPath: fullFilePath })
 
           if (!backup.serverVersion) {
             // Backups before v2
@@ -333,33 +454,34 @@ class BackupManager {
   async runBackup() {
     // Check if Metadata Path is inside Config Path (otherwise there will be an infinite loop as the archiver tries to zip itself)
     Logger.info(`[BackupManager] Running Backup`)
+    const databaseBackupConfig = this.databaseBackupConfig
     const newBackup = new Backup()
-    newBackup.setData(this.backupPath)
+    newBackup.setData(this.backupPath, databaseBackupConfig.dialect)
 
     await fs.ensureDir(this.AuthorsMetadataPath)
 
-    // Create backup sqlite file
-    const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
-      Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
+    // Create a database dump
+    const databaseBackupPath = await this.backupDatabase(newBackup).catch((error) => {
+      Logger.error(`[BackupManager] Failed to backup ${databaseBackupConfig.dialect} database`, error)
       const errorMsg = error?.message || error || 'Unknown Error'
       NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
-    if (!sqliteBackupPath) {
+    if (!databaseBackupPath) {
       return false
     }
 
-    // Zip sqlite file, /metadata/items, and /metadata/authors folders
-    const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
+    // Zip database dump, /metadata/items, and /metadata/authors folders
+    const zipResult = await this.zipBackup(databaseBackupPath, newBackup, databaseBackupConfig.entryName).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
       const errorMsg = error?.message || error || 'Unknown Error'
       NotificationManager.onBackupFailed(errorMsg)
       return false
     })
 
-    // Remove sqlite backup
-    await fs.remove(sqliteBackupPath)
+    // Remove temporary database dump
+    await fs.remove(databaseBackupPath)
 
     if (!zipResult) return false
 
@@ -390,6 +512,10 @@ class BackupManager {
     return true
   }
 
+  backupDatabase(backup) {
+    return this.databaseBackupConfig.dialect === 'postgres' ? this.backupPostgresDb(backup) : this.backupSqliteDb(backup)
+  }
+
   async removeBackup(backup) {
     try {
       Logger.debug(`[BackupManager] Removing Backup "${backup.fullPath}"`)
@@ -406,29 +532,147 @@ class BackupManager {
    * @param {Backup} backup
    */
   backupSqliteDb(backup) {
-    const db = new sqlite3.Database(Database.dbPath)
     const dbFilePath = Path.join(global.ConfigPath, `absdatabase.${backup.id}.sqlite`)
     return new Promise(async (resolve, reject) => {
-      const backup = db.backup(dbFilePath)
-      backup.step(-1)
-      backup.finish()
+      let db
+      let sqliteBackup
+      let settled = false
 
-      // Max time ~2 mins
-      for (let i = 0; i < 240; i++) {
-        if (backup.completed) {
-          return resolve(dbFilePath)
-        } else if (backup.failed) {
-          return reject(backup.message || 'Unknown failure reason')
+      const finish = (error, result) => {
+        if (settled) return
+        settled = true
+        if (db) {
+          db.close(() => {
+            if (error) reject(error)
+            else resolve(result)
+          })
+        } else if (error) {
+          reject(error)
+        } else {
+          resolve(result)
         }
-        await new Promise((r) => setTimeout(r, 500))
       }
 
-      Logger.error(`[BackupManager] Backup sqlite timed out`)
-      reject('Backup timed out')
+      const pollBackup = async () => {
+        // Max time ~2 mins
+        for (let i = 0; i < 240; i++) {
+          if (sqliteBackup.completed) {
+            return finish(null, dbFilePath)
+          } else if (sqliteBackup.failed) {
+            return finish(sqliteBackup.message || 'Unknown failure reason')
+          }
+          await new Promise((r) => setTimeout(r, 500))
+        }
+
+        Logger.error(`[BackupManager] Backup sqlite timed out`)
+        finish('Backup timed out')
+      }
+
+      const startBackup = () => {
+        try {
+          sqliteBackup = db.backup(dbFilePath)
+          sqliteBackup.step(-1)
+          sqliteBackup.finish()
+          pollBackup().catch(finish)
+        } catch (error) {
+          finish(error)
+        }
+      }
+
+      db = new sqlite3.Database(Database.dbPath, (error) => {
+        if (error) return finish(error)
+        startBackup()
+      })
+      db.on('error', finish)
     })
   }
 
-  zipBackup(sqliteBackupPath, backup) {
+  /**
+   * Build pg_dump/pg_restore connection arguments from DATABASE_URL without
+   * exposing credentials in argv. execFile error messages and the host process
+   * list include argv, so the password is passed via PGPASSWORD env instead.
+   */
+  getPostgresConnection() {
+    let dbUrl
+    try {
+      dbUrl = new URL(Database.dbPath)
+    } catch (error) {
+      throw new Error('DATABASE_URL must be a valid postgres connection URI to run backups')
+    }
+
+    const args = ['--host', dbUrl.hostname, '--dbname', decodeURIComponent(dbUrl.pathname.replace(/^\//, ''))]
+    if (dbUrl.port) args.push('--port', dbUrl.port)
+    if (dbUrl.username) args.push('--username', decodeURIComponent(dbUrl.username))
+
+    // Redact both the percent-encoded and decoded password from any error output
+    const decodedPassword = dbUrl.password ? decodeURIComponent(dbUrl.password) : null
+    const secrets = dbUrl.password ? [dbUrl.password, decodedPassword] : []
+    const env = decodedPassword ? { ...process.env, PGPASSWORD: decodedPassword } : process.env
+
+    return { args, env, secrets }
+  }
+
+  backupPostgresDb(backup) {
+    const dbFilePath = Path.join(global.ConfigPath, `absdatabase.${backup.id}.postgres.dump`)
+    return this.runPostgresCommand('pg_dump', [
+      '--format=custom',
+      '--no-owner',
+      '--no-acl',
+      '--file',
+      dbFilePath
+    ])
+      .then(() => dbFilePath)
+      .catch(async (error) => {
+        await fs.remove(dbFilePath)
+        throw error
+      })
+  }
+
+  restorePostgresDb(dbFilePath) {
+    return this.runPostgresCommand('pg_restore', [
+      '--clean',
+      '--if-exists',
+      '--exit-on-error',
+      '--single-transaction',
+      '--no-owner',
+      '--no-acl',
+      dbFilePath
+    ])
+  }
+
+  runPostgresCommand(command, args) {
+    return new Promise((resolve, reject) => {
+      let connection
+      try {
+        connection = this.getPostgresConnection()
+      } catch (error) {
+        return reject(error)
+      }
+
+      const redact = (text) => {
+        if (typeof text !== 'string') return text
+        return connection.secrets.reduce((redacted, secret) => redacted.split(secret).join('***'), text)
+      }
+
+      const options = {
+        maxBuffer: 10 * 1024 * 1024,
+        // Kill after 30 mins (e.g. lock waits) - a killed restore rolls back via --single-transaction
+        timeout: 30 * 60 * 1000,
+        env: connection.env
+      }
+      childProcess.execFile(command, [...args, ...connection.args], options, (error, stdout, stderr) => {
+        if (error) {
+          error.message = redact(error.message)
+          if (error.cmd) error.cmd = redact(error.cmd)
+          error.stderr = redact(stderr)
+          return reject(error)
+        }
+        resolve({ stdout, stderr })
+      })
+    })
+  }
+
+  zipBackup(databaseBackupPath, backup, databaseEntryName = 'absdatabase.sqlite') {
     return new Promise((resolve, reject) => {
       // create a file to stream archive data to
       const output = fs.createWriteStream(backup.fullPath)
@@ -492,7 +736,7 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      archive.file(sqliteBackupPath, { name: 'absdatabase.sqlite' })
+      archive.file(databaseBackupPath, { name: databaseEntryName })
       archive.directory(this.ItemsMetadataPath, 'metadata-items')
       archive.directory(this.AuthorsMetadataPath, 'metadata-authors')
 

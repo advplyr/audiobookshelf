@@ -94,20 +94,26 @@ class MigrationManager {
 
     // Only proceed with migration if there are migrations to run
     if (migrationsToRun.length > 0) {
+      const dialect = typeof this.sequelize.getDialect === 'function' ? this.sequelize.getDialect() : 'sqlite'
+      const isSqlite = !dialect || dialect === 'sqlite'
       const originalDbPath = path.join(this.configPath, 'absdatabase.sqlite')
       const backupDbPath = path.join(this.configPath, 'absdatabase.backup.sqlite')
       try {
         Logger.info(`[MigrationManager] Migrating database ${migrationDirection} to version ${this.serverVersion}`)
         Logger.info(`[MigrationManager] Migrations to run: ${migrationsToRun.join(', ')}`)
-        // Create a backup copy of the SQLite database before starting migrations
-        await fs.copy(originalDbPath, backupDbPath)
-        Logger.info('Created a backup of the original database.')
+        if (isSqlite) {
+          // Create a backup copy of the SQLite database before starting migrations
+          await fs.copy(originalDbPath, backupDbPath)
+          Logger.info('Created a backup of the original database.')
+        }
 
         // Run migrations
         await this.umzug[migrationDirection]({ migrations: migrationsToRun, rerun: 'ALLOW' })
 
-        // Clean up the backup
-        await fs.remove(backupDbPath)
+        if (isSqlite) {
+          // Clean up the backup
+          await fs.remove(backupDbPath)
+        }
 
         Logger.info('[MigrationManager] Migrations successfully applied to the original database.')
       } catch (error) {
@@ -115,13 +121,15 @@ class MigrationManager {
 
         await this.sequelize.close()
 
-        // Step 3: If migration fails, save the failed original and restore the backup
-        const failedDbPath = path.join(this.configPath, 'absdatabase.failed.sqlite')
-        await fs.move(originalDbPath, failedDbPath, { overwrite: true })
-        Logger.info('[MigrationManager] Saved the failed database as absdatabase.failed.sqlite.')
+        if (isSqlite) {
+          // Step 3: If migration fails, save the failed original and restore the backup
+          const failedDbPath = path.join(this.configPath, 'absdatabase.failed.sqlite')
+          await fs.move(originalDbPath, failedDbPath, { overwrite: true })
+          Logger.info('[MigrationManager] Saved the failed database as absdatabase.failed.sqlite.')
 
-        await fs.move(backupDbPath, originalDbPath, { overwrite: true })
-        Logger.info('[MigrationManager] Restored the original database from the backup.')
+          await fs.move(backupDbPath, originalDbPath, { overwrite: true })
+          Logger.info('[MigrationManager] Restored the original database from the backup.')
+        }
 
         Logger.info('[MigrationManager] Migration failed. Exiting Audiobookshelf with code 1.')
         process.exit(1)
@@ -191,29 +199,27 @@ class MigrationManager {
   }
 
   async fetchVersionsFromDatabase() {
+    const migrationsMetaTable = MigrationManager.MIGRATIONS_META_TABLE
     await this.checkOrCreateMigrationsMetaTable()
 
-    const [{ version }] = await this.sequelize.query("SELECT value as version FROM :migrationsMeta WHERE key = 'version'", {
-      replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+    const [versionRow] = await this.sequelize.query(`SELECT value as version FROM ${migrationsMetaTable} WHERE key = 'version'`, {
       type: Sequelize.QueryTypes.SELECT
     })
-    this.databaseVersion = version
+    this.databaseVersion = versionRow?.version
 
-    const [{ maxVersion }] = await this.sequelize.query("SELECT value as maxVersion FROM :migrationsMeta WHERE key = 'maxVersion'", {
-      replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+    const [maxVersionRow] = await this.sequelize.query(`SELECT value as maxVersion FROM ${migrationsMetaTable} WHERE key = 'maxVersion'`, {
       type: Sequelize.QueryTypes.SELECT
     })
-    this.maxVersion = maxVersion
+    this.maxVersion = maxVersionRow?.maxVersion || maxVersionRow?.maxversion
   }
 
   async checkOrCreateMigrationsMetaTable() {
     const queryInterface = this.sequelize.getQueryInterface()
-    let migrationsMetaTableExists = await queryInterface.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
+    let migrationsMetaTableExists = await this.tableExists(MigrationManager.MIGRATIONS_META_TABLE)
 
     // If the table exists, check that the `version` and `maxVersion` rows exist
     if (migrationsMetaTableExists) {
-      const [{ count }] = await this.sequelize.query("SELECT COUNT(*) as count FROM :migrationsMeta WHERE key IN ('version', 'maxVersion')", {
-        replacements: { migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+      const [{ count }] = await this.sequelize.query(`SELECT COUNT(*) as count FROM ${MigrationManager.MIGRATIONS_META_TABLE} WHERE key IN ('version', 'maxVersion')`, {
         type: Sequelize.QueryTypes.SELECT
       })
       if (count < 2) {
@@ -241,12 +247,26 @@ class MigrationManager {
           allowNull: false
         }
       })
-      await this.sequelize.query("INSERT INTO :migrationsMeta (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')", {
-        replacements: { version: this.isDatabaseNew ? this.serverVersion : '0.0.0', migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+      await this.sequelize.query(`INSERT INTO ${MigrationManager.MIGRATIONS_META_TABLE} (key, value) VALUES ('version', :version), ('maxVersion', '0.0.0')`, {
+        replacements: { version: this.isDatabaseNew ? this.serverVersion : '0.0.0' },
         type: Sequelize.QueryTypes.INSERT
       })
       Logger.debug(`[MigrationManager] Created migrationsMeta table: "${MigrationManager.MIGRATIONS_META_TABLE}"`)
     }
+  }
+
+  async tableExists(tableName) {
+    const queryInterface = this.sequelize.getQueryInterface()
+    if (typeof queryInterface.tableExists === 'function') {
+      return queryInterface.tableExists(tableName)
+    }
+
+    const tables = await queryInterface.showAllTables()
+    return tables.some((table) => {
+      if (typeof table === 'string') return table === tableName
+      if (table?.tableName) return table.tableName === tableName
+      return false
+    })
   }
 
   extractVersionFromTag(tag) {
@@ -299,8 +319,8 @@ class MigrationManager {
 
   async updateMaxVersion() {
     try {
-      await this.sequelize.query("UPDATE :migrationsMeta SET value = :maxVersion WHERE key = 'maxVersion'", {
-        replacements: { maxVersion: this.serverVersion, migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+      await this.sequelize.query(`UPDATE ${MigrationManager.MIGRATIONS_META_TABLE} SET value = :maxVersion WHERE key = 'maxVersion'`, {
+        replacements: { maxVersion: this.serverVersion },
         type: Sequelize.QueryTypes.UPDATE
       })
     } catch (error) {
@@ -311,8 +331,8 @@ class MigrationManager {
 
   async updateDatabaseVersion() {
     try {
-      await this.sequelize.query("UPDATE :migrationsMeta SET value = :version WHERE key = 'version'", {
-        replacements: { version: this.serverVersion, migrationsMeta: MigrationManager.MIGRATIONS_META_TABLE },
+      await this.sequelize.query(`UPDATE ${MigrationManager.MIGRATIONS_META_TABLE} SET value = :version WHERE key = 'version'`, {
+        replacements: { version: this.serverVersion },
         type: Sequelize.QueryTypes.UPDATE
       })
     } catch (error) {

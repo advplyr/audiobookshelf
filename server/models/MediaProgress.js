@@ -257,7 +257,13 @@ class MediaProgress extends Model {
         const escapedDate = this.sequelize.escape(new Date(progressPayload.lastUpdate))
         Logger.info(`[MediaProgress] Manually setting updatedAt to ${escapedDate} (media item ${this.mediaItemId})`)
 
-        await this.sequelize.query(`UPDATE "mediaProgresses" SET "updatedAt" = ${escapedDate} WHERE "id" = '${this.id}'`)
+        await this.constructor.update(
+          { updatedAt: new Date(progressPayload.lastUpdate) },
+          {
+            where: { id: this.id },
+            silent: true
+          }
+        )
 
         await this.reload()
       }

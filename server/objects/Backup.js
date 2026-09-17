@@ -62,9 +62,9 @@ class Backup {
     }
   }
 
-  setData(backupDirPath) {
+  setData(backupDirPath, dialect = 'sqlite') {
     this.id = date.format(new Date(), 'YYYY-MM-DD[T]HHmm')
-    this.key = 'sqlite'
+    this.key = dialect
     this.datePretty = date.format(new Date(), 'ddd, MMM D YYYY HH:mm')
 
     this.backupDirPath = backupDirPath
