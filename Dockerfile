@@ -9,7 +9,15 @@ COPY /client /client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
-### STAGE 1: Build server ###
+### STAGE 1: Compile server on the builder CPU (avoid QEMU SIGILL from tsc on arm64) ###
+FROM --platform=$BUILDPLATFORM node:20-alpine AS compile-server
+
+WORKDIR /server
+COPY index.js package* tsconfig.server.json /server
+COPY /server /server/server
+RUN npm ci --include=dev --ignore-scripts && npm run build:server
+
+### STAGE 2: Install native server deps for the target arch ###
 FROM node:20-alpine AS build-server
 
 ARG NUSQLITE3_DIR
@@ -25,8 +33,9 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* tsconfig.server.json /server
+COPY index.js package* /server
 COPY /server /server/server
+COPY --from=compile-server /server/dist-server /server/dist-server
 
 RUN case "$TARGETPLATFORM" in \
   "linux/amd64") \
@@ -38,9 +47,9 @@ RUN case "$TARGETPLATFORM" in \
   unzip /tmp/library.zip -d $NUSQLITE3_DIR && \
   rm /tmp/library.zip
 
-RUN npm ci --include=dev && npm run build:server && npm prune --omit=dev
+RUN npm ci --omit=dev
 
-### STAGE 2: Create minimal runtime image ###
+### STAGE 3: Create minimal runtime image ###
 FROM node:20-alpine
 
 ARG NUSQLITE3_DIR
