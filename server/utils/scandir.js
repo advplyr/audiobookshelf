@@ -203,15 +203,15 @@ function getNarrator(folder) {
  * @returns {[string, string]} [folder, sequence]
  */
 function getSequence(folder) {
-  // Matches a valid volume string. Also matches a book whose title starts with a 1 to 3 digit number. Will handle that later.
-  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{0,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?$/i
+  // Labeled sequences may have any number of digits; unlabeled sequences are limited to three to avoid matching years.
+  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d+(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?$/i
 
   let volumeNumber = null
   let parts = folder.split(' - ')
   for (let i = 0; i < parts.length; i++) {
     let match = parts[i].match(pattern)
     // This excludes '101 Dalmations' but includes '101. Dalmations'
-    if (match && !(match.groups.suffix && !(match.groups.volumeLabel || match.groups.trailingDot))) {
+    if (match && (match.groups.volumeLabel || !/^\d{4}/.test(match.groups.sequence)) && !(match.groups.suffix && !(match.groups.volumeLabel || match.groups.trailingDot))) {
       volumeNumber = isNaN(match.groups.sequence) ? match.groups.sequence : Number(match.groups.sequence).toString()
       parts[i] = match.groups.suffix
       if (!parts[i]) {

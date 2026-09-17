@@ -4,6 +4,22 @@ const expect = chai.expect
 const scanUtils = require('../../../server/utils/scandir')
 
 describe('scanUtils', async () => {
+  it('should parse labeled series sequences above 999', () => {
+    const bookData = scanUtils.getBookDataFromDir('Author/Series/Vol 1456 - 2026 - Test')
+
+    expect(bookData.title).to.equal('Test')
+    expect(bookData.seriesSequence).to.equal('1456')
+    expect(bookData.publishedYear).to.equal('2026')
+  })
+
+  it('should keep unlabeled four-digit prefixes as publication years', () => {
+    const bookData = scanUtils.getBookDataFromDir('Author/Series/1456 - Test')
+
+    expect(bookData.title).to.equal('Test')
+    expect(bookData.seriesSequence).to.be.null
+    expect(bookData.publishedYear).to.equal('1456')
+  })
+
   it('should properly group files into potential book library items', async () => {
     global.isWin = process.platform === 'win32'
     global.ServerSettings = {
