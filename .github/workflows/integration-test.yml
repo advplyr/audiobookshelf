@@ -12,6 +12,7 @@ on:
       - test/**
       - index.js
       - package.json
+      - tsconfig.server.json
 
 jobs:
   build:
