@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'">
+  <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'" :z-index="zIndex">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
@@ -38,6 +38,10 @@
 export default {
   props: {
     value: Boolean,
+    zIndex: {
+      type: Number,
+      default: 60
+    },
     bookmarks: {
       type: Array,
       default: () => []

@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" name="sleep-timer" :width="350" :height="'unset'">
+  <modals-modal v-model="show" name="sleep-timer" :width="350" :height="'unset'" :z-index="zIndex">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
         <p class="text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderSleepTimer }}</p>
@@ -51,7 +51,11 @@ export default {
     timerSet: Boolean,
     timerType: String,
     remaining: Number,
-    hasChapters: Boolean
+    hasChapters: Boolean,
+    zIndex: {
+      type: Number,
+      default: 60
+    }
   },
   data() {
     return {
