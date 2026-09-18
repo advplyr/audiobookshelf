@@ -159,7 +159,7 @@ class Audible {
           timeout
         })
         .then((res) => {
-          if (!res?.data?.products) return null
+          if (!res?.data?.products) return []
           return Promise.all(res.data.products.map((result) => this.asinSearch(result.asin, region, timeout)))
         })
         .catch((error) => {
