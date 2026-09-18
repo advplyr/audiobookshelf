@@ -139,6 +139,8 @@ class LibraryScan {
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
 
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
+
+    await Logger.logManager?.removeOldScanLogs()
   }
 }
 module.exports = LibraryScan

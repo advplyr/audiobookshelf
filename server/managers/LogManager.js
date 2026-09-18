@@ -36,6 +36,10 @@ class LogManager {
     return global.ServerSettings.loggerDailyLogsToKeep || 7
   }
 
+  get loggerScannerLogsToKeep() {
+    return global.ServerSettings.loggerScannerLogsToKeep || 2
+  }
+
   async ensureLogDirs() {
     try {
       await fs.ensureDir(this.DailyLogPath)
@@ -57,6 +61,9 @@ class LogManager {
 
     // Load daily logs
     await this.scanLogFiles()
+
+    // Remove old scan logs
+    await this.removeOldScanLogs()
 
     // Check remove extra daily logs
     if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
@@ -104,6 +111,37 @@ class LogManager {
       })
     }
     this.dailyLogFiles.sort()
+  }
+
+  /**
+   * Remove the oldest scan logs so that only `loggerScannerLogsToKeep` remain
+   */
+  async removeOldScanLogs() {
+    try {
+      const files = (await fs.readdir(this.ScanLogPath)).filter((f) => f.endsWith('.txt'))
+      if (files.length <= this.loggerScannerLogsToKeep) return
+
+      // Scan log filenames are `<YYYY-MM-DD>_<uuid>.txt` so they need mtime to order within a day
+      const withTimes = await Promise.all(
+        files.map(async (f) => {
+          const stat = await fs.stat(Path.join(this.ScanLogPath, f)).catch(() => null)
+          return { f, mtimeMs: stat?.mtimeMs || 0 }
+        })
+      )
+      withTimes.sort((a, b) => a.mtimeMs - b.mtimeMs)
+
+      const toRemove = withTimes.slice(0, withTimes.length - this.loggerScannerLogsToKeep)
+      for (const { f } of toRemove) {
+        try {
+          await fs.unlink(Path.join(this.ScanLogPath, f))
+        } catch (error) {
+          Logger.error(TAG, 'Failed to unlink scan log file ' + f, error.message)
+        }
+      }
+      Logger.debug(TAG, `Removed ${toRemove.length} old scan logs`)
+    } catch (error) {
+      Logger.error(TAG, 'Failed to remove old scan logs', error.message)
+    }
   }
 
   /**
