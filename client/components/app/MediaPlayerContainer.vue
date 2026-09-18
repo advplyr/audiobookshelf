@@ -528,7 +528,11 @@ export default {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })
 
-      this.playerHandler.load(libraryItem, episodeId, true, this.currentPlaybackRate, payload.startTime)
+      // Resolve per-book playback rate for the new item, falling back to current rate
+      const mediaProgress = this.$store.getters['user/getUserMediaProgress'](libraryItemId, episodeId)
+      const playbackRate = mediaProgress?.playbackRate || this.currentPlaybackRate
+
+      this.playerHandler.load(libraryItem, episodeId, true, playbackRate, payload.startTime)
     },
     pauseItem() {
       this.playerHandler.pause()
