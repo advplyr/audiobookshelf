@@ -17,6 +17,7 @@ class MediaProbeData {
     this.channelLayout = null
     this.channels = null
     this.sampleRate = null
+    this.profile = null
     this.chapters = []
 
     this.audioMetaTags = null
@@ -58,6 +59,7 @@ class MediaProbeData {
     this.channelLayout = this.audioStream.channel_layout
     this.channels = this.audioStream.channels
     this.sampleRate = this.audioStream.sample_rate
+    this.profile = this.audioStream.profile
     this.chapters = data.chapters || []
 
     this.audioMetaTags = new AudioMetaTags()
