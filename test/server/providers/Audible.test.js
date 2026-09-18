@@ -45,4 +45,26 @@ describe('Audible', () => {
       expect(result).to.equal('.5')
     })
   })
+
+  describe('cleanResult', () => {
+    const baseItem = {
+      title: 'Some Book',
+      formatType: 'unabridged'
+    }
+
+    it('should set explicit to true when isAdult is true', () => {
+      const result = audible.cleanResult({ ...baseItem, isAdult: true })
+      expect(result.explicit).to.equal(true)
+    })
+
+    it('should set explicit to false when isAdult is false', () => {
+      const result = audible.cleanResult({ ...baseItem, isAdult: false })
+      expect(result.explicit).to.equal(false)
+    })
+
+    it('should set explicit to false when isAdult is not present', () => {
+      const result = audible.cleanResult({ ...baseItem })
+      expect(result.explicit).to.equal(false)
+    })
+  })
 })
