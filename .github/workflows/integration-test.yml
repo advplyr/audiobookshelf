@@ -24,10 +24,10 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
 
-      - name: install pkg (using yao-pkg fork for targeting node20)
+      - name: install pkg (using yao-pkg fork for targeting node24)
         run: npm install -g @yao-pkg/pkg
 
       - name: get client dependencies
@@ -42,7 +42,7 @@ jobs:
         run: npm ci && npm run build:server && npm prune --omit=dev
 
       - name: build binary
-        run: pkg --config package.json -t node20-linux-x64 -o audiobookshelf dist-server/index.js
+        run: pkg --config package.json -t node24-linux-x64 -o audiobookshelf dist-server/index.js
 
       - name: run audiobookshelf
         run: |

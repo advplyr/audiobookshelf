@@ -49,7 +49,7 @@ Description: $DESCRIPTION"
 echo "$controlfile" > dist/debian/DEBIAN/control;
 
 # Package debian
-pkg --config package.json -t node20-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf dist-server/index.js
+pkg --config package.json -t node24-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf dist-server/index.js
 
 fakeroot dpkg-deb -Zxz --build dist/debian
 
