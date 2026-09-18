@@ -510,7 +510,7 @@ class Book extends Model {
     const seriesAdded = []
     let hasUpdates = false
     for (const seriesObj of seriesObjects) {
-      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence : null
+      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence.trim() || null : null
 
       const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
       if (existingSeries) {
