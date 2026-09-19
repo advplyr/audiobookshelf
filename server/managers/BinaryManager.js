@@ -369,8 +369,8 @@ class BinaryManager {
    * @param {Binary} binary
    */
   async removeBinary(destination, binary) {
+    const binaryPath = path.join(destination, binary.fileName)
     try {
-      const binaryPath = path.join(destination, binary.fileName)
       if (await fs.pathExists(binaryPath)) {
         Logger.debug(`[BinaryManager] Removing binary: ${binaryPath}`)
         await fs.remove(binaryPath)
