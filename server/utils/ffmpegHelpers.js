@@ -1,5 +1,5 @@
 const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
+const ssrfFilter = require('./ssrfRequestFilter')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
