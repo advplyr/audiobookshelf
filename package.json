@@ -19,7 +19,9 @@
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "deploy-linux": "node deploy/linux",
     "test": "npm run build:server && mocha dist-server/test",
-    "coverage": "npm run build:server && nyc mocha dist-server/test"
+    "coverage": "npm run build:server && nyc mocha dist-server/test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "bin": "dist-server/index.js",
   "pkg": {
@@ -61,8 +63,12 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
     "@types/node": "^20.17.0",
     "chai": "^4.3.10",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^16.0.0",
     "mocha": "^10.2.0",
     "nodemon": "^2.0.20",
     "nyc": "^15.1.0",
