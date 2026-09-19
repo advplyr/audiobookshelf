@@ -151,12 +151,6 @@ module.exports = {
     }
 
     const sortingIgnorePrefix = Database.serverSettings.sortingIgnorePrefix
-    // Legacy API sort paths map to direct properties on the current Book model.
-    const legacyMediaSortFields = {
-      'media.metadata.authorName': 'authorName',
-      'media.metadata.authorNameLF': 'authorNameLF',
-      'media.metadata.publishedYear': 'publishedYear'
-    }
 
     let sortArray = []
     const direction = payload.sortDesc ? 'desc' : 'asc'
@@ -202,8 +196,6 @@ module.exports = {
               return li.collapsedSeries?.name || li.media.title
             }
           } else {
-            const mediaSortField = legacyMediaSortFields[payload.sortBy]
-            if (mediaSortField) return li.media[mediaSortField]
             return payload.sortBy.split('.').reduce((a, b) => a[b], li)
           }
         }

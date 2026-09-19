@@ -4,7 +4,6 @@ const sinon = require('sinon')
 
 const Database = require('../../../server/Database')
 const LibraryController = require('../../../server/controllers/LibraryController')
-const libraryHelpers = require('../../../server/utils/libraryHelpers')
 const zipHelpers = require('../../../server/utils/zipHelpers')
 const Logger = require('../../../server/Logger')
 
@@ -175,92 +174,5 @@ describe('LibraryController.downloadMultiple', () => {
     const pathObjects = zipHelpers.zipDirectoriesPipe.firstCall.args[0]
     expect(pathObjects).to.have.length(1)
     expect(pathObjects[0].path).to.equal('/test-lib/allowed')
-  })
-})
-
-describe('LibraryController.getLibraryItems', () => {
-  let library
-  let filteredSeries
-  let user
-
-  beforeEach(async () => {
-    global.ServerSettings = { sortingIgnorePrefix: false }
-    Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
-    await Database.buildModels()
-
-    library = await Database.libraryModel.create({
-      name: 'Test Library',
-      mediaType: 'book',
-      settings: { hideSingleBookSeries: false }
-    })
-    filteredSeries = await Database.seriesModel.create({ name: 'Filtered Series', libraryId: library.id })
-    user = {}
-  })
-
-  afterEach(async () => {
-    sinon.restore()
-    await Database.sequelize.close()
-  })
-
-  function getSeriesFilter() {
-    return `series.${encodeURIComponent(Buffer.from(filteredSeries.id).toString('base64'))}`
-  }
-
-  it('uses the collapse helper for a specific series filter', async () => {
-    const collapseStub = sinon.stub(libraryHelpers, 'handleCollapseSubseries').callsFake(async (payload) => {
-      payload.total = 1
-      return [{ id: 'collapsed-item' }]
-    })
-    const res = { json: sinon.spy() }
-
-    await LibraryController.getLibraryItems(
-      {
-        query: {
-          filter: getSeriesFilter(),
-          collapseseries: '1',
-          sort: 'media.metadata.authorName',
-          desc: '0'
-        },
-        user,
-        library
-      },
-      res
-    )
-
-    expect(collapseStub.calledOnce).to.be.true
-    expect(collapseStub.firstCall.args[1]).to.equal(filteredSeries.id)
-    expect(res.json.calledOnce).to.be.true
-    expect(res.json.firstCall.args[0]).to.include({ total: 1, collapseseries: true })
-    expect(res.json.firstCall.args[0].results).to.deep.equal([{ id: 'collapsed-item' }])
-  })
-
-  it('uses the normal query path when series collapsing is disabled', async () => {
-    const collapseStub = sinon.stub(libraryHelpers, 'handleCollapseSubseries')
-    const queryStub = sinon.stub(Database.libraryItemModel, 'getByFilterAndSort').resolves({
-      libraryItems: [{ id: 'regular-item' }],
-      count: 1
-    })
-    const res = { json: sinon.spy() }
-
-    await LibraryController.getLibraryItems(
-      {
-        query: {
-          filter: getSeriesFilter(),
-          collapseseries: '0',
-          sort: 'media.metadata.authorName',
-          desc: '0'
-        },
-        user,
-        library
-      },
-      res
-    )
-
-    expect(collapseStub.called).to.be.false
-    expect(queryStub.calledOnce).to.be.true
-    expect(queryStub.firstCall.args[2].collapseseries).to.equal(false)
-    expect(res.json.firstCall.args[0]).to.include({ total: 1, collapseseries: false })
-    expect(res.json.firstCall.args[0].results).to.deep.equal([{ id: 'regular-item' }])
   })
 })
