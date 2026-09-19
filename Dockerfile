@@ -1,8 +1,13 @@
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
+ARG ROUTER_BASE_PATH="/audiobookshelf"
 
 ### STAGE 0: Build client ###
 FROM node:20-alpine AS build-client
+
+ARG ROUTER_BASE_PATH
+
+ENV ROUTER_BASE_PATH=${ROUTER_BASE_PATH}
 
 WORKDIR /client
 COPY /client /client
@@ -22,8 +27,10 @@ FROM node:20-alpine AS build-server
 
 ARG NUSQLITE3_DIR
 ARG TARGETPLATFORM
+ARG ROUTER_BASE_PATH
 
 ENV NODE_ENV=production
+ENV ROUTER_BASE_PATH=${ROUTER_BASE_PATH}
 
 RUN apk add --no-cache --update \
   curl \
@@ -54,6 +61,7 @@ FROM node:20-alpine
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
+ARG ROUTER_BASE_PATH
 
 # Install only runtime dependencies
 RUN apk add --no-cache --update \
@@ -77,6 +85,7 @@ ENV METADATA_PATH="/metadata"
 ENV SOURCE="docker"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
+ENV ROUTER_BASE_PATH=${ROUTER_BASE_PATH}
 
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "dist-server/index.js"]
