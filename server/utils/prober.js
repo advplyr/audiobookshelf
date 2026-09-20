@@ -12,22 +12,22 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   }
 
   // Attempt to get bitrate from bps tags
-  var bps = stream.tags.BPS || stream.tags['BPS-eng'] || stream.tags['BPS_eng']
+  const bps = stream.tags.BPS || stream.tags['BPS-eng'] || stream.tags['BPS_eng']
   if (bps && !isNaN(bps)) {
     return Number(bps)
   }
 
-  var tagDuration = stream.tags.DURATION || stream.tags['DURATION-eng'] || stream.tags['DURATION_eng']
-  var tagBytes = stream.tags.NUMBER_OF_BYTES || stream.tags['NUMBER_OF_BYTES-eng'] || stream.tags['NUMBER_OF_BYTES_eng']
+  const tagDuration = stream.tags.DURATION || stream.tags['DURATION-eng'] || stream.tags['DURATION_eng']
+  const tagBytes = stream.tags.NUMBER_OF_BYTES || stream.tags['NUMBER_OF_BYTES-eng'] || stream.tags['NUMBER_OF_BYTES_eng']
   if (tagDuration && tagBytes && !isNaN(tagDuration) && !isNaN(tagBytes)) {
-    var bps = Math.floor((Number(tagBytes) * 8) / Number(tagDuration))
-    if (bps && !isNaN(bps)) {
-      return bps
+    const calculatedBps = Math.floor((Number(tagBytes) * 8) / Number(tagDuration))
+    if (calculatedBps && !isNaN(calculatedBps)) {
+      return calculatedBps
     }
   }
 
   if (total_bit_rate && stream.codec_type === 'video') {
-    var estimated_bit_rate = total_bit_rate
+    let estimated_bit_rate = total_bit_rate
     all_streams.forEach((stream) => {
       if (stream.bit_rate && !isNaN(stream.bit_rate)) {
         estimated_bit_rate -= Number(stream.bit_rate)
@@ -46,9 +46,9 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
 }
 
 function tryGrabFrameRate(stream) {
-  var avgFrameRate = stream.avg_frame_rate || stream.r_frame_rate
+  let avgFrameRate = stream.avg_frame_rate || stream.r_frame_rate
   if (!avgFrameRate) return null
-  var parts = avgFrameRate.split('/')
+  const parts = avgFrameRate.split('/')
   if (parts.length === 2) {
     avgFrameRate = Number(parts[0]) / Number(parts[1])
   } else {
@@ -59,13 +59,13 @@ function tryGrabFrameRate(stream) {
 }
 
 function tryGrabSampleRate(stream) {
-  var sample_rate = stream.sample_rate
+  const sample_rate = stream.sample_rate
   if (!isNaN(sample_rate)) return Number(sample_rate)
   return null
 }
 
 function tryGrabChannelLayout(stream) {
-  var layout = stream.channel_layout
+  const layout = stream.channel_layout
   if (!layout) return null
   return String(layout).split('(').shift()
 }
@@ -81,7 +81,7 @@ function tryGrabTags(stream, ...tags) {
 }
 
 function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
-  var info = {
+  const info = {
     index: stream.index,
     type: stream.codec_type,
     codec: stream.codec_name || null,
@@ -95,7 +95,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   if (stream.tags) info.tags = stream.tags
 
   if (info.type === 'audio' || info.type === 'subtitle') {
-    var disposition = stream.disposition || {}
+    const disposition = stream.disposition || {}
     info.is_default = disposition.default === 1 || disposition.default === '1'
   }
 
@@ -230,7 +230,7 @@ function parseTags(format, verbose) {
 function getDefaultAudioStream(audioStreams) {
   if (!audioStreams || !audioStreams.length) return null
   if (audioStreams.length === 1) return audioStreams[0]
-  var defaultStream = audioStreams.find((a) => a.is_default)
+  const defaultStream = audioStreams.find((a) => a.is_default)
   if (!defaultStream) return audioStreams[0]
   return defaultStream
 }
