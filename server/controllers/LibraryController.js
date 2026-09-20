@@ -220,7 +220,7 @@ class LibraryController {
   async findOne(req, res) {
     const includeArray = (req.query.include || '').split(',')
     if (includeArray.includes('filterdata')) {
-      const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
+      const filterdata = await libraryFilters.getFilterData(req.library.mediaType, req.library.id, req.user)
 
       return res.json({
         filterdata,
