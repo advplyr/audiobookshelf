@@ -167,11 +167,7 @@ describe('MiscController OpenID environment settings', () => {
     global.ServerSettings = Database.serverSettings.getEffectiveServerSettings()
     const auth = { useAuthStrategy: sinon.spy(), unuseAuthStrategy: sinon.spy() }
 
-    await MiscController.updateAuthSettings.call(
-      { auth },
-      { user: { isAdminOrUp: true }, body: { authActiveAuthMethods: ['local'] } },
-      response()
-    )
+    await MiscController.updateAuthSettings.call({ auth }, { user: { isAdminOrUp: true }, body: { authActiveAuthMethods: ['local'] } }, response())
 
     expect(Database.serverSettings.authActiveAuthMethods).to.deep.equal(['local', 'openid'])
   })

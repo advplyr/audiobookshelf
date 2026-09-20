@@ -26,16 +26,8 @@ const OPENID_ENV_SETTINGS = {
 }
 const OPENID_ENV_KEYS = Object.keys(OPENID_ENV_SETTINGS)
 const OPENID_SETTINGS_KEYS = Object.values(OPENID_ENV_SETTINGS)
-const REQUIRED_OPENID_ENV_KEYS = [
-  'AUTH_OPENID_ISSUER_URL',
-  'AUTH_OPENID_AUTHORIZATION_URL',
-  'AUTH_OPENID_TOKEN_URL',
-  'AUTH_OPENID_USERINFO_URL',
-  'AUTH_OPENID_JWKS_URL',
-  'AUTH_OPENID_CLIENT_ID',
-  'AUTH_OPENID_CLIENT_SECRET'
-]
-const OPENID_REDIRECT_URI_PATTERN = /^\w+:\/\/[\w.-]+(\/[\w./-]*)*$/i
+const REQUIRED_OPENID_ENV_KEYS = ['AUTH_OPENID_ISSUER_URL', 'AUTH_OPENID_AUTHORIZATION_URL', 'AUTH_OPENID_TOKEN_URL', 'AUTH_OPENID_USERINFO_URL', 'AUTH_OPENID_JWKS_URL', 'AUTH_OPENID_CLIENT_ID', 'AUTH_OPENID_CLIENT_SECRET']
+const OPENID_REDIRECT_URI_PATTERN = /^\w+:\/\/[\w.-]+(?:\/[\w./-]*)?$/i
 const OPENID_CLAIM_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 
 const PATCHABLE_SETTINGS_KEYS = new Set([
@@ -389,8 +381,7 @@ class ServerSettings {
       authOpenIDMobileRedirectURIs: mobileRedirectURIs,
       authOpenIDGroupClaim: envValue('AUTH_OPENID_GROUP_CLAIM', ''),
       authOpenIDAdvancedPermsClaim: envValue('AUTH_OPENID_ADVANCED_PERMS_CLAIM', ''),
-      authOpenIDSubfolderForRedirectURLs:
-        process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS === undefined ? global.RouterBasePath || '' : process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS
+      authOpenIDSubfolderForRedirectURLs: process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS === undefined ? global.RouterBasePath || '' : process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS
     }
 
     const missingRequiredVariables = REQUIRED_OPENID_ENV_KEYS.filter((key) => !process.env[key])
