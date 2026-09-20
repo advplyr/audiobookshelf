@@ -11,8 +11,8 @@
     "start-dev": "node dist-server/index.js --prod-with-dev-env",
     "client": "cd client && npm ci && npm run generate",
     "prod": "npm run client && npm ci && npm run build:server && npm run start",
-    "build-win": "npm run client && npm run build:server && pkg --config package.json -t node20-win-x64 -o ./dist/win/audiobookshelf -C GZip dist-server/index.js",
-    "build-win-no-compress": "npm run client && npm run build:server && pkg --config package.json -t node20-win-x64 -o ./dist/win/audiobookshelf dist-server/index.js",
+    "build-win": "npm run client && npm run build:server && pkg --config package.json -t node24-win-x64 -o ./dist/win/audiobookshelf -C GZip dist-server/index.js",
+    "build-win-no-compress": "npm run client && npm run build:server && pkg --config package.json -t node24-win-x64 -o ./dist/win/audiobookshelf dist-server/index.js",
     "build-linux": "build/linuxpackager",
     "docker": "docker buildx build --platform linux/amd64,linux/arm64 --push .  -t advplyr/audiobookshelf",
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
@@ -62,7 +62,7 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
-    "@types/node": "^20.17.0",
+    "@types/node": "^24.13.6",
     "chai": "^4.3.10",
     "eslint": "^10.11.0",
     "mocha": "^10.2.0",
