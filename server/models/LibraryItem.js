@@ -491,11 +491,7 @@ class LibraryItem extends Model {
       }
       Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${newestAuthorsResult.elapsedSeconds}s`)
     } else if (library.isPodcast) {
-      const [newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([
-        timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)),
-        timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)),
-        timed(() => libraryFilters.getMediaFinished(library, user, include, limit))
-      ])
+      const [newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)), timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)), timed(() => libraryFilters.getMediaFinished(library, user, include, limit))])
 
       const newestEpisodesPayload = newestEpisodesResult.payload
       // "Newest Episodes" shelf
@@ -852,8 +848,18 @@ class LibraryItem extends Model {
   get isPodcast() {
     return this.mediaType === 'podcast'
   }
+  /**
+   * Check if book or podcast library item has audio tracks.
+   * Requires expanded library item (media loaded).
+   *
+   * @returns {boolean}
+   */
   get hasAudioTracks() {
-    return this.media.hasAudioTracks()
+    if (!this.media) {
+      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
+      return false
+    }
+    return this.media.hasAudioTracks
   }
 
   /**
@@ -901,24 +907,6 @@ class LibraryItem extends Model {
           [this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
         ]
       })
-    }
-  }
-
-  /**
-   * Check if book or podcast library item has audio tracks
-   * Requires expanded library item
-   *
-   * @returns {boolean}
-   */
-  hasAudioTracks() {
-    if (!this.media) {
-      Logger.error(`[LibraryItem] hasAudioTracks: Library item "${this.id}" does not have media`)
-      return false
-    }
-    if (this.isBook) {
-      return this.media.audioFiles?.length > 0
-    } else {
-      return this.media.podcastEpisodes?.length > 0
     }
   }
 
