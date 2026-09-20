@@ -876,7 +876,7 @@ class LibraryController {
    * @param {Response} res
    */
   async getLibraryFilterData(req, res) {
-    const filterData = await libraryFilters.getFilterData(req.library.mediaType, req.library.id)
+    const filterData = await libraryFilters.getFilterData(req.library.mediaType, req.library.id, req.user)
     res.json(filterData)
   }
 
