@@ -102,11 +102,6 @@ class Database {
     return this.models.libraryItem
   }
 
-  /** @type {typeof import('./models/PodcastEpisode')} */
-  get podcastEpisodeModel() {
-    return this.models.podcastEpisode
-  }
-
   /** @type {typeof import('./models/MediaProgress')} */
   get mediaProgressModel() {
     return this.models.mediaProgress
