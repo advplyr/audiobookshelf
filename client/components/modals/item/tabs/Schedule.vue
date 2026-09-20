@@ -158,6 +158,8 @@ export default {
       this.isProcessing = true
       var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatePayload).catch((error) => {
         console.error('Failed to update', error)
+        const errorMessage = typeof error?.response?.data === 'string' ? error?.response?.data : null
+        this.$toast.error(errorMessage || this.$strings.ToastFailedToUpdate)
         return false
       })
       this.isProcessing = false

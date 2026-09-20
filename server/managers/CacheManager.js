@@ -40,6 +40,7 @@ class CacheManager {
     const width = options.width || 400
     const height = options.height || null
 
+    if (!['webp', 'jpeg', 'png'].includes(format)) return res.sendStatus(400)
     res.type(`image/${format}`)
 
     const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
@@ -149,6 +150,7 @@ class CacheManager {
     const width = options.width || 400
     const height = options.height || null
 
+    if (!['webp', 'jpeg', 'png'].includes(format)) return res.sendStatus(400)
     res.type(`image/${format}`)
 
     var cachePath = Path.join(this.ImageCachePath, `${authorId}_${width}${height ? `x${height}` : ''}`) + '.' + format

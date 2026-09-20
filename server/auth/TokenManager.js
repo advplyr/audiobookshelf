@@ -1,10 +1,12 @@
 const { Op } = require('sequelize')
+const uuid = require('uuid')
 
 const Database = require('../Database')
 const Logger = require('../Logger')
 
 const requestIp = require('../libs/requestIp')
 const jwt = require('../libs/jsonwebtoken')
+const { isRequestSecure } = require('../utils/requestUtils')
 
 class TokenManager {
   /** @type {string} JWT secret key */
@@ -15,12 +17,17 @@ class TokenManager {
     this.RefreshTokenExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRY) || 30 * 24 * 60 * 60 // 30 days
     /** @type {number} Access token expiry in seconds */
     this.AccessTokenExpiry = parseInt(process.env.ACCESS_TOKEN_EXPIRY) || 1 * 60 * 60 // 1 hour
+    /** @type {number} Grace period in seconds during which a rotated (old) refresh token is still accepted */
+    this.RefreshTokenGracePeriod = parseInt(process.env.REFRESH_TOKEN_GRACE_PERIOD) || 10 * 60 // 10 minutes
 
     if (parseInt(process.env.REFRESH_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Refresh token expiry set from ENV variable to ${this.RefreshTokenExpiry} seconds`)
     }
     if (parseInt(process.env.ACCESS_TOKEN_EXPIRY) > 0) {
       Logger.info(`[TokenManager] Access token expiry set from ENV variable to ${this.AccessTokenExpiry} seconds`)
+    }
+    if (parseInt(process.env.REFRESH_TOKEN_GRACE_PERIOD) > 0) {
+      Logger.info(`[TokenManager] Refresh token grace period set from ENV variable to ${this.RefreshTokenGracePeriod} seconds`)
     }
   }
 
@@ -58,11 +65,23 @@ class TokenManager {
   setRefreshTokenCookie(req, res, refreshToken) {
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: req.secure || req.get('x-forwarded-proto') === 'https',
+      secure: isRequestSecure(req),
       sameSite: 'lax',
       maxAge: this.RefreshTokenExpiry * 1000,
       path: '/'
     })
+  }
+
+  /**
+   * Whether a decoded JWT payload may authenticate API/socket requests (not refresh-only credentials).
+   *
+   * @param {Object} decoded
+   * @returns {boolean}
+   */
+  static isBearerAccessTokenPayload(decoded) {
+    if (!decoded?.userId) return false
+    if (decoded.type === 'refresh') return false
+    return true
   }
 
   /**
@@ -75,7 +94,9 @@ class TokenManager {
    */
   static validateAccessToken(token) {
     try {
-      return jwt.verify(token, TokenManager.TokenSecret)
+      const decoded = jwt.verify(token, TokenManager.TokenSecret)
+      if (!TokenManager.isBearerAccessTokenPayload(decoded)) return null
+      return decoded
     } catch (err) {
       return null
     }
@@ -115,6 +136,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
+      jti: uuid.v4(),
       type: 'access'
     }
     const options = {
@@ -138,6 +160,7 @@ class TokenManager {
     const payload = {
       userId: user.id,
       username: user.username,
+      jti: uuid.v4(),
       type: 'refresh'
     }
     const options = {
@@ -183,20 +206,60 @@ class TokenManager {
    * @param {import('../models/User')} user
    * @param {import('express').Request} req
    * @param {import('express').Response} res
+   * @param {boolean} gracePeriod - whether to use the grace period
    * @returns {Promise<{ accessToken:string, refreshToken:string }>}
    */
-  async rotateTokensForSession(session, user, req, res) {
-    // Generate new tokens
+  async rotateTokensForSession(session, user, req, res, gracePeriod = true) {
+    const previousRefreshToken = session.refreshToken
     const newAccessToken = this.generateTempAccessToken(user)
-    const newRefreshToken = this.generateRefreshToken(user)
-
-    // Calculate new expiration time
+    let newRefreshToken = this.generateRefreshToken(user)
     const newExpiresAt = new Date(Date.now() + this.RefreshTokenExpiry * 1000)
 
-    // Update the session with the new refresh token and expiration
-    session.refreshToken = newRefreshToken
-    session.expiresAt = newExpiresAt
-    await session.save()
+    let lastRefreshToken = null
+    let lastRefreshTokenExpiresAt = null
+    if (gracePeriod) {
+      // Set grace period of old refresh token in case of race condition in token rotation.
+      // During this window a retry with the old refresh token returns the already-rotated
+      // current token instead of failing, so a client that never received the rotation
+      // response (e.g. dropped/suspended mobile request) can still recover the session.
+      // Configurable via REFRESH_TOKEN_GRACE_PERIOD; may need to be longer if fetching the
+      // user data takes longer due to large progress objects.
+      lastRefreshToken = previousRefreshToken
+      lastRefreshTokenExpiresAt = new Date(Date.now() + this.RefreshTokenGracePeriod * 1000)
+    }
+
+    // Only update if this session row still has the refresh token we read
+    const [numUpdated] = await Database.sessionModel.update(
+      {
+        refreshToken: newRefreshToken,
+        expiresAt: newExpiresAt,
+        lastRefreshToken,
+        lastRefreshTokenExpiresAt
+      },
+      {
+        where: {
+          id: session.id,
+          refreshToken: previousRefreshToken
+        }
+      }
+    )
+
+    if (numUpdated === 0) {
+      Logger.debug(`[TokenManager] Race condition in rotateTokensForSession for user ${user.id}, getting new token`)
+
+      const updatedSession = await Database.sessionModel.findOne({ where: { id: session.id } })
+
+      newRefreshToken = updatedSession.refreshToken
+      session.refreshToken = updatedSession.refreshToken
+      session.expiresAt = updatedSession.expiresAt
+      session.lastRefreshToken = updatedSession.lastRefreshToken
+      session.lastRefreshTokenExpiresAt = updatedSession.lastRefreshTokenExpiresAt
+    } else {
+      session.refreshToken = newRefreshToken
+      session.expiresAt = newExpiresAt
+      session.lastRefreshToken = lastRefreshToken
+      session.lastRefreshTokenExpiresAt = lastRefreshTokenExpiresAt
+    }
 
     // Set new refresh token cookie
     this.setRefreshTokenCookie(req, res, newRefreshToken)
@@ -234,9 +297,20 @@ class TokenManager {
       }
 
       const user = await Database.userModel.getUserById(apiKey.userId)
+
+      if (!user?.isActive) {
+        // deny login
+        done(null, null)
+        return
+      }
+
       done(null, user)
     } else {
-      // JWT based authentication
+      // JWT based authentication — refresh tokens are only valid at POST /auth/refresh
+      if (!TokenManager.isBearerAccessTokenPayload(jwt_payload)) {
+        done(null, null)
+        return
+      }
 
       // Check if the jwt is expired
       if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) {
@@ -287,23 +361,40 @@ class TokenManager {
         }
       }
 
-      const session = await Database.sessionModel.findOne({
-        where: { refreshToken: refreshToken }
+      let session = await Database.sessionModel.findOne({
+        where: {
+          [Op.or]: [{ refreshToken: refreshToken }, { lastRefreshToken: refreshToken }]
+        }
       })
 
       if (!session) {
-        Logger.error(`[TokenManager] Failed to refresh token. Session not found for refresh token: ${refreshToken}`)
+        Logger.error(`[TokenManager] Failed to refresh token. Session not found`)
         return {
           error: 'Invalid refresh token'
         }
       }
 
-      // Check if session is expired in database
-      if (session.expiresAt < new Date()) {
-        Logger.info(`[TokenManager] Session expired in database, cleaning up`)
-        await session.destroy()
-        return {
-          error: 'Refresh token expired'
+      let isGracePeriod = false
+      if (session.refreshToken !== refreshToken) {
+        // Token matched lastRefreshToken
+        if (session.lastRefreshTokenExpiresAt && session.lastRefreshTokenExpiresAt > new Date()) {
+          isGracePeriod = true
+          Logger.debug(`[TokenManager] Grace period hit for user ${session.userId}`)
+        } else {
+          Logger.debug(`[TokenManager] Grace period expired for user ${session.userId}`)
+          return {
+            error: 'Invalid refresh token'
+          }
+        }
+      } else {
+        // Token matched current refreshToken
+        // Check if session is expired in database
+        if (session.expiresAt < new Date()) {
+          Logger.info(`[TokenManager] Session expired in database, cleaning up`)
+          await session.destroy()
+          return {
+            error: 'Refresh token expired'
+          }
         }
       }
 
@@ -312,6 +403,20 @@ class TokenManager {
         Logger.error(`[TokenManager] Failed to refresh token. User not found or inactive for user id: ${decoded.userId}`)
         return {
           error: 'User not found or inactive'
+        }
+      }
+
+      if (isGracePeriod) {
+        // Return the already rotated refresh token store in the database,
+        // and generate a new access token without changing the refresh token
+        // again
+        const accessToken = this.generateTempAccessToken(user)
+        this.setRefreshTokenCookie(req, res, session.refreshToken)
+
+        return {
+          accessToken,
+          refreshToken: session.refreshToken,
+          user
         }
       }
 
@@ -359,16 +464,21 @@ class TokenManager {
    * @param {import('../models/User')} user
    * @param {import('express').Request} req
    * @param {import('express').Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   * @returns {Promise<{ accessToken:string, refreshToken:string }|null>} new tokens for the current session if kept alive
    */
   async invalidateJwtSessionsForUser(user, req, res) {
-    const currentRefreshToken = req.cookies.refresh_token
+    const currentRefreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
     if (req.user.id === user.id && currentRefreshToken) {
       // Current user is the same as the user to invalidate sessions for
       // So rotate token for current session
-      const currentSession = await Database.sessionModel.findOne({ where: { refreshToken: currentRefreshToken } })
+      const currentSession = await Database.sessionModel.findOne({
+        where: {
+          userId: user.id,
+          [Op.or]: [{ refreshToken: currentRefreshToken }, { lastRefreshToken: currentRefreshToken }]
+        }
+      })
       if (currentSession) {
-        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res)
+        const newTokens = await this.rotateTokensForSession(currentSession, user, req, res, false)
 
         // Invalidate all sessions for the user except the current one
         await Database.sessionModel.destroy({
@@ -380,9 +490,12 @@ class TokenManager {
           }
         })
 
-        return newTokens.accessToken
+        return {
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken
+        }
       } else {
-        Logger.error(`[TokenManager] No session found to rotate tokens for refresh token ${currentRefreshToken}`)
+        Logger.error(`[TokenManager] No session found to rotate tokens`)
       }
     }
 
@@ -390,6 +503,25 @@ class TokenManager {
     // So invalidate all sessions for the user
     await Database.sessionModel.destroy({ where: { userId: user.id } })
     return null
+  }
+
+  /**
+   * Destroy all JWT sessions for the user that owns this refresh token
+   *
+   * @param {string} refreshToken
+   */
+  async invalidateAllSessionsForRefreshToken(refreshToken) {
+    if (!refreshToken) return
+
+    const session = await Database.sessionModel.findOne({
+      where: {
+        [Op.or]: [{ refreshToken: refreshToken }, { lastRefreshToken: refreshToken }]
+      }
+    })
+    if (!session) return
+
+    const numDeleted = await Database.sessionModel.destroy({ where: { userId: session.userId } })
+    Logger.info(`[TokenManager] Invalidated all JWT sessions for user ${session.userId}, ${numDeleted} deleted`)
   }
 
   /**
@@ -406,7 +538,7 @@ class TokenManager {
 
     try {
       const numDeleted = await Database.sessionModel.destroy({ where: { refreshToken: refreshToken } })
-      Logger.info(`[TokenManager] Refresh token ${refreshToken} invalidated, ${numDeleted} sessions deleted`)
+      Logger.info(`[TokenManager] Refresh token invalidated, ${numDeleted} sessions deleted`)
       return true
     } catch (error) {
       Logger.error(`[TokenManager] Error invalidating refresh token: ${error.message}`)

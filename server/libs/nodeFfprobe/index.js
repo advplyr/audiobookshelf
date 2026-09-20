@@ -15,16 +15,19 @@ module.exports = (function () {
       proc.stdout.setEncoding('utf8')
       proc.stderr.setEncoding('utf8')
 
-      proc.stdout.on('data', function (data) { probeData.push(data) })
-      proc.stderr.on('data', function (data) { errData.push(data) })
+      proc.stdout.on('data', function (data) {
+        probeData.push(data)
+      })
+      proc.stderr.on('data', function (data) {
+        errData.push(data)
+      })
 
-      proc.on('exit', code => { exitCode = code })
-      proc.on('error', err => reject(err))
+      proc.on('error', (err) => reject(err))
       proc.on('close', () => {
         try {
-            resolve(JSON.parse(probeData.join('')))
+          resolve(JSON.parse(probeData.join('')))
         } catch (err) {
-            reject(err);
+          reject(err)
         }
       })
     })

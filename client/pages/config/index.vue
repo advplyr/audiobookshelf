@@ -390,8 +390,8 @@ export default {
     },
     purgeItemsCache() {
       const payload = {
-        // message: `This will delete the entire folder at <code>/metadata/cache/items</code>.<br />Are you sure you want to purge items cache?`,
         message: this.$strings.MessageConfirmPurgeItemsCache,
+        allowHtml: true,
         callback: (confirmed) => {
           if (confirmed) {
             this.sendPurgeItemsCache()

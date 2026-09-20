@@ -153,6 +153,11 @@ class CronManager {
 
   startPodcastCron(expression, libraryItemIds) {
     try {
+      if (!cron.validate(expression)) {
+        Logger.error(`[CronManager] Invalid auto download schedule cron expression "${expression}" - not starting podcast episode check cron`)
+        return
+      }
+
       Logger.debug(`[CronManager] Scheduling podcast episode check cron "${expression}" for ${libraryItemIds.length} item(s)`)
       const task = cron.schedule(expression, () => {
         if (this.podcastCronExpressionsExecuting.includes(expression)) {
@@ -167,7 +172,7 @@ class CronManager {
         task
       })
     } catch (error) {
-      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.podcastEpisodeSchedule}`, error)
+      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${expression}`, error)
     }
   }
 

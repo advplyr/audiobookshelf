@@ -3,6 +3,7 @@ const Logger = require('./Logger')
 const Database = require('./Database')
 const TokenManager = require('./auth/TokenManager')
 const CoverSearchManager = require('./managers/CoverSearchManager')
+const { LogLevel } = require('./utils/constants')
 
 /**
  * @typedef SocketClient
@@ -83,6 +84,14 @@ class SocketAuthority {
         this.clients[socketId].socket.emit(evt, data)
       }
     }
+  }
+
+  requireAdminSocket(socket, eventName) {
+    const client = this.clients[socket.id]
+    if (client?.user?.isAdminOrUp) return true
+
+    Logger.warn(`[SocketAuthority] Unauthorized ${eventName} socket event from socket ${socket.id}`)
+    return false
   }
 
   /**
@@ -179,14 +188,25 @@ class SocketAuthority {
         socket.on('auth', (token) => this.authenticateSocket(socket, token))
 
         // Scanning
-        socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
+        socket.on('cancel_scan', (libraryId) => {
+          if (!this.requireAdminSocket(socket, 'cancel_scan')) return
+          this.cancelScan(libraryId)
+        })
 
         // Cover search streaming
         socket.on('search_covers', (payload) => this.handleCoverSearch(socket, payload))
         socket.on('cancel_cover_search', (requestId) => this.handleCancelCoverSearch(socket, requestId))
 
         // Logs
-        socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+        socket.on('set_log_listener', (level) => {
+          if (!this.requireAdminSocket(socket, 'set_log_listener')) return
+
+          if (!Number.isInteger(level) || !Object.values(LogLevel).includes(level)) {
+            Logger.warn(`[SocketAuthority] Invalid set_log_listener level from socket ${socket.id}`)
+            return
+          }
+          Logger.addSocketListener(socket, level)
+        })
         socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
 
         // Sent automatically from socket.io clients
