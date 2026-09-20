@@ -664,6 +664,30 @@ class MiscController {
     const originalEffectiveAuthMethods = [...global.ServerSettings.authActiveAuthMethods]
     const authOpenIDEnvSet = Database.serverSettings.authOpenIDEnvSet
 
+    if (authOpenIDEnvSet) {
+      const effectiveAuthenticationSettings = Database.serverSettings.effectiveAuthenticationSettings
+      const changedOpenIDKey = Object.keys(settingsUpdate).find((key) => {
+        if (!key.startsWith('authOpenID') || key === 'authOpenIDSamplePermissions' || !Object.prototype.hasOwnProperty.call(currentAuthenticationSettings, key)) return false
+
+        let submittedValue = settingsUpdate[key]
+        let effectiveValue = effectiveAuthenticationSettings[key]
+        if (key === 'authOpenIDMobileRedirectURIs') {
+          if (!Array.isArray(submittedValue) || !Array.isArray(effectiveValue)) return true
+          return submittedValue.some((uri) => !effectiveValue.includes(uri)) || effectiveValue.some((uri) => !submittedValue.includes(uri))
+        }
+        if (key !== 'authOpenIDSubfolderForRedirectURLs') {
+          if (submittedValue === '') submittedValue = null
+          if (effectiveValue === '') effectiveValue = null
+        }
+        return submittedValue !== effectiveValue
+      })
+
+      if (changedOpenIDKey) {
+        Logger.warn(`[MiscController] Cannot update environment-controlled OpenID setting "${changedOpenIDKey}"`)
+        return res.status(400).send('OpenID Connect settings are controlled by environment variables')
+      }
+    }
+
     // TODO: Better validation of auth settings once auth settings are separated from server settings
     for (const key in currentAuthenticationSettings) {
       if (settingsUpdate[key] === undefined) continue

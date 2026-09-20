@@ -98,7 +98,7 @@ describe('MiscController OpenID environment settings', () => {
     expect(res.body).to.equal(undefined)
   })
 
-  it('ignores environment-controlled OpenID fields and never persists their secret', async () => {
+  it('accepts matching round-tripped OpenID fields without persisting their environment values', async () => {
     Database.serverSettings = persistedSettings()
     let persisted
     const updateSettingObj = sinon.stub().callsFake((value) => {
@@ -115,10 +115,8 @@ describe('MiscController OpenID environment settings', () => {
       {
         user: { isAdminOrUp: true },
         body: {
-          authLoginCustomMessage: 'Welcome',
-          authActiveAuthMethods: ['local', 'openid'],
-          authOpenIDIssuerURL: 'https://submitted.example.com',
-          authOpenIDClientSecret: 'environment-secret'
+          ...Database.serverSettings.effectiveAuthenticationSettings,
+          authLoginCustomMessage: 'Welcome'
         }
       },
       res
@@ -131,6 +129,36 @@ describe('MiscController OpenID environment settings', () => {
     expect(Database.serverSettings.authOpenIDClientSecret).to.equal('database-secret')
     expect(persisted.authOpenIDClientSecret).to.equal('database-secret')
     expect(JSON.stringify(persisted)).not.to.include('environment-secret')
+  })
+
+  it('rejects a changed environment-controlled OpenID field without applying other updates', async () => {
+    Database.serverSettings = persistedSettings()
+    const updateSettingObj = sinon.stub().resolves()
+    Database.sequelize = { models: { setting: { updateSettingObj } } }
+    global.ServerSettings = Database.serverSettings.getEffectiveServerSettings()
+    const res = response()
+    const auth = { useAuthStrategy: sinon.spy(), unuseAuthStrategy: sinon.spy() }
+
+    await MiscController.updateAuthSettings.call(
+      { auth },
+      {
+        user: { isAdminOrUp: true },
+        body: {
+          ...Database.serverSettings.effectiveAuthenticationSettings,
+          authLoginCustomMessage: 'This must not be saved',
+          authOpenIDIssuerURL: 'https://changed.example.com'
+        }
+      },
+      res
+    )
+
+    expect(res.statusCode).to.equal(400)
+    expect(res.body).to.equal('OpenID Connect settings are controlled by environment variables')
+    expect(Database.serverSettings.authLoginCustomMessage).to.equal(null)
+    expect(Database.serverSettings.authOpenIDIssuerURL).to.equal('https://db.example.com')
+    expect(updateSettingObj.called).to.equal(false)
+    expect(auth.useAuthStrategy.called).to.equal(false)
+    expect(auth.unuseAuthStrategy.called).to.equal(false)
   })
 
   it('preserves persisted OpenID membership when a client changes local membership', async () => {
