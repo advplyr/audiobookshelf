@@ -637,7 +637,7 @@ class MiscController {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
       return res.sendStatus(403)
     }
-    return res.json(Database.serverSettings.authenticationSettings)
+    return res.json(Database.serverSettings.effectiveAuthenticationSettings)
   }
 
   /**
@@ -661,7 +661,8 @@ class MiscController {
     let hasUpdates = false
 
     const currentAuthenticationSettings = Database.serverSettings.authenticationSettings
-    const originalAuthMethods = [...currentAuthenticationSettings.authActiveAuthMethods]
+    const originalEffectiveAuthMethods = [...global.ServerSettings.authActiveAuthMethods]
+    const authOpenIDEnvSet = Database.serverSettings.authOpenIDEnvSet
 
     // TODO: Better validation of auth settings once auth settings are separated from server settings
     for (const key in currentAuthenticationSettings) {
@@ -669,6 +670,15 @@ class MiscController {
 
       if (key === 'authActiveAuthMethods') {
         let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
+        if (authOpenIDEnvSet && Array.isArray(updatedAuthMethods)) {
+          const persistedOpenIDEnabled = currentAuthenticationSettings.authActiveAuthMethods.includes('openid')
+          const localRequested = updatedAuthMethods.includes('local')
+          const canDisableLocal = persistedOpenIDEnabled && Database.serverSettings.isOpenIDAuthSettingsValid
+
+          updatedAuthMethods = []
+          if (localRequested || !canDisableLocal) updatedAuthMethods.push('local')
+          if (persistedOpenIDEnabled) updatedAuthMethods.push('openid')
+        }
         if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
           updatedAuthMethods.sort()
           currentAuthenticationSettings[key].sort()
@@ -680,6 +690,8 @@ class MiscController {
         } else {
           Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
         }
+      } else if (authOpenIDEnvSet && key.startsWith('authOpenID')) {
+        continue
       } else if (key === 'authOpenIDMobileRedirectURIs') {
         function isValidRedirectURI(uri) {
           if (typeof uri !== 'string') return false
@@ -729,11 +741,11 @@ class MiscController {
 
       // Use/unuse auth methods
       Database.serverSettings.supportedAuthMethods.forEach((authMethod) => {
-        if (originalAuthMethods.includes(authMethod) && !Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+        if (originalEffectiveAuthMethods.includes(authMethod) && !global.ServerSettings.authActiveAuthMethods.includes(authMethod)) {
           // Auth method has been removed
           Logger.info(`[MiscController] Disabling active auth method "${authMethod}"`)
           this.auth.unuseAuthStrategy(authMethod)
-        } else if (!originalAuthMethods.includes(authMethod) && Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+        } else if (!originalEffectiveAuthMethods.includes(authMethod) && global.ServerSettings.authActiveAuthMethods.includes(authMethod)) {
           // Auth method has been added
           Logger.info(`[MiscController] Enabling active auth method "${authMethod}"`)
           this.auth.useAuthStrategy(authMethod)
