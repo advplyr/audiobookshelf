@@ -335,6 +335,9 @@ class LibraryItemController {
   /**
    * PATCH: /api/items/:id/cover
    *
+   * This is used when updating the cover to a local image library file for the library item
+   * TODO: In the next API this should be using an inode or similar instead of a file path
+   *
    * @param {LibraryItemControllerRequest} req
    * @param {Response} res
    */
@@ -343,6 +346,7 @@ class LibraryItemController {
       return res.status(400).send('Invalid request no cover path')
     }
 
+    // Must be a cover file path inside the libraryFiles array
     const validationResult = await CoverManager.validateCoverPath(req.body.cover, req.libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
