@@ -45,4 +45,22 @@ describe('Audible', () => {
       expect(result).to.equal('.5')
     })
   })
+
+  describe('cleanResult', () => {
+    it('should decode HTML entities in the title and subtitle (#5340)', () => {
+      const result = audible.cleanResult({
+        title: 'The &quot;Hitler&quot; Myth',
+        subtitle: 'Image &amp; Reality in the Third Reich',
+        asin: 'B0TESTASIN'
+      })
+      expect(result.title).to.equal('The "Hitler" Myth')
+      expect(result.subtitle).to.equal('Image & Reality in the Third Reich')
+    })
+
+    it('should keep a null subtitle when none is provided', () => {
+      const result = audible.cleanResult({ title: 'A Plain Title', asin: 'B0TESTASIN' })
+      expect(result.title).to.equal('A Plain Title')
+      expect(result.subtitle).to.equal(null)
+    })
+  })
 })
