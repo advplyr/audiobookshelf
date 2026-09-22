@@ -782,7 +782,7 @@ class LibraryController {
       .filter((v) => !!v)
 
     const series = await Database.seriesModel.findByPk(req.params.seriesId)
-    if (!series) return res.sendStatus(404)
+    if (!series || series.libraryId !== req.library.id) return res.sendStatus(404)
 
     const libraryItemsInSeries = await libraryItemsBookFilters.getLibraryItemsForSeries(series, req.user)
 
