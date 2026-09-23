@@ -39,6 +39,41 @@ function checkFilepathIsAudioFile(filepath) {
 module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
 /**
+ * Check if a scanned folder holds the media files of an existing library item, matching by file inode.
+ * Inodes are only unique per filesystem and are reused after a file is deleted, so sizes have to match
+ * as well when both are known. At least half of the item's media files have to be found, so that a
+ * stray file cannot claim a multi-file item.
+ *
+ * @param {import('../objects/files/LibraryFile')[]} existingLibraryFiles
+ * @param {{ino:string, size:number}[]} scannedFiles - inodes and sizes of the files found in the scanned folder
+ * @param {string} mediaType
+ * @returns {boolean}
+ */
+function checkItemFilesMatchByIno(existingLibraryFiles, scannedFiles, mediaType) {
+  const existingMediaFiles = (existingLibraryFiles || []).filter((lf) => lf?.ino && isMediaFile(mediaType, lf.metadata?.ext))
+  if (!existingMediaFiles.length) return false
+
+  const scannedSizeByIno = new Map((scannedFiles || []).filter((sf) => sf?.ino).map((sf) => [sf.ino, toFileSize(sf.size)]))
+  const numMatchingMediaFiles = existingMediaFiles.filter((lf) => {
+    if (!scannedSizeByIno.has(lf.ino)) return false
+    const existingSize = toFileSize(lf.metadata?.size)
+    const scannedSize = scannedSizeByIno.get(lf.ino)
+    // Only compare sizes when both are known, library files scanned by older versions may not have one
+    if (isNaN(existingSize) || isNaN(scannedSize)) return true
+    return existingSize === scannedSize
+  }).length
+
+  return numMatchingMediaFiles * 2 >= existingMediaFiles.length
+}
+module.exports.checkItemFilesMatchByIno = checkItemFilesMatchByIno
+
+// Returns NaN when the size is not known
+function toFileSize(size) {
+  if (size === null || size === undefined || size === '') return NaN
+  return Number(size)
+}
+
+/**
  * @param {string} mediaType
  * @param {import('./fileUtils').FilePathItem[]} fileItems
  * @param {boolean} audiobooksOnly
