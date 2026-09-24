@@ -20,7 +20,7 @@
             <p v-if="episode?.season" class="text-sm text-gray-300">{{ $getString('LabelSeasonNumber', [episode.season]) }}</p>
             <p v-if="episode?.episode" class="text-sm text-gray-300">{{ $getString('LabelEpisodeNumber', [episode.episode]) }}</p>
             <p v-if="episode?.chapters?.length" class="text-sm text-gray-300">{{ $getString('LabelChapterCount', [episode.chapters.length]) }}</p>
-            <p v-if="publishedAt" class="text-sm text-gray-300">{{ $getString('LabelPublishedDate', [$formatDate(publishedAt, dateFormat)]) }}</p>
+            <p v-if="publishedDate" class="text-sm text-gray-300">{{ $getString('LabelPublishedDate', [publishedDate]) }}</p>
           </div>
         </div>
 
@@ -110,6 +110,17 @@ export default {
     },
     publishedAt() {
       return this.episode?.publishedAt
+    },
+    publishedDate() {
+      const pubDate = this.episode?.pubDate
+      const dateMatch = typeof pubDate === 'string' ? pubDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null
+
+      if (dateMatch) {
+        const date = new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]))
+        return this.$formatJsDate(date, this.dateFormat)
+      }
+
+      return this.publishedAt ? this.$formatDate(this.publishedAt, this.dateFormat) : ''
     },
     dateFormat() {
       return this.store.getters['getServerSetting']('dateFormat')
