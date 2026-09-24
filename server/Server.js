@@ -389,7 +389,10 @@ class Server {
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     const ReactClientPath = process.env.REACT_CLIENT_PATH
-    if (!ReactClientPath) {
+    const DisableWebUi = process.env.DISABLE_WEB_UI === '1'
+    if (DisableWebUi) {
+      Logger.info(`[Server] Web UI is disabled`)
+    } else if (!ReactClientPath) {
       // Static path to generated nuxt
       const distPath = Path.join(global.appRoot, '/client/dist')
       router.use(express.static(distPath))
