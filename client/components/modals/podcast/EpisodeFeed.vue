@@ -56,6 +56,8 @@
 </template>
 
 <script>
+const MAX_EPISODE_REQUEST_BYTES = 9 * 1024 * 1024
+
 export default {
   props: {
     value: Boolean,
@@ -241,36 +243,49 @@ export default {
       this.$set(this.selectedEpisodes, episode.cleanUrl, !this.selectedEpisodes[episode.cleanUrl])
       this.checkSetIsSelectedAll()
     },
-    submit() {
-      let episodesToDownload = []
-      if (this.episodesSelected.length) {
-        episodesToDownload = this.episodesSelected.map((cleanUrl) => this.episodesCleaned.find((ep) => ep.cleanUrl == cleanUrl))
-      }
+    async submit() {
+      if (this.processing || !this.episodesSelected.length) return
 
-      const payloadSize = JSON.stringify(episodesToDownload).length
-      const sizeInMb = payloadSize / 1024 / 1024
-      const sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
-      console.log('Request size', sizeInMb)
-      if (sizeInMb > 9.99) {
-        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 10Mb`)
+      const episodesToDownload = this.episodesSelected.map((cleanUrl) => this.episodesCleaned.find((ep) => ep.cleanUrl == cleanUrl))
+      const encoder = new TextEncoder()
+      const batches = []
+      let batch = []
+      let batchBytes = 2 // JSON array brackets
+
+      for (const episode of episodesToDownload) {
+        const episodeBytes = encoder.encode(JSON.stringify(episode)).length
+        if (episodeBytes + 2 > MAX_EPISODE_REQUEST_BYTES) {
+          return this.$toast.error(`Episode "${episode.title}" is too large to submit (over 9 MiB)`)
+        }
+        const nextBatchBytes = batchBytes + episodeBytes + (batch.length ? 1 : 0) // Comma between episodes
+        if (nextBatchBytes > MAX_EPISODE_REQUEST_BYTES) {
+          batches.push(batch)
+          batch = []
+          batchBytes = 2
+        }
+        batch.push(episode)
+        batchBytes += episodeBytes + (batch.length > 1 ? 1 : 0)
       }
+      if (batch.length) batches.push(batch)
 
       this.processing = true
-      this.$axios
-        .$post(`/api/podcasts/${this.libraryItem.id}/download-episodes`, episodesToDownload)
-        .then(() => {
-          this.processing = false
-          this.$toast.success('Started downloading episodes')
-          this.show = false
-        })
-        .catch((error) => {
-          console.error('Failed to download episodes', error)
-          this.processing = false
-          this.$toast.error(error.response?.data || 'Failed to download episodes')
-
-          this.selectedEpisodes = {}
+      let acceptedCount = 0
+      try {
+        for (const episodes of batches) {
+          await this.$axios.$post(`/api/podcasts/${this.libraryItem.id}/download-episodes`, episodes)
+          acceptedCount += episodes.length
+          for (const episode of episodes) this.$set(this.selectedEpisodes, episode.cleanUrl, false)
           this.selectAll = false
-        })
+        }
+        this.$toast.success('Started downloading episodes')
+        this.show = false
+      } catch (error) {
+        console.error('Failed to download episodes', error)
+        const message = error.response?.data || 'Failed to download episodes'
+        this.$toast.error(acceptedCount ? `${acceptedCount} episodes accepted; ${message}. Remaining episodes are still selected.` : message)
+      } finally {
+        this.processing = false
+      }
     },
     init() {
       this.updateDownloadedEpisodeMaps()
