@@ -319,6 +319,34 @@ class MeController {
   }
 
   /**
+   * POST: /api/me/progress/batch/delete
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async batchRemoveMediaProgress(req, res) {
+    const libraryItemIds = req.body?.libraryItemIds
+    if (!libraryItemIds?.length) {
+      return res.status(400).send('Missing libraryItemIds')
+    }
+
+    const idSet = new Set(libraryItemIds)
+    const toRemove = (req.user.mediaProgresses || []).filter((mp) => idSet.has(mp.extraData?.libraryItemId))
+
+    if (toRemove.length) {
+      const removedIds = toRemove.map((mp) => mp.id)
+      await Database.mediaProgressModel.destroy({
+        where: { userId: req.user.id, id: removedIds }
+      })
+      const removedIdSet = new Set(removedIds)
+      req.user.mediaProgresses = req.user.mediaProgresses.filter((mp) => !removedIdSet.has(mp.id))
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toOldJSONForBrowser())
+    }
+
+    res.sendStatus(200)
+  }
+
+  /**
    * POST: /api/me/item/:id/bookmark
    *
    * @param {RequestWithUser} req
