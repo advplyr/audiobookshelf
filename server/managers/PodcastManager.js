@@ -333,7 +333,7 @@ class PodcastManager {
     const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheck
     Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
-    const newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
+    const newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload, true)
     Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes?.length || 'N/A'} episodes found`)
 
     if (!newEpisodes) {
@@ -375,9 +375,10 @@ class PodcastManager {
    * @param {import('../models/LibraryItem')} podcastLibraryItem
    * @param {number} dateToCheckForEpisodesAfter - Unix timestamp
    * @param {number} maxNewEpisodes
+   * @param {boolean} [applyAutoDownloadFilters=false]
    * @returns {Promise<import('../utils/podcastUtils').RssPodcastEpisode[]|null>}
    */
-  async checkPodcastForNewEpisodes(podcastLibraryItem, dateToCheckForEpisodesAfter, maxNewEpisodes = 3) {
+  async checkPodcastForNewEpisodes(podcastLibraryItem, dateToCheckForEpisodesAfter, maxNewEpisodes = 3, applyAutoDownloadFilters = false) {
     if (!podcastLibraryItem.media.feedURL) {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.title} (ID: ${podcastLibraryItem.id})`)
       return null
@@ -400,6 +401,14 @@ class PodcastManager {
 
     // Filter new and not already has
     let newEpisodes = feed.episodes.filter((ep) => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedEpisode(ep))
+
+    if (applyAutoDownloadFilters) {
+      const filteredEpisodes = newEpisodes.filter((ep) => podcastLibraryItem.media.checkFeedEpisodePassesAutoDownloadFilters(ep))
+      if (filteredEpisodes.length < newEpisodes.length) {
+        Logger.info(`[PodcastManager] checkPodcastForNewEpisodes skipped ${newEpisodes.length - filteredEpisodes.length} episodes excluded by auto-download filters for "${podcastLibraryItem.media.title}"`)
+      }
+      newEpisodes = filteredEpisodes
+    }
 
     if (maxNewEpisodes > 0) {
       newEpisodes = newEpisodes.slice(0, maxNewEpisodes)
