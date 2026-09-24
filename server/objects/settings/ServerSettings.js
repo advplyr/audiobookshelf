@@ -5,6 +5,31 @@ const Logger = require('../../Logger')
 const User = require('../../models/User')
 const { sanitize } = require('../../utils/htmlSanitizer')
 
+const OPENID_ENV_SETTINGS = {
+  AUTH_OPENID_ISSUER_URL: 'authOpenIDIssuerURL',
+  AUTH_OPENID_AUTHORIZATION_URL: 'authOpenIDAuthorizationURL',
+  AUTH_OPENID_TOKEN_URL: 'authOpenIDTokenURL',
+  AUTH_OPENID_USERINFO_URL: 'authOpenIDUserInfoURL',
+  AUTH_OPENID_JWKS_URL: 'authOpenIDJwksURL',
+  AUTH_OPENID_LOGOUT_URL: 'authOpenIDLogoutURL',
+  AUTH_OPENID_CLIENT_ID: 'authOpenIDClientID',
+  AUTH_OPENID_CLIENT_SECRET: 'authOpenIDClientSecret',
+  AUTH_OPENID_TOKEN_SIGNING_ALGORITHM: 'authOpenIDTokenSigningAlgorithm',
+  AUTH_OPENID_BUTTON_TEXT: 'authOpenIDButtonText',
+  AUTH_OPENID_AUTO_LAUNCH: 'authOpenIDAutoLaunch',
+  AUTH_OPENID_AUTO_REGISTER: 'authOpenIDAutoRegister',
+  AUTH_OPENID_MATCH_EXISTING_BY: 'authOpenIDMatchExistingBy',
+  AUTH_OPENID_MOBILE_REDIRECT_URIS: 'authOpenIDMobileRedirectURIs',
+  AUTH_OPENID_GROUP_CLAIM: 'authOpenIDGroupClaim',
+  AUTH_OPENID_ADVANCED_PERMS_CLAIM: 'authOpenIDAdvancedPermsClaim',
+  AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS: 'authOpenIDSubfolderForRedirectURLs'
+}
+const OPENID_ENV_KEYS = Object.keys(OPENID_ENV_SETTINGS)
+const OPENID_SETTINGS_KEYS = Object.values(OPENID_ENV_SETTINGS)
+const REQUIRED_OPENID_ENV_KEYS = ['AUTH_OPENID_ISSUER_URL', 'AUTH_OPENID_AUTHORIZATION_URL', 'AUTH_OPENID_TOKEN_URL', 'AUTH_OPENID_USERINFO_URL', 'AUTH_OPENID_JWKS_URL', 'AUTH_OPENID_CLIENT_ID', 'AUTH_OPENID_CLIENT_SECRET']
+const OPENID_REDIRECT_URI_PATTERN = /^\w+:\/\/[\w.-]+(?:\/[\w./-]*)?$/i
+const OPENID_CLAIM_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/
+
 const PATCHABLE_SETTINGS_KEYS = new Set([
   'scannerParseSubtitle',
   'scannerFindCovers',
@@ -30,6 +55,7 @@ const PATCHABLE_SETTINGS_KEYS = new Set([
 
 class ServerSettings {
   static patchableSettingsKeys = PATCHABLE_SETTINGS_KEYS
+  static OPENID_ENV_KEYS = OPENID_ENV_KEYS
   constructor(settings) {
     this.id = 'server-settings'
     /** @type {string} JWT secret key ONLY used when JWT_SECRET_KEY is not set in ENV */
@@ -111,6 +137,8 @@ class ServerSettings {
     if (settings) {
       this.construct(settings)
     }
+
+    this.logOpenIDEnvironmentStatus()
   }
 
   construct(settings) {
@@ -263,7 +291,7 @@ class ServerSettings {
       version: this.version,
       buildNumber: this.buildNumber,
       authLoginCustomMessage: this.authLoginCustomMessage,
-      authActiveAuthMethods: this.authActiveAuthMethods,
+      authActiveAuthMethods: [...this.authActiveAuthMethods],
       authOpenIDIssuerURL: this.authOpenIDIssuerURL,
       authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
       authOpenIDTokenURL: this.authOpenIDTokenURL,
@@ -277,7 +305,7 @@ class ServerSettings {
       authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
       authOpenIDAutoRegister: this.authOpenIDAutoRegister,
       authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
+      authOpenIDMobileRedirectURIs: [...this.authOpenIDMobileRedirectURIs], // Do not return to client
       authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
       authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
       authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs
@@ -297,7 +325,7 @@ class ServerSettings {
   }
 
   toJSONForBrowser() {
-    const json = this.toJSON()
+    const json = this.getEffectiveServerSettings()
     delete json.tokenSecret
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
@@ -315,43 +343,141 @@ class ServerSettings {
   /**
    * Auth settings required for openid to be valid
    */
+  static isOpenIDAuthSettingsValid(settings) {
+    return !!(settings.authOpenIDIssuerURL && settings.authOpenIDAuthorizationURL && settings.authOpenIDTokenURL && settings.authOpenIDUserInfoURL && settings.authOpenIDJwksURL && settings.authOpenIDClientID && settings.authOpenIDClientSecret && settings.authOpenIDTokenSigningAlgorithm)
+  }
+
   get isOpenIDAuthSettingsValid() {
-    return this.authOpenIDIssuerURL && this.authOpenIDAuthorizationURL && this.authOpenIDTokenURL && this.authOpenIDUserInfoURL && this.authOpenIDJwksURL && this.authOpenIDClientID && this.authOpenIDClientSecret && this.authOpenIDTokenSigningAlgorithm
+    return ServerSettings.isOpenIDAuthSettingsValid(this)
+  }
+
+  get authOpenIDEnvSet() {
+    return OPENID_ENV_KEYS.some((key) => process.env[key] !== undefined)
+  }
+
+  getOpenIDSettingsFromEnv() {
+    const envValue = (key, defaultValue = null) => (process.env[key] === undefined ? defaultValue : process.env[key])
+    const mobileRedirectURIs =
+      process.env.AUTH_OPENID_MOBILE_REDIRECT_URIS === undefined
+        ? ['audiobookshelf://oauth']
+        : process.env.AUTH_OPENID_MOBILE_REDIRECT_URIS.split(',')
+            .map((uri) => uri.trim())
+            .filter((uri) => uri)
+
+    const settings = {
+      authOpenIDIssuerURL: envValue('AUTH_OPENID_ISSUER_URL'),
+      authOpenIDAuthorizationURL: envValue('AUTH_OPENID_AUTHORIZATION_URL'),
+      authOpenIDTokenURL: envValue('AUTH_OPENID_TOKEN_URL'),
+      authOpenIDUserInfoURL: envValue('AUTH_OPENID_USERINFO_URL'),
+      authOpenIDJwksURL: envValue('AUTH_OPENID_JWKS_URL'),
+      authOpenIDLogoutURL: process.env.AUTH_OPENID_LOGOUT_URL || null,
+      authOpenIDClientID: envValue('AUTH_OPENID_CLIENT_ID'),
+      authOpenIDClientSecret: envValue('AUTH_OPENID_CLIENT_SECRET'),
+      authOpenIDTokenSigningAlgorithm: envValue('AUTH_OPENID_TOKEN_SIGNING_ALGORITHM', 'RS256'),
+      authOpenIDButtonText: envValue('AUTH_OPENID_BUTTON_TEXT', 'Login with OpenId'),
+      authOpenIDAutoLaunch: process.env.AUTH_OPENID_AUTO_LAUNCH === '1',
+      authOpenIDAutoRegister: process.env.AUTH_OPENID_AUTO_REGISTER === '1',
+      authOpenIDMatchExistingBy: process.env.AUTH_OPENID_MATCH_EXISTING_BY || null,
+      authOpenIDMobileRedirectURIs: mobileRedirectURIs,
+      authOpenIDGroupClaim: envValue('AUTH_OPENID_GROUP_CLAIM', ''),
+      authOpenIDAdvancedPermsClaim: envValue('AUTH_OPENID_ADVANCED_PERMS_CLAIM', ''),
+      authOpenIDSubfolderForRedirectURLs: process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS === undefined ? global.RouterBasePath || '' : process.env.AUTH_OPENID_SUBFOLDER_FOR_REDIRECT_URLS
+    }
+
+    const missingRequiredVariables = REQUIRED_OPENID_ENV_KEYS.filter((key) => !process.env[key])
+    const invalidVariables = []
+
+    if (!settings.authOpenIDTokenSigningAlgorithm) {
+      invalidVariables.push('AUTH_OPENID_TOKEN_SIGNING_ALGORITHM')
+    }
+    if (mobileRedirectURIs.includes('*') && mobileRedirectURIs.length > 1) {
+      invalidVariables.push('AUTH_OPENID_MOBILE_REDIRECT_URIS')
+    } else if (mobileRedirectURIs.some((uri) => uri !== '*' && !OPENID_REDIRECT_URI_PATTERN.test(uri))) {
+      invalidVariables.push('AUTH_OPENID_MOBILE_REDIRECT_URIS')
+    }
+    if (settings.authOpenIDGroupClaim && !OPENID_CLAIM_PATTERN.test(settings.authOpenIDGroupClaim)) {
+      invalidVariables.push('AUTH_OPENID_GROUP_CLAIM')
+    }
+    if (settings.authOpenIDAdvancedPermsClaim && !OPENID_CLAIM_PATTERN.test(settings.authOpenIDAdvancedPermsClaim)) {
+      invalidVariables.push('AUTH_OPENID_ADVANCED_PERMS_CLAIM')
+    }
+    if (settings.authOpenIDMatchExistingBy && !['email', 'username'].includes(settings.authOpenIDMatchExistingBy)) {
+      invalidVariables.push('AUTH_OPENID_MATCH_EXISTING_BY')
+    }
+
+    return {
+      ...settings,
+      isValid: missingRequiredVariables.length === 0 && invalidVariables.length === 0 && ServerSettings.isOpenIDAuthSettingsValid(settings),
+      missingRequiredVariables,
+      invalidVariables,
+      errors: [...missingRequiredVariables, ...invalidVariables]
+    }
+  }
+
+  logOpenIDEnvironmentStatus() {
+    if (!this.authOpenIDEnvSet) return
+    const envSettings = this.getOpenIDSettingsFromEnv()
+    if (envSettings.isValid) {
+      Logger.info('[ServerSettings] Using OpenID Connect settings from environment variables')
+    } else {
+      const issues = []
+      if (envSettings.missingRequiredVariables.length) issues.push(`Missing required variables: ${envSettings.missingRequiredVariables.join(', ')}`)
+      if (envSettings.invalidVariables.length) issues.push(`Invalid variables: ${envSettings.invalidVariables.join(', ')}`)
+      Logger.error(`[ServerSettings] Invalid OpenID Connect environment configuration. ${issues.join('. ')}`)
+    }
+  }
+
+  getEffectiveServerSettings() {
+    const settings = this.toJSON()
+    if (!this.authOpenIDEnvSet) return settings
+
+    const envSettings = this.getOpenIDSettingsFromEnv()
+    for (const key of OPENID_SETTINGS_KEYS) {
+      settings[key] = envSettings[key]
+    }
+
+    const effectiveAuthMethods = settings.authActiveAuthMethods.filter((method) => method !== 'openid')
+    if (envSettings.isValid) effectiveAuthMethods.push('openid')
+    if (!effectiveAuthMethods.some((method) => this.supportedAuthMethods.includes(method))) effectiveAuthMethods.push('local')
+    settings.authActiveAuthMethods = [...new Set(effectiveAuthMethods)]
+    return settings
   }
 
   get authenticationSettings() {
-    return {
-      authLoginCustomMessage: this.authLoginCustomMessage,
-      authActiveAuthMethods: this.authActiveAuthMethods,
-      authOpenIDIssuerURL: this.authOpenIDIssuerURL,
-      authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
-      authOpenIDTokenURL: this.authOpenIDTokenURL,
-      authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
-      authOpenIDJwksURL: this.authOpenIDJwksURL,
-      authOpenIDLogoutURL: this.authOpenIDLogoutURL,
-      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
-      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
-      authOpenIDTokenSigningAlgorithm: this.authOpenIDTokenSigningAlgorithm,
-      authOpenIDButtonText: this.authOpenIDButtonText,
-      authOpenIDAutoLaunch: this.authOpenIDAutoLaunch,
-      authOpenIDAutoRegister: this.authOpenIDAutoRegister,
-      authOpenIDMatchExistingBy: this.authOpenIDMatchExistingBy,
-      authOpenIDMobileRedirectURIs: this.authOpenIDMobileRedirectURIs, // Do not return to client
-      authOpenIDGroupClaim: this.authOpenIDGroupClaim, // Do not return to client
-      authOpenIDAdvancedPermsClaim: this.authOpenIDAdvancedPermsClaim, // Do not return to client
-      authOpenIDSubfolderForRedirectURLs: this.authOpenIDSubfolderForRedirectURLs,
+    return this.getAuthenticationSettings(this.toJSON())
+  }
 
+  get effectiveAuthenticationSettings() {
+    return {
+      ...this.getAuthenticationSettings(this.getEffectiveServerSettings()),
+      authOpenIDEnvSet: this.authOpenIDEnvSet
+    }
+  }
+
+  getAuthenticationSettings(settings) {
+    return {
+      authLoginCustomMessage: settings.authLoginCustomMessage,
+      authActiveAuthMethods: settings.authActiveAuthMethods,
+      ...Object.fromEntries(OPENID_SETTINGS_KEYS.map((key) => [key, settings[key]])),
       authOpenIDSamplePermissions: User.getSampleAbsPermissions()
     }
   }
 
   get authFormData() {
+    return this.getAuthFormData(this.toJSON())
+  }
+
+  get effectiveAuthFormData() {
+    return this.getAuthFormData(this.getEffectiveServerSettings())
+  }
+
+  getAuthFormData(settings) {
     const clientFormData = {
-      authLoginCustomMessage: sanitize(this.authLoginCustomMessage)
+      authLoginCustomMessage: sanitize(settings.authLoginCustomMessage)
     }
-    if (this.authActiveAuthMethods.includes('openid')) {
-      clientFormData.authOpenIDButtonText = this.authOpenIDButtonText
-      clientFormData.authOpenIDAutoLaunch = this.authOpenIDAutoLaunch
+    if (settings.authActiveAuthMethods.includes('openid')) {
+      clientFormData.authOpenIDButtonText = settings.authOpenIDButtonText
+      clientFormData.authOpenIDAutoLaunch = settings.authOpenIDAutoLaunch
     }
     return clientFormData
   }
