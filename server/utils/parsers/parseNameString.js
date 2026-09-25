@@ -5,6 +5,17 @@
 //
 const parseFullName = require('./parseFullName')
 
+// Some taggers join a first and last name with a non-breaking or other Unicode
+// space (e.g. U+202F NARROW NO-BREAK SPACE, U+00A0 NO-BREAK SPACE) instead of a
+// regular space. These are not matched by ' ', so a name like "First Last" reads
+// as a single space-less token - i.e. a last name only - which can flip an entire
+// comma-separated list into "Last, First" pairing mode and mangle it. Normalize
+// such spaces to a regular space before parsing. U+3000 (ideographic space) is
+// intentionally left alone so CJK names are returned untouched.
+function normalizeNameSpaces(name) {
+  return name.replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F]/g, ' ')
+}
+
 function parseName(name) {
   var parts = parseFullName(name)
   var firstName = parts.first
@@ -29,7 +40,7 @@ function checkIsALastName(name) {
 
 // Handle name already in First Last format and return Last, First
 module.exports.nameToLastFirst = (firstLast) => {
-  var nameObj = parseName(firstLast)
+  var nameObj = parseName(normalizeNameSpaces(firstLast))
   if (!nameObj.last_name) return nameObj.first_name
   else if (!nameObj.first_name) return nameObj.last_name
   return `${nameObj.last_name}, ${nameObj.first_name}`
@@ -43,6 +54,8 @@ module.exports.nameToLastFirst = (firstLast) => {
  */
 module.exports.parse = (nameString) => {
   if (!nameString) return null
+
+  nameString = normalizeNameSpaces(nameString)
 
   let splitNames = []
   const isCommaSeparated = nameString.includes(',')
