@@ -35,6 +35,9 @@
           <div class="md:w-1/4 p-2">
             <ui-text-input-with-label v-model="podcast.language" :label="$strings.LabelLanguage" />
           </div>
+          <div class="md:w-1/4 p-2">
+            <ui-text-input-with-label v-model="podcast.podcastFilenameFormat" :label="$strings.PodcastFilenameFormatHelp" />
+          </div>
           <div class="md:w-1/4 px-2 pt-7">
             <ui-checkbox v-model="podcast.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
@@ -95,6 +98,7 @@ export default {
         itunesArtistId: '',
         autoDownloadEpisodes: false,
         language: '',
+        filenameFormat: '',
         explicit: false,
         type: ''
       }
@@ -193,6 +197,7 @@ export default {
             itunesId: this.podcast.itunesId,
             itunesArtistId: this.podcast.itunesArtistId,
             language: this.podcast.language,
+            podcastFilenameFormat: this.podcast.podcastFilenameFormat,
             explicit: this.podcast.explicit,
             type: this.podcast.type
           },
@@ -230,6 +235,7 @@ export default {
       this.podcast.itunesId = this._podcastData.id || ''
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
       this.podcast.language = this._podcastData.language || this.feedMetadata.language || ''
+      this.podcast.filenameFormat = this._podcastData.filenameFormat ||  '%T'
       this.podcast.autoDownloadEpisodes = false
       this.podcast.type = this._podcastData.type || this.feedMetadata.type || 'episodic'
 
