@@ -318,8 +318,9 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
         const totalSize = parseInt(response.headers['content-length'], 10)
         let downloadedSize = 0
 
-        // Write to filepath
-        const writer = fs.createWriteStream(filepath)
+        // Use a 512 KiB write buffer. Node's default 16 KiB highWaterMark causes
+        // many small write syscalls for large audio files and limits throughput.
+        const writer = fs.createWriteStream(filepath, { highWaterMark: 524288 })
         response.data.pipe(writer)
 
         let lastProgress = 0
