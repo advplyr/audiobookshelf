@@ -280,9 +280,11 @@ export default {
       this.playerHandler.playPause()
     },
     jumpForward() {
+      this._manualSeekTime = Date.now()
       this.playerHandler.jumpForward()
     },
     jumpBackward() {
+      this._manualSeekTime = Date.now()
       this.playerHandler.jumpBackward()
     },
     setVolume(volume) {
@@ -293,6 +295,7 @@ export default {
       this.playerHandler.setPlaybackRate(playbackRate)
     },
     seek(time) {
+      this._manualSeekTime = Date.now()
       this.playerHandler.seek(time)
     },
     playbackTimeUpdate(time) {
@@ -308,6 +311,9 @@ export default {
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
         this.checkChapterEnd()
       }
+      
+      // check for intro/outro and skip if needed
+      this.checkAndSkipIntroOutro(time)
     },
     setDuration(duration) {
       this.totalDuration = duration
@@ -542,6 +548,87 @@ export default {
         console.log('sessionClosedEvent closing current session', sessionId)
         this.playerHandler.resetPlayer() // Closes player without reporting to server
         this.$store.commit('setMediaPlaying', null)
+      }
+    },
+    
+    // get skip settings
+    getSkipSettings() {
+      return {
+        skipIntro: this.$store.getters['user/getUserSetting']('skipIntro'),
+        introDuration: this.$store.getters['user/getUserSetting']('introDuration'),
+        skipOutro: this.$store.getters['user/getUserSetting']('skipOutro'),
+        outroDuration: this.$store.getters['user/getUserSetting']('outroDuration')
+      }
+    },
+
+    // check and skip intro/outro
+    checkAndSkipIntroOutro(currentTime) {
+      const skipSettings = this.getSkipSettings()
+      if (!skipSettings) return
+
+      const doSkipIntro = skipSettings.skipIntro && skipSettings.introDuration > 0
+      const doSkipOutro = skipSettings.skipOutro && skipSettings.outroDuration > 0
+      if (!doSkipIntro && !doSkipOutro) return
+      if (!this.isPlaying || !this.chapters.length) return
+
+      // The skip function is not triggered within 2 seconds after the user manually seeks
+      if (this._manualSeekTime && Date.now() - this._manualSeekTime < 2000) return
+
+      // Reentry guard: When skipping, wait until reaching the target position before cancelling
+      if (this._isSkipping) {
+        if (this._skipTarget != null && currentTime >= this._skipTarget - 0.5) {
+          this._isSkipping = false
+          this._skipTarget = null
+        }
+        return
+      }
+
+      const chapter = this.chapters.find((ch) => ch.start <= currentTime && currentTime < ch.end)
+      if (!chapter) return
+
+      const introDuration = doSkipIntro ? skipSettings.introDuration : 0
+      const outroDuration = doSkipOutro ? skipSettings.outroDuration : 0
+
+      const introEndTime = Math.min(chapter.start + introDuration, chapter.end)
+      const outroStartTime = Math.max(chapter.end - outroDuration, chapter.start)
+
+      // Short chapter: If the intro and outro intervals overlap, do not skip
+      if (doSkipIntro && doSkipOutro && introEndTime > outroStartTime) return
+
+      //  Check whether it is within the intro interval
+      if (doSkipIntro && currentTime < introEndTime) {
+        const target = introEndTime + 0.5
+        this._isSkipping = true
+        this._skipTarget = target
+        this.seek(target)
+        return
+      }
+
+      // check whether it is within the outro interval
+      if (doSkipOutro && currentTime >= outroStartTime) {
+        const chapterIndex = this.chapters.indexOf(chapter)
+        const nextChapter = this.chapters[chapterIndex + 1]
+
+        if (nextChapter) {
+          // has next chapter: skip to next chapter start (if skipIntro is on, skip intro)
+          let target = nextChapter.start
+          if (doSkipIntro) {
+            const nextIntroEnd = Math.min(nextChapter.start + introDuration, nextChapter.end)
+            const nextOutroStart = Math.max(nextChapter.end - outroDuration, nextChapter.start)
+            // ensure that the next chapter intro/outro does not overlap
+            if (nextIntroEnd <= nextOutroStart) {
+              target = nextIntroEnd + 0.5
+            }
+          }
+          this._isSkipping = true
+          this._skipTarget = target
+          this.seek(target)
+        } else {
+          // last chapter: skip to end
+          this._isSkipping = true
+          this._skipTarget = chapter.end
+          this.seek(chapter.end)
+        }
       }
     }
   },
