@@ -441,12 +441,130 @@ module.exports = {
   },
 
   /**
+   * Get filter data for a user restricted by tags or explicit content.
+   *
+   * Not cached because the result depends on the user's permissions, whereas the
+   * shared cache is keyed by library only.
+   *
+   * @param {string} mediaType
+   * @param {string} libraryId
+   * @param {import('../../models/User')} user
+   * @returns {Promise<object>}
+   */
+  async getFilterDataForRestrictedUser(mediaType, libraryId, user) {
+    const data = {
+      authors: [],
+      genres: new Set(),
+      tags: new Set(),
+      series: [],
+      narrators: new Set(),
+      languages: new Set(),
+      publishers: new Set(),
+      publishedDecades: new Set(),
+      bookCount: 0,
+      authorCount: 0,
+      seriesCount: 0,
+      podcastCount: 0,
+      numIssues: 0
+    }
+
+    if (mediaType === 'podcast') {
+      const { podcastWhere, replacements } = libraryItemsPodcastFilters.getUserPermissionPodcastWhereQuery(user)
+      const podcasts = await Database.podcastModel.findAll({
+        where: podcastWhere,
+        replacements,
+        include: {
+          model: Database.libraryItemModel,
+          attributes: ['isMissing', 'isInvalid'],
+          where: {
+            libraryId: libraryId
+          }
+        },
+        attributes: ['tags', 'genres', 'language']
+      })
+      for (const podcast of podcasts) {
+        if (podcast.libraryItem.isMissing || podcast.libraryItem.isInvalid) data.numIssues++
+        podcast.tags?.forEach((tag) => data.tags.add(tag))
+        podcast.genres?.forEach((genre) => data.genres.add(genre))
+        if (podcast.language) data.languages.add(podcast.language)
+      }
+      data.podcastCount = podcasts.length
+    } else {
+      const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
+      const books = await Database.bookModel.findAll({
+        where: bookWhere,
+        replacements,
+        include: [
+          {
+            model: Database.libraryItemModel,
+            attributes: ['isMissing', 'isInvalid'],
+            where: {
+              libraryId: libraryId
+            }
+          },
+          {
+            model: Database.authorModel,
+            attributes: ['id', 'name'],
+            through: { attributes: [] }
+          },
+          {
+            model: Database.seriesModel,
+            attributes: ['id', 'name'],
+            through: { attributes: [] }
+          }
+        ],
+        attributes: ['id', 'tags', 'genres', 'publisher', 'publishedYear', 'narrators', 'language']
+      })
+
+      const authorsById = new Map()
+      const seriesById = new Map()
+      for (const book of books) {
+        if (book.libraryItem.isMissing || book.libraryItem.isInvalid) data.numIssues++
+        book.tags?.forEach((tag) => data.tags.add(tag))
+        book.genres?.forEach((genre) => data.genres.add(genre))
+        book.narrators?.forEach((narrator) => data.narrators.add(narrator))
+        if (book.publisher) data.publishers.add(book.publisher)
+        if (book.publishedYear && !isNaN(book.publishedYear) && book.publishedYear > 0 && book.publishedYear < 3000) {
+          data.publishedDecades.add((Math.floor(book.publishedYear / 10) * 10).toString())
+        }
+        if (book.language) data.languages.add(book.language)
+        book.authors?.forEach((author) => authorsById.set(author.id, { id: author.id, name: author.name }))
+        book.series?.forEach((series) => seriesById.set(series.id, { id: series.id, name: series.name || 'No Title' }))
+      }
+
+      data.authors = [...authorsById.values()]
+      data.series = [...seriesById.values()]
+      data.bookCount = books.length
+      data.authorCount = data.authors.length
+      data.seriesCount = data.series.length
+    }
+
+    data.authors = naturalSort(data.authors).asc((au) => au.name)
+    data.genres = naturalSort([...data.genres]).asc()
+    data.tags = naturalSort([...data.tags]).asc()
+    data.series = naturalSort(data.series).asc((se) => se.name)
+    data.narrators = naturalSort([...data.narrators]).asc()
+    data.publishers = naturalSort([...data.publishers]).asc()
+    data.publishedDecades = naturalSort([...data.publishedDecades]).asc()
+    data.languages = naturalSort([...data.languages]).asc()
+    data.loadedAt = Date.now()
+    return data
+  },
+
+  /**
    * Get filter data used in filter menus
    * @param {string} mediaType
    * @param {string} libraryId
+   * @param {import('../../models/User')} [user]
    * @returns {Promise<object>}
    */
-  async getFilterData(mediaType, libraryId) {
+  async getFilterData(mediaType, libraryId, user) {
+    // Users restricted by tags or explicit content must not see filter values
+    // sourced from items they cannot access
+    if (user && !user.permissions?.accessAllTags && (user.permissions?.itemTagsSelected?.length || !user.canAccessExplicitContent)) {
+      return this.getFilterDataForRestrictedUser(mediaType, libraryId, user)
+    }
+
     const cachedFilterData = Database.libraryFilterData[libraryId]
     if (cachedFilterData) {
       const cacheElapsed = Date.now() - cachedFilterData.loadedAt
