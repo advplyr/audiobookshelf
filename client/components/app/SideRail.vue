@@ -28,6 +28,14 @@
         <div v-show="showLibrary" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
+      <nuxt-link :to="`/library/${currentLibraryId}/folders`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isFoldersPage ? 'bg-primary/80' : 'bg-bg/60'">
+        <span class="material-symbols text-2xl">folder</span>
+
+        <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.LabelFolders }}</p>
+
+        <div v-show="isFoldersPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      </nuxt-link>
+
       <nuxt-link v-if="isBookLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="w-full h-20 flex flex-col items-center justify-center text-white/80 border-b border-primary/70 hover:bg-primary cursor-pointer relative" :class="isSeriesPage ? 'bg-primary/80' : 'bg-bg/60'">
         <span class="material-symbols text-2xl">view_column</span>
 
@@ -173,6 +181,9 @@ export default {
     },
     isNarratorsPage() {
       return this.$route.name === 'library-library-narrators'
+    },
+    isFoldersPage() {
+      return this.$route.name === 'library-library-folders'
     },
     isPlaylistsPage() {
       return this.paramId === 'playlists'
