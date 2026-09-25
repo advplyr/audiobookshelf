@@ -1,12 +1,15 @@
 <template>
   <div class="relative">
     <!-- Track -->
-    <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
-      <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
-      <div ref="bufferTrack" class="h-full bg-gray-500 absolute top-0 left-0 pointer-events-none" />
-      <div ref="playedTrack" class="h-full bg-gray-200 absolute top-0 left-0 pointer-events-none" />
-      <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
-      <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white/25" />
+    <div ref="track" class="w-full bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125" :class="rounded ? 'h-2.5 rounded-full' : 'h-2 overflow-hidden'" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
+      <div class="absolute inset-0 overflow-hidden" :class="rounded ? 'rounded-full' : ''">
+        <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
+        <div ref="bufferTrack" class="h-full bg-gray-500 absolute top-0 left-0 pointer-events-none" />
+        <div ref="playedTrack" class="h-full absolute top-0 left-0 pointer-events-none" :class="rounded ? 'bg-white' : 'bg-gray-200'" />
+        <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
+        <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white/25" />
+      </div>
+      <div v-if="rounded" ref="trackThumb" class="absolute top-1/2 w-3 h-3 rounded-full bg-white pointer-events-none shadow-md" style="transform: translate(-50%, -50%)" />
     </div>
     <div class="w-full h-2 relative overflow-hidden" :class="useChapterTrack ? 'opacity-0' : ''">
       <template v-for="(tick, index) in chapterTicks">
@@ -39,7 +42,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    playbackRate: Number
+    playbackRate: Number,
+    rounded: Boolean
   },
   data() {
     return {
@@ -132,6 +136,7 @@ export default {
       const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
 
       const ptWidth = Math.round((time / duration) * this.trackWidth)
+      if (this.$refs.trackThumb) this.$refs.trackThumb.style.left = ptWidth + 'px'
       if (this.playedTrackWidth === ptWidth) {
         return
       }
