@@ -839,6 +839,7 @@ class BookScanner {
      * Keys must match abmetadataGenerator.js
      */
     const jsonObject = {
+      id: libraryItem.id,
       tags: libraryItem.media.tags || [],
       chapters: libraryItem.media.chapters?.map((c) => ({ ...c })) || [],
       title: libraryItem.media.title,
