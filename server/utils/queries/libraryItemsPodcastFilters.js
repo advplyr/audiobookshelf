@@ -85,6 +85,13 @@ module.exports = {
       return [[Sequelize.literal('libraryItem.birthtime'), dir]]
     } else if (sortBy === 'mtimeMs') {
       return [[Sequelize.literal('libraryItem.mtime'), dir]]
+    } else if (sortBy === 'latestEpisodePublishedAt') {
+      return [[
+        Sequelize.literal(`(
+        SELECT MAX("publishedAt")
+        FROM "podcastEpisodes"
+        WHERE "podcastEpisodes"."podcastId" = "podcast"."id"
+      )`),dir]]
     } else if (sortBy === 'media.metadata.author') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`\`podcast\`.\`author\` COLLATE NOCASE ${nullDir}`)]]
