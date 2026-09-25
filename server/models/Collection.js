@@ -72,7 +72,10 @@ class Collection extends Model {
         },
         ...collectionIncludes
       ],
-      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+      order: [
+        [this.sequelize.Sequelize.fn('LOWER', this.sequelize.col('collection.name')), 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']
+      ]
     })
     // TODO: Handle user permission restrictions on initial query
     return collections
