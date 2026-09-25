@@ -195,15 +195,22 @@ class BookScanner {
 
     // Check if ebook is not set and ebooks were found
     if (!media.ebookFile && !librarySettings.audiobooksOnly && libraryItemData.ebookLibraryFiles.length) {
+      // Disk scans do not retain the saved supplementary flag. New ebooks are
+      // initially marked supplementary by checkLibraryItemData, but can still be selected.
+      const addedEbookInodes = new Set(libraryItemData.ebookLibraryFilesAdded.map((lf) => lf.ino))
+      const supplementaryInodes = new Set(existingLibraryItem.libraryFiles.filter((lf) => lf.isSupplementary).map((lf) => lf.ino))
+      const ebookLibraryFiles = libraryItemData.ebookLibraryFiles.filter((lf) => addedEbookInodes.has(lf.ino) || !supplementaryInodes.has(lf.ino))
+
       // Prefer to use an epub ebook then fallback to the first ebook found
-      let ebookLibraryFile = libraryItemData.ebookLibraryFiles.find((lf) => lf.metadata.ext.slice(1).toLowerCase() === 'epub')
-      if (!ebookLibraryFile) ebookLibraryFile = libraryItemData.ebookLibraryFiles[0]
-      ebookLibraryFile = ebookLibraryFile.toJSON()
-      // Ebook file is the same as library file except for additional `ebookFormat`
-      ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
-      media.ebookFile = ebookLibraryFile
-      media.changed('ebookFile', true)
-      hasMediaChanges = true
+      let ebookLibraryFile = ebookLibraryFiles.find((lf) => lf.metadata.ext.slice(1).toLowerCase() === 'epub') || ebookLibraryFiles[0]
+      if (ebookLibraryFile) {
+        ebookLibraryFile = ebookLibraryFile.toJSON()
+        // Ebook file is the same as library file except for additional `ebookFormat`
+        ebookLibraryFile.ebookFormat = ebookLibraryFile.metadata.ext.slice(1).toLowerCase()
+        media.ebookFile = ebookLibraryFile
+        media.changed('ebookFile', true)
+        hasMediaChanges = true
+      }
     }
 
     const ebookFileScanData = await parseEbookMetadata.parse(media.ebookFile)
