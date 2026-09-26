@@ -74,7 +74,8 @@ class TokenManager {
    */
   static validateAccessToken(token) {
     try {
-      return jwt.verify(token, TokenManager.TokenSecret)
+      // Expiration is handled by the caller so expired API keys can be deactivated
+      return jwt.verify(token, TokenManager.TokenSecret, { ignoreExpiration: true })
     } catch (err) {
       return null
     }
