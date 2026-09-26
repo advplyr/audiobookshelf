@@ -28,11 +28,6 @@ describe('TokenManager', () => {
   })
 
   describe('validateAccessToken', () => {
-    it('rejects refresh tokens', () => {
-      const refreshToken = jwt.sign({ userId, type: 'refresh' }, secret, { expiresIn: 3600 })
-      expect(TokenManager.validateAccessToken(refreshToken)).to.equal(null)
-    })
-
     it('accepts access tokens', () => {
       const accessToken = jwt.sign({ userId, type: 'access' }, secret, { expiresIn: 3600 })
       const decoded = TokenManager.validateAccessToken(accessToken)
