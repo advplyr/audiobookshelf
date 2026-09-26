@@ -5,7 +5,12 @@ const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 
 module.exports = {
   decode(text) {
-    return Buffer.from(decodeURIComponent(text), 'base64').toString()
+    try {
+      return Buffer.from(decodeURIComponent(text), 'base64').toString()
+    } catch (error) {
+      Logger.warn(`[seriesFilters] Failed to decode filter value "${text}": ${error.message}`)
+      return null
+    }
   },
 
   /**

@@ -364,6 +364,7 @@ export default {
     }
 
     const startTime = this.playbackSession.currentTime || 0
+
     this.localAudioPlayer.set(null, this.audioTracks, false, startTime, false)
     this.localAudioPlayer.on('stateChange', this.playerStateChange.bind(this))
     this.localAudioPlayer.on('timeupdate', this.playerTimeUpdate.bind(this))

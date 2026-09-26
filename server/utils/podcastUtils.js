@@ -69,7 +69,7 @@ function extractStringOrStringify(json) {
       return json[Object.keys(json)[0]][0]
     }
     // Handles case where html was included without being wrapped in CDATA
-    return JSON.stringify(value)
+    return JSON.stringify(json)
   } catch {
     return ''
   }
@@ -216,6 +216,10 @@ function extractEpisodeData(item) {
     const cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
+
+  if (episode.subtitle) {
+    episode.subtitle = htmlSanitizer.sanitize(episode.subtitle.trim())
+  }
 
   // Extract psc:chapters if duration is set
   episode.durationSeconds = episode.duration ? timestampToSeconds(episode.duration) : null

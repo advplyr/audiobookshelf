@@ -83,7 +83,8 @@ class Audible {
       duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
       region: item.region || null,
       rating: item.rating || null,
-      abridged: formatType === 'abridged'
+      abridged: formatType === 'abridged',
+      explicit: !!item.isAdult
     }
   }
 

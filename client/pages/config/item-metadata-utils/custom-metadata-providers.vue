@@ -8,7 +8,7 @@
       </template>
       <template #header-items>
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
-          <a href="https://www.audiobookshelf.org/guides/custom-metadata-providers" target="_blank" class="inline-flex">
+          <a href="https://audiobookshelf.org/docs/documentation/community/community-providers" target="_blank" class="inline-flex">
             <span class="material-symbols text-xl w-5 text-gray-200">help_outline</span>
           </a>
         </ui-tooltip>

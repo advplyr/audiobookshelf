@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, fn, col } = require('sequelize')
 
 class BookAuthor extends Model {
   constructor(values, options) {
@@ -35,6 +35,32 @@ class BookAuthor extends Model {
         authorId
       }
     })
+  }
+
+  /**
+   * Get number of books for each author
+   *
+   * @param {string[]} authorIds
+   * @returns {Promise<Record<string, number>>}
+   */
+  static async getCountsForAuthors(authorIds) {
+    if (!authorIds.length) return {}
+
+    const rows = await this.findAll({
+      attributes: ['authorId', [fn('COUNT', col('id')), 'count']],
+      where: {
+        authorId: authorIds
+      },
+      group: ['authorId'],
+      raw: true
+    })
+
+    /** @type {Record<string, number>} */
+    const counts = {}
+    for (const row of rows) {
+      counts[row.authorId] = Number(row.count)
+    }
+    return counts
   }
 
   /**

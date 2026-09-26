@@ -2,6 +2,7 @@ const { Request, Response } = require('express')
 const Path = require('path')
 
 const Logger = require('../Logger')
+const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
@@ -215,6 +216,11 @@ class RssFeedManager {
       Logger.error(`[RssFeedManager] Feed episode not found ${req.params.episodeId}`)
       res.sendStatus(404)
       return
+    }
+    // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+    const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(episodePath))
+    if (audioMimeType) {
+      res.setHeader('Content-Type', audioMimeType)
     }
     res.sendFile(episodePath)
   }

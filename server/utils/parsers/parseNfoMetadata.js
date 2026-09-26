@@ -22,7 +22,7 @@ function parseNfoMetadata(nfoText) {
       switch (key) {
         case 'title':
           {
-            const titleMatch = value.match(/^(.*?):(.*)$/)
+            const titleMatch = value.match(/^(.*?): (.*)$/)
             if (titleMatch) {
               metadata.title = titleMatch[1].trim()
               metadata.subtitle = titleMatch[2].trim()

@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WatcherStats = exports.Stats = void 0;
-const ripstat_1 = require("ripstat");
+const ripstat_1 = require("./ripstat");
 Object.defineProperty(exports, "Stats", { enumerable: true, get: function () { return ripstat_1.Stats; } });
 const watcher_stats_1 = __importDefault(require("./watcher_stats"));
 exports.WatcherStats = watcher_stats_1.default;

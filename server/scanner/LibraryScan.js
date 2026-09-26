@@ -24,6 +24,8 @@ class LibraryScan {
 
     /** @type {string[]} */
     this.authorsRemovedFromBooks = []
+    /** @type {Set<string>} */
+    this.authorsNumBooksChangedIds = new Set()
     /** @type {string[]} */
     this.seriesRemovedFromBooks = []
 

@@ -171,6 +171,11 @@ class ApiRouter {
     // Current User Routes (Me)
     //
     this.router.get('/me', MeController.getCurrentUser.bind(this))
+    this.router.get('/me/sessions', MeController.getSessions.bind(this))
+    this.router.delete('/me/sessions/:id', MeController.deleteSession.bind(this))
+    this.router.get('/me/progress', MeController.getAllMediaProgress.bind(this))
+    this.router.get('/me/bookmarks', MeController.getAllBookmarks.bind(this))
+    this.router.get('/me/bookmarks/:libraryItemId', MeController.getBookmarksForLibraryItem.bind(this))
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/item/listening-sessions/:libraryItemId/:episodeId?', MeController.getItemListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
@@ -363,8 +368,9 @@ class ApiRouter {
    * Remove library item and associated entities
    * @param {string} libraryItemId
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
+   * @param {string} libraryId
    */
-  async handleDeleteLibraryItem(libraryItemId, mediaItemIds) {
+  async handleDeleteLibraryItem(libraryItemId, mediaItemIds, libraryId) {
     const numProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: mediaItemIds
@@ -395,7 +401,8 @@ class ApiRouter {
     await Database.libraryItemModel.removeById(libraryItemId)
 
     SocketAuthority.emitter('item_removed', {
-      id: libraryItemId
+      id: libraryItemId,
+      libraryId
     })
   }
 

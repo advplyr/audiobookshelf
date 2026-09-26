@@ -272,7 +272,7 @@ class AudioMetadataMangaer {
     this.tasksRunning = this.tasksRunning.filter((t) => t.id !== task.id)
 
     if (this.tasksRunning.length < this.MAX_CONCURRENT_TASKS && this.tasksQueued.length) {
-      Logger.info(`[AudioMetadataManager] Task finished and dequeueing next task. ${this.tasksQueued} tasks queued.`)
+      Logger.info(`[AudioMetadataManager] Task finished and dequeueing next task. ${this.tasksQueued.length} tasks queued.`)
       const nextTask = this.tasksQueued.shift()
       SocketAuthority.emitter('metadata_embed_queue_update', {
         libraryItemId: nextTask.data.libraryItemId,

@@ -73,7 +73,7 @@ class Stream extends EventEmitter {
     return [AudioMimeType.FLAC, AudioMimeType.OPUS, AudioMimeType.WMA, AudioMimeType.AIFF, AudioMimeType.WEBM, AudioMimeType.WEBMA, AudioMimeType.AWB, AudioMimeType.CAF]
   }
   get codecsToForceAAC() {
-    return ['alac', 'ac3', 'eac3']
+    return ['alac', 'ac3', 'eac3', 'opus']
   }
   get userToken() {
     return this.user.token

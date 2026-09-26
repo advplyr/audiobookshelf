@@ -7,7 +7,7 @@ const { ObjectDefineProperties, ObjectDefineProperty, ObjectSetPrototypeOf } = r
 
 const stream = require('../../stream')
 
-const { getDefaultEncoding } = require('../crypto/util')
+const getDefaultEncoding = () => 'buffer'
 
 module.exports = LazyTransform
 

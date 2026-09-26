@@ -5,15 +5,15 @@ const { LogLevel } = require('../utils/constants')
 const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 
 class AbsMetadataFileScanner {
-  constructor() { }
+  constructor() {}
 
   /**
    * Check for metadata.json file and set book metadata
-   * 
-   * @param {import('./LibraryScan')} libraryScan 
-   * @param {import('./LibraryItemScanData')} libraryItemData 
-   * @param {Object} bookMetadata 
-   * @param {string} [existingLibraryItemId] 
+   *
+   * @param {import('./LibraryScan')} libraryScan
+   * @param {import('./LibraryItemScanData')} libraryItemData
+   * @param {Object} bookMetadata
+   * @param {string} [existingLibraryItemId]
    */
   async scanBookMetadataFile(libraryScan, libraryItemData, bookMetadata, existingLibraryItemId = null) {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
@@ -32,7 +32,8 @@ class AbsMetadataFileScanner {
 
     if (metadataText) {
       libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}"`)
-      const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
+      const abMetadata = abmetadataGenerator.parseJson(metadataText, 'book') || {}
+
       for (const key in abMetadata) {
         // TODO: When to override with null or empty arrays?
         if (abMetadata[key] === undefined || abMetadata[key] === null) continue
@@ -48,11 +49,11 @@ class AbsMetadataFileScanner {
 
   /**
    * Check for metadata.json file and set podcast metadata
-   * 
-   * @param {import('./LibraryScan')} libraryScan 
-   * @param {import('./LibraryItemScanData')} libraryItemData 
-   * @param {Object} podcastMetadata 
-   * @param {string} [existingLibraryItemId] 
+   *
+   * @param {import('./LibraryScan')} libraryScan
+   * @param {import('./LibraryItemScanData')} libraryItemData
+   * @param {Object} podcastMetadata
+   * @param {string} [existingLibraryItemId]
    */
   async scanPodcastMetadataFile(libraryScan, libraryItemData, podcastMetadata, existingLibraryItemId = null) {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
@@ -71,7 +72,7 @@ class AbsMetadataFileScanner {
 
     if (metadataText) {
       libraryScan.addLog(LogLevel.INFO, `Found metadata file "${metadataFilePath}"`)
-      const abMetadata = abmetadataGenerator.parseJson(metadataText) || {}
+      const abMetadata = abmetadataGenerator.parseJson(metadataText, 'podcast') || {}
       for (const key in abMetadata) {
         if (abMetadata[key] === undefined || abMetadata[key] === null) continue
         if (key === 'tags' && !abMetadata.tags?.length) continue

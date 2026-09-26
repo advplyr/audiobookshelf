@@ -138,6 +138,16 @@ class CoverManager {
       }
     }
     coverPath = filePathToPOSIX(coverPath)
+
+    // Must already have been scanned in for the library item
+    const isLibraryItemFile = libraryItem.libraryFiles?.some((lf) => filePathToPOSIX(lf.metadata?.path) === coverPath)
+    if (!isLibraryItemFile) {
+      Logger.error(`[CoverManager] validate cover path is not a library item file "${coverPath}"`)
+      return {
+        error: 'Invalid cover path'
+      }
+    }
+
     // Cover path already set on media
     if (libraryItem.media.coverPath == coverPath) {
       Logger.debug(`[CoverManager] validate cover path already set "${coverPath}"`)

@@ -54,6 +54,16 @@ module.exports.isNullOrNaN = (num) => {
   return num === null || isNaN(num)
 }
 
+/**
+ * @param {number|null|undefined} value
+ * @param {number} max
+ * @returns {number|null}
+ */
+module.exports.clampPositiveInt = (value, max) => {
+  if (value == null || !Number.isFinite(value) || value <= 0) return null
+  return Math.min(Math.floor(value), max)
+}
+
 const xmlToJSON = (xml) => {
   return new Promise((resolve, reject) => {
     parseString(xml, (err, results) => {

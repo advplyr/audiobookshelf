@@ -352,11 +352,7 @@ class User extends Model {
     if (cachedUser) return cachedUser
 
     const user = await this.findOne({
-      where: {
-        username: {
-          [sequelize.Op.like]: username
-        }
-      },
+      where: sequelize.where(sequelize.fn('lower', sequelize.col('username')), username.toLowerCase()),
       include: this.sequelize.models.mediaProgress
     })
 
@@ -377,11 +373,7 @@ class User extends Model {
     if (cachedUser) return cachedUser
 
     const user = await this.findOne({
-      where: {
-        email: {
-          [sequelize.Op.like]: email
-        }
-      },
+      where: sequelize.where(sequelize.fn('lower', sequelize.col('email')), email.toLowerCase()),
       include: this.sequelize.models.mediaProgress
     })
 
@@ -538,7 +530,14 @@ class User extends Model {
       },
       {
         sequelize,
-        modelName: 'user'
+        modelName: 'user',
+        hooks: {
+          beforeDestroy(user) {
+            if (user.type === 'root') {
+              throw new Error('Root user cannot be deleted')
+            }
+          }
+        }
       }
     )
   }
@@ -782,7 +781,14 @@ class User extends Model {
           error: 'Library item not found',
           statusCode: 404
         }
+      } else if (libraryItem.mediaType !== 'book') {
+        Logger.error(`[User] createUpdateMediaProgress: library item ${progressPayload.libraryItemId} is not a book`)
+        return {
+          error: 'Library item is not a book',
+          statusCode: 400
+        }
       }
+
       mediaItemId = libraryItem.media.id
       mediaProgress = libraryItem.media.mediaProgresses?.[0]
     }

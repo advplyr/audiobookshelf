@@ -111,16 +111,17 @@ class Author extends Model {
    *
    * @param {string} name
    * @param {string} libraryId
-   * @returns {Promise<Author>}
+   * @returns {Promise<{ author: Author, created: boolean }>}
    */
   static async findOrCreateByNameAndLibrary(name, libraryId) {
     const author = await this.getByNameAndLibrary(name, libraryId)
-    if (author) return author
-    return this.create({
+    if (author) return { author, created: false }
+    const newAuthor = await this.create({
       name,
       lastFirst: this.getLastFirst(name),
       libraryId
     })
+    return { author: newAuthor, created: true }
   }
 
   /**

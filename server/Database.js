@@ -102,11 +102,6 @@ class Database {
     return this.models.libraryItem
   }
 
-  /** @type {typeof import('./models/PodcastEpisode')} */
-  get podcastEpisodeModel() {
-    return this.models.podcastEpisode
-  }
-
   /** @type {typeof import('./models/MediaProgress')} */
   get mediaProgressModel() {
     return this.models.mediaProgress
@@ -514,19 +509,17 @@ class Database {
     })
   }
 
-  replaceNarratorInFilterData(oldNarrator, newNarrator) {
-    for (const libraryId in this.libraryFilterData) {
-      const indexOf = this.libraryFilterData[libraryId].narrators.findIndex((n) => n === oldNarrator)
-      if (indexOf >= 0) {
-        this.libraryFilterData[libraryId].narrators.splice(indexOf, 1, newNarrator)
-      }
+  replaceNarratorInFilterData(libraryId, oldNarrator, newNarrator) {
+    if (!this.libraryFilterData[libraryId]) return
+    const indexOf = this.libraryFilterData[libraryId].narrators.findIndex((n) => n === oldNarrator)
+    if (indexOf >= 0) {
+      this.libraryFilterData[libraryId].narrators.splice(indexOf, 1, newNarrator)
     }
   }
 
-  removeNarratorFromFilterData(narrator) {
-    for (const libraryId in this.libraryFilterData) {
-      this.libraryFilterData[libraryId].narrators = this.libraryFilterData[libraryId].narrators.filter((n) => n !== narrator)
-    }
+  removeNarratorFromFilterData(libraryId, narrator) {
+    if (!this.libraryFilterData[libraryId]) return
+    this.libraryFilterData[libraryId].narrators = this.libraryFilterData[libraryId].narrators.filter((n) => n !== narrator)
   }
 
   addNarratorsToFilterData(libraryId, narrators) {

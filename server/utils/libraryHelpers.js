@@ -1,9 +1,12 @@
 const { createNewSortInstance } = require('../libs/fastSort')
 const Database = require('../Database')
+const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
+
+const VALID_COLLAPSE_SUBSERIES_SORTS = new Set(['addedAt', 'size', 'birthtimeMs', 'mtimeMs', 'media.duration', 'media.metadata.publishedYear', 'media.metadata.authorName', 'media.metadata.authorNameLF', 'media.metadata.title', 'sequence', 'progress', 'progress.createdAt', 'progress.finishedAt', 'random'])
 
 module.exports = {
   /**
@@ -100,6 +103,11 @@ module.exports = {
    * @returns {Object[]}
    */
   async handleCollapseSubseries(payload, seriesId, user, library) {
+    if (payload.sortBy && !VALID_COLLAPSE_SUBSERIES_SORTS.has(payload.sortBy)) {
+      Logger.warn(`[libraryHelpers] Invalid "sort" query string "${payload.sortBy}"`)
+      payload.sortBy = undefined
+    }
+
     const seriesWithBooks = await Database.seriesModel.findByPk(seriesId, {
       include: {
         model: Database.bookModel,
@@ -196,7 +204,9 @@ module.exports = {
               return li.collapsedSeries?.name || li.media.title
             }
           } else {
-            return payload.sortBy.split('.').reduce((a, b) => a[b], li)
+            if (payload.sortBy === 'media.metadata.authorName') return li.authorNamesFirstLast ?? ''
+            if (payload.sortBy === 'media.metadata.authorNameLF') return li.authorNamesLastFirst ?? ''
+            return payload.sortBy.split('.').reduce((a, b) => a?.[b], li) ?? ''
           }
         }
       })

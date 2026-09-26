@@ -86,9 +86,9 @@ export default {
 
       let message = this.$getString('MessageConfirmRenameTag', [this.editingTag, this.newTagName])
       if (tagNameExists) {
-        message += `<br><span class="text-sm">${this.$strings.MessageConfirmRenameTagMergeNote}</span>`
+        message += ` ${this.$strings.MessageConfirmRenameTagMergeNote}`
       } else if (tagNameExistsOfDifferentCase) {
-        message += `<br><span class="text-warning text-sm">${this.$getString('MessageConfirmRenameTagWarning', [tagNameExistsOfDifferentCase])}</span>`
+        message += ` ${this.$getString('MessageConfirmRenameTagWarning', [tagNameExistsOfDifferentCase])}`
       }
 
       const payload = {

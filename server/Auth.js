@@ -81,7 +81,7 @@ class Auth {
    * @param {import('./models/User')} user
    * @param {Request} req
    * @param {Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   * @returns {Promise<{ accessToken:string, refreshToken:string }|null>} new tokens for the current session if kept alive
    */
   async invalidateJwtSessionsForUser(user, req, res) {
     return this.tokenManager.invalidateJwtSessionsForUser(user, req, res)
@@ -471,18 +471,23 @@ class Auth {
       res.json(openIdIssuerConfig)
     })
 
-    // Logout route
+    /**
+     * Logout route
+     * Use ?allDevices=1 to destroy every session for this user instead of just the current one
+     */
     router.post('/logout', async (req, res) => {
       // Refresh token be alternatively be sent in the header
       const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
+      const allDevices = req.query.allDevices === '1'
 
       // Clear refresh token cookie
       res.clearCookie('refresh_token', {
         path: '/'
       })
 
-      // Invalidate the session in database using refresh token
-      if (refreshToken) {
+      if (allDevices) {
+        await this.tokenManager.invalidateAllSessionsForRefreshToken(refreshToken)
+      } else if (refreshToken) {
         await this.tokenManager.invalidateRefreshToken(refreshToken)
       } else {
         Logger.info(`[Auth] logout: No refresh token on request`)
