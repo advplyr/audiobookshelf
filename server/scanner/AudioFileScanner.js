@@ -343,6 +343,33 @@ class AudioFileScanner {
       }
     })
 
+    const abridgedTag = audioFileMetaTags.tagAbridged?.trim().toLowerCase()
+    const formatTag = audioFileMetaTags.tagFormat?.trim().toLowerCase()
+
+    let abridgedFromTag
+    if (['1', 'true', 'yes'].includes(abridgedTag)) {
+      abridgedFromTag = true
+    } else if (['0', 'false', 'no'].includes(abridgedTag)) {
+      abridgedFromTag = false
+    }
+
+    let abridgedFromFormat
+    if (formatTag === 'abridged') {
+      abridgedFromFormat = true
+    } else if (formatTag === 'unabridged') {
+      abridgedFromFormat = false
+    }
+
+    if (abridgedFromTag !== undefined && abridgedFromFormat !== undefined) {
+      if (abridgedFromTag === abridgedFromFormat) {
+        bookMetadata.abridged = abridgedFromTag
+      }
+    } else if (abridgedFromTag !== undefined) {
+      bookMetadata.abridged = abridgedFromTag
+    } else if (abridgedFromFormat !== undefined) {
+      bookMetadata.abridged = abridgedFromFormat
+    }
+
     // Set chapters
     const chapters = this.getBookChaptersFromAudioFiles(bookTitle, audioFiles, libraryScan)
     if (chapters.length) {
