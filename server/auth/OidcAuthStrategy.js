@@ -2,9 +2,11 @@ const { Request, Response } = require('express')
 const passport = require('passport')
 const OpenIDClient = require('openid-client')
 const axios = require('axios')
-const Database = require('../Database')
 const Logger = require('../Logger')
 const { getRequestOrigin } = require('../utils/requestUtils')
+
+const getDatabase = () => require('../Database')
+const getServerSettings = () => require('../objects/settings/ServerSettings')
 
 /**
  * OpenID Connect authentication strategy
@@ -44,7 +46,7 @@ class OidcAuthStrategy {
    */
   getClient() {
     if (!this.client) {
-      if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
+      if (!getServerSettings().isOpenIDAuthSettingsValid(global.ServerSettings)) {
         throw new Error('OpenID Connect settings are not valid')
       }
 
@@ -88,7 +90,7 @@ class OidcAuthStrategy {
    * Initialize the strategy with passport
    */
   init() {
-    if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
+    if (!getServerSettings().isOpenIDAuthSettingsValid(global.ServerSettings)) {
       Logger.error(`[OidcAuth] Cannot init openid auth strategy - invalid settings`)
       return
     }
@@ -111,6 +113,7 @@ class OidcAuthStrategy {
    * @param {Function} done - Passport callback
    */
   async verifyCallback(tokenset, userinfo, done) {
+    const Database = getDatabase()
     let isNewUser = false
     let user = null
     try {
@@ -121,7 +124,7 @@ class OidcAuthStrategy {
       }
 
       if (!this.validateGroupClaim(userinfo)) {
-        throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
+        throw new Error(`Group claim ${global.ServerSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
       }
 
       user = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
@@ -168,7 +171,7 @@ class OidcAuthStrategy {
    * @returns {boolean}
    */
   validateGroupClaim(userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    const groupClaimName = global.ServerSettings.authOpenIDGroupClaim
     if (!groupClaimName)
       // Allow no group claim when configured like this
       return true
@@ -186,7 +189,7 @@ class OidcAuthStrategy {
    * @param {Object} userinfo
    */
   async setUserGroup(user, userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+    const groupClaimName = global.ServerSettings.authOpenIDGroupClaim
     if (!groupClaimName)
       // No group claim configured, don't set anything
       return
@@ -224,7 +227,7 @@ class OidcAuthStrategy {
    * @param {Object} userinfo
    */
   async updateUserPermissions(user, userinfo) {
-    const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
+    const absPermissionsClaim = global.ServerSettings.authOpenIDAdvancedPermsClaim
     if (!absPermissionsClaim)
       // No advanced permissions claim configured, don't set anything
       return
@@ -275,7 +278,7 @@ class OidcAuthStrategy {
    */
   isValidRedirectUri(uri) {
     // Check if the redirect_uri is in the whitelist
-    return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) || (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
+    return global.ServerSettings.authOpenIDMobileRedirectURIs.includes(uri) || (global.ServerSettings.authOpenIDMobileRedirectURIs.length === 1 && global.ServerSettings.authOpenIDMobileRedirectURIs[0] === '*')
   }
 
   /**

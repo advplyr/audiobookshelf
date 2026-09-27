@@ -373,7 +373,7 @@ class Database {
     this.emailSettings = settingsData.emailSettings
     this.serverSettings = settingsData.serverSettings
     this.notificationSettings = settingsData.notificationSettings
-    global.ServerSettings = this.serverSettings.toJSON()
+    global.ServerSettings = this.serverSettings.getEffectiveServerSettings()
 
     // Version specific migrations
     if (packageJson.version !== this.serverSettings.version) {
@@ -427,7 +427,7 @@ class Database {
 
   updateServerSettings() {
     if (!this.sequelize) return false
-    global.ServerSettings = this.serverSettings.toJSON()
+    global.ServerSettings = this.serverSettings.getEffectiveServerSettings()
     return this.updateSetting(this.serverSettings)
   }
 

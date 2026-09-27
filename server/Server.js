@@ -144,6 +144,22 @@ class Server {
     this.auth.isAuthenticated(req, res, next)
   }
 
+  getStatusPayload() {
+    const payload = {
+      app: 'audiobookshelf',
+      serverVersion: version,
+      isInit: Database.hasRootUser,
+      language: Database.serverSettings.language,
+      authMethods: global.ServerSettings.authActiveAuthMethods,
+      authFormData: Database.serverSettings.effectiveAuthFormData
+    }
+    if (!payload.isInit) {
+      payload.ConfigPath = global.ConfigPath
+      payload.MetadataPath = global.MetadataPath
+    }
+    return payload
+  }
+
   cancelLibraryScan(libraryId) {
     LibraryScanner.setCancelLibraryScan(libraryId)
   }
@@ -368,19 +384,7 @@ class Server {
     router.get('/status', (req, res) => {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
-      const payload = {
-        app: 'audiobookshelf',
-        serverVersion: version,
-        isInit: Database.hasRootUser,
-        language: Database.serverSettings.language,
-        authMethods: Database.serverSettings.authActiveAuthMethods,
-        authFormData: Database.serverSettings.authFormData
-      }
-      if (!payload.isInit) {
-        payload.ConfigPath = global.ConfigPath
-        payload.MetadataPath = global.MetadataPath
-      }
-      res.json(payload)
+      res.json(this.getStatusPayload())
     })
     router.get('/ping', (req, res) => {
       Logger.info('Received ping')
