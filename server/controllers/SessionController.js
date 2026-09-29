@@ -283,9 +283,15 @@ class SessionController {
       return res.sendStatus(400)
     }
 
-    const playbackSession = this.playbackSessionManager.getSession(req.params.id)
+    let playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) {
-      Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
+      // Session not in memory - check if it exists in the database (e.g. evicted after a new session on the same device)
+      const sessionInDb = await Database.getPlaybackSession(req.params.id)
+      if (sessionInDb) {
+        Logger.debug(`[SessionController] Playback session with id=${req.params.id} is not in memory but exists in the database. Client should re-open the session.`)
+      } else {
+        Logger.warn(`[SessionController] Unable to find playback session with id=${req.params.id}`)
+      }
       return res.sendStatus(404)
     }
 
