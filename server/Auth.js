@@ -385,7 +385,13 @@ class Auth {
         const sessionKey = this.oidcAuthStrategy.getStrategy()._key
 
         if (!req.session[sessionKey]) {
-          return res.status(400).send('No session')
+          Logger.warn(`[Auth] No openid session found in callback - restarting login`)
+          const isMobileFlow = !!req.query.code_verifier
+          return req.session.destroy(() => {
+            res.clearCookie('connect.sid')
+            if (isMobileFlow) return res.status(400).send('No session')
+            res.redirect(`/login?error=${encodeURIComponent('Login session expired, please try again')}&autoLaunch=0`)
+          })
         }
 
         // If the client sends us a code_verifier, we will tell passport to use this to send this in the token request
