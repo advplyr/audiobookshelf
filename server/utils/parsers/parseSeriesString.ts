@@ -5,13 +5,11 @@
  * Name #1a => { name: 'Name', sequence: '1a' }
  * Name #1 => { name: 'Name', sequence: '1' }
  *
- * @param {string} seriesString
- * @returns {{name: string, sequence: string}|null}
  */
-module.exports.parse = (seriesString) => {
+export const parse = (seriesString: unknown): { name: string; sequence: string | null } | null => {
   if (!seriesString || typeof seriesString !== 'string') return null
 
-  let sequence = null
+  let sequence: string | null = null
   let name = seriesString
   // Series sequence match any characters after " #" other than whitespace and another #
   //  e.g. "Name #1a" is valid. "Name #1#a" or "Name #1 a" is not valid.
