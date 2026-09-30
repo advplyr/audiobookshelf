@@ -122,6 +122,7 @@ export default class PlayerHandler {
     // Switch to HLS stream on error
     if (!this.isCasting && this.player instanceof LocalAudioPlayer) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
+      this.playWhenReady = this.playerPlaying || this.player.playWhenReady
       this.prepare(true)
     }
   }
