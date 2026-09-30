@@ -39,12 +39,19 @@ export default [
     files: ['server/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
       parser: tsParser,
-      sourceType: 'module'
+      sourceType: 'module',
+      parserOptions: {
+        project: './tsconfig.server.json',
+        tsconfigRootDir: import.meta.dirname
+      }
     },
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       ...tsPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'error'
+      ...tsPlugin.configs['recommended-type-checked'].rules,
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Keep coercion diagnostics visible while preserving behavior during migration.
+      '@typescript-eslint/no-base-to-string': 'warn'
     }
   },
   {

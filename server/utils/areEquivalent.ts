@@ -17,10 +17,18 @@
  @param value2 Other item to compare
  @param stack Used internally to track circular refs - don't set it
  */
-module.exports = function areEquivalent(value1, value2, numToString = false, stack = []) {
+function areEquivalent(value1: unknown, value2: unknown, numToString = false, stack: unknown[] = []): boolean {
   if (numToString) {
-    if (value1 !== null && !isNaN(value1)) value1 = String(value1)
-    if (value2 !== null && !isNaN(value2)) value2 = String(value2)
+    // Native isNaN accepts arbitrary JS values and throws for symbols and bigints,
+    // including objects that coerce to them. Number(value) would accept bigints.
+    if (value1 !== null) {
+      const isValue1NaN: unknown = Reflect.apply(isNaN, undefined, [value1])
+      if (isValue1NaN === false) value1 = String(value1)
+    }
+    if (value2 !== null) {
+      const isValue2NaN: unknown = Reflect.apply(isNaN, undefined, [value2])
+      if (isValue2NaN === false) value2 = String(value2)
+    }
   }
 
   // Numbers, strings, null, undefined, symbols, functions, booleans.
@@ -46,13 +54,13 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
 
   // Special case for number: check for NaN on both sides
   // (only way they can still be equivalent but not equal)
-  if (type1 === 'number') {
+  if (typeof value1 === 'number' && typeof value2 === 'number') {
     // Failed initial equals test, but could still both be NaN
     return (isNaN(value1) && isNaN(value2));
   }
 
   // Special case for function: check for toString() equivalence
-  if (type1 === 'function') {
+  if (typeof value1 === 'function' && typeof value2 === 'function') {
     // Failed initial equals test, but could still have equivalent
     // implementations - note, will match on functions that have same name
     // and are native code: `function abc() { [native code] }`
@@ -61,7 +69,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
 
   // For these types, cannot still be equal at this point, so fast-fail
   if (type1 === 'bigint' || type1 === 'boolean' ||
-    type1 === 'function' || type1 === 'string' ||
+    type1 === 'string' ||
     type1 === 'symbol') {
     // console.log('no match for values', value1, value2)
     return false
@@ -88,6 +96,8 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   }
 
   // breadcrumb
+  // Preserve the original stack lifetime: array and empty-object success paths
+  // leave entries behind, so some repeated references also throw as circular.
   stack.push(value1)
 
   // Handle arrays
@@ -96,14 +106,16 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
       return false
     }
 
-    const length = value1.length
+    const array1: unknown[] = value1
+    const array2: unknown[] = value2
+    const length = array1.length
 
-    if (length !== value2.length) {
+    if (length !== array2.length) {
       return false
     }
 
     for (let i = 0; i < length; i++) {
-      if (!areEquivalent(value1[i], value2[i], numToString, stack)) {
+      if (!areEquivalent(array1[i], array2[i], numToString, stack)) {
         return false
       }
     }
@@ -111,6 +123,9 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   }
 
   // Final case: object
+
+  // Equality and type checks above have already handled null and undefined.
+  if (typeof value1 !== 'object' || value1 === null || typeof value2 !== 'object' || value2 === null) return false
 
   // get both key lists and check length
   const keys1 = Object.keys(value1)
@@ -142,7 +157,9 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
 
   // Ensure perfect match across all values
   for (let i = 0; i < numKeys; i++) {
-    if (!areEquivalent(value1[keys1[i]], value2[keys1[i]], numToString, stack)) {
+    const child1: unknown = Reflect.get(value1, keys1[i])
+    const child2: unknown = Reflect.get(value2, keys1[i])
+    if (!areEquivalent(child1, child2, numToString, stack)) {
       // console.log('2 subobjects not equiv', keys1[i], value1[keys1[i]], value2[keys1[i]])
       return false
     }
@@ -155,3 +172,5 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   // 🦆🦆
   return true;
 }
+
+export = areEquivalent
