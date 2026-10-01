@@ -88,6 +88,18 @@ class Feed extends Model {
   }
 
   /**
+   * @param {string} slug
+   * @param {string|null|undefined} coverPath
+   * @param {Date|null|undefined} entityUpdatedAt
+   * @returns {string}
+   */
+  static getFeedImageURL(slug, coverPath, entityUpdatedAt) {
+    if (!coverPath) return '/Logo.png'
+    const cacheBuster = entityUpdatedAt != null ? `?ts=${entityUpdatedAt.valueOf()}` : ''
+    return `/feed/${slug}/cover${Path.extname(coverPath)}${cacheBuster}`
+  }
+
+  /**
    *
    * @param {string} userId
    * @param {import('./LibraryItem').LibraryItemExpanded} libraryItem
@@ -119,7 +131,7 @@ class Feed extends Model {
       entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
-      imageURL: media.coverPath ? `/feed/${slug}/cover${Path.extname(media.coverPath)}?ts=${new Date(entityUpdatedAt).getTime()}` : `/Logo.png`,
+      imageURL: Feed.getFeedImageURL(slug, media.coverPath, entityUpdatedAt),
       siteURL: `/item/${libraryItem.id}`,
       title: media.title,
       description: media.description,
@@ -212,7 +224,7 @@ class Feed extends Model {
       entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
-      imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}?ts=${new Date(entityUpdatedAt).getTime()}` : `/Logo.png`,
+      imageURL: Feed.getFeedImageURL(slug, firstBookWithCover?.coverPath, entityUpdatedAt),
       siteURL: `/collection/${collectionExpanded.id}`,
       title: collectionExpanded.name,
       description: collectionExpanded.description || '',
@@ -301,7 +313,7 @@ class Feed extends Model {
       entityUpdatedAt,
       serverAddress,
       feedURL: `/feed/${slug}`,
-      imageURL: firstBookWithCover?.coverPath ? `/feed/${slug}/cover${Path.extname(firstBookWithCover.coverPath)}?ts=${new Date(entityUpdatedAt).getTime()}` : `/Logo.png`,
+      imageURL: Feed.getFeedImageURL(slug, firstBookWithCover?.coverPath, entityUpdatedAt),
       siteURL: `/library/${booksWithTracks[0].libraryItem.libraryId}/series/${seriesExpanded.id}`,
       title: seriesExpanded.name,
       description: seriesExpanded.description || '',
