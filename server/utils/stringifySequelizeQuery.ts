@@ -1,12 +1,13 @@
-function stringifySequelizeQuery(findOptions) {
-  function isClass(func) {
+function stringifySequelizeQuery(findOptions: unknown): string | undefined {
+  function isClass(func: unknown): func is { name: string } {
     return typeof func === 'function' && /^class\s/.test(func.toString())
   }
 
-  function replacer(key, value) {
+  function replacer(key: string, value: unknown): unknown {
     if (typeof value === 'object' && value !== null) {
-      const symbols = Object.getOwnPropertySymbols(value).reduce((acc, sym) => {
-        acc[sym.toString()] = value[sym]
+      const symbols = Object.getOwnPropertySymbols(value).reduce<Record<string, unknown>>((acc, sym) => {
+        // The keys come from this object's own symbol properties; their values may have any shape.
+        acc[sym.toString()] = (value as Record<symbol, unknown>)[sym]
         return acc
       }, {})
 
@@ -22,4 +23,4 @@ function stringifySequelizeQuery(findOptions) {
 
   return JSON.stringify(findOptions, replacer)
 }
-module.exports = stringifySequelizeQuery
+export = stringifySequelizeQuery
