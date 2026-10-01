@@ -323,4 +323,23 @@ describe('LazyBookCard', () => {
         })
     })
   })
+
+  describe('when recentEpisode is present', () => {
+    beforeEach(() => {
+      mountOptions.propsData.bookMount.mediaType = 'podcast'
+      mountOptions.propsData.bookMount.recentEpisode = {
+        id: 'ep-123',
+        title: 'Episode 1',
+        episode: '1'
+      }
+    })
+
+    it('routes to the episode when clicked', () => {
+      mountOptions.mocks.$router = { push: cy.stub().as('routerPush') }
+      cy.mount(LazyBookCard, mountOptions)
+      cy.get('#book-card-0').click()
+
+      cy.get('@routerPush').should('have.been.calledOnceWithExactly', '/item/1?episode=ep-123')
+    })
+  })
 })

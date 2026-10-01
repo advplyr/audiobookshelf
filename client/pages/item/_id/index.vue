@@ -182,7 +182,8 @@ export default {
       episodeDownloadsQueued: [],
       showBookmarksModal: false,
       isDescriptionClamped: false,
-      showFullDescription: false
+      showFullDescription: false,
+      openedEpisodeModalFromQuery: false
     }
   },
   computed: {
@@ -266,6 +267,14 @@ export default {
     },
     podcastEpisodes() {
       return this.media.episodes || []
+    },
+    episodeIdFromQuery() {
+      const episodeId = this.$route.query.episode
+      if (!episodeId) return null
+      return Array.isArray(episodeId) ? episodeId[0] : episodeId
+    },
+    showViewPodcastEpisodeModal() {
+      return this.$store.state.globals.showViewPodcastEpisodeModal
     },
     title() {
       return this.mediaMetadata.title || 'No Title'
@@ -434,6 +443,18 @@ export default {
     }
   },
   methods: {
+    showEpisodeFromQuery(episodeId) {
+      if (!episodeId || !this.isPodcast) return
+      const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+      if (!episode) {
+        this.$toast.error(this.$getString('ToastEpisodeNotFound', [episodeId]))
+        return
+      }
+      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
+      this.openedEpisodeModalFromQuery = true
+    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
@@ -779,11 +800,27 @@ export default {
       }
     }
   },
+  watch: {
+    episodeIdFromQuery(episodeId) {
+      this.showEpisodeFromQuery(episodeId)
+    },
+    showViewPodcastEpisodeModal(show) {
+      if (show || !this.openedEpisodeModalFromQuery) return
+      this.openedEpisodeModalFromQuery = false
+      // Drop the episode deep link once the modal is closed so the same episode
+      // link can be opened again without a page reload
+      if (this.episodeIdFromQuery) {
+        this.$router.replace({ query: { ...this.$route.query, episode: undefined } })
+      }
+    }
+  },
   mounted() {
     this.checkDescriptionClamped()
 
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
+
+    this.showEpisodeFromQuery(this.episodeIdFromQuery)
 
     this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -797,6 +834,12 @@ export default {
     this.$root.socket.on('episode_download_queue_cleared', this.episodeDownloadQueueCleared)
   },
   beforeDestroy() {
+    // The view episode modal is global, so close it if this page opened it and
+    // the user navigated away while it was still open
+    if (this.openedEpisodeModalFromQuery && this.$store.state.globals.showViewPodcastEpisodeModal) {
+      this.openedEpisodeModalFromQuery = false
+      this.$store.commit('globals/setShowViewPodcastEpisodeModal', false)
+    }
     this.$eventBus.$off(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
     this.$root.socket.off('rss_feed_open', this.rssFeedOpen)

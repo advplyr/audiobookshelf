@@ -1045,6 +1045,7 @@
   "ToastEncodeCancelSucces": "Encode canceled",
   "ToastEpisodeDownloadQueueClearFailed": "Failed to clear queue",
   "ToastEpisodeDownloadQueueClearSuccess": "Episode download queue cleared",
+  "ToastEpisodeNotFound": "Episode \"{0}\" not found",
   "ToastEpisodeUpdateSuccess": "{0} episodes updated",
   "ToastErrorCannotShare": "Cannot share natively on this device",
   "ToastFailedToCreate": "Failed to create",

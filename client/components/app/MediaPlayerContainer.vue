@@ -6,7 +6,7 @@
     <div class="flex items-start mb-6 lg:mb-0" :class="isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
       <div class="min-w-0 w-full">
         <div class="flex items-center">
-          <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
+          <nuxt-link :to="streamItemLink" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
             {{ title }}
           </nuxt-link>
           <widgets-explicit-indicator v-if="isExplicit" />
@@ -128,6 +128,12 @@ export default {
     },
     libraryItemId() {
       return this.streamLibraryItem?.id || null
+    },
+    streamItemLink() {
+      if (!this.streamLibraryItem) return '/'
+      const episodeId = this.streamEpisode?.id
+      if (!episodeId) return `/item/${this.streamLibraryItem.id}`
+      return `/item/${this.streamLibraryItem.id}?episode=${episodeId}`
     },
     media() {
       return this.streamLibraryItem?.media || {}

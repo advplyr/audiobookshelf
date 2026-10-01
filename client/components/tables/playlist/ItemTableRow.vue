@@ -17,7 +17,7 @@
       <div class="grow overflow-hidden max-w-48 md:max-w-md h-full flex items-center px-2 md:px-3">
         <div>
           <div class="truncate max-w-48 md:max-w-md">
-            <nuxt-link :to="`/item/${libraryItem.id}`" class="truncate hover:underline text-sm md:text-base">{{ itemTitle }}</nuxt-link>
+            <nuxt-link :to="itemLink" class="truncate hover:underline text-sm md:text-base">{{ itemTitle }}</nuxt-link>
           </div>
           <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
             <template v-for="(author, index) in bookAuthors">
@@ -100,6 +100,10 @@ export default {
     itemTitle() {
       if (this.episode) return this.episode.title
       return this.mediaMetadata.title || ''
+    },
+    itemLink() {
+      if (this.episodeId) return `/item/${this.libraryItem.id}?episode=${this.episodeId}`
+      return `/item/${this.libraryItem.id}`
     },
     bookAuthors() {
       if (this.episode) return []
