@@ -1,9 +1,27 @@
-function parseNfoMetadata(nfoText) {
+type NfoMetadata = {
+  description?: string
+  title?: string
+  subtitle?: string
+  authors?: string[]
+  narrators?: string[]
+  series?: string
+  genres?: string[]
+  tags?: string[]
+  publishedYear?: string
+  sequence?: string
+  abridged?: boolean
+  publisher?: string
+  asin?: string
+  isbn?: string
+  language?: string
+}
+
+export function parseNfoMetadata(nfoText: string | null | undefined): NfoMetadata | null {
   if (!nfoText) return null
   const lines = nfoText.split(/\r?\n/)
-  const metadata = {}
+  const metadata: NfoMetadata = {}
   let insideBookDescription = false
-  lines.forEach(line => {
+  lines.forEach((line) => {
     if (line.search(/^\s*book description\s*$/i) !== -1) {
       insideBookDescription = true
       return
@@ -32,20 +50,20 @@ function parseNfoMetadata(nfoText) {
           }
           break
         case 'author':
-          metadata.authors = value.split(/\s*,\s*/).filter(v => v)
+          metadata.authors = value.split(/\s*,\s*/).filter((v) => v)
           break
         case 'narrator':
         case 'read by':
-          metadata.narrators = value.split(/\s*,\s*/).filter(v => v)
+          metadata.narrators = value.split(/\s*,\s*/).filter((v) => v)
           break
         case 'series name':
           metadata.series = value
           break
         case 'genre':
-          metadata.genres = value.split(/\s*,\s*/).filter(v => v)
+          metadata.genres = value.split(/\s*,\s*/).filter((v) => v)
           break
         case 'tags':
-          metadata.tags = value.split(/\s*,\s*/).filter(v => v)
+          metadata.tags = value.split(/\s*,\s*/).filter((v) => v)
           break
         case 'copyright':
         case 'audible.com release':
@@ -96,9 +114,8 @@ function parseNfoMetadata(nfoText) {
 
   return metadata
 }
-module.exports = { parseNfoMetadata }
 
-function extractYear(str) {
+function extractYear(str: string): string | null {
   const match = str.match(/\d{4}/g)
   return match ? match[match.length - 1] : null
 }
