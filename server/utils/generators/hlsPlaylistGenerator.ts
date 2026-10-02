@@ -1,9 +1,13 @@
-const fs = require('../../libs/fsExtra')
+import fsExtra from '../../libs/fsExtra'
 
-function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType) {
-  var ext = hlsSegmentType === 'fmp4' ? 'm4s' : 'ts'
+// writeFile is assigned in a loop in libs/fsExtra/fs/index.js, so it is absent from the inferred type.
+type FsWriteFile = (file: string, data: string) => Promise<void>
+const fs = fsExtra as typeof fsExtra & { writeFile: FsWriteFile }
 
-  var lines = [
+function getPlaylistStr(segmentName: string, duration: number, segmentLength: number, hlsSegmentType: string): string {
+  const ext = hlsSegmentType === 'fmp4' ? 'm4s' : 'ts'
+
+  const lines = [
     '#EXTM3U',
     '#EXT-X-VERSION:3',
     '#EXT-X-ALLOW-CACHE:NO',
@@ -14,8 +18,8 @@ function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType) {
   if (hlsSegmentType === 'fmp4') {
     lines.push('#EXT-X-MAP:URI="init.mp4"')
   }
-  var numSegments = Math.floor(duration / segmentLength)
-  var lastSegment = duration - (numSegments * segmentLength)
+  const numSegments = Math.floor(duration / segmentLength)
+  const lastSegment = duration - (numSegments * segmentLength)
   for (let i = 0; i < numSegments; i++) {
     lines.push(`#EXTINF:6,`)
     lines.push(`${segmentName}-${i}.${ext}`)
@@ -28,8 +32,9 @@ function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType) {
   return lines.join('\n')
 }
 
-function generatePlaylist(outputPath, segmentName, duration, segmentLength, hlsSegmentType) {
-  var playlistStr = getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType)
+function generatePlaylist(outputPath: string, segmentName: string, duration: number, segmentLength: number, hlsSegmentType: string): Promise<void> {
+  const playlistStr = getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType)
   return fs.writeFile(outputPath, playlistStr)
 }
-module.exports = generatePlaylist
+
+export = generatePlaylist
