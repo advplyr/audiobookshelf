@@ -106,6 +106,15 @@ function parseJsonMetadataText(text, mediaType) {
 module.exports.parseJson = parseJsonMetadataText
 
 /**
+ * Title is excluded since clearing it would leave the item unnamed, booleans are stored as false
+ *
+ * @param {"book" | "podcast"} mediaType
+ * @param {string} key
+ * @returns {boolean} true if a null for this key should clear lower precedence values
+ */
+module.exports.isClearableKey = (mediaType, key) => key !== 'title' && mediaTypeKeys[mediaType]?.[key] === 'string'
+
+/**
  * @param {string} key
  * @param {*} value
  * @param {string} expectedType
