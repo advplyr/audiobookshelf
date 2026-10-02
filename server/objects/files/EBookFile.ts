@@ -1,41 +1,57 @@
-const FileMetadata = require('../metadata/FileMetadata')
+import FileMetadata from '../metadata/FileMetadata'
+
+type FileMetadataJSON = ReturnType<FileMetadata['toJSON']>
+
+interface EBookFileData {
+  ino: string | null
+  metadata: FileMetadataJSON
+  ebookFormat: string | null
+  addedAt: number | null
+  updatedAt: number | null
+}
+
+/** A library file with a metadata that can be read by the ebook reader */
+interface EBookSourceFile {
+  ino: string | null
+  metadata: FileMetadata
+}
 
 class EBookFile {
-  constructor(file) {
-    this.ino = null
-    this.metadata = null
-    this.ebookFormat = null
-    this.addedAt = null
-    this.updatedAt = null
+  ino: string | null = null
+  metadata: FileMetadata | null = null
+  ebookFormat: string | null = null
+  addedAt: number | null = null
+  updatedAt: number | null = null
 
+  constructor(file?: Partial<EBookFileData> | null) {
     if (file) {
       this.construct(file)
     }
   }
 
-  construct(file) {
-    this.ino = file.ino
+  construct(file: Partial<EBookFileData>) {
+    this.ino = file.ino as string
     this.metadata = new FileMetadata(file.metadata)
     this.ebookFormat = file.ebookFormat || this.metadata.format
-    this.addedAt = file.addedAt
-    this.updatedAt = file.updatedAt
+    this.addedAt = file.addedAt as number
+    this.updatedAt = file.updatedAt as number
   }
 
-  toJSON() {
+  toJSON(): EBookFileData {
     return {
       ino: this.ino,
-      metadata: this.metadata.toJSON(),
+      metadata: (this.metadata as FileMetadata).toJSON(),
       ebookFormat: this.ebookFormat,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
   }
 
-  get isEpub() {
+  get isEpub(): boolean {
     return this.ebookFormat === 'epub'
   }
 
-  setData(libraryFile) {
+  setData(libraryFile: EBookSourceFile) {
     this.ino = libraryFile.ino
     this.metadata = libraryFile.metadata.clone()
     this.ebookFormat = libraryFile.metadata.format
@@ -43,10 +59,11 @@ class EBookFile {
     this.updatedAt = Date.now()
   }
 
-  updateFromLibraryFile(libraryFile) {
-    var hasUpdated = false
+  /** @returns true if updates were made */
+  updateFromLibraryFile(libraryFile: Pick<EBookSourceFile, 'metadata'>): boolean {
+    let hasUpdated = false
 
-    if (this.metadata.update(libraryFile.metadata)) {
+    if ((this.metadata as FileMetadata).update(libraryFile.metadata)) {
       hasUpdated = true
     }
 
@@ -58,4 +75,5 @@ class EBookFile {
     return hasUpdated
   }
 }
-module.exports = EBookFile
+
+export = EBookFile
