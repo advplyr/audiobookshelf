@@ -1,7 +1,19 @@
-const Logger = require('../../Logger')
-const parseSeriesString = require('../parsers/parseSeriesString')
+import Logger from '../../Logger'
+import { parse } from '../parsers/parseSeriesString'
 
-const mediaTypeKeys = {
+type ExpectedType = 'string' | 'boolean' | 'stringArray'
+type MetadataScalar = string | null | boolean | string[]
+type ParsedSeries = NonNullable<ReturnType<typeof parse>>
+type MetadataChapter = {
+  id: number
+  start: unknown
+  end: unknown
+  title: string
+}
+type MetadataValue = MetadataScalar | ParsedSeries[] | MetadataChapter[]
+type AbMetadata = Record<string, MetadataValue | undefined>
+
+const mediaTypeKeys: Record<string, Record<string, ExpectedType> | undefined> = {
   book: {
     tags: 'stringArray',
     title: 'string',
@@ -40,25 +52,26 @@ const mediaTypeKeys = {
 }
 
 /**
- *
- * @param {string} text
- * @param {"book" | "podcast"} mediaType
- * @returns {Object}
+ * Parse metadata.json text into validated book or podcast metadata.
+ * Returns null when the text or media type is invalid.
  */
-function parseJsonMetadataText(text, mediaType) {
+function parseJsonMetadataText(text: string, mediaType: string): AbMetadata | null {
   try {
-    const abmetadataData = JSON.parse(text)
+    const parsed: unknown = JSON.parse(text)
+    const abmetadataData = parsed as Record<string, unknown>
 
     // Old metadata.json used nested "metadata"
-    if (abmetadataData.metadata) {
-      for (const key in abmetadataData.metadata) {
-        if (abmetadataData.metadata[key] === undefined) continue
+    const nestedMetadata = abmetadataData.metadata
+    if (nestedMetadata && typeof nestedMetadata === 'object') {
+      const nestedRecord = nestedMetadata as Record<string, unknown>
+      for (const key in nestedRecord) {
+        if (nestedRecord[key] === undefined) continue
         let newModelKey = key
         if (key === 'feedUrl') newModelKey = 'feedURL'
         else if (key === 'imageUrl') newModelKey = 'imageURL'
         else if (key === 'itunesPageUrl') newModelKey = 'itunesPageURL'
         else if (key === 'type') newModelKey = 'podcastType'
-        abmetadataData[newModelKey] = abmetadataData.metadata[key]
+        abmetadataData[newModelKey] = nestedRecord[key]
       }
     }
     delete abmetadataData.metadata
@@ -69,7 +82,7 @@ function parseJsonMetadataText(text, mediaType) {
       return null
     }
 
-    const validated = {}
+    const validated: AbMetadata = {}
     for (const key in expectedKeys) {
       const expectedType = expectedKeys[key]
       if (!(key in abmetadataData)) continue
@@ -80,14 +93,15 @@ function parseJsonMetadataText(text, mediaType) {
       }
     }
 
-    if (validated.series?.length) {
-      validated.series = validated.series.map((series) => parseSeriesString.parse(series)).filter(Boolean)
+    const series = validated.series
+    if (isNonEmptyArray(series)) {
+      validated.series = series.map((seriesName) => parse(seriesName)).filter((seriesName): seriesName is ParsedSeries => Boolean(seriesName))
     }
 
     if (mediaType === 'book' && 'chapters' in abmetadataData) {
       if (abmetadataData.chapters === null) {
         validated.chapters = []
-      } else if (Array.isArray(abmetadataData.chapters)) {
+      } else if (isUnknownArray(abmetadataData.chapters)) {
         const cleanedChapters = cleanChaptersArray(abmetadataData.chapters, validated.title ?? abmetadataData.title)
         if (cleanedChapters) {
           validated.chapters = cleanedChapters
@@ -103,15 +117,12 @@ function parseJsonMetadataText(text, mediaType) {
     return null
   }
 }
-module.exports.parseJson = parseJsonMetadataText
+export { parseJsonMetadataText as parseJson }
 
 /**
- * @param {string} key
- * @param {*} value
- * @param {string} expectedType
- * @returns {*|undefined} undefined excludes the key
+ * @returns undefined excludes the key
  */
-function validateMetadataValue(key, value, expectedType) {
+function validateMetadataValue(key: string, value: unknown, expectedType: string): MetadataScalar | undefined {
   if (expectedType === 'string') {
     if (value === null) return null
     if (typeof value === 'number') return String(value)
@@ -140,42 +151,73 @@ function validateMetadataValue(key, value, expectedType) {
       return undefined
     }
 
-    const cleanedArray = value.filter((t) => typeof t === 'string')
-    return [...new Set(cleanedArray.map((t) => t.trim()).filter((t) => t))]
+    const cleanedArray = value.filter((item): item is string => typeof item === 'string')
+    return [...new Set(cleanedArray.map((item) => item.trim()).filter((item) => item))]
   }
 
   Logger.warn(`[abmetadataGenerator] Unknown expected type "${expectedType}" for key "${key}"`)
   return undefined
 }
 
-/**
- * @param {Object[]} chaptersArray
- * @param {string} mediaTitle
- * @returns {Object[]}
- */
-function cleanChaptersArray(chaptersArray, mediaTitle) {
-  const chapters = []
+function cleanChaptersArray(chaptersArray: unknown[], mediaTitle: unknown): MetadataChapter[] | null {
+  const chapters: MetadataChapter[] = []
   let index = 0
   for (const chap of chaptersArray) {
-    if (chap.start === null || isNaN(chap.start)) {
-      Logger.error(`[abmetadataGenerator] Invalid chapter start time ${chap.start} for "${mediaTitle}" metadata file`)
+    const start = readProperty(chap, 'start')
+    const end = readProperty(chap, 'end')
+    const title = readProperty(chap, 'title')
+    if (start === null || valueIsNaN(start)) {
+      Logger.error(`[abmetadataGenerator] Invalid chapter start time ${logText(start)} for "${logText(mediaTitle)}" metadata file`)
       return null
     }
-    if (chap.end === null || isNaN(chap.end)) {
-      Logger.error(`[abmetadataGenerator] Invalid chapter end time ${chap.end} for "${mediaTitle}" metadata file`)
+    if (end === null || valueIsNaN(end)) {
+      Logger.error(`[abmetadataGenerator] Invalid chapter end time ${logText(end)} for "${logText(mediaTitle)}" metadata file`)
       return null
     }
-    if (!chap.title || typeof chap.title !== 'string') {
-      Logger.error(`[abmetadataGenerator] Invalid chapter title ${chap.title} for "${mediaTitle}" metadata file`)
+    if (!title || typeof title !== 'string') {
+      Logger.error(`[abmetadataGenerator] Invalid chapter title ${logText(title)} for "${logText(mediaTitle)}" metadata file`)
       return null
     }
 
     chapters.push({
       id: index++,
-      start: chap.start,
-      end: chap.end,
-      title: chap.title
+      start,
+      end,
+      title
     })
   }
   return chapters
+}
+
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value)
+}
+
+function isNonEmptyArray(value: MetadataValue | undefined): value is string[] | ParsedSeries[] | MetadataChapter[] {
+  return Array.isArray(value) && value.length > 0
+}
+
+function readProperty(value: unknown, key: 'start' | 'end' | 'title'): unknown {
+  if (typeof value === 'object' || typeof value === 'function') {
+    return (value as Record<string, unknown>)[key]
+  }
+  return undefined
+}
+
+// Native isNaN accepts arbitrary values and throws for symbols and bigints.
+function valueIsNaN(value: unknown): boolean {
+  const result: unknown = Reflect.apply(isNaN, undefined, [value])
+  return result === true
+}
+
+function logText(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint' || value == null) {
+    return `${value}`
+  }
+  if (typeof value === 'symbol' || typeof value === 'function') return value.toString()
+  if (Array.isArray(value)) {
+    return value.map((item) => (item == null ? '' : logText(item))).join(',')
+  }
+  // Match template-literal stringification, including a custom toString.
+  return `${value as unknown as string}`
 }

@@ -1,17 +1,38 @@
-const xml = require('../../libs/xml')
-const escapeForXML = require('../../libs/xml/escapeForXML')
+import xml from '../../libs/xml'
+import escapeForXMLImport from '../../libs/xml/escapeForXML'
+
+type XmlText = string | null | undefined
+
+// escapeForXML.js has no annotations, so its inferred signature is any.
+type EscapeForXML = (value: XmlText) => XmlText
+const escapeForXML: EscapeForXML = escapeForXMLImport
+
+type OpmlPodcast = {
+  feedURL?: string | null
+  title?: string | null
+  description?: string | null
+  itunesPageUrl?: string | null
+  language?: string | null
+}
+
+type FeedAttributes = {
+  type: 'rss'
+  text: XmlText
+  title: XmlText
+  xmlUrl: XmlText
+  description?: XmlText
+  htmlUrl?: XmlText
+  language?: XmlText
+}
 
 /**
- * Generate OPML file string for podcasts in a library
- * @param {import('../../models/Podcast')[]} podcasts 
- * @param {boolean} [indent=true] 
- * @returns {string}
+ * Generate an OPML file string for podcasts in a library.
  */
-module.exports.generate = (podcasts, indent = true) => {
-  const bodyItems = []
+export function generate(podcasts: OpmlPodcast[], indent = true): string {
+  const bodyItems: { outline: { _attr: FeedAttributes } }[] = []
   podcasts.forEach((podcast) => {
     if (!podcast.feedURL) return
-    const feedAttributes = {
+    const feedAttributes: FeedAttributes = {
       type: 'rss',
       text: escapeForXML(podcast.title),
       title: escapeForXML(podcast.title),
@@ -55,5 +76,7 @@ module.exports.generate = (podcasts, indent = true) => {
     }
   ]
 
-  return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml(data, indent)
+  // xml() returns a Stream only when options.stream is set. A boolean indent returns the document string.
+  const rendered = xml(data, indent) as string
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + rendered
 }
