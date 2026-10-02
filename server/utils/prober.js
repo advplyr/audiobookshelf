@@ -70,12 +70,38 @@ function tryGrabChannelLayout(stream) {
   return String(layout).split('(').shift()
 }
 
+/**
+ * Some tagging tools write UTF-8 bytes into an ID3v2 text frame while declaring it as
+ * ISO-8859-1 (Latin-1). ffprobe decodes per the declared encoding, producing mojibake
+ * (e.g. "Je čas metat kamení" becomes "Je Äas metat kamenÃ­").
+ *
+ * This detects that specific mistake and repairs it by re-interpreting the string as
+ * Latin-1 bytes and decoding those bytes as UTF-8. It's a no-op for already-correct
+ * text (ASCII, CJK, or any string containing characters outside the Latin-1 range),
+ * since those could not have come from this exact mistake.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function repairMojibake(value) {
+  if (!value) return value
+  // If the string contains a character outside the Latin-1 range, it isn't representable
+  // as raw Latin-1 bytes, so it can't be the result of this particular encoding mistake
+  if (Buffer.from(value, 'latin1').toString('latin1') !== value) return value
+
+  const repaired = Buffer.from(value, 'latin1').toString('utf8')
+  // The unicode replacement character means re-decoding as UTF-8 failed - not a match
+  if (repaired.includes('�') || repaired === value) return value
+
+  return repaired
+}
+
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
     const tagKey = Object.keys(stream.tags).find((t) => t.toLowerCase() === tags[i].toLowerCase())
     const value = stream.tags[tagKey]
-    if (value && value.trim()) return value.trim()
+    if (value && value.trim()) return repairMojibake(value.trim())
   }
   return null
 }
@@ -321,6 +347,8 @@ function probe(filepath, verbose = false) {
     })
 }
 module.exports.probe = probe
+module.exports.repairMojibake = repairMojibake
+module.exports.tryGrabTags = tryGrabTags
 
 /**
  * Ffprobe for audio file path
