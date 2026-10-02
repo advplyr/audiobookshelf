@@ -1,14 +1,30 @@
-const uaParserJs = require('../../libs/uaParser')
+import uaParserJs from '../../libs/uaParser'
+
+type UaResult = {
+  browser?: { name?: string; version?: string }
+  os?: { name?: string; version?: string }
+  device?: { type?: string; model?: string; vendor?: string }
+}
+
+type DeviceInfo = {
+  browserName?: string
+  browserVersion?: string
+  osName?: string
+  osVersion?: string
+  deviceType?: string
+  model?: string
+  vendor?: string
+}
 
 /**
- * @param {string|null|undefined} userAgent
- * @returns {{ browserName?:string, browserVersion?:string, osName?:string, osVersion?:string, deviceType?:string, model?:string, vendor?:string }|null}
+ * Parse a user-agent string into display fields.
+ * Returns null when the header is empty or nothing could be identified.
  */
-function parseUserAgent(userAgent) {
+function parseUserAgent(userAgent: string | null | undefined): DeviceInfo | null {
   if (!userAgent) return null
 
-  const ua = uaParserJs(userAgent)
-  const deviceInfo = {
+  const ua = uaParserJs(userAgent) as UaResult
+  const deviceInfo: DeviceInfo = {
     browserName: ua?.browser?.name || undefined,
     browserVersion: ua?.browser?.version || undefined,
     osName: ua?.os?.name || undefined,
@@ -19,10 +35,10 @@ function parseUserAgent(userAgent) {
   }
 
   for (const key in deviceInfo) {
-    if (deviceInfo[key] === undefined) delete deviceInfo[key]
+    if (deviceInfo[key as keyof DeviceInfo] === undefined) delete deviceInfo[key as keyof DeviceInfo]
   }
 
   return Object.keys(deviceInfo).length ? deviceInfo : null
 }
 
-module.exports = parseUserAgent
+export = parseUserAgent

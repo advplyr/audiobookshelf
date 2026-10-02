@@ -1,14 +1,17 @@
-const h = require('htmlparser2')
-const Logger = require('../../Logger')
+import { Parser } from 'htmlparser2'
+import Logger from '../../Logger'
+
+type OpmlFeed = {
+  title: string
+  feedUrl: string
+}
 
 /**
- *
- * @param {string} opmlText
- * @returns {Array<{title: string, feedUrl: string}>
+ * Parse OPML text into RSS feed outlines.
  */
-function parse(opmlText) {
-  var feeds = []
-  var parser = new h.Parser({
+export function parse(opmlText: string): OpmlFeed[] {
+  const feeds: OpmlFeed[] = []
+  const parser = new Parser({
     onopentag: (name, attribs) => {
       if (name === 'outline' && attribs.type === 'rss') {
         if (!attribs.xmlurl) {
@@ -25,4 +28,3 @@ function parse(opmlText) {
   parser.write(opmlText)
   return feeds
 }
-module.exports.parse = parse
