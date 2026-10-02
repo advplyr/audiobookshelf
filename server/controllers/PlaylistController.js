@@ -3,6 +3,7 @@ const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const { resolvePlaylistRequestItems } = require('../utils/playlistHelpers')
 
 /**
  * @typedef RequestUserObject
@@ -287,18 +288,9 @@ class PlaylistController {
       return res.status(400).send('Request body has no libraryItemId')
     }
 
-    const libraryItem = await Database.libraryItemModel.getExpandedById(itemToAdd.libraryItemId)
-    if (!libraryItem) {
+    const [resolvedItem] = (await resolvePlaylistRequestItems([itemToAdd], req.playlist.libraryId)) || []
+    if (!resolvedItem) {
       return res.status(400).send('Library item not found')
-    }
-    if (libraryItem.libraryId !== req.playlist.libraryId) {
-      return res.status(400).send('Library item in different library')
-    }
-    if ((itemToAdd.episodeId && !libraryItem.isPodcast) || (libraryItem.isPodcast && !itemToAdd.episodeId)) {
-      return res.status(400).send('Invalid item to add for this library type')
-    }
-    if (itemToAdd.episodeId && !libraryItem.media.podcastEpisodes.some((pe) => pe.id === itemToAdd.episodeId)) {
-      return res.status(400).send('Episode not found in library item')
     }
 
     req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
@@ -311,27 +303,13 @@ class PlaylistController {
 
     const playlistMediaItem = {
       playlistId: req.playlist.id,
-      mediaItemId: itemToAdd.episodeId || libraryItem.media.id,
-      mediaItemType: itemToAdd.episodeId ? 'podcastEpisode' : 'book',
+      mediaItemId: resolvedItem.mediaItemId,
+      mediaItemType: resolvedItem.mediaItemType,
       order: req.playlist.playlistMediaItems.length + 1
     }
     await Database.playlistMediaItemModel.create(playlistMediaItem)
 
-    // Add the new item to to the old json expanded to prevent having to fully reload the playlist media items
-    if (itemToAdd.episodeId) {
-      const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === itemToAdd.episodeId)
-      jsonExpanded.items.push({
-        episodeId: itemToAdd.episodeId,
-        episode: episode.toOldJSONExpanded(libraryItem.id),
-        libraryItemId: libraryItem.id,
-        libraryItem: libraryItem.toOldJSONMinified()
-      })
-    } else {
-      jsonExpanded.items.push({
-        libraryItemId: libraryItem.id,
-        libraryItem: libraryItem.toOldJSONExpanded()
-      })
-    }
+    jsonExpanded.items.push(resolvedItem.jsonItem)
 
     SocketAuthority.clientEmitter(jsonExpanded.userId, 'playlist_updated', jsonExpanded)
     res.json(jsonExpanded)
@@ -396,11 +374,8 @@ class PlaylistController {
       return res.status(400).send('Invalid request body items')
     }
 
-    // Find all library items
-    const libraryItemIds = new Set(req.body.items.map((i) => i.libraryItemId).filter((i) => i))
-
-    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({ id: Array.from(libraryItemIds) })
-    if (libraryItems.length !== libraryItemIds.size) {
+    const resolvedItems = await resolvePlaylistRequestItems(req.body.items, req.playlist.libraryId)
+    if (!resolvedItems || resolvedItems.some((item) => !item)) {
       return res.status(400).send('Invalid request body items')
     }
 
@@ -411,10 +386,8 @@ class PlaylistController {
 
     // Setup array of playlistMediaItem records to add
     let order = req.playlist.playlistMediaItems.length + 1
-    for (const item of req.body.items) {
-      const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
-
-      const mediaItemId = item.episodeId || libraryItem.media.id
+    for (const resolvedItem of resolvedItems) {
+      const { mediaItemId, mediaItemType, jsonItem } = resolvedItem
       if (req.playlist.playlistMediaItems.some((pmi) => pmi.mediaItemId === mediaItemId)) {
         // Already exists in playlist
         continue
@@ -422,25 +395,10 @@ class PlaylistController {
         mediaItemsToAdd.push({
           playlistId: req.playlist.id,
           mediaItemId,
-          mediaItemType: item.episodeId ? 'podcastEpisode' : 'book',
+          mediaItemType,
           order: order++
         })
-
-        // Add the new item to to the old json expanded to prevent having to fully reload the playlist media items
-        if (item.episodeId) {
-          const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === item.episodeId)
-          jsonExpanded.items.push({
-            episodeId: item.episodeId,
-            episode: episode.toOldJSONExpanded(libraryItem.id),
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONMinified()
-          })
-        } else {
-          jsonExpanded.items.push({
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONExpanded()
-          })
-        }
+        jsonExpanded.items.push(jsonItem)
       }
     }
 
