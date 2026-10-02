@@ -58,7 +58,7 @@
         <div v-if="selectedMatchOrig.title" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.title" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" :label="$strings.LabelTitle" />
+            <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" :label="$strings.LabelTitle" trim-whitespace />
             <p v-if="mediaMetadata.title" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('title', mediaMetadata.title)">{{ mediaMetadata.title || '' }}</a>
             </p>
@@ -67,7 +67,7 @@
         <div v-if="selectedMatchOrig.subtitle" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.subtitle" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" :label="$strings.LabelSubtitle" />
+            <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" :label="$strings.LabelSubtitle" trim-whitespace />
             <p v-if="mediaMetadata.subtitle" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('subtitle', mediaMetadata.subtitle)">{{ mediaMetadata.subtitle }}</a>
             </p>
@@ -103,7 +103,7 @@
         <div v-if="selectedMatchOrig.publisher" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publisher" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" :label="$strings.LabelPublisher" />
+            <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" :label="$strings.LabelPublisher" trim-whitespace />
             <p v-if="mediaMetadata.publisher" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('publisher', mediaMetadata.publisher)">{{ mediaMetadata.publisher }}</a>
             </p>
@@ -149,7 +149,7 @@
         <div v-if="selectedMatchOrig.language" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.language" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" :label="$strings.LabelLanguage" />
+            <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" :label="$strings.LabelLanguage" trim-whitespace />
             <p v-if="mediaMetadata.language" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('language', mediaMetadata.language)">{{ mediaMetadata.language }}</a>
             </p>
@@ -158,7 +158,7 @@
         <div v-if="selectedMatchOrig.isbn" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.isbn" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" />
+            <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" trim-whitespace />
             <p v-if="mediaMetadata.isbn" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('isbn', mediaMetadata.isbn)">{{ mediaMetadata.isbn }}</a>
             </p>
@@ -167,7 +167,7 @@
         <div v-if="selectedMatchOrig.asin" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.asin" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" />
+            <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" trim-whitespace />
             <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white/60">
               {{ $strings.LabelCurrently }} <a :title="$strings.LabelClickToUseCurrentValue" class="cursor-pointer hover:underline" @click.stop="setMatchFieldValue('asin', mediaMetadata.asin)">{{ mediaMetadata.asin }}</a>
             </p>
