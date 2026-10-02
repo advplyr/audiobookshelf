@@ -1,47 +1,43 @@
-const parseEpubMetadata = require('./parseEpubMetadata')
-const parseComicMetadata = require('./parseComicMetadata')
+import type { EBookFileObject } from '../../models/Book'
+import { extractCoverImage as extractComicCoverImage, parse as parseComicMetadata } from './parseComicMetadata'
+import { extractCoverImage as extractEpubCoverImage, parse as parseEpubMetadata } from './parseEpubMetadata'
 
 /**
- * @typedef EBookFileScanData
- * @property {string} path
- * @property {string} ebookFormat
- * @property {string} ebookCoverPath internal image path
- * @property {import('../../scanner/BookScanner').BookMetadataObject} metadata
+ * Parsed ebook file used by scanners and cover extraction.
  */
+export type EBookFileScanData = {
+  path: string
+  ebookFormat: string
+  /** Internal image path. Omitted when no cover image was found. */
+  ebookCoverPath?: string
+  metadata: unknown
+}
 
 /**
- * Parse metadata from ebook file
- * 
- * @param {import('../../models/Book').EBookFileObject} ebookFile 
- * @returns {Promise<EBookFileScanData>}
+ * Parse metadata from an ebook file.
+ * Returns null when the file is missing or the format is not epub, cbz, or cbr.
  */
-async function parse(ebookFile) {
+export async function parse(ebookFile: EBookFileObject | null | undefined): Promise<EBookFileScanData | null> {
   if (!ebookFile) return null
 
   if (ebookFile.ebookFormat === 'epub') {
-    return parseEpubMetadata.parse(ebookFile)
+    return parseEpubMetadata(ebookFile)
   } else if (['cbz', 'cbr'].includes(ebookFile.ebookFormat)) {
-    return parseComicMetadata.parse(ebookFile)
+    return parseComicMetadata(ebookFile)
   }
   return null
 }
-module.exports.parse = parse
 
 /**
- * Extract cover from ebook file
- * 
- * @param {EBookFileScanData} ebookFileScanData 
- * @param {string} outputCoverPath 
- * @returns {Promise<boolean>}
+ * Extract a cover image from an ebook file.
  */
-async function extractCoverImage(ebookFileScanData, outputCoverPath) {
+export async function extractCoverImage(ebookFileScanData: EBookFileScanData | null | undefined, outputCoverPath: string): Promise<boolean> {
   if (!ebookFileScanData?.ebookCoverPath) return false
 
   if (ebookFileScanData.ebookFormat === 'epub') {
-    return parseEpubMetadata.extractCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
+    return extractEpubCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
   } else if (['cbz', 'cbr'].includes(ebookFileScanData.ebookFormat)) {
-    return parseComicMetadata.extractCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
+    return extractComicCoverImage(ebookFileScanData.path, ebookFileScanData.ebookCoverPath, outputCoverPath)
   }
   return false
 }
-module.exports.extractCoverImage = extractCoverImage
