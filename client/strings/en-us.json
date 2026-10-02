@@ -307,6 +307,7 @@
   "LabelCurrently": "Currently:",
   "LabelCustomCronExpression": "Custom Cron Expression:",
   "LabelDatetime": "Datetime",
+  "LabelDateUpdated": "Date Updated",
   "LabelDays": "Days",
   "LabelDeleteFromFileSystemCheckbox": "Delete from file system (uncheck to only remove from database)",
   "LabelDescription": "Description",

@@ -83,6 +83,10 @@ export default {
           value: 'birthtimeMs'
         },
         {
+          text: this.$strings.LabelDateUpdated,
+          value: 'latestEpisodePublishedAt'
+        },
+        {
           text: this.$strings.LabelFileModified,
           value: 'mtimeMs'
         },
