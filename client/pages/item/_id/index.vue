@@ -86,6 +86,15 @@
               {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
+            <ui-btn v-else-if="!userCanStream && userCanDownload && tracks.length" color="bg" :padding-x="4" small class="flex items-center h-9 mr-2" @click="downloadLibraryItem">
+              <span class="material-symbols text-2xl -ml-2 pr-1 text-white">download</span>
+              {{ $strings.LabelDownload }}
+            </ui-btn>
+
+            <p v-else-if="!userCanStream && !userCanDownload && tracks.length" class="text-sm text-gray-400 mr-2">
+              {{ $strings.MessageNoStreamOrDownloadAccess }}
+            </p>
+
             <ui-btn v-else-if="isMissing || isInvalid" color="bg-error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span class="material-symbols text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
@@ -229,6 +238,7 @@ export default {
       return !!this.mediaMetadata.abridged
     },
     showPlayButton() {
+      if (!this.userCanStream) return false
       if (this.isMissing || this.isInvalid) return false
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
@@ -351,6 +361,9 @@ export default {
     },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
+    },
+    userCanStream() {
+      return this.$store.getters['user/getUserCanStream']
     },
     showRssFeedBtn() {
       if (!this.rssFeed && !this.podcastEpisodes.length && !this.tracks.length) return false // Cannot open RSS feed with no episodes/tracks

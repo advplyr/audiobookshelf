@@ -44,6 +44,15 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
+                <p id="stream-permissions-toggle">{{ $strings.LabelPermissionsStream }}</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch labeledBy="stream-permissions-toggle" v-model="newUser.permissions.stream" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
                 <p id="update-permissions-toggle">{{ $strings.LabelPermissionsUpdate }}</p>
               </div>
               <div class="w-1/2">
@@ -354,6 +363,7 @@ export default {
     userTypeUpdated(type) {
       this.newUser.permissions = {
         download: type !== 'guest',
+        stream: true,
         update: type === 'admin',
         delete: type === 'admin',
         upload: type === 'admin',

@@ -42,6 +42,7 @@ function createMountOptions() {
         'user/getUserCanUpdate': true,
         'user/getUserCanDelete': true,
         'user/getUserCanDownload': true,
+        'user/getUserCanStream': true,
         'user/getIsAdminOrUp': true,
         'user/getUserMediaProgress': (id) => null,
         'user/getUserSetting': (settingName) => false,
@@ -161,6 +162,15 @@ describe('LazyBookCard', () => {
     cy.get('&selectedRadioButton').should('be.visible').and('have.text', 'radio_button_unchecked')
     cy.get('&moreButton').should('be.visible')
     cy.get('&ebookFormat').should('not.exist')
+  })
+
+  it('hides play button on mouseover when user cannot stream', () => {
+    mountOptions.mocks.$store.getters['user/getUserCanStream'] = false
+    cy.mount(LazyBookCard, mountOptions)
+    cy.get('#book-card-0').trigger('mouseover')
+
+    cy.get('&overlay').should('be.visible')
+    cy.get('&playButton').should('be.hidden')
   })
 
   it('routes to item page when clicked', () => {
