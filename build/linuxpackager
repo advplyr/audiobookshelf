@@ -35,7 +35,6 @@ echo "--------------------"
 mkdir -p dist
 rm -rf dist/debian
 cp -R build/debian dist/debian
-chmod -R 775 dist/debian
 
 controlfile="Package: audiobookshelf
 Version: $VERSION
@@ -47,6 +46,12 @@ Maintainer: advplyr
 Description: $DESCRIPTION"
 
 echo "$controlfile" > dist/debian/DEBIAN/control;
+
+# Package contents: directories 0755, files 0644 (including the systemd unit).
+# Maintainer scripts must stay executable so dpkg can run them.
+find dist/debian -type d -exec chmod 755 {} +
+find dist/debian -type f -exec chmod 644 {} +
+chmod 755 dist/debian/DEBIAN/preinst dist/debian/DEBIAN/postinst dist/debian/DEBIAN/prerm
 
 # Package debian
 pkg --config package.json -t node24-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf dist-server/index.js
