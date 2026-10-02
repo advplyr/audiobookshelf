@@ -29,9 +29,10 @@ class Collection extends Model {
    * @param {import('./User')} user
    * @param {string} [libraryId]
    * @param {string[]} [include]
+   * @param {boolean} [minified=false]
    * @async
    */
-  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
+  static async getOldCollectionsJsonExpanded(user, libraryId, include, minified = false) {
     let collectionWhere = null
     if (libraryId) {
       collectionWhere = {
@@ -98,7 +99,7 @@ class Collection extends Model {
 
         this.books = books
 
-        const collectionExpanded = c.toOldJSONExpanded()
+        const collectionExpanded = c.toOldJSONExpanded(minified)
 
         // Map feed if found
         if (c.feeds?.length) {
@@ -272,7 +273,11 @@ class Collection extends Model {
     }
   }
 
-  toOldJSONExpanded() {
+  /**
+   * @param {boolean} [minified=false] When true, books use the minified library item serialization
+   *                                    (omits libraryFiles and heavy media fields like chapters/tracks/audioFiles)
+   */
+  toOldJSONExpanded(minified = false) {
     if (!this.books) {
       throw new Error('Books are required to expand Collection')
     }
@@ -282,7 +287,7 @@ class Collection extends Model {
       const libraryItem = book.libraryItem
       delete book.libraryItem
       libraryItem.media = book
-      return libraryItem.toOldJSONExpanded()
+      return minified ? libraryItem.toOldJSONMinified() : libraryItem.toOldJSONExpanded()
     })
 
     return json
