@@ -1,33 +1,46 @@
-const Path = require('path')
-const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileUtils')
-const globals = require('../../utils/globals')
-const FileMetadata = require('../metadata/FileMetadata')
+import Path from 'path'
+import FileMetadata from '../metadata/FileMetadata'
+import globals from '../../utils/globals'
+import { getFileTimestampsWithIno, filePathToPOSIX } from '../../utils/fileUtils'
+
+type FileMetadataJSON = ReturnType<FileMetadata['toJSON']>
+
+type LibraryFileType = 'image' | 'audio' | 'ebook' | 'text' | 'metadata' | 'unknown'
+
+interface LibraryFileData {
+  ino: string | null
+  metadata: FileMetadataJSON
+  isSupplementary: boolean | null
+  addedAt: number | null
+  updatedAt: number | null
+  fileType: LibraryFileType
+}
 
 class LibraryFile {
-  constructor(file) {
-    this.ino = null
-    this.metadata = null
-    this.isSupplementary = null
-    this.addedAt = null
-    this.updatedAt = null
+  ino: string | null = null
+  metadata: FileMetadata | null = null
+  isSupplementary: boolean | null = null
+  addedAt: number | null = null
+  updatedAt: number | null = null
 
+  constructor(file?: Partial<LibraryFileData> | null) {
     if (file) {
       this.construct(file)
     }
   }
 
-  construct(file) {
-    this.ino = file.ino
+  construct(file: Partial<LibraryFileData>) {
+    this.ino = file.ino as string
     this.metadata = new FileMetadata(file.metadata)
     this.isSupplementary = file.isSupplementary === undefined ? null : file.isSupplementary
-    this.addedAt = file.addedAt
-    this.updatedAt = file.updatedAt
+    this.addedAt = file.addedAt as number
+    this.updatedAt = file.updatedAt as number
   }
 
-  toJSON() {
+  toJSON(): LibraryFileData {
     return {
       ino: this.ino,
-      metadata: this.metadata.toJSON(),
+      metadata: (this.metadata as FileMetadata).toJSON(),
       isSupplementary: this.isSupplementary,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,
@@ -35,43 +48,46 @@ class LibraryFile {
     }
   }
 
-  clone() {
+  clone(): LibraryFile {
     return new LibraryFile(this.toJSON())
   }
 
-  get fileType() {
-    if (globals.SupportedImageTypes.includes(this.metadata.format)) return 'image'
-    if (globals.SupportedAudioTypes.includes(this.metadata.format)) return 'audio'
-    if (globals.SupportedEbookTypes.includes(this.metadata.format)) return 'ebook'
-    if (globals.TextFileTypes.includes(this.metadata.format)) return 'text'
-    if (globals.MetadataFileTypes.includes(this.metadata.format)) return 'metadata'
+  get fileType(): LibraryFileType {
+    const format = (this.metadata as FileMetadata).format
+    if (globals.SupportedImageTypes.includes(format)) return 'image'
+    if (globals.SupportedAudioTypes.includes(format)) return 'audio'
+    if (globals.SupportedEbookTypes.includes(format)) return 'ebook'
+    if (globals.TextFileTypes.includes(format)) return 'text'
+    if (globals.MetadataFileTypes.includes(format)) return 'metadata'
     return 'unknown'
   }
 
-  get isMediaFile() {
+  get isMediaFile(): boolean {
     return this.fileType === 'audio' || this.fileType === 'ebook'
   }
 
-  get isEBookFile() {
+  get isEBookFile(): boolean {
     return this.fileType === 'ebook'
   }
 
-  get isOPFFile() {
-    return this.metadata.ext === '.opf'
+  get isOPFFile(): boolean {
+    return (this.metadata as FileMetadata).ext === '.opf'
   }
 
-  async setDataFromPath(path, relPath) {
-    var fileTsData = await getFileTimestampsWithIno(path)
-    var fileMetadata = new FileMetadata()
-    fileMetadata.setData(fileTsData)
+  async setDataFromPath(path: string, relPath: string) {
+    const fileTsData = await getFileTimestampsWithIno(path)
+    const fileMetadata = new FileMetadata()
+    // getFileTimestampsWithIno returns false when the file cannot be read
+    if (fileTsData) fileMetadata.setData(fileTsData)
     fileMetadata.filename = Path.basename(relPath)
     fileMetadata.path = filePathToPOSIX(path)
     fileMetadata.relPath = filePathToPOSIX(relPath)
     fileMetadata.ext = Path.extname(relPath)
-    this.ino = fileTsData.ino
+    this.ino = fileTsData ? fileTsData.ino : null
     this.metadata = fileMetadata
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
   }
 }
-module.exports = LibraryFile
+
+export = LibraryFile
