@@ -95,7 +95,7 @@ class LibraryController {
               return res.status(400).send('Invalid request. Settings "metadataPrecedence" must be an array')
             }
             newLibraryPayload.settings[key] = [...req.body.settings[key]]
-          } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
+          } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion' || key === 'podcastFilenameFormat') {
             if (!req.body.settings[key]) continue
             if (typeof req.body.settings[key] !== 'string') {
               return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
@@ -316,7 +316,7 @@ class LibraryController {
             updatedSettings[key] = [...req.body.settings[key]]
             Logger.debug(`[LibraryController] Library "${req.library.name}" updating setting "${key}" to "${updatedSettings[key]}"`)
           }
-        } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion') {
+        } else if (key === 'autoScanCronExpression' || key === 'podcastSearchRegion' || key === 'podcastFilenameFormat' ) {
           if (req.body.settings[key] !== null && typeof req.body.settings[key] !== 'string') {
             Logger.error(`[LibraryController] Invalid request. Settings "${key}" must be a string`)
             return res.status(400).send(`Invalid request. Settings "${key}" must be a string`)
