@@ -1,3 +1,5 @@
+// Boundary declaration for the fluent-ffmpeg API used by application code.
+// Keep this outside the library directory so index.js remains in the build output.
 /// <reference types="node" />
 
 import * as events from "events";
