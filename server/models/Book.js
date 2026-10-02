@@ -261,6 +261,19 @@ class Book extends Model {
     return this.audioFiles.filter((af) => !af.exclude)
   }
 
+  /**
+   * Recalculate the book duration from the included (non-excluded) audio files.
+   * Sets `this.duration` and returns whether it changed.
+   *
+   * @returns {boolean}
+   */
+  updateDuration() {
+    const newDuration = this.includedAudioFiles.reduce((total, af) => total + (isNaN(af.duration) ? 0 : Number(af.duration)), 0)
+    if (this.duration === newDuration) return false
+    this.duration = newDuration
+    return true
+  }
+
   get hasMediaFiles() {
     return !!this.hasAudioTracks || !!this.ebookFile
   }
