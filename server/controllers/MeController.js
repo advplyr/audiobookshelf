@@ -106,11 +106,21 @@ class MeController {
   /**
    * GET: /api/me/progress
    *
+   * Optional query param:
+   *   ?libraryItemId=<id>  — return only progress records for that library item
+   *
    * @param {RequestWithUser} req
    * @param {Response} res
    */
   getAllMediaProgress(req, res) {
-    const mediaProgress = req.user.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || []
+    let progresses = req.user.mediaProgresses || []
+
+    const { libraryItemId } = req.query
+    if (libraryItemId) {
+      progresses = progresses.filter((mp) => mp.extraData?.libraryItemId === libraryItemId)
+    }
+
+    const mediaProgress = progresses.map((mp) => mp.getOldMediaProgress())
     res.json({ mediaProgress })
   }
 
