@@ -148,6 +148,10 @@ export default {
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     },
+    useChapterTrack() {
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      return this.chapters.length ? _useChapterTrack : false
+    },
     title() {
       if (this.playerHandler.displayTitle) return this.playerHandler.displayTitle
       return this.mediaMetadata.title || 'No Title'
@@ -291,6 +295,8 @@ export default {
     setPlaybackRate(playbackRate) {
       this.currentPlaybackRate = playbackRate
       this.playerHandler.setPlaybackRate(playbackRate)
+      // Update position state with new playback rate
+      this.updateMediaSessionPositionState()
     },
     seek(time) {
       this.playerHandler.seek(time)
@@ -300,6 +306,7 @@ export default {
       this.playerHandler.seek(time, false)
     },
     setCurrentTime(time) {
+      const previousChapterId = this.currentChapter?.id
       this.currentTime = time
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setCurrentTime(time)
@@ -307,6 +314,14 @@ export default {
 
       if (this.sleepTimerType === this.$constants.SleepTimerTypes.CHAPTER && this.sleepTimerSet) {
         this.checkChapterEnd()
+      }
+
+      // Update MediaSession position state (chapter-relative when useChapterTrack enabled)
+      this.updateMediaSessionPositionState()
+
+      // If chapter changed and useChapterTrack enabled, update MediaSession metadata
+      if (this.useChapterTrack && this.currentChapter?.id !== previousChapterId && this.currentChapter) {
+        this.updateMediaSessionForChapter()
       }
     },
     setDuration(duration) {
@@ -355,7 +370,20 @@ export default {
     mediaSessionSeekTo(e) {
       console.log('Media session seek to', e)
       if (e.seekTime !== null && !isNaN(e.seekTime)) {
-        this.playerHandler.seek(e.seekTime)
+        // When "Use chapter track" is enabled and chapters exist, seekTime is
+        // relative to current chapter start. Map it back to absolute position.
+        if (this.useChapterTrack && this.currentChapter) {
+          const chapterStart = this.currentChapter.start
+          const chapterEnd = this.currentChapter.end
+          const chapterDuration = chapterEnd - chapterStart
+          // Clamp seekTime to chapter bounds to prevent seeking outside chapter
+          const clampedSeekTime = Math.max(0, Math.min(e.seekTime, chapterDuration))
+          const absoluteTime = chapterStart + clampedSeekTime
+          this.playerHandler.seek(absoluteTime)
+        } else {
+          // "Use chapter track" disabled or no chapters - use full-file seek
+          this.playerHandler.seek(e.seekTime)
+        }
       }
     },
     mediaSessionPreviousTrack() {
@@ -371,6 +399,91 @@ export default {
     updateMediaSessionPlaybackState() {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
+      }
+    },
+    /**
+     * Update MediaSession metadata when chapter changes (only if useChapterTrack is enabled).
+     * Updates the title to show chapter info and resets position state.
+     */
+    updateMediaSessionForChapter() {
+      if (!('mediaSession' in navigator) || !this.useChapterTrack || !this.currentChapter) {
+        return
+      }
+
+      // Update metadata with chapter title
+      const baseTitle = this.title
+      const chapterTitle = this.currentChapter.title
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: chapterTitle || baseTitle,
+        artist: this.playerHandler.displayAuthor || this.mediaMetadata.authorName || 'Unknown',
+        album: baseTitle,
+        artwork: [
+          {
+            src: this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png', true)
+          }
+        ]
+      })
+
+      // Immediately update position state for new chapter
+      this.updateMediaSessionPositionState()
+    },
+    /**
+     * Update MediaSession position state.
+     * When "Use chapter track" is enabled and a chapter is active, reports
+     * duration/position relative to chapter bounds so the OS scrubber spans
+     * only the current chapter. Otherwise uses full-file duration/position.
+     */
+    updateMediaSessionPositionState() {
+      if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) {
+        return
+      }
+
+      const playbackRate = this.currentPlaybackRate || 1
+
+      if (this.useChapterTrack && this.currentChapter) {
+        // "Use chapter track" enabled - report chapter-relative values
+        const chapterStart = this.currentChapter.start
+        const chapterEnd = this.currentChapter.end
+        const chapterDuration = chapterEnd - chapterStart
+
+        // Calculate position relative to chapter start
+        // Clamp to valid range to handle slight timing drift
+        let chapterPosition = this.currentTime - chapterStart
+        chapterPosition = Math.max(0, Math.min(chapterPosition, chapterDuration))
+
+        // Validate values to prevent NaN or invalid states
+        if (isNaN(chapterDuration) || chapterDuration <= 0 || isNaN(chapterPosition)) {
+          console.warn('Invalid chapter position state values, skipping update')
+          return
+        }
+
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: chapterDuration,
+            position: chapterPosition,
+            playbackRate: playbackRate
+          })
+        } catch (e) {
+          console.error('Error setting media session position state:', e)
+        }
+      } else if (this.totalDuration > 0) {
+        // "Use chapter track" disabled or no chapters - use full-file values
+        const position = Math.max(0, Math.min(this.currentTime, this.totalDuration))
+
+        if (isNaN(this.totalDuration) || isNaN(position)) {
+          return
+        }
+
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: this.totalDuration,
+            position: position,
+            playbackRate: playbackRate
+          })
+        } catch (e) {
+          console.error('Error setting media session position state:', e)
+        }
       }
     },
     setMediaSession() {
