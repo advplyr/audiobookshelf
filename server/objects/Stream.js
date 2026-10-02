@@ -234,7 +234,7 @@ class Stream extends EventEmitter {
   async start() {
     Logger.info(`[STREAM] START STREAM - Num Segments: ${this.numSegments}`)
 
-    /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
+    /** @type {import('../libs/fluentFfmpeg').FfmpegCommand} */
     this.ffmpeg = Ffmpeg()
     this.furthestSegmentCreated = 0
 
