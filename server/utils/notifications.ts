@@ -1,6 +1,17 @@
-const { version } = require('../../package.json')
+import { version } from '../../package.json'
 
-module.exports.notificationData = {
+type NotificationEvent = {
+  name: string
+  requiresLibrary: boolean
+  libraryMediaType?: string
+  description: string
+  descriptionKey: string
+  variables: string[]
+  defaults: { title: string; body: string }
+  testData: Record<string, string | number>
+}
+
+const notificationData: { events: NotificationEvent[] } = {
   events: [
     {
       name: 'onPodcastEpisodeDownloaded',
@@ -108,3 +119,5 @@ module.exports.notificationData = {
     }
   ]
 }
+
+export = { notificationData }

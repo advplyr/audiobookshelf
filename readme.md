@@ -181,6 +181,18 @@ cd ..
 
 ### Development Commands
 
+#### Backend TypeScript migration
+
+The backend supports JavaScript and TypeScript together. Migrated TypeScript files use strict checking and compile to CommonJS in `dist-server`; existing JavaScript is not globally type-checked. Use named TypeScript exports so existing destructured `require()` calls continue to work, and use type-only imports for dependency types. Preserve runtime behavior and avoid `any` or type assertions that hide missing types.
+
+Run `npm run typecheck:server` for type checking without emitting JavaScript, and `npm run lint` for JavaScript and TypeScript linting. Compile-only type contracts live in `test/**/*.types.ts` and are checked by the server compiler.
+
+After deleting or renaming source files, run `npm run clean:server` followed by `npm run build:server` to remove stale compiled files. The clean command deletes only the generated `dist-server` directory and is not part of hot reload.
+
+To validate the first migrated module, build the server and run `npx --no-install mocha dist-server/test/server/utils/requestUtils.test.js`. Existing JavaScript tests exercise the compiled CommonJS exports. API behavior is unchanged, including the existing origin string when the Host header is absent.
+
+#### Running the application
+
 After setting up your development environment, either using the dev container or using your own custom environment, the following commands will help you run the server and client.
 
 To run the server, you can use the command `npm run dev`. This will compile the server and use the client that was built when you ran `npm run generate` in the client directory or when you started the dev container. Server changes are compiled and restarted automatically. If you make changes to the client, you will need to run the command `(cd client; npm run generate)` and then restart the server. By default the client runs at `localhost:3333`, though the port can be configured in `dev.js`.
