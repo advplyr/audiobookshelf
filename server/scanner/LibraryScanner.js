@@ -257,26 +257,42 @@ class LibraryScanner {
 
     // Add new library items
     if (libraryItemDataFound.length) {
+      // Ids of items missing before this phase - a returned item with one of these ids was adopted from a missing
+      // item (matched by metadata) rather than newly created, since new items always get a freshly generated id
+      const missingLibraryItemIds = new Set(existingLibraryItems.filter((li) => li.isMissing).map((li) => li.id).concat(libraryItemIdsMissing))
+
       let newLibraryItems = []
+      let adoptedLibraryItems = []
       for (const libraryItemData of libraryItemDataFound) {
         const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library.settings, libraryScan)
         if (newLibraryItem) {
-          newLibraryItems.push(newLibraryItem)
-
-          libraryScan.resultsAdded++
+          if (missingLibraryItemIds.has(newLibraryItem.id)) {
+            adoptedLibraryItems.push(newLibraryItem)
+            libraryScan.resultsUpdated++
+          } else {
+            newLibraryItems.push(newLibraryItem)
+            libraryScan.resultsAdded++
+          }
         }
 
-        // Emit new items in chunks of 10 to client
+        // Emit new/adopted items in chunks of 10 to client
         if (newLibraryItems.length === 10) {
           SocketAuthority.libraryItemsEmitter('items_added', newLibraryItems)
           newLibraryItems = []
         }
+        if (adoptedLibraryItems.length === 10) {
+          SocketAuthority.libraryItemsEmitter('items_updated', adoptedLibraryItems)
+          adoptedLibraryItems = []
+        }
 
         if (this.shouldCancelScan(libraryScan)) return true
       }
-      // Emit new items to client
+      // Emit new/adopted items to client
       if (newLibraryItems.length) {
         SocketAuthority.libraryItemsEmitter('items_added', newLibraryItems)
+      }
+      if (adoptedLibraryItems.length) {
+        SocketAuthority.libraryItemsEmitter('items_updated', adoptedLibraryItems)
       }
     }
 
