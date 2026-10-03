@@ -1,11 +1,11 @@
 const chai = require('chai')
 const sinon = require('sinon')
-const fs = require('../../../server/libs/fsExtra')
-const fileUtils = require('../../../server/utils/fileUtils')
-const which = require('../../../server/libs/which')
+const fs = require('../../../server/libs/fsExtra/index.js')
+const fileUtils = require('../../../server/utils/fileUtils.js')
+const which = require('../../../server/libs/which/index.js')
 const path = require('path')
-const BinaryManager = require('../../../server/managers/BinaryManager')
-const { Binary, ffbinaries } = require('../../../server/managers/BinaryManager')
+const BinaryManager = require('../../../server/managers/BinaryManager.js')
+const { Binary, ffbinaries } = require('../../../server/managers/BinaryManager.js')
 
 const expect = chai.expect
 

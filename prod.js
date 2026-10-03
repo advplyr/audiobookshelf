@@ -6,13 +6,13 @@ const optionDefinitions = [
   { name: 'source', alias: 's', type: String }
 ]
 
-const commandLineArgs = require('./server/libs/commandLineArgs')
+const commandLineArgs = require('./server/libs/commandLineArgs/index.js')
 const options = commandLineArgs(optionDefinitions)
 
 const Path = require('path')
 process.env.NODE_ENV = 'production'
 
-const server = require('./server/Server')
+const server = require('./server/Server.js')
 
 global.appRoot = __dirname
 

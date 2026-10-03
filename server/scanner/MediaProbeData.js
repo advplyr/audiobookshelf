@@ -1,4 +1,4 @@
-const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
+const AudioMetaTags = require('../objects/metadata/AudioMetaTags.js')
 
 class MediaProbeData {
   constructor(probeData) {

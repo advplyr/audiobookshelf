@@ -1,11 +1,11 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
+const fs = require('../libs/fsExtra/index.js')
 const stream = require('stream')
-const Logger = require('../Logger')
-const { resizeImage } = require('../utils/ffmpegHelpers')
-const { encodeUriPath } = require('../utils/fileUtils')
-const { isUUID } = require('../utils/index')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const { resizeImage } = require('../utils/ffmpegHelpers.js')
+const { encodeUriPath } = require('../utils/fileUtils.js')
+const { isUUID } = require('../utils/index.js')
+const Database = require('../Database.js')
 
 function isValidCacheDimension(dimension) {
   return Number.isSafeInteger(dimension) && dimension > 0

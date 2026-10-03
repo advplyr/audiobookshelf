@@ -1,8 +1,8 @@
 const Path = require('path')
-const Logger = require('../../Logger')
-const fsExtra = require('../../libs/fsExtra')
-const fileUtils = require('../fileUtils')
-const LibraryFile = require('../../objects/files/LibraryFile')
+const Logger = require('../../Logger.js')
+const fsExtra = require('../../libs/fsExtra/index.js')
+const fileUtils = require('../fileUtils.js')
+const LibraryFile = require('../../objects/files/LibraryFile.js')
 
 /**
  * 

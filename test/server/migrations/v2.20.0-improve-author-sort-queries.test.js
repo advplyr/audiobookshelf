@@ -3,9 +3,9 @@ const sinon = require('sinon')
 const { expect } = chai
 
 const { DataTypes, Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
-const { up, down } = require('../../../server/migrations/v2.20.0-improve-author-sort-queries')
+const { up, down } = require('../../../server/migrations/v2.20.0-improve-author-sort-queries.js')
 
 const normalizeWhitespaceAndBackticks = (str) => str.replace(/\s+/g, ' ').trim().replace(/`/g, '')
 

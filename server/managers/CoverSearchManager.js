@@ -1,7 +1,7 @@
 const { setMaxListeners } = require('events')
-const Logger = require('../Logger')
-const BookFinder = require('../finders/BookFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
+const Logger = require('../Logger.js')
+const BookFinder = require('../finders/BookFinder.js')
+const PodcastFinder = require('../finders/PodcastFinder.js')
 
 /**
  * Manager for handling streaming cover search across multiple providers

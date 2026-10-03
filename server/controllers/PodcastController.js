@@ -1,19 +1,19 @@
 const Path = require('path')
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
 
-const fs = require('../libs/fsExtra')
-const cron = require('../libs/nodeCron')
+const fs = require('../libs/fsExtra/index.js')
+const cron = require('../libs/nodeCron/index.js')
 
-const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils')
-const { validateUrl } = require('../utils/index')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils.js')
+const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils.js')
+const { validateUrl } = require('../utils/index.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
 
-const Scanner = require('../scanner/Scanner')
-const CoverManager = require('../managers/CoverManager')
+const Scanner = require('../scanner/Scanner.js')
+const CoverManager = require('../managers/CoverManager.js')
 
 /**
  * @typedef RequestUserObject

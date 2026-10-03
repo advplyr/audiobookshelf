@@ -1,4 +1,4 @@
-const Audible = require('../../../server/providers/Audible')
+const Audible = require('../../../server/providers/Audible.js')
 const { expect } = require('chai')
 const sinon = require('sinon')
 

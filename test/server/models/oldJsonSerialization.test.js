@@ -1,7 +1,7 @@
 const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 
-const Database = require('../../../server/Database')
+const Database = require('../../../server/Database.js')
 
 /**
  * Assert that `expanded` contains every key from `minified` with matching values.

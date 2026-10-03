@@ -1,7 +1,7 @@
-const ffprobe = require('../libs/nodeFfprobe')
-const MediaProbeData = require('../scanner/MediaProbeData')
+const ffprobe = require('../libs/nodeFfprobe/index.js')
+const MediaProbeData = require('../scanner/MediaProbeData.js')
 
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
 function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   if (!isNaN(stream.bit_rate) && stream.bit_rate) {

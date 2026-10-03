@@ -2,7 +2,7 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
 const { LRUCache } = require('lru-cache')
-const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
+const ApiCacheManager = require('../../../server/managers/ApiCacheManager.js')
 
 describe('ApiCacheManager', () => {
   let cache

@@ -1,20 +1,20 @@
 const uuidv4 = require('uuid').v4
 const Path = require('path')
 const serverVersion = require('../../package.json').version
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
 
-const date = require('../libs/dateAndTime')
-const fs = require('../libs/fsExtra')
-const uaParserJs = require('../libs/uaParser')
-const requestIp = require('../libs/requestIp')
+const date = require('../libs/dateAndTime/index.js')
+const fs = require('../libs/fsExtra/index.js')
+const uaParserJs = require('../libs/uaParser/index.js')
+const requestIp = require('../libs/requestIp/index.js')
 
-const { PlayMethod } = require('../utils/constants')
+const { PlayMethod } = require('../utils/constants.js')
 
-const PlaybackSession = require('../objects/PlaybackSession')
-const DeviceInfo = require('../objects/DeviceInfo')
-const Stream = require('../objects/Stream')
+const PlaybackSession = require('../objects/PlaybackSession.js')
+const DeviceInfo = require('../objects/DeviceInfo.js')
+const Stream = require('../objects/Stream.js')
 
 class PlaybackSessionManager {
   constructor() {

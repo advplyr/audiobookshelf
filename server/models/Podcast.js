@@ -1,8 +1,8 @@
 const { DataTypes, Model } = require('sequelize')
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
-const Logger = require('../Logger')
-const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index.js')
+const Logger = require('../Logger.js')
+const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
 
 /**
  * @typedef PodcastExpandedProperties

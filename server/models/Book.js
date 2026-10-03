@@ -1,10 +1,10 @@
 const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
-const parseNameString = require('../utils/parsers/parseNameString')
-const htmlSanitizer = require('../utils/htmlSanitizer')
-const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
-const SocketAuthority = require('../SocketAuthority')
+const Logger = require('../Logger.js')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index.js')
+const parseNameString = require('../utils/parsers/parseNameString.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
+const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters.js')
+const SocketAuthority = require('../SocketAuthority.js')
 
 /**
  * @typedef EBookFileObject
