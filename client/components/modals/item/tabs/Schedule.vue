@@ -29,6 +29,20 @@
           </ui-tooltip>
         </div>
 
+        <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">
+          <ui-text-input ref="minDurationInput" type="number" v-model="newAutoDownloadMinDurationMinutes" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updateAutoDownloadMinDuration" />
+          <ui-tooltip :text="$strings.LabelAutoDownloadMinDurationHelp">
+            <p class="pl-4 text-base">
+              {{ $strings.LabelAutoDownloadMinDuration }}
+              <span class="material-symbols icon-text">info</span>
+            </p>
+          </ui-tooltip>
+        </div>
+        <div v-if="enableAutoDownloadEpisodes" class="py-2">
+          <ui-multi-select v-model="newAutoDownloadExcludeTerms" :items="newAutoDownloadExcludeTerms" menu-disabled :label="$strings.LabelAutoDownloadExcludeTerms" />
+          <p class="px-1 pt-1 text-xs text-gray-300">{{ $strings.LabelAutoDownloadExcludeTermsHelp }}</p>
+        </div>
+
         <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoDownloadEpisodes" v-model="cronExpression" />
       </template>
     </div>
@@ -56,7 +70,9 @@ export default {
       enableAutoDownloadEpisodes: false,
       cronExpression: null,
       newMaxEpisodesToKeep: 0,
-      newMaxNewEpisodesToDownload: 0
+      newMaxNewEpisodesToDownload: 0,
+      newAutoDownloadMinDurationMinutes: 0,
+      newAutoDownloadExcludeTerms: []
     }
   },
   watch: {
@@ -103,8 +119,20 @@ export default {
     maxNewEpisodesToDownload() {
       return this.media.maxNewEpisodesToDownload
     },
+    autoDownloadMinDuration() {
+      return this.media.autoDownloadMinDuration || 0
+    },
+    autoDownloadExcludeTerms() {
+      return this.media.autoDownloadExcludeTerms || []
+    },
+    newAutoDownloadMinDuration() {
+      return Number(this.newAutoDownloadMinDurationMinutes) * 60
+    },
+    isExcludeTermsUpdated() {
+      return this.autoDownloadExcludeTerms.join('\n') !== this.newAutoDownloadExcludeTerms.join('\n')
+    },
     isUpdated() {
-      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
+      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload) || this.autoDownloadMinDuration !== this.newAutoDownloadMinDuration || this.isExcludeTermsUpdated
     }
   },
   methods: {
@@ -122,6 +150,13 @@ export default {
         this.newMaxNewEpisodesToDownload = Number(this.newMaxNewEpisodesToDownload)
       }
     },
+    updateAutoDownloadMinDuration() {
+      if (isNaN(this.newAutoDownloadMinDurationMinutes) || this.newAutoDownloadMinDurationMinutes < 0) {
+        this.newAutoDownloadMinDurationMinutes = 0
+      } else {
+        this.newAutoDownloadMinDurationMinutes = Math.floor(Number(this.newAutoDownloadMinDurationMinutes))
+      }
+    },
     save() {
       // If custom expression input is focused then unfocus it instead of submitting
       if (this.$refs.cronExpressionBuilder && this.$refs.cronExpressionBuilder.checkBlurExpressionInput) {
@@ -135,6 +170,9 @@ export default {
       }
       if (this.$refs.maxEpisodesToDownloadInput?.isFocused) {
         this.$refs.maxEpisodesToDownloadInput.blur()
+      }
+      if (this.$refs.minDurationInput?.isFocused) {
+        this.$refs.minDurationInput.blur()
       }
 
       const updatePayload = {
@@ -150,6 +188,12 @@ export default {
       this.newMaxNewEpisodesToDownload = Number(this.newMaxNewEpisodesToDownload)
       if (this.newMaxNewEpisodesToDownload !== this.maxNewEpisodesToDownload) {
         updatePayload.maxNewEpisodesToDownload = this.newMaxNewEpisodesToDownload
+      }
+      if (this.newAutoDownloadMinDuration !== this.autoDownloadMinDuration) {
+        updatePayload.autoDownloadMinDuration = this.newAutoDownloadMinDuration
+      }
+      if (this.isExcludeTermsUpdated) {
+        updatePayload.autoDownloadExcludeTerms = [...this.newAutoDownloadExcludeTerms]
       }
 
       this.updateDetails(updatePayload)
@@ -178,6 +222,8 @@ export default {
       this.cronExpression = this.autoDownloadSchedule
       this.newMaxEpisodesToKeep = this.maxEpisodesToKeep
       this.newMaxNewEpisodesToDownload = this.maxNewEpisodesToDownload
+      this.newAutoDownloadMinDurationMinutes = Math.round(this.autoDownloadMinDuration / 60)
+      this.newAutoDownloadExcludeTerms = [...this.autoDownloadExcludeTerms]
     }
   },
   mounted() {
