@@ -463,7 +463,7 @@
   "LabelSettingsHomePageBookshelfView": "Avalehel kasuta raamaturiiulivaadet",
   "LabelSettingsLibraryBookshelfView": "Raamatukogus kasuta raamaturiiulivaadet",
   "LabelSettingsParseSubtitles": "Lugege subtiitreid",
-  "LabelSettingsParseSubtitlesHelp": "Eraldage subtiitrid heliraamatu kaustade nimedest.<br>Subtiitrid peavad olema eraldatud  kasutades \" - \".<br>Näiteks: \"Raamatu pealkiri - Siin on alapealkiri\" alapealkiri on \"Siin on alapealkiri\"",
+  "LabelSettingsParseSubtitlesHelp": "Eraldage subtiitrid heliraamatu kaustade nimedest.<br>Subtiitrid peavad olema eraldatud kasutades \" - \".<br>Näiteks: \"Raamatu pealkiri - Siin on alapealkiri\" alapealkiri on \"Siin on alapealkiri\"",
   "LabelSettingsPreferMatchedMetadata": "Eelista sobitatud metaandmeid",
   "LabelSettingsPreferMatchedMetadataHelp": "Sobitatud andmed kirjutavad Kiir Sobitamise kasutamisel üle üksikasjad.",
   "LabelSettingsSkipMatchingBooksWithASIN": "Jätke ASIN-iga sobituvad raamatud vahele",
