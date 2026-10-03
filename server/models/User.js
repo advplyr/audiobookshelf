@@ -822,6 +822,21 @@ class User extends Model {
         newMediaProgressPayload.finishedAt = null
       }
       mediaProgress = await this.sequelize.models.mediaProgress.create(newMediaProgressPayload)
+
+      // For local sync: preserve the client's lastUpdate on create too (parity with the "For local sync"
+      // block in MediaProgress.applyProgressUpdate, MediaProgress.js:253-262, which only ran on update).
+      // Without this, Sequelize stamps updatedAt = now, and the sync guard then rejects every session
+      // with an older-but-real timestamp (including a finished one), freezing progress at the first-synced session.
+      if (progressPayload.lastUpdate) {
+        if (isNaN(new Date(progressPayload.lastUpdate))) {
+          Logger.warn(`[User] Invalid date provided for lastUpdate: ${progressPayload.lastUpdate} (media item ${mediaItemId})`)
+        } else {
+          const escapedDate = this.sequelize.escape(new Date(progressPayload.lastUpdate))
+          await this.sequelize.query(`UPDATE "mediaProgresses" SET "updatedAt" = ${escapedDate} WHERE "id" = '${mediaProgress.id}'`)
+          await mediaProgress.reload()
+        }
+      }
+
       this.mediaProgresses.push(mediaProgress)
     }
     userCache.maybeInvalidate(this)
