@@ -16,7 +16,7 @@
           <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" filter-key="authors" @input="handleInputChange" />
         </div>
         <div class="grow px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" :label="$strings.LabelPublishYear" @input="handleInputChange" />
+          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" :label="$strings.LabelPublishYear" @input="handleInputChange" />
         </div>
       </div>
 

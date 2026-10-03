@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
+const { normalizePublishedYear } = require('../utils/metadataUtils')
 const parseNameString = require('../utils/parsers/parseNameString')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
@@ -377,6 +378,10 @@ class Book extends Model {
       metadataStringKeys.forEach((key) => {
         if (typeof payload.metadata[key] == 'number') {
           payload.metadata[key] = String(payload.metadata[key])
+        }
+
+        if (key === 'publishedYear') {
+          payload.metadata[key] = normalizePublishedYear(payload.metadata[key])
         }
 
         if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && this[key] !== payload.metadata[key]) {
