@@ -443,7 +443,7 @@ module.exports.encodeUriPath = (path) => {
   const uri = new URL('/', 'file://')
   // we assign the path here to assure that URL control characters like # are
   // actually interpreted as part of the URL path
-  uri.pathname = path
+  uri.pathname = path.replaceAll('%', '%25')
   return uri.pathname
 }
 
