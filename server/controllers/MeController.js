@@ -485,16 +485,54 @@ class MeController {
   async getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
-    const mediaProgressesInProgress = req.user.mediaProgresses.filter((mp) => !mp.isFinished && (mp.currentTime > 0 || mp.ebookProgress > 0))
+    const mediaProgressesInProgress = req.user.mediaProgresses
+      .filter((mp) => !mp.isFinished && (mp.currentTime > 0 || mp.ebookProgress > 0))
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, limit)
 
     const libraryItemsIds = [...new Set(mediaProgressesInProgress.map((mp) => mp.extraData?.libraryItemId).filter((id) => id))]
-    const libraryItems = await Database.libraryItemModel.findAllExpandedWhere({ id: libraryItemsIds })
+    const episodeIds = mediaProgressesInProgress.filter((mp) => mp.mediaItemType === 'podcastEpisode').map((mp) => mp.mediaItemId)
+    const libraryItems = await Database.libraryItemModel.findAll({
+      where: { id: libraryItemsIds },
+      include: [
+        {
+          model: Database.bookModel,
+          include: [
+            {
+              model: Database.authorModel,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: Database.seriesModel,
+              through: {
+                attributes: ['id', 'sequence']
+              }
+            }
+          ]
+        },
+        {
+          model: Database.podcastModel,
+          include: {
+            model: Database.podcastEpisodeModel,
+            where: { id: episodeIds },
+            required: false
+          }
+        }
+      ],
+      order: [
+        [Database.bookModel, Database.authorModel, Database.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+        [Database.bookModel, Database.seriesModel, 'bookSeries', 'createdAt', 'ASC']
+      ]
+    })
+    const libraryItemsById = new Map(libraryItems.map((li) => [li.id, li]))
 
     let itemsInProgress = []
 
     for (const mediaProgress of mediaProgressesInProgress) {
       const oldMediaProgress = mediaProgress.getOldMediaProgress()
-      const libraryItem = libraryItems.find((li) => li.id === oldMediaProgress.libraryItemId)
+      const libraryItem = libraryItemsById.get(oldMediaProgress.libraryItemId)
       if (libraryItem) {
         if (oldMediaProgress.episodeId && libraryItem.isPodcast) {
           const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === oldMediaProgress.episodeId)
@@ -504,6 +542,7 @@ class MeController {
               recentEpisode: episode.toOldJSON(libraryItem.id),
               progressLastUpdate: oldMediaProgress.lastUpdate
             }
+            libraryItemWithEpisode.media.numEpisodes = libraryItem.media.numEpisodes
             itemsInProgress.push(libraryItemWithEpisode)
           }
         } else if (!oldMediaProgress.episodeId) {
