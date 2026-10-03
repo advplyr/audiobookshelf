@@ -794,6 +794,9 @@ WHERE EXISTS (
       })
     }
 
+    // Remove bookmarks for library items that no longer exist
+    await this.userModel.removeOrphanedBookmarks()
+
     // Remove expired Session records
     await this.cleanupExpiredSessions()
 
