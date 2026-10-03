@@ -82,7 +82,7 @@ class Library extends Model {
   }
 
   static get defaultMetadataPrecedence() {
-    return ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'absMetadata']
+    return ['folderStructure', 'audioMetatags', 'nfoFile', 'txtFiles', 'opfFile', 'daisyFile', 'absMetadata']
   }
 
   /**
