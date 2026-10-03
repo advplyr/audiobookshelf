@@ -347,7 +347,7 @@ export default {
       asinError: null,
       removeBranding: false,
       showSecondInputs: false,
-      audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
+      audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES', 'BR'],
       hasChanges: false,
       timeIncrementAmount: 1,
       elapsedTime: 0,
