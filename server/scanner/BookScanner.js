@@ -20,6 +20,7 @@ const LibraryFile = require('../objects/files/LibraryFile')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CoverManager = require('../managers/CoverManager')
+const CacheManager = require('../managers/CacheManager')
 
 const LibraryScan = require('./LibraryScan')
 const OpfFileScanner = require('./OpfFileScanner')
@@ -162,6 +163,10 @@ class BookScanner {
           media.coverPath = coverPath
           media.changed('coverPath', true)
           hasMediaChanges = true
+        } else {
+          // Cover file was modified in place so the cached covers are stale
+          libraryScan.addLog(LogLevel.DEBUG, `Purging cover cache for book "${media.title}" because cover "${media.coverPath}" was modified`)
+          await CacheManager.purgeCoverCache(existingLibraryItem.id)
         }
       }
     }
