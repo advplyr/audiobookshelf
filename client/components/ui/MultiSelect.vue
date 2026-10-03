@@ -314,6 +314,8 @@ export default {
   },
   mounted() {},
   beforeDestroy() {
+    // Ensure the scroll listener is always removed, even if the menu was still open when this component was destroyed
+    this.removeListener()
     if (this.menu) this.menu.remove()
   }
 }
