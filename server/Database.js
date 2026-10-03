@@ -942,10 +942,29 @@ WHERE EXISTS (
   }
 
   TextSearchQuery = class {
+    static PUNCTUATION_EQUIVALENTS = [
+      [`’`, `'`],
+      [`‘`, `'`],
+      [`“`, `"`],
+      [`”`, `"`],
+      [`！`, `!`],
+      [`？`, `?`],
+      [`，`, `,`],
+      [`：`, `:`],
+      [`；`, `;`],
+      [`（`, `(`],
+      [`）`, `)`],
+      [`\u3000`, ` `],
+      [`\uff5e`, `~`],
+      [`\u301c`, `~`],
+      [`\u2026`, `...`],
+      [`\u2014`, `--`]
+    ]
+
     constructor(sequelize, supportsUnaccent, query) {
       this.sequelize = sequelize
       this.supportsUnaccent = supportsUnaccent
-      this.query = query
+      this.query = this.normalizePunctuationJs(query)
       this.hasAccents = false
     }
 
@@ -955,6 +974,21 @@ WHERE EXISTS (
      * @param {string} value
      * @returns {string}
      */
+    normalizePunctuationJs(value) {
+      const punctuationNormalized = this.constructor.PUNCTUATION_EQUIVALENTS.reduce((str, [from, to]) => str.split(from).join(to), value)
+      return punctuationNormalized.replace(/\s+/g, ' ').trim()
+    }
+
+    normalizePunctuationSql(expression) {
+      const punctuationNormalized = this.constructor.PUNCTUATION_EQUIVALENTS.reduce((expr, [from, to]) => `REPLACE(${expr}, ${this.sequelize.escape(from)}, ${this.sequelize.escape(to)})`, expression)
+      // SQLite has no built-in regex replace, so collapse runs of spaces by repeatedly
+      // replacing double-spaces with a single space (each pass halves the max run length)
+      const collapsedWhitespace = Array(5)
+        .fill(null)
+        .reduce((expr) => `REPLACE(${expr}, '  ', ' ')`, punctuationNormalized)
+      return `TRIM(${collapsedWhitespace})`
+    }
+
     normalize(value) {
       return `unaccent(${value})`
     }
@@ -982,8 +1016,9 @@ WHERE EXISTS (
      */
     matchExpression(column) {
       const pattern = this.sequelize.escape(`%${this.query}%`)
-      if (!this.supportsUnaccent) return `${column} LIKE ${pattern}`
-      const normalizedColumn = this.hasAccents ? column : this.normalize(column)
+      const punctuationNormalizedColum = this.normalizePunctuationSql(column)
+      if (!this.supportsUnaccent) return `${punctuationNormalizedColum} LIKE ${pattern}`
+      const normalizedColumn = this.hasAccents ? punctuationNormalizedColum : this.normalize(punctuationNormalizedColum)
       return `${normalizedColumn} LIKE ${pattern}`
     }
   }
