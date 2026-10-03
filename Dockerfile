@@ -33,7 +33,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* /server/
 COPY /server /server/server
 COPY --from=compile-server /server/dist-server /server/dist-server
 
