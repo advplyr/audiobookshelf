@@ -391,8 +391,7 @@ class PlaybackSessionManager {
     const updateResponse = await user.createUpdateMediaProgressFromPayload({
       libraryItemId: libraryItem.id,
       episodeId: session.episodeId,
-      // duration no longer required (v2.15.1) but used if available
-      duration: syncData.duration || session.duration || 0,
+      duration: session.duration || syncData.duration || 0,
       currentTime: syncData.currentTime,
       progress: session.progress,
       markAsFinishedTimeRemaining: library.librarySettings.markAsFinishedTimeRemaining,
