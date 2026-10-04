@@ -1,4 +1,6 @@
 import type { EBookFileObject } from '../../models/Book'
+import type { ComicInfoMetadata } from './parseComicInfoMetadata'
+import type { OpfMetadataResult } from './parseOpfMetadata'
 import { extractCoverImage as extractComicCoverImage, parse as parseComicMetadata } from './parseComicMetadata'
 import { extractCoverImage as extractEpubCoverImage, parse as parseEpubMetadata } from './parseEpubMetadata'
 
@@ -10,7 +12,7 @@ export type EBookFileScanData = {
   ebookFormat: string
   /** Internal image path. Omitted when no cover image was found. */
   ebookCoverPath?: string
-  metadata: unknown
+  metadata: OpfMetadataResult | ComicInfoMetadata | null
 }
 
 /**
