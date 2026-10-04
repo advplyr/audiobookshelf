@@ -59,3 +59,7 @@ Check local paths in `dev.js` before startup. Use isolated configuration, databa
 - Do not create branches or commits without explicit authorization.
 - Use temporary databases and media directories for startup, scanning, and migration checks.
 - Consult [migration-plan.md](docs/migration-plan.md) for migration phases, scope, and validation details when more context is needed.
+- Migrate existing files with git mv; never delete the original and create a replacement.
+- Keep file renames in a dedicated commit with unchanged contents, then apply TypeScript changes in a subsequent commit.
+- Verify each rename commit reports R100 with git diff-tree --no-commit-id --name-status -r -M, and confirm git log --follow reaches the original file history.
+- Do not rewrite published history or force-push without explicit user authorization.
