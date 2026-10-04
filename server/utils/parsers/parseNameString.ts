@@ -5,19 +5,13 @@
 //
 import parseFullName from './parseFullName'
 
-type ParsedFullName = {
-  first?: string
-  middle?: string
-  last?: string
-}
-
 type NameParts = {
   first_name?: string
   last_name?: string
 }
 
 function parseName(name: string): NameParts {
-  const parts = parseFullName(name) as ParsedFullName
+  const parts = parseFullName(name)
   let firstName = parts.first
   if (firstName && parts.middle) firstName += ' ' + parts.middle
 
@@ -32,7 +26,7 @@ function parseName(name: string): NameParts {
 function checkIsALastName(name: string): boolean {
   if (!name.includes(' ')) return true // No spaces must be a Last name
 
-  const parsed = parseFullName(name) as ParsedFullName
+  const parsed = parseFullName(name)
   if (!parsed.first) return true // had spaces but not a first name i.e. "von Mises", must be last name only
 
   return false

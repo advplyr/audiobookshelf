@@ -13,7 +13,17 @@ type ParsedName = {
 const namePartKeys = ['title', 'first', 'middle', 'last', 'nick', 'suffix', 'error'] as const
 type NamePart = (typeof namePartKeys)[number]
 
-const parseFullName = (nameToParse: unknown, partToReturn?: unknown, fixCase?: unknown, stopOnError?: unknown, useLongLists?: unknown): ParsedName | ParsedName[NamePart] => {
+type ParsedPart<Part extends string> = Part extends string
+  ? Lowercase<Part> extends NamePart
+    ? ParsedName[Lowercase<Part>]
+    : ParsedName | ParsedName[Extract<NamePart, Lowercase<Part>>]
+  : never
+
+// Part names are case-insensitive; omitted, falsy, and unrecognized parts return the full object.
+function parseFullName(nameToParse: unknown, partToReturn?: null | false | 0 | '', fixCase?: unknown, stopOnError?: unknown, useLongLists?: unknown): ParsedName
+function parseFullName<Part extends string>(nameToParse: unknown, partToReturn: Part, fixCase?: unknown, stopOnError?: unknown, useLongLists?: unknown): ParsedPart<Part>
+function parseFullName(nameToParse: unknown, partToReturn: unknown, fixCase?: unknown, stopOnError?: unknown, useLongLists?: unknown): ParsedName | ParsedName[NamePart]
+function parseFullName(nameToParse: unknown, partToReturn?: unknown, fixCase?: unknown, stopOnError?: unknown, useLongLists?: unknown): ParsedName | ParsedName[NamePart] {
   let i = 0
   let j = 0
   let l = 0
