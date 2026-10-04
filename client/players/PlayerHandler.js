@@ -324,6 +324,13 @@ export default class PlayerHandler {
       })
       .catch((error) => {
         console.error('Failed to update session progress', error)
+        // Session no longer exists on the server: open a new one and resume from current position
+        if (error.response && error.response.status === 404) {
+          console.log('[PlayerHandler] Sync returned 404 - session closed on server, reopening session at', currentTime)
+          this.startTimeOverride = currentTime
+          this.prepare()
+          return
+        }
         // After 4 failed sync attempts show an alert toast
         this.failedProgressSyncs++
         if (this.failedProgressSyncs >= 4) {
