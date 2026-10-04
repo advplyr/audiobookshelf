@@ -54,7 +54,7 @@ export async function parse(ebookFile: EBookFileObject): Promise<EBookFileScanDa
     let metadata = null
     const comicInfoPath = filePaths.find((filePath) => filePath === 'ComicInfo.xml')
     if (comicInfoPath) {
-      // extractToBuffer and xmlToJSON are inferred as any from untyped JavaScript.
+      // Archive contents and parsed XML are checked at the metadata boundary.
       const comicInfoData = (await archive.extractToBuffer(comicInfoPath)) as AllowSharedBufferSource | null | undefined
       if (comicInfoData) {
         const comicInfoStr = new TextDecoder().decode(comicInfoData)

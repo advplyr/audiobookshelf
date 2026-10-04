@@ -76,7 +76,7 @@ async function extractFileFromEpub(epubPath: string, filepath: string): Promise<
 async function extractXmlToJson(epubPath: string, xmlFilepath: string): Promise<EpubPackageJson | null> {
   const filedata = await extractFileFromEpub(epubPath, xmlFilepath)
   if (!filedata) return null
-  // xmlToJSON resolves parser output as any.
+  // Parsed XML is narrowed to the expected EPUB package shape here.
   return (await xmlToJSON(filedata)) as EpubPackageJson | null
 }
 
