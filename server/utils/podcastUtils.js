@@ -189,6 +189,17 @@ function extractEpisodeData(item) {
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription.trim())
   }
 
+  // Some feeds (e.g. ZDF and other public-broadcaster feeds) carry the episode
+  // notes only in itunes:summary, with no description or content:encoded. Fall
+  // back to it so the description is not left empty. (#5541)
+  if (item['itunes:summary']) {
+    const rawDescription = (extractFirstArrayItemString(item, 'itunes:summary') || '').trim()
+    if (rawDescription) {
+      if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
+      if (!episode.descriptionPlain) episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    }
+  }
+
   if (item['pubDate']) {
     const pubDate = extractFirstArrayItem(item, 'pubDate')
     if (typeof pubDate === 'string') {
