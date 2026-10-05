@@ -128,6 +128,8 @@
             <button v-if="isDescriptionClamped" class="py-0.5 flex items-center text-slate-300 hover:text-white" @click="showFullDescription = !showFullDescription">{{ showFullDescription ? $strings.ButtonReadLess : $strings.ButtonReadMore }} <span class="material-symbols text-xl pl-1" v-html="showFullDescription ? 'expand_less' : '&#xe313;'" /></button>
           </div>
 
+          <tables-reviews-table v-if="enableReviews" :library-item="libraryItem" class="mt-6" />
+
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
           <tables-tracks-table v-if="tracks.length" :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
@@ -143,6 +145,7 @@
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" :download-queue="episodeDownloadsQueued" :episodes-downloading="episodesDownloading" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :playback-rate="1" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
+    <modals-review-modal v-if="enableReviews" />
   </div>
 </template>
 
@@ -343,6 +346,9 @@ export default {
     isQueued() {
       return this.$store.getters['getIsMediaQueued'](this.libraryItemId)
     },
+    enableReviews() {
+      return this.$store.getters['getServerSetting']('enableReviews')
+    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
@@ -434,6 +440,9 @@ export default {
     }
   },
   methods: {
+    onReviewUpdated(review) {
+      this.$root.$emit('review-updated', review)
+    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {

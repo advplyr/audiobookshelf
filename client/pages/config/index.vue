@@ -103,6 +103,26 @@
             <ui-toggle-switch v-model="newServerSettings.allowIframe" :label="$strings.LabelSettingsAllowIframe" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('allowIframe', val)" />
             <p aria-hidden="true" class="pl-4">{{ $strings.LabelSettingsAllowIframe }}</p>
           </div>
+
+          <div role="article" :aria-label="$strings.LabelSettingsEnableReviewsHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsEnableReviews" v-model="newServerSettings.enableReviews" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableReviews', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsEnableReviewsHelp">
+              <p class="pl-4">
+                <span id="settings-enable-reviews">{{ $strings.LabelSettingsEnableReviews }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div v-if="newServerSettings.enableReviews" role="article" :aria-label="$strings.LabelSettingsShowRatingsPageHelp" class="flex items-center py-2 mb-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsShowRatingsPage" v-model="newServerSettings.showReviewsInSidebar" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('showReviewsInSidebar', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsShowRatingsPageHelp">
+              <p class="pl-4">
+                <span id="settings-show-ratings-page">{{ $strings.LabelSettingsShowRatingsPage }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
         </div>
 
         <div class="flex-1">

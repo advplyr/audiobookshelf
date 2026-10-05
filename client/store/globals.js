@@ -25,8 +25,10 @@ export const state = () => ({
   selectedRawCoverUrl: null,
   selectedMediaItemShare: null,
   isCasting: false, // Actively casting
-  isChromecastInitialized: false, // Script loadeds
-  showBatchQuickMatchModal: false,
+    isChromecastInitialized: false, // Script loadeds
+    showReviewModal: false,
+    selectedReviewItem: null,
+    showBatchQuickMatchModal: false,
   dateFormats: [
     {
       text: 'MM/DD/YYYY',
@@ -203,6 +205,16 @@ export const mutations = {
   },
   setShowBatchQuickMatchModal(state, val) {
     state.showBatchQuickMatchModal = val
+  },
+  setShowReviewModal(state, val) {
+    state.showReviewModal = val
+  },
+  setReviewModal(state, { libraryItem, review }) {
+    state.selectedReviewItem = {
+      libraryItem,
+      review
+    }
+    state.showReviewModal = true
   },
   resetSelectedMediaItems(state) {
     state.selectedMediaItems = []
