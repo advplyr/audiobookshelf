@@ -108,8 +108,8 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <!-- Only admin or root user can download new episodes -->
-            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
+            <!-- Only admins or users with the download podcast episodes permission can download new episodes -->
+            <ui-tooltip v-if="isPodcast && userCanDownloadPodcastEpisodes" :text="$strings.LabelFindEpisodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :aria-label="$strings.LabelFindEpisodes" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
@@ -352,6 +352,9 @@ export default {
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },
+    userCanDownloadPodcastEpisodes() {
+      return this.$store.getters['user/getUserCanDownloadPodcastEpisodes']
+    },
     showRssFeedBtn() {
       if (!this.rssFeed && !this.podcastEpisodes.length && !this.tracks.length) return false // Cannot open RSS feed with no episodes/tracks
 
@@ -475,7 +478,8 @@ export default {
         return this.$toast.error(this.$strings.ToastNoRSSFeed)
       }
       this.fetchingRSSFeed = true
-      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
+      // Feed url is read from the library item server-side so this is usable by non-admin users
+      var payload = await this.$axios.$get(`/api/podcasts/${this.libraryItemId}/feed`).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error(this.$strings.ToastPodcastGetFeedFailed)
         return null
