@@ -194,9 +194,9 @@ function extractEpisodeData(item) {
   // back to it so the description is not left empty. (#5541)
   if (item['itunes:summary']) {
     const rawDescription = (extractFirstArrayItemString(item, 'itunes:summary') || '').trim()
-    if (rawDescription) {
-      if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
-      if (!episode.descriptionPlain) episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+    if (rawDescription && !episode.description) {
+      episode.description = htmlSanitizer.sanitize(rawDescription)
+      episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
     }
   }
 

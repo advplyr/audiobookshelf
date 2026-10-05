@@ -38,6 +38,7 @@ describe('podcastUtils', () => {
       const episode = result.podcast.episodes[0]
       expect(episode.description).to.include('Full HTML body.')
       expect(episode.description).to.not.include('fallback')
+      expect(episode.descriptionPlain || '').to.not.include('fallback')
     })
   })
 })
