@@ -6,6 +6,7 @@ const Database = require('../Database')
 const RssFeedManager = require('../managers/RssFeedManager')
 
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+const { getTitleIgnorePrefix } = require('../utils/index')
 
 /**
  * @typedef RequestUserObject
@@ -62,7 +63,8 @@ class SeriesController {
   }
 
   /**
-   * TODO: Currently unused in the client, should check for duplicate name
+   * PATCH /api/series/:id
+   * Update series metadata (name, description)
    *
    * @param {SeriesControllerRequest} req
    * @param {Response} res
@@ -78,6 +80,17 @@ class SeriesController {
     if (!Object.keys(payload).length) {
       return res.status(400).send('No valid fields to update')
     }
+
+    // Check for duplicate series name in the same library
+    if (payload.name && payload.name.toLowerCase() !== req.series.name.toLowerCase()) {
+      const existingSeries = await Database.seriesModel.getByNameAndLibrary(payload.name, req.series.libraryId)
+      if (existingSeries && existingSeries.id !== req.series.id) {
+        return res.status(400).send('A series with that name already exists in this library')
+      }
+      // Update nameIgnorePrefix when name changes
+      payload.nameIgnorePrefix = getTitleIgnorePrefix(payload.name)
+    }
+
     req.series.set(payload)
     if (req.series.changed()) {
       await req.series.save()
