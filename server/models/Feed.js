@@ -605,6 +605,12 @@ class Feed extends Model {
       })
     }
 
+    if (this.genres) {
+      this.genres.forEach(genre => {
+        customElements.push({ 'itunes:category': genre})
+      })
+    }
+
     if (this.preventIndexing) {
       customElements.push({ 'itunes:block': 'yes' }, { 'googleplay:block': 'yes' })
     }
