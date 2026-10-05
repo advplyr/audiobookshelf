@@ -472,7 +472,11 @@ class Server {
     const rootUsername = newRoot.username || 'root'
     const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    await Database.createRootUser(rootUsername, rootPash, this.auth)
+    const created = await Database.createRootUser(rootUsername, rootPash, this.auth)
+    if (!created) {
+      Logger.error(`[Server] attempt to init server when server already has a root user`)
+      return res.sendStatus(500)
+    }
 
     res.sendStatus(200)
   }
