@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
+const { normalizeSeriesSequence } = require('../utils/seriesSequence')
 const parseNameString = require('../utils/parsers/parseNameString')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
@@ -510,7 +511,7 @@ class Book extends Model {
     const seriesAdded = []
     let hasUpdates = false
     for (const seriesObj of seriesObjects) {
-      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence : null
+      const seriesObjSequence = typeof seriesObj.sequence === 'string' ? normalizeSeriesSequence(seriesObj.sequence) : null
 
       const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
       if (existingSeries) {
