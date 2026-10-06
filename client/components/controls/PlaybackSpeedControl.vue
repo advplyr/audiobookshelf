@@ -37,6 +37,15 @@ export default {
     playbackRateIncrementDecrement: {
       type: Number,
       default: 0.1
+    },
+    /**
+     * Override the menu's left offset (px, relative to the control). Use when the
+     * default centered menu would open over neighboring content, e.g. the
+     * fullscreen player's artwork.
+     */
+    menuLeftOffset: {
+      type: Number,
+      default: null
     }
   },
   data() {
@@ -97,14 +106,15 @@ export default {
       if (!this.$refs.wrapper) return
       const boundingBox = this.$refs.wrapper.getBoundingClientRect()
 
-      if (boundingBox.left + 110 > window.innerWidth - 10) {
+      if (this.menuLeftOffset !== null) {
+        this.menuLeft = this.menuLeftOffset
+      } else if (boundingBox.left + 110 > window.innerWidth - 10) {
         this.menuLeft = window.innerWidth - 230 - boundingBox.left
-
-        this.arrowLeft = Math.abs(this.menuLeft) - 96
       } else {
         this.menuLeft = -96
-        this.arrowLeft = 0
       }
+      // Keeps the arrow pointing at the control regardless of where the menu sits
+      this.arrowLeft = -this.menuLeft - 96
     },
     setShowMenu(val) {
       if (val) {
