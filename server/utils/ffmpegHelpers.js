@@ -1,11 +1,11 @@
 const axios = require('axios')
 const ssrfFilter = require('ssrf-req-filter')
-const Ffmpeg = require('../libs/fluentFfmpeg')
-const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
-const fs = require('../libs/fsExtra')
+const Ffmpeg = require('../libs/fluentFfmpeg/index.js')
+const ffmpgegUtils = require('../libs/fluentFfmpeg/utils.js')
+const fs = require('../libs/fsExtra/index.js')
 const Path = require('path')
-const Logger = require('../Logger')
-const { filePathToPOSIX, copyToExisting } = require('./fileUtils')
+const Logger = require('../Logger.js')
+const { filePathToPOSIX, copyToExisting } = require('./fileUtils.js')
 
 function escapeSingleQuotes(path) {
   // A ' within a quoted string is escaped with '\'' in ffmpeg (see https://www.ffmpeg.org/ffmpeg-utils.html#Quoting-and-escaping)

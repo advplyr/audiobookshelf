@@ -1,6 +1,6 @@
-const Logger = require('../../Logger')
-const Notification = require('../Notification')
-const { isNullOrNaN } = require('../../utils')
+const Logger = require('../../Logger.js')
+const Notification = require('../Notification.js')
+const { isNullOrNaN } = require('../../utils/index.js')
 
 class NotificationSettings {
   constructor(settings = null) {

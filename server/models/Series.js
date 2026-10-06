@@ -1,6 +1,6 @@
 const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
 
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index.js')
 
 class Series extends Model {
   constructor(values, options) {

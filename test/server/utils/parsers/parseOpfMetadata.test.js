@@ -1,6 +1,6 @@
 const chai = require('chai')
 const expect = chai.expect
-const { parseOpfMetadataXML } = require('../../../../server/utils/parsers/parseOpfMetadata')
+const { parseOpfMetadataXML } = require('../../../../server/utils/parsers/parseOpfMetadata.js')
 
 describe('parseOpfMetadata - test series', async () => {
   it('test one series', async () => {

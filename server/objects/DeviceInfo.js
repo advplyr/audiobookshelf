@@ -1,5 +1,5 @@
 const uuidv4 = require('uuid').v4
-const { stripAllTags } = require('../utils/htmlSanitizer')
+const { stripAllTags } = require('../utils/htmlSanitizer.js')
 
 class DeviceInfo {
   /** @type {string[]} Fields to sanitize when loading from stored data */

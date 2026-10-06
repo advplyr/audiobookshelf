@@ -2,15 +2,15 @@ const { Request, Response } = require('express')
 const uuid = require('uuid')
 const Path = require('path')
 const { Op } = require('sequelize')
-const Logger = require('../Logger')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
 
-const { PlayMethod } = require('../utils/constants')
-const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
-const zipHelpers = require('../utils/zipHelpers')
+const { PlayMethod } = require('../utils/constants.js')
+const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils.js')
+const zipHelpers = require('../utils/zipHelpers.js')
 
-const PlaybackSession = require('../objects/PlaybackSession')
-const ShareManager = require('../managers/ShareManager')
+const PlaybackSession = require('../objects/PlaybackSession.js')
+const ShareManager = require('../managers/ShareManager.js')
 
 /**
  * @typedef RequestUserObject

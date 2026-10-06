@@ -1,12 +1,12 @@
 const { Op } = require('sequelize')
 const uuid = require('uuid')
 
-const Database = require('../Database')
-const Logger = require('../Logger')
+const Database = require('../Database.js')
+const Logger = require('../Logger.js')
 
-const requestIp = require('../libs/requestIp')
-const jwt = require('../libs/jsonwebtoken')
-const { isRequestSecure } = require('../utils/requestUtils')
+const requestIp = require('../libs/requestIp/index.js')
+const jwt = require('../libs/jsonwebtoken/index.js')
+const { isRequestSecure } = require('../utils/requestUtils.js')
 
 class TokenManager {
   /** @type {string} JWT secret key */

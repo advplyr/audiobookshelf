@@ -1,8 +1,8 @@
 const axios = require('axios').default
 const Throttle = require('p-throttle')
-const Logger = require('../Logger')
-const { levenshteinDistance } = require('../utils/index')
-const { isValidASIN } = require('../utils/index')
+const Logger = require('../Logger.js')
+const { levenshteinDistance } = require('../utils/index.js')
+const { isValidASIN } = require('../utils/index.js')
 
 /**
  * @typedef AuthorSearchObj

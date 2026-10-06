@@ -1,8 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const { up, down } = require('../../../server/migrations/v2.17.5-remove-host-from-feed-urls')
+const { up, down } = require('../../../server/migrations/v2.17.5-remove-host-from-feed-urls.js')
 const { Sequelize, DataTypes } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
 const defineModels = (sequelize) => {
   const Feeds = sequelize.define('Feeds', {

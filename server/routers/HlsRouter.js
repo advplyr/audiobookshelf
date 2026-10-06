@@ -1,10 +1,10 @@
 const express = require('express')
 const Path = require('path')
 
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
 
-const fs = require('../libs/fsExtra')
+const fs = require('../libs/fsExtra/index.js')
 
 
 class HlsRouter {
