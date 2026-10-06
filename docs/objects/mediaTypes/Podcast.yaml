@@ -54,6 +54,14 @@ components:
         maxNewEpisodesToDownload:
           type: integer
           description: The maximum number of new episodes to download when automatically downloading epsiodes.
+        autoDownloadMinDuration:
+          type: integer
+          description: New episodes shorter than this duration in seconds are skipped when automatically downloading episodes. 0 disables the filter.
+        autoDownloadExcludeTerms:
+          type: array
+          description: New episodes whose title contains one of these terms (case-insensitive) are skipped when automatically downloading episodes.
+          items:
+            type: string
         lastCoverSearch:
           type: integer
           description: The timestamp of the last cover search.
