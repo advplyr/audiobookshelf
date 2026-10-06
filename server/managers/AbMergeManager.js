@@ -40,6 +40,9 @@ class AbMergeManager {
    * @returns {Promise<void>}
    */
   cancelEncode(task) {
+    if (task.data.ffmpeg) {
+      task.data.ffmpeg.cancelRequested = true
+    }
     const taskFailedString = {
       text: 'Task canceled by user',
       key: 'MessageTaskCanceledByUser'
