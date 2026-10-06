@@ -125,11 +125,7 @@ class LibraryScan {
   }
 
   async saveLog() {
-    const scanLogDir = Path.join(global.MetadataPath, 'logs', 'scans')
-
-    if (!(await fs.pathExists(scanLogDir))) {
-      await fs.mkdir(scanLogDir)
-    }
+    const scanLogDir = Logger.logManager.ScanLogPath
 
     const outputPath = Path.join(scanLogDir, this.logFilename)
     const logLines = [JSON.stringify(this.toJSON())]
@@ -139,6 +135,8 @@ class LibraryScan {
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
 
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
+
+    await Logger.logManager?.purgeOldScanLogs()
   }
 }
 module.exports = LibraryScan
