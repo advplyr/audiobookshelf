@@ -323,7 +323,8 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
 
     if (isMp4) {
       ffmpeg.outputOptions([
-        '-f mp4' // force output format to mp4
+        '-f mp4', // force output format to mp4
+        '-movflags use_metadata_tags' // preserve custom metadata tags
       ])
     } else if (isMp3) {
       ffmpeg.outputOptions([
@@ -405,6 +406,8 @@ function escapeFFMetadataValue(value) {
  * @returns {Object} - The FFmpeg metadata object.
  */
 function getFFMetadataObject(libraryItem, audioFilesLength) {
+  const series = libraryItem.media.series || []
+  const canEmbedSeriesTags = series.length <= 1 || series.every((s) => s.bookSeries.sequence)
   const ffmetadata = {
     title: libraryItem.media.title,
     artist: libraryItem.media.authorName,
@@ -419,7 +422,9 @@ function getFFMetadataObject(libraryItem, audioFilesLength) {
     copyright: libraryItem.media.publisher,
     publisher: libraryItem.media.publisher, // mp3 only
     TRACKTOTAL: `${audioFilesLength}`, // mp3 only
-    grouping: libraryItem.media.series?.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
+    series: canEmbedSeriesTags ? series.map((s) => s.name).join('; ') : undefined,
+    'series-part': canEmbedSeriesTags ? series.map((s) => s.bookSeries.sequence).join('; ') : undefined,
+    grouping: series.map((s) => s.name + (s.bookSeries.sequence ? ` #${s.bookSeries.sequence}` : '')).join('; ')
   }
   Object.keys(ffmetadata).forEach((key) => {
     if (!ffmetadata[key]) {
