@@ -53,6 +53,41 @@ class BookScanner {
   constructor() {}
 
   /**
+   * Repair audio file identity that no longer matches the library file at the same path
+   * @param {import('../models/Book')} media
+   * @param {import('./LibraryItemScanData')} libraryItemData
+   * @param {LibraryScan} libraryScan
+   * @returns {number} number of audio files updated
+   */
+  reconcileAudioFileIdentity(media, libraryItemData, libraryScan) {
+    const audioLibraryFiles = libraryItemData.audioLibraryFiles
+    const claimed = new Set()
+    let numUpdated = 0
+
+    for (const audioFile of media.audioFiles) {
+      // Match on exact path, then fallback to relPath in case a parent directory was renamed
+      let matches = audioLibraryFiles.filter((lf) => !claimed.has(lf) && lf.metadata.path === audioFile.metadata.path)
+      if (!matches.length) {
+        matches = audioLibraryFiles.filter((lf) => !claimed.has(lf) && lf.metadata.relPath === audioFile.metadata.relPath)
+      }
+      if (matches.length !== 1) continue
+
+      const libraryFile = matches[0]
+      claimed.add(libraryFile)
+
+      if (libraryFile.ino === audioFile.ino && libraryFile.metadata.path === audioFile.metadata.path) continue
+      if (libraryFile.metadata.size !== audioFile.metadata.size || libraryFile.metadata.mtimeMs !== audioFile.metadata.mtimeMs) continue
+
+      libraryScan.addLog(LogLevel.INFO, `Audio file "${audioFile.metadata.relPath}" on book "${media.title}" is stored with inode "${audioFile.ino}" at "${audioFile.metadata.path}" but the file on disk has inode "${libraryFile.ino}" at "${libraryFile.metadata.path}", updating it`)
+      audioFile.ino = libraryFile.ino
+      audioFile.metadata = libraryFile.metadata.toJSON()
+      numUpdated++
+    }
+
+    return numUpdated
+  }
+
+  /**
    * @param {import('../models/LibraryItem')} existingLibraryItem
    * @param {import('./LibraryItemScanData')} libraryItemData
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
@@ -81,6 +116,10 @@ class BookScanner {
         [Database.seriesModel, 'bookSeries', 'createdAt', 'ASC']
       ]
     })
+
+    // Must run before the audio library file check below, which matches on inode alone
+    const numIdentityUpdated = this.reconcileAudioFileIdentity(media, libraryItemData, libraryScan)
+    if (numIdentityUpdated) media.changed('audioFiles', true)
 
     let hasMediaChanges = libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length
     if (hasMediaChanges) {
@@ -145,6 +184,9 @@ class BookScanner {
 
       media.changed('audioFiles', true)
     }
+
+    // Saved, but intentionally after the block above so a manual track order is not re-sorted
+    if (numIdentityUpdated) hasMediaChanges = true
 
     // Check if cover was removed
     if (media.coverPath && libraryItemData.imageLibraryFilesRemoved.some((lf) => lf.metadata.path === media.coverPath) && !(await fsExtra.pathExists(media.coverPath))) {
