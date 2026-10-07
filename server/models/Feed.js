@@ -50,6 +50,8 @@ class Feed extends Model {
     this.podcastType
     /** @type {string} */
     this.language
+    /** @type {string[]} */
+    this.genres
     /** @type {string} */
     this.ownerName
     /** @type {string} */
@@ -138,6 +140,7 @@ class Feed extends Model {
       author: libraryItem.mediaType === 'podcast' ? media.author : media.authorName,
       podcastType: libraryItem.mediaType === 'podcast' ? media.podcastType : 'serial',
       language: media.language,
+      genres: media.genres,
       explicit: media.explicit,
       coverPath: media.coverPath,
       userId
@@ -396,6 +399,7 @@ class Feed extends Model {
         author: DataTypes.STRING,
         podcastType: DataTypes.STRING,
         language: DataTypes.STRING,
+        genres: DataTypes.JSON,
         ownerName: DataTypes.STRING,
         ownerEmail: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN,
@@ -585,7 +589,7 @@ class Feed extends Model {
           }
         }
       },
-      { 'itunes:explicit': !!this.explicit }
+      { 'itunes:explicit': !!this.explicit },
     ]
 
     if (this.description) {
@@ -604,7 +608,7 @@ class Feed extends Model {
         'itunes:owner': itunesOwnersData
       })
     }
-
+    
     if (this.genres) {
       this.genres.forEach(genre => {
         customElements.push({ 'itunes:category': genre})
@@ -668,6 +672,7 @@ class Feed extends Model {
         explicit: this.explicit,
         type: this.podcastType,
         language: this.language,
+        genres: this.genres,
         preventIndexing: this.preventIndexing,
         ownerName: this.ownerName,
         ownerEmail: this.ownerEmail
