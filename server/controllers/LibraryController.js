@@ -448,6 +448,7 @@ class LibraryController {
           Logger.info(`[LibraryController] Removed folder "${folder.path}" from library "${req.library.name}" with ${libraryItemsInFolder.length} library items`)
           const seriesIds = []
           const authorIds = []
+          const deletedLibraryItemIds = []
           for (const libraryItem of libraryItemsInFolder) {
             let mediaItemIds = []
             if (req.library.isPodcast) {
@@ -462,8 +463,10 @@ class LibraryController {
               }
             }
             Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.path}"`)
-            await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
+            await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id, deletedLibraryItemIds)
           }
+
+          await Database.userModel.removeBookmarksForLibraryItems(deletedLibraryItemIds)
 
           if (authorIds.length) {
             await this.checkRemoveAuthorsWithNoBooks(authorIds)
@@ -555,6 +558,7 @@ class LibraryController {
       ]
     })
     Logger.info(`[LibraryController] Removing ${libraryItemsInLibrary.length} library items in library "${req.library.name}"`)
+    const deletedLibraryItemIds = []
     for (const libraryItem of libraryItemsInLibrary) {
       let mediaItemIds = []
       if (req.library.isPodcast) {
@@ -563,8 +567,10 @@ class LibraryController {
         mediaItemIds.push(libraryItem.mediaId)
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${req.library.name}"`)
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id, deletedLibraryItemIds)
     }
+
+    await Database.userModel.removeBookmarksForLibraryItems(deletedLibraryItemIds)
 
     // Set PlaybackSessions libraryId to null
     const [sessionsUpdated] = await Database.playbackSessionModel.update(
@@ -700,6 +706,7 @@ class LibraryController {
     Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
     const authorIds = []
     const seriesIds = []
+    const deletedLibraryItemIds = []
     for (const libraryItem of libraryItemsWithIssues) {
       let mediaItemIds = []
       if (req.library.isPodcast) {
@@ -714,8 +721,10 @@ class LibraryController {
         }
       }
       Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" with issue`)
-      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id)
+      await this.handleDeleteLibraryItem(libraryItem.id, mediaItemIds, req.library.id, deletedLibraryItemIds)
     }
+
+    await Database.userModel.removeBookmarksForLibraryItems(deletedLibraryItemIds)
 
     if (authorIds.length) {
       await this.checkRemoveAuthorsWithNoBooks(authorIds)

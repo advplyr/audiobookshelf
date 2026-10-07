@@ -369,8 +369,9 @@ class ApiRouter {
    * @param {string} libraryItemId
    * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
    * @param {string} libraryId
+   * @param {string[]} [deletedLibraryItemIds] Optional array used to defer bookmark cleanup for batch deletes
    */
-  async handleDeleteLibraryItem(libraryItemId, mediaItemIds, libraryId) {
+  async handleDeleteLibraryItem(libraryItemId, mediaItemIds, libraryId, deletedLibraryItemIds = null) {
     const numProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: mediaItemIds
@@ -399,6 +400,12 @@ class ApiRouter {
     }
 
     await Database.libraryItemModel.removeById(libraryItemId)
+
+    if (deletedLibraryItemIds) {
+      deletedLibraryItemIds.push(libraryItemId)
+    } else {
+      await Database.userModel.removeBookmarksForLibraryItems([libraryItemId])
+    }
 
     SocketAuthority.emitter('item_removed', {
       id: libraryItemId,
