@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Postotak završenosti je veći od",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Preostalo vrijeme je manje od (sekunde)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Označi medij kao završen kada",
+  "LabelSettingsMdnsDefaultName": "Zvučna knjiga",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Preskoči ranije knjige u funkciji Nastavi serijal",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Na polici početne stranice Nastavi serijal prikazuje se prva nezapočeta knjiga serijala koji imaju barem jednu završenu knjigu i nijednu započetu knjigu. Ako se ova opcija uključi serijal će nastaviti od zadnje završene knjige umjesto od prve nezapočete knjige.",
   "LabelSettingsParseSubtitles": "Raščlani podnaslove",

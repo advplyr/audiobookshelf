@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "In Prozent gehört größer als",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Verbleibende Zeit ist weniger als (Sekunden)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Markiere Mediendateien als fertig, wenn",
+  "LabelSettingsMdnsDefaultName": "Hörbuch",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Überspringe vorherige Bücher in fortführender Serie",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Die Startseite von \"Fortführende Serien\" zeigt das erste noch nicht begonnene Buch in Serien an, die mindestens ein Buch abgeschlossen und keine Bücher begonnen haben. Wenn diese Einstellung aktiviert wird, werden Serien ab dem letzten abgeschlossenen Buch fortgesetzt und nicht ab dem ersten nicht begonnenen Buch.",
   "LabelSettingsParseSubtitles": "Analysiere Untertitel",

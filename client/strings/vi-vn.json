@@ -453,6 +453,7 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Các loạt sách chỉ có một cuốn sách sẽ được ẩn khỏi trang loạt sách và kệ trang chủ.",
   "LabelSettingsHomePageBookshelfView": "Trang chủ sử dụng chế độ xem kệ sách",
   "LabelSettingsLibraryBookshelfView": "Thư viện sử dụng chế độ xem kệ sách",
+  "LabelSettingsMdnsDefaultName": "Sách nói",
   "LabelSettingsParseSubtitles": "Phân tích phụ đề",
   "LabelSettingsParseSubtitlesHelp": "Trích xuất phụ đề từ tên thư mục sách nói.<br>Phụ đề phải được tách bằng \" - \"<br>i.e. \"Book Title - A Subtitle Here\" có phụ đề \"A Subtitle Here\"",
   "LabelSettingsPreferMatchedMetadata": "Ưu tiên siêu dữ liệu phù hợp",

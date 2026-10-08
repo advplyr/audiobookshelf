@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Százalékos befejezettség nagyobb mint",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "A hátralévő idő kevesebb, mint (másodperc)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "A médiaelem befejezettnek jelölése, ha",
+  "LabelSettingsMdnsDefaultName": "Hangoskönyv",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Megelőző könyvek kihagyása a Sorozat folytatásában",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "A Sorozat folytatása kezdőlap polcán az első nem megkezdett könyv látható egy olyan sorozatban, amelynek legalább egy könyve befejeződött, és nincs folyamatban lévő rész. Ha engedélyezi ezt a beállítást, akkor a sorozatot a legvégső befejezett könyvtől folytatja az első el nem kezdett könyv helyett.",
   "LabelSettingsParseSubtitles": "Feliratok elemzése",

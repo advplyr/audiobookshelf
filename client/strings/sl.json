@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Odstotek dokončanega je večji od",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Preostali čas je manj kot (sekund)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Označi medijski element kot končan, ko",
+  "LabelSettingsMdnsDefaultName": "Zvočna knjiga",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Preskoči prejšnje knjige v nadaljevanju serije",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Polica z domačo stranjo Nadaljuj serijo prikazuje prvo nezačeto knjigo v seriji, ki ima vsaj eno dokončano knjigo in ni nobene knjige v teku. Če omogočite to nastavitev, se bo serija nadaljevala od najbolj dokončane knjige namesto od prve nezačete knjige.",
   "LabelSettingsParseSubtitles": "Razčleni podnaslove",

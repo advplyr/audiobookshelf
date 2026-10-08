@@ -1,0 +1,706 @@
+name: mDNS Discovery
+
+# End to end tests of local network discovery (server/managers/MdnsManager.js) with an independent DNS-SD client
+# (.github/scripts/mdns-check.js) and the OS resolvers. MdnsManager unit tests run with all other tests in unit-tests.yml.
+
+on:
+  # Pull requests plus pushes to any branch, so a feature branch is tested before it is submitted. Both use the same
+  # paths filter: the matrix (macOS, Windows, Docker image build) is expensive and other files can't change discovery.
+  # Note: path filtered workflows can't be required status checks.
+  pull_request:
+    paths: &paths
+      - server/**
+      - client/strings/** # the default server name is read from the translations at runtime
+      - index.js
+      - package.json
+      - package-lock.json
+      - tsconfig.server.json
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/mdns.yml
+      - .github/scripts/mdns-check.js
+  push:
+    branches-ignore:
+      - 'dependabot/**' # covered by their pull requests
+    paths: *paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Ports of the servers started on the runner itself
+  PORT_A: 13378
+  PORT_B: 13379
+  PORT_C: 13380
+  # Git Bash on Windows rewrites arguments that look like paths (path=/audiobookshelf/ -> C:/Program Files/Git/...).
+  # Only exclude path=..., native programs like curl.exe still need their file arguments converted.
+  MSYS2_ARG_CONV_EXCL: 'path='
+
+jobs:
+  # Server installed directly on the OS: node, and the pkg binary used by the .deb and Windows builds
+  native:
+    name: native (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    # TODO: make macOS required once a hosted run proved that running as root gets past Local Network Privacy
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      SKIP_BINARIES_CHECK: '1'
+      FFMPEG_PATH: ffmpeg
+      FFPROBE_PATH: ffprobe
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: install and compile server
+        run: npm ci && npm run build:server
+
+      # !!! KEEP THIS STEP BEFORE "start audiobookshelf": BUILDING THE PKG BINARY CRASHES A RUNNING SERVER !!!
+      #
+      # While packaging, pkg runs prebuild-install inside node_modules/sqlite3 to fetch the addon for the target
+      # platform. prebuild-install extracts it over build/Release/node_sqlite3.node in place (truncate and rewrite of
+      # the same file), then pkg renames its backup over that path. A server already running from this checkout has
+      # that file mapped into memory as executable code, so its next sqlite3 call executes garbage and the process
+      # dies with SIGSEGV (exit status 139, curl exit 52 "empty reply"), with no message in the server log. A core
+      # dump shows the crash inside node_sqlite3.node, with the file marked "(deleted)".
+      #
+      # Only Linux showed it: macOS doesn't build the binary, and Windows most likely refuses to overwrite a loaded DLL.
+      # It is not a bug in audiobookshelf, node or sqlite3, and installed servers are not affected: it only happens
+      # when pkg runs in the same node_modules as a running server, which nothing but this workflow does.
+      # Found by a matrix of Linux variants: every variant that built the pkg binary while server A ran crashed,
+      # every variant that skipped it did not, and moving this step here fixed all of them.
+      - name: build pkg binary (Linux, Windows)
+        if: runner.os != 'macOS'
+        run: |
+          npm install -g @yao-pkg/pkg
+          target=$([ "$RUNNER_OS" = "Windows" ] && echo node24-win-x64 || echo node24-linux-x64)
+          pkg --config package.json -t "$target" -o "$RUNNER_TEMP/abs-bin" dist-server/index.js
+
+      - &helpers
+        name: write test helpers
+        run: |
+          # Sourced by every following bash step through BASH_ENV
+          cat > "$RUNNER_TEMP/mdns-ci.sh" <<'EOF'
+          # macOS 15+ Local Network Privacy blocks multicast of non-root processes (actions/runner-images#10924)
+          as_root() { if [ "$RUNNER_OS" = macOS ]; then sudo -E env "PATH=$PATH" "$@"; else "$@"; fi; }
+
+          check() { as_root node .github/scripts/mdns-check.js "$@"; }
+
+          # fetch_log <file or docker:<container>>
+          fetch_log() {
+            case "$1" in docker:*) docker logs "${1#docker:}" 2>&1 ;; *) cat "$1" 2>/dev/null ;; esac
+          }
+
+          # running <file or docker:<container>>: whether the process writing the log (started by start_abs) still runs
+          running() {
+            case "$1" in
+              docker:*) [ "$(docker inspect -f '{{.State.Running}}' "${1#docker:}" 2> /dev/null)" = true ] ;;
+              *) [ ! -f "${1%.log}.pid" ] || as_root kill -0 "$(cat "${1%.log}.pid")" 2> /dev/null ;;
+            esac
+          }
+
+          # wait_log <file or docker:<container>> <ERE> [occurrences=1] [seconds=60]
+          wait_log() {
+            local n reason="Timed out"
+            for _ in $(seq 1 "${4:-60}"); do
+              n=$(fetch_log "$1" | grep -cE "$2" || true)
+              [ "${n:-0}" -ge "${3:-1}" ] && return 0
+              if ! running "$1"; then reason="Process exited"; break; fi
+              sleep 1
+            done
+            echo "::error::$reason while waiting for /$2/ in $1"
+            fetch_log "$1" | tail -50
+            return 1
+          }
+
+          # start_abs <id> <port> <command...>: start a server in the background with its own config, log and pid file.
+          # The pid is the server itself (sudo on macOS, which forwards signals). Not through as_root: a backgrounded
+          # shell function runs in a subshell, so $! would be that subshell instead of the server.
+          start_abs() {
+            local dir="$RUNNER_TEMP/$1" port=$2 sudo=()
+            shift 2
+            mkdir -p "$dir/config" "$dir/metadata"
+            if [ "$RUNNER_OS" = macOS ]; then sudo=(sudo -E env "PATH=$PATH"); fi
+            "${sudo[@]}" env PORT="$port" CONFIG_PATH="$dir/config" METADATA_PATH="$dir/metadata" "$@" > "$dir.log" 2>&1 &
+            echo $! > "$dir.pid"
+          }
+
+          # stop_abs <id> <advertised name>: SIGTERM a server started by start_abs, require its goodbye and exit within 10s
+          stop_abs() {
+            local pid
+            pid=$(cat "$RUNNER_TEMP/$1.pid")
+            watch_goodbye "goodbye-$1" "$2"
+            as_root kill -TERM "$pid"
+            # Exited means gone or a zombie (orphans of earlier steps aren't always reaped right away).
+            # Read the state with ONE ps call: checking "kill -0" and then ps separately reported a server that exited
+            # within milliseconds as still running when its zombie was reaped between the two checks.
+            alive() { local s; s=$(ps -o stat= -p "$pid") && [[ $s != *Z* ]]; }
+            for _ in $(seq 1 10); do alive || break; sleep 1; done
+            if alive; then
+              echo "::error::$1 did not exit within 10s of SIGTERM"
+              return 1
+            fi
+            wait_goodbye "goodbye-$1"
+          }
+
+          # login <port>: create the root user of a new server and print an access token
+          login() {
+            local credentials='{"username":"root","password":"mdns-ci"}'
+            curl -sSf -X POST -H 'Content-Type: application/json' -d "{\"newRoot\":$credentials}" "http://127.0.0.1:$1/init" > /dev/null
+            curl -sSf -X POST -H 'Content-Type: application/json' -d "$credentials" "http://127.0.0.1:$1/login" |
+              node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).user.accessToken)'
+          }
+
+          # api <port> <token> <method> <path> [json body] [expected http status=200]
+          api() {
+            local out status data=()
+            out=$(mktemp)
+            if [ -n "${5:-}" ]; then data=(--data "$5"); fi
+            status=$(curl -sS -o "$out" -w '%{http_code}' -X "$3" -H "Authorization: Bearer $2" -H 'Content-Type: application/json' "${data[@]}" "http://127.0.0.1:$1$4")
+            echo "$3 $4 ${5:-} -> HTTP $status: $(head -c 400 "$out")"
+            if [ "$status" != "${6:-200}" ]; then
+              echo "::error::$3 $4 returned HTTP $status, expected ${6:-200}"
+              return 1
+            fi
+          }
+
+          # wait_status <port> <token> <jq condition> [seconds=30]: poll GET /api/mdns until the condition is true
+          wait_status() {
+            local body=''
+            for _ in $(seq 1 "${4:-30}"); do
+              body=$(curl -sf -H "Authorization: Bearer $2" "http://127.0.0.1:$1/api/mdns" || true)
+              if printf '%s' "$body" | jq -e "$3" > /dev/null 2>&1; then
+                echo "GET /api/mdns: $body"
+                return 0
+              fi
+              sleep 1
+            done
+            echo "::error::GET /api/mdns never matched $3, last response: $body"
+            return 1
+          }
+
+          # watch_goodbye <id> <instance name> [mdns-check args]: wait in the background for the goodbye of an instance,
+          # returns once the instance has been seen. Finish with wait_goodbye <id> in the same step.
+          watch_goodbye() {
+            local id=$1 name=$2
+            shift 2
+            rm -f "$RUNNER_TEMP/$id.ready"
+            check --goodbye "$name" --ready-file "$RUNNER_TEMP/$id.ready" --timeout 60 "$@" > "$RUNNER_TEMP/$id.log" 2>&1 &
+            echo $! > "$RUNNER_TEMP/$id.pid"
+            for _ in $(seq 1 30); do
+              [ -f "$RUNNER_TEMP/$id.ready" ] && return 0
+              kill -0 "$(cat "$RUNNER_TEMP/$id.pid")" 2> /dev/null || break
+              sleep 1
+            done
+            cat "$RUNNER_TEMP/$id.log"
+            echo "::error::Goodbye watcher for \"$name\" did not see the instance"
+            return 1
+          }
+
+          wait_goodbye() {
+            local rc=0
+            wait "$(cat "$RUNNER_TEMP/$1.pid")" || rc=$?
+            cat "$RUNNER_TEMP/$1.log"
+            return $rc
+          }
+          EOF
+          helpers="$RUNNER_TEMP/mdns-ci.sh"
+          if command -v cygpath > /dev/null; then helpers=$(cygpath -u "$helpers"); fi # Git Bash on Windows
+          echo "BASH_ENV=$helpers" >> "$GITHUB_ENV"
+
+      - name: install avahi and nss-mdns (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y avahi-daemon avahi-utils libnss-mdns
+          sudo systemctl start avahi-daemon
+
+      - name: allow mDNS and the servers through the firewall (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-NetFirewallRule -DisplayName 'mDNS (CI)' -Direction Inbound -Protocol UDP -LocalPort 5353 -Action Allow | Out-Null
+          New-NetFirewallRule -DisplayName 'audiobookshelf (CI)' -Direction Inbound -Protocol TCP -LocalPort $env:PORT_A,$env:PORT_B -Action Allow | Out-Null
+          New-NetFirewallRule -DisplayName 'node (CI)' -Direction Inbound -Program (Get-Command node).Source -Action Allow | Out-Null
+
+      - name: start audiobookshelf
+        run: |
+          start_abs abs-a "$PORT_A" node dist-server/index.js
+          wait_log "$RUNNER_TEMP/abs-a.log" 'MdnsManager\] Advertising'
+          grep MdnsManager "$RUNNER_TEMP/abs-a.log"
+          grep -q 'MdnsManager\] Advertising "Audiobook" (_audiobookshelf._tcp) at http://audiobook.local:'"$PORT_A"'/audiobookshelf/' "$RUNNER_TEMP/abs-a.log"
+
+      - name: discover via legacy unicast query (RFC 6762 6.7, e.g. Roku)
+        run: check --mode unicast --name Audiobook --txt path=/audiobookshelf/ --http --timeout 30
+
+      - name: discover via standard multicast query
+        run: check --mode multicast --name Audiobook --txt path=/audiobookshelf/ --http --timeout 30
+
+      - name: browse with avahi (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          timeout 15 avahi-browse --resolve --parsable --terminate _audiobookshelf._tcp | tee "$RUNNER_TEMP/browse.txt"
+          grep -qE '^=;[^;]*;IPv4;Audiobook;_audiobookshelf\._tcp;local;audiobook\.local;' "$RUNNER_TEMP/browse.txt"
+
+      - name: browse with dns-sd (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          dns-sd -B _audiobookshelf._tcp local. > "$RUNNER_TEMP/browse.txt" 2>&1 &
+          pid=$!
+          for _ in $(seq 1 15); do grep -qE ' Add .* Audiobook$' "$RUNNER_TEMP/browse.txt" && break; sleep 1; done
+          kill $pid || true
+          cat "$RUNNER_TEMP/browse.txt"
+          grep -qE ' Add .* Audiobook$' "$RUNNER_TEMP/browse.txt"
+
+      # Same machine lookup through the OS resolver (nss-mdns, mDNSResponder, Windows DNS client),
+      # i.e. what a browser on the server itself does for http://audiobook.local.
+      # Informational on Windows until a run proved the Windows DNS client resolves .local names on hosted runners.
+      - name: resolve audiobook.local with the OS resolver
+        continue-on-error: ${{ runner.os == 'Windows' }}
+        run: |
+          node -e "
+            const dns = require('dns')
+            const deadline = Date.now() + 20000
+            const attempt = () => dns.lookup('audiobook.local', { family: 4 }, (error, address) => {
+              if (!error) return console.log('audiobook.local ->', address)
+              if (Date.now() > deadline) { console.error(error); process.exit(1) }
+              setTimeout(attempt, 1000)
+            })
+            attempt()
+          "
+
+      - name: status API reports the advertised name
+        run: |
+          token=$(login "$PORT_A")
+          echo "::add-mask::$token"
+          echo "TOKEN_A=$token" >> "$GITHUB_ENV"
+          wait_status "$PORT_A" "$token" '.state == "advertising" and .name == "Audiobook" and .hostname == "audiobook.local" and .url == "http://audiobook.local:'"$PORT_A"'/audiobookshelf/" and .lockedByEnv == { enabled: false, name: false }'
+          api "$PORT_A" "$token" GET /api/mdns
+
+      - name: renaming in settings advertises the new name and says goodbye for the old one
+        run: |
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"Audiobook (2)"}' 400
+          watch_goodbye goodbye-rename Audiobook
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"CI Renamed"}'
+          wait_goodbye goodbye-rename
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "CI Renamed" and .hostname == "ci-renamed.local"'
+          check --mode both --name 'CI Renamed' --absent Audiobook --http --timeout 30
+
+      - name: disabling in settings says goodbye, enabling advertises again
+        run: |
+          watch_goodbye goodbye-disable 'CI Renamed'
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsEnabled":false}'
+          wait_goodbye goodbye-disable
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "disabled"'
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsEnabled":true}'
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "CI Renamed"'
+          check --name 'CI Renamed' --timeout 30
+
+      # The default name comes from client/strings/<server language>.json (the hostname stays audiobook.local),
+      # an empty name resets to it
+      - name: default name follows the server language
+        run: |
+          german=$(node -p "require('./client/strings/de.json').LabelSettingsMdnsDefaultName")
+          echo "German default name: $german"
+          watch_goodbye goodbye-language 'CI Renamed'
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"","language":"de"}'
+          wait_goodbye goodbye-language
+          wait_status "$PORT_A" "$TOKEN_A" ".state == \"advertising\" and .name == \"$german\" and .hostname == \"audiobook.local\""
+          check --mode both --name "$german" --absent 'CI Renamed' --http --timeout 30
+
+      # Also frees audiobook.local for the second server
+      - name: custom names are transliterated for the hostname
+        run: |
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"Gro\u00dfe Bibliothek"}'
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "Gro\u00dfe Bibliothek" and .hostname == "grosse-bibliothek.local"'
+          check --name 'Große Bibliothek' --http --timeout 30
+
+      # Only the English default exists without the translation files, so switching the language verifies the
+      # binary contains client/strings
+      - name: second server from the pkg binary on the same machine (Linux, Windows)
+        if: runner.os != 'macOS'
+        run: |
+          bin="$RUNNER_TEMP/abs-bin"
+          [ "$RUNNER_OS" = "Windows" ] && bin="$bin.exe"
+          start_abs abs-b "$PORT_B" "$bin"
+          wait_log "$RUNNER_TEMP/abs-b.log" 'MdnsManager\] Advertising'
+          grep MdnsManager "$RUNNER_TEMP/abs-b.log"
+          grep -q 'MdnsManager\] Advertising "Audiobook" (_audiobookshelf._tcp) at http://audiobook.local:'"$PORT_B"'/audiobookshelf/' "$RUNNER_TEMP/abs-b.log"
+          check --count 2 --name 'Große Bibliothek' --name Audiobook --http --timeout 30
+          token=$(login "$PORT_B")
+          echo "::add-mask::$token"
+          echo "TOKEN_B=$token" >> "$GITHUB_ENV"
+          french=$(node -p "require('./client/strings/fr.json').LabelSettingsMdnsDefaultName")
+          api "$PORT_B" "$token" PATCH /api/settings '{"language":"fr"}'
+          wait_status "$PORT_B" "$token" ".state == \"advertising\" and .name == \"$french\" and .hostname == \"audiobook.local\""
+          check --count 2 --name 'Große Bibliothek' --name "$french" --absent Audiobook --http --timeout 30
+
+      # RFC 6762 9: a conflict is per name. Both servers' default names use audiobook.local, but the German and French
+      # instance names differ, so only the hostname of the server that comes second changes, and it keeps its
+      # fallback hostname after restarting both (Linux, where the servers can be stopped with a signal).
+      - name: a hostname only conflict keeps both instance names (Linux, Windows)
+        if: runner.os != 'macOS'
+        run: |
+          german=$(node -p "require('./client/strings/de.json').LabelSettingsMdnsDefaultName")
+          french=$(node -p "require('./client/strings/fr.json').LabelSettingsMdnsDefaultName")
+          fallback='(.hostname | test("^audiobook-[0-9a-f]{4}[.]local$"))'
+          names=(--count 2 --name "$german" --name "$french" --name-pattern "^($german|$french)\$")
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"","language":"de"}'
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "'"$german"'" and '"$fallback"
+          wait_log "$RUNNER_TEMP/abs-a.log" 'MdnsManager\] The hostname audiobook\.local is already used'
+          wait_status "$PORT_B" "$TOKEN_B" '.state == "advertising" and .name == "'"$french"'" and .hostname == "audiobook.local"'
+          check "${names[@]}" --http --timeout 30
+          if [ "$RUNNER_OS" = Linux ]; then
+            hostname_a=$(curl -sf -H "Authorization: Bearer $TOKEN_A" "http://127.0.0.1:$PORT_A/api/mdns" | jq -r .hostname)
+            stop_abs abs-a "$german"
+            stop_abs abs-b "$french"
+            start_abs abs-a "$PORT_A" node dist-server/index.js
+            start_abs abs-b "$PORT_B" "$RUNNER_TEMP/abs-bin"
+            wait_log "$RUNNER_TEMP/abs-a.log" 'MdnsManager\] Advertising'
+            wait_log "$RUNNER_TEMP/abs-b.log" 'MdnsManager\] Advertising'
+            wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "'"$german"'" and .hostname == "'"$hostname_a"'"'
+            wait_status "$PORT_B" "$TOKEN_B" '.state == "advertising" and .name == "'"$french"'" and .hostname == "audiobook.local"'
+            check "${names[@]}" --http --timeout 30
+          fi
+          # back to the name the next step expects
+          api "$PORT_A" "$TOKEN_A" PATCH /api/settings '{"mdnsName":"Gro\u00dfe Bibliothek"}'
+          wait_status "$PORT_A" "$TOKEN_A" '.state == "advertising" and .name == "Gro\u00dfe Bibliothek" and .hostname == "grosse-bibliothek.local"'
+
+      # SIGTERM is what docker stop, launchd and the .deb's systemd unit (pkg binary) send. There is no SIGTERM on Windows.
+      - name: stopping the servers says goodbye (Linux, macOS)
+        if: runner.os != 'Windows'
+        run: |
+          stop_abs abs-a 'Große Bibliothek'
+          if [ "$RUNNER_OS" = Linux ]; then stop_abs abs-b "$(node -p "require('./client/strings/fr.json').LabelSettingsMdnsDefaultName")"; fi
+
+      - name: server logs
+        if: always()
+        run: |
+          for f in "$RUNNER_TEMP"/*.log; do echo "::group::$f"; cat "$f"; echo "::endgroup::"; done
+          # A server killed by a signal leaves nothing in its own log
+          for p in "$RUNNER_TEMP"/abs-*.pid; do
+            [ -f "$p" ] || continue
+            pid=$(cat "$p")
+            if kill -0 "$pid" 2>/dev/null; then echo "$(basename "$p" .pid) (pid $pid): running"; else echo "::warning::$(basename "$p" .pid) (pid $pid) is not running"; fi
+          done
+
+      - name: upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mdns-logs-native-${{ matrix.os }}
+          path: ${{ runner.temp }}/*.log
+          retention-days: 7
+
+  docker-image:
+    name: build docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: abs-mdns:ci
+          outputs: type=docker,dest=${{ runner.temp }}/abs-mdns.tar
+          cache-from: type=gha,scope=mdns
+          cache-to: type=gha,scope=mdns,mode=max
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: abs-mdns-image
+          path: ${{ runner.temp }}/abs-mdns.tar
+          retention-days: 1
+
+  # The real image with host networking (docker-compose "network_mode: host"), discovered from the runner like any
+  # other device on the LAN would
+  docker-host:
+    name: docker (host network)
+    needs: docker-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: install checker dependencies
+        run: npm ci --ignore-scripts
+
+      - *helpers
+
+      - name: install avahi and nss-mdns
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y avahi-daemon avahi-utils libnss-mdns
+          sudo systemctl start avahi-daemon
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: abs-mdns-image
+          path: ${{ runner.temp }}
+
+      - name: load image
+        run: docker load -i "$RUNNER_TEMP/abs-mdns.tar"
+
+      - name: start container with host networking
+        run: |
+          docker run -d --name abs-host --network host -e PORT="$PORT_A" abs-mdns:ci
+          wait_log docker:abs-host 'MdnsManager\] Advertising'
+          docker logs abs-host 2>&1 | grep MdnsManager
+          docker logs abs-host 2>&1 | grep -q 'MdnsManager\] Advertising "Audiobook" (_audiobookshelf._tcp) at http://audiobook.local:'"$PORT_A"'/audiobookshelf/'
+          docker logs abs-host 2>&1 | grep -q 'MdnsManager\] Running in Docker'
+          if docker logs abs-host 2>&1 | grep 'appears to be on a Docker bridge network'; then
+            echo "::error::bridge network warning logged with host networking"
+            exit 1
+          fi
+
+      - name: discover from the host
+        run: |
+          check --mode unicast --name Audiobook --txt path=/audiobookshelf/ --http --timeout 30
+          check --mode multicast --name Audiobook --txt path=/audiobookshelf/ --http --timeout 30
+          timeout 15 avahi-browse --resolve --parsable --terminate _audiobookshelf._tcp | tee "$RUNNER_TEMP/browse.txt"
+          grep -qE '^=;[^;]*;IPv4;Audiobook;_audiobookshelf\._tcp;local;audiobook\.local;' "$RUNNER_TEMP/browse.txt"
+          getent ahostsv4 audiobook.local
+          curl -sSf "http://audiobook.local:$PORT_A/audiobookshelf/status"
+
+      # Only the English default exists without the translation files, so this verifies the image contains client/strings
+      - name: default name follows the server language
+        run: |
+          token=$(login "$PORT_A")
+          echo "::add-mask::$token"
+          expected=$(node -p "require('./client/strings/de.json').LabelSettingsMdnsDefaultName")
+          watch_goodbye goodbye-language Audiobook
+          api "$PORT_A" "$token" PATCH /api/settings '{"language":"de"}'
+          wait_goodbye goodbye-language
+          wait_status "$PORT_A" "$token" ".state == \"advertising\" and .name == \"$expected\" and .hostname == \"audiobook.local\""
+          check --mode both --name "$expected" --absent Audiobook --http --timeout 30
+          getent ahostsv4 audiobook.local
+
+      - name: docker stop says goodbye and exits without being killed
+        run: |
+          name=$(node -p "require('./client/strings/de.json').LabelSettingsMdnsDefaultName")
+          watch_goodbye goodbye-stop "$name"
+          docker stop --time 10 abs-host
+          wait_goodbye goodbye-stop
+          code=$(docker inspect -f '{{.State.ExitCode}}' abs-host)
+          echo "exit code $code"
+          if [ "$code" = 137 ]; then echo "::error::container was killed after the stop timeout"; exit 1; fi
+
+      # MDNS_INTERFACES is limited to the LAN interface, so the docker0 bridge address (172.17.0.1) must not be advertised.
+      # docker0 is only up (and otherwise advertised) while a container uses the default bridge network.
+      - name: MDNS_NAME, MDNS_INTERFACES and ROUTER_BASE_PATH (e.g. UnRAID template)
+        run: |
+          docker run -d --name docker0-up abs-mdns:ci sleep 600
+          nic=$(ip route show default | awk '{ print $5; exit }')
+          docker run -d --name abs-env --network host -e PORT="$PORT_B" -e MDNS_NAME='Living Room' -e MDNS_INTERFACES="$nic" -e ROUTER_BASE_PATH=/books abs-mdns:ci
+          wait_log docker:abs-env 'MdnsManager\] Advertising "Living Room" \(_audiobookshelf._tcp\) at http://living-room.local:'"$PORT_B"'/books/'
+          check --mode both --name 'Living Room' --txt path=/books/ --http --timeout 30 --json "$RUNNER_TEMP/env.json"
+          jq -e '.[] | select(.name == "Living Room") | .addresses | length > 0 and all(startswith("172.") | not)' "$RUNNER_TEMP/env.json"
+          getent ahostsv4 living-room.local
+          token=$(login "$PORT_B")
+          echo "::add-mask::$token"
+          wait_status "$PORT_B" "$token" '.state == "advertising" and .configuredName == "Living Room" and .lockedByEnv.name == true'
+          api "$PORT_B" "$token" PATCH /api/settings '{"mdnsName":"Kitchen"}' 400
+
+      - name: DISABLE_MDNS
+        run: |
+          docker run -d --name abs-off --network host -e PORT="$PORT_C" -e DISABLE_MDNS=1 -e MDNS_NAME='Should Not Appear' abs-mdns:ci
+          wait_log docker:abs-off 'MdnsManager\] Local network discovery \(mDNS\) is off: disabled by DISABLE_MDNS'
+          check --name 'Living Room' --absent 'Should Not Appear' --timeout 15
+          token=$(login "$PORT_C")
+          echo "::add-mask::$token"
+          wait_status "$PORT_C" "$token" '.state == "disabled" and .lockedByEnv.enabled == true'
+          api "$PORT_C" "$token" PATCH /api/settings '{"mdnsEnabled":false}' 400
+
+      - name: container logs
+        if: always()
+        run: |
+          for c in abs-host abs-env abs-off; do echo "::group::$c"; docker logs $c 2>&1 || true; echo "::endgroup::"; done
+          for f in "$RUNNER_TEMP"/*.log; do echo "::group::$f"; cat "$f"; echo "::endgroup::"; done
+
+  # Several servers on one network: conflict resolution, unique names and persistence across restarts.
+  # A user-defined bridge network (multicast works between containers on one bridge, not to the LAN).
+  docker-bridge:
+    name: docker (multiple servers on a bridge network)
+    needs: docker-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: install checker dependencies
+        run: npm ci --ignore-scripts
+
+      - *helpers
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: abs-mdns-image
+          path: ${{ runner.temp }}
+
+      - name: load image
+        run: docker load -i "$RUNNER_TEMP/abs-mdns.tar"
+
+      - name: start three servers with the same default name
+        run: |
+          # explicit subnet in Docker's default bridge pool so the bridge network warning check is deterministic
+          docker network create --subnet 172.30.0.0/24 abs-mdns
+          for i in 1 2 3; do docker run -d --name abs-$i --network abs-mdns abs-mdns:ci; done
+          for i in 1 2 3; do
+            wait_log docker:abs-$i 'MdnsManager\] Advertising'
+            docker logs abs-$i 2>&1 | grep MdnsManager
+          done
+
+      - name: all three are discoverable with unique names, hostnames and ids
+        run: |
+          docker run --rm --network abs-mdns -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/out" -w /repo node:24-alpine \
+            node .github/scripts/mdns-check.js --count 3 --mode both --http --timeout 30 \
+            --name Audiobook --name-pattern '^Audiobook( [0-9A-F]{4})?$' --json /out/before.json
+
+      - name: bridge network warning is logged
+        run: docker logs abs-1 2>&1 | grep -q 'appears to be on a Docker bridge network'
+
+      - name: names are kept after restarting every server
+        run: |
+          docker restart abs-1 abs-2 abs-3
+          for i in 1 2 3; do wait_log docker:abs-$i 'MdnsManager\] Advertising' 2; done
+          docker run --rm --network abs-mdns -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/out" -w /repo node:24-alpine \
+            node .github/scripts/mdns-check.js --count 3 --mode both --timeout 30 --json /out/after.json
+          names() { jq -r '.[] | .txt.id + " " + .name' "$1" | sort; }
+          diff <(names "$RUNNER_TEMP/before.json") <(names "$RUNNER_TEMP/after.json") || { echo "::error::server names changed after restart"; exit 1; }
+
+      - name: container logs
+        if: always()
+        run: for i in 1 2 3; do echo "::group::abs-$i"; docker logs abs-$i 2>&1 || true; echo "::endgroup::"; done
+
+  # macvlan / ipvlan networks as used by UnRAID ("br0") and Synology/TrueNAS setups. The parent is a Linux bridge with
+  # a dummy port, like UnRAID's br0 with eth0 in it, so the test doesn't depend on the runner's cloud network.
+  # The host can't talk to its own macvlan/ipvlan containers through the parent, so discovery is checked from
+  # another container on the same network (any other device on the LAN) and from the host through a shim
+  # interface (UnRAID "Host access to custom networks").
+  docker-lan:
+    name: docker (${{ matrix.driver }} network)
+    needs: docker-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: [macvlan, ipvlan]
+    defaults:
+      run:
+        shell: bash
+    env:
+      DRIVER: ${{ matrix.driver }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: install checker dependencies
+        run: npm ci --ignore-scripts
+
+      - *helpers
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: abs-mdns-image
+          path: ${{ runner.temp }}
+
+      - name: load image
+        run: docker load -i "$RUNNER_TEMP/abs-mdns.tar"
+
+      - name: create br0 and a ${{ matrix.driver }} network on it
+        run: |
+          sudo modprobe -a dummy macvlan ipvlan || { sudo apt-get install -y "linux-modules-extra-$(uname -r)" && sudo modprobe -a dummy macvlan ipvlan; }
+          sudo ip link add abs-br0 type bridge
+          sudo ip link add abs-eth0 type dummy
+          sudo ip link set abs-eth0 master abs-br0
+          sudo ip link set abs-eth0 up
+          sudo ip link set abs-br0 up
+          docker network create -d "$DRIVER" --subnet 192.168.77.0/24 --gateway 192.168.77.1 -o parent=abs-br0 abs-lan
+          ip -d link show abs-br0
+
+      - name: start two servers with the same default name
+        run: |
+          for i in 1 2; do docker run -d --name abs-$i --network abs-lan --ip 192.168.77.1$i abs-mdns:ci; done
+          for i in 1 2; do
+            wait_log docker:abs-$i 'MdnsManager\] Advertising'
+            docker logs abs-$i 2>&1 | grep MdnsManager
+            if docker logs abs-$i 2>&1 | grep 'appears to be on a Docker bridge network'; then
+              echo "::error::bridge network warning logged on a $DRIVER network"
+              exit 1
+            fi
+          done
+
+      - name: discover from another device on the network
+        run: |
+          docker run --rm --network abs-lan -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/out" -w /repo node:24-alpine \
+            node .github/scripts/mdns-check.js --count 2 --mode both --http --timeout 30 \
+            --name Audiobook --name-pattern '^Audiobook( [0-9A-F]{4})?$' --json /out/lan.json
+
+      - name: discover from the host through a shim interface
+        run: |
+          mode=$([ "$DRIVER" = macvlan ] && echo bridge || echo l2)
+          sudo ip link add abs-shim link abs-br0 type "$DRIVER" mode "$mode"
+          sudo ip addr add 192.168.77.250/24 dev abs-shim
+          sudo ip link set abs-shim up
+          check --count 2 --mode both --http --timeout 30 --name Audiobook
+
+      - name: docker stop says goodbye to other devices
+        run: |
+          name=$(jq -r '.[] | select(.addresses | index("192.168.77.11")) | .name' "$RUNNER_TEMP/lan.json")
+          echo "abs-1 is advertised as \"$name\""
+          docker run -d --name goodbye --network abs-lan -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/out" -w /repo node:24-alpine \
+            node .github/scripts/mdns-check.js --goodbye "$name" --timeout 60
+          wait_log docker:goodbye '^READY'
+          docker stop abs-1
+          code=$(docker wait goodbye)
+          docker logs goodbye
+          [ "$code" = 0 ]
+
+      - name: container logs
+        if: always()
+        run: for c in abs-1 abs-2 goodbye; do echo "::group::$c"; docker logs $c 2>&1 || true; echo "::endgroup::"; done

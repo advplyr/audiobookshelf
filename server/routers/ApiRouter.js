@@ -55,6 +55,8 @@ class ApiRouter {
     /** @type {import('../managers/EmailManager')} */
     this.emailManager = Server.emailManager
     this.apiCacheManager = Server.apiCacheManager
+    /** @type {import('../managers/MdnsManager')} */
+    this.mdnsManager = Server.mdnsManager
 
     this.router = express()
     this.router.disable('x-powered-by')
@@ -346,6 +348,7 @@ class ApiRouter {
     this.router.post('/upload', MiscController.handleUpload.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
+    this.router.get('/mdns', MiscController.getMdnsStatus.bind(this))
     this.router.patch('/sorting-prefixes', MiscController.updateSortingPrefixes.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))

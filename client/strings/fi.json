@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Valmistumisprosentti on suurempi kuin",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Jäljellä oleva aika on alle (sekuntia)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Merkitse mediakohde valmiiksi, kun",
+  "LabelSettingsMdnsDefaultName": "Äänikirja",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Ohita aiemmat kirjat Jatka sarjassa",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Jatka sarja -kotisivun hyllyssä näkyy ensimmäinen kirja, jota ei ole aloitettu sarjoissa, joissa on vähintään yksi kirja valmiina eikä yhtään kirjaa kesken. Tämän asetuksen ottaminen käyttöön jatkaa sarjaa kauimpana valmistuneesta kirjasta ensimmäisen aloittamattoman kirjan sijaan.",
   "LabelSettingsParseSubtitles": "Jäsennä alaotsikot",

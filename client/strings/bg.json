@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Процент завършеност е по-голям от",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Оставащо време е по-малко от (секунди)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Отбелязване на мултимедиен елемент като завършен когато",
+  "LabelSettingsMdnsDefaultName": "Аудиокнига",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Пропусни предишни книги в Продължи Поредица",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Рафтът на началната страница 'Продължи поредицата' показва първата книга, която не е започната в поредици, в които има поне една завършена книга и няма книги в процес на четене. Активирането на тази настройка ще продължи поредицата от най-далечната завършена книга вместо от първата незапочната книга.",
   "LabelSettingsParseSubtitles": "Извлечи подзаглавия",

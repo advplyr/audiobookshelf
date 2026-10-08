@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Voltooid percentage is groter dan",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Resterende tijd is kleiner dan (seconden)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Markeer media item wanneer voltooid",
+  "LabelSettingsMdnsDefaultName": "Audioboek",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Sla eedere boeken in Serie Verderzetten over",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "De Continue Series home page shelf toont het eerste boek dat nog niet is begonnen in series waarvan er minstens één is voltooid en er geen boeken in uitvoering zijn. Als u deze instelling inschakelt, wordt de serie voortgezet vanaf het boek dat het verst is voltooid in plaats van het eerste boek dat nog niet is begonnen.",
   "LabelSettingsParseSubtitles": "Subtitel afleiden uit foldernaam",

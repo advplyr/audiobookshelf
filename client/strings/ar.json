@@ -592,6 +592,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "النسبة المئوية المكتملة أكبر من",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "الوقت المتبقي أقل من (ثواني)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "تعليم عنصر الوسائط على أنه منتهٍ عند",
+  "LabelSettingsMdnsDefaultName": "كتاب صوتي",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "تخطي الكتب السابقة في \"متابعة السلسلة\"",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "يعرض رف \"متابعة السلسلة\" في الصفحة الرئيسية أول كتاب لم يبدأ في السلاسل التي تحتوي على كتاب واحد على الأقل منتهي ولا يوجد كتب قيد التقدم. سيؤدي تمكين هذا الإعداد إلى متابعة السلاسل من أبعد كتاب مكتمل بدلاً من أول كتاب لم يبدأ.",
   "LabelSettingsParseSubtitles": "تحليل الترجمة",

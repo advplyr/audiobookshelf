@@ -25,7 +25,9 @@ const PATCHABLE_SETTINGS_KEYS = new Set([
   'timeFormat',
   'language',
   'chromecastEnabled',
-  'sortingIgnorePrefix'
+  'sortingIgnorePrefix',
+  'mdnsEnabled',
+  'mdnsName'
 ])
 
 class ServerSettings {
@@ -79,6 +81,21 @@ class ServerSettings {
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
     this.allowedOrigins = []
+
+    // Local network discovery (mDNS / DNS-SD)
+    this.mdnsEnabled = true
+    /** @type {string|null} null uses the translated default name for the server language ("Audiobook" in English) */
+    this.mdnsName = null
+    /** @type {string} Stable random id advertised in the TXT record, generated on first start */
+    this.mdnsServiceId = null
+    /** @type {string} Name this server lost an mDNS name conflict on, so it keeps its fallback name across restarts */
+    this.mdnsFallbackFor = null
+    /** @type {number} Which fallback instance name is in use for mdnsFallbackFor (1 = "Name 3F2A", 2 = "Name 3F2A-2", ...) */
+    this.mdnsFallbackLevel = null
+    /** @type {string} Hostname this server lost an mDNS conflict on, so it keeps its fallback hostname across restarts and language changes */
+    this.mdnsHostnameFallbackFor = null
+    /** @type {number} Which fallback hostname is in use for mdnsHostnameFallbackFor (1 = name-3f2a.local, 2 = name-3f2a-2.local, ...) */
+    this.mdnsHostnameFallbackLevel = null
 
     this.logLevel = Logger.logLevel
 
@@ -147,6 +164,13 @@ class ServerSettings {
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
     this.allowedOrigins = settings.allowedOrigins || []
+    this.mdnsEnabled = settings.mdnsEnabled !== false
+    this.mdnsName = settings.mdnsName || null
+    this.mdnsServiceId = settings.mdnsServiceId || null
+    this.mdnsFallbackFor = settings.mdnsFallbackFor || null
+    this.mdnsFallbackLevel = settings.mdnsFallbackLevel || null
+    this.mdnsHostnameFallbackFor = settings.mdnsHostnameFallbackFor || null
+    this.mdnsHostnameFallbackLevel = settings.mdnsHostnameFallbackLevel || null
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
     this.buildNumber = settings.buildNumber || 0 // Added v2.4.5
@@ -259,6 +283,13 @@ class ServerSettings {
       timeFormat: this.timeFormat,
       language: this.language,
       allowedOrigins: this.allowedOrigins,
+      mdnsEnabled: this.mdnsEnabled,
+      mdnsName: this.mdnsName,
+      mdnsServiceId: this.mdnsServiceId,
+      mdnsFallbackFor: this.mdnsFallbackFor,
+      mdnsFallbackLevel: this.mdnsFallbackLevel,
+      mdnsHostnameFallbackFor: this.mdnsHostnameFallbackFor,
+      mdnsHostnameFallbackLevel: this.mdnsHostnameFallbackLevel,
       logLevel: this.logLevel,
       version: this.version,
       buildNumber: this.buildNumber,
@@ -304,6 +335,10 @@ class ServerSettings {
     delete json.authOpenIDMobileRedirectURIs
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
+    delete json.mdnsFallbackFor
+    delete json.mdnsFallbackLevel
+    delete json.mdnsHostnameFallbackFor
+    delete json.mdnsHostnameFallbackLevel
     json.timeZone = ServerSettings.getHostTimeZone()
     return json
   }

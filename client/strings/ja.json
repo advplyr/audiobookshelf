@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "完了率が次より大きい",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "残り時間が次より少ない(秒)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "メディアアイテムを完了としてマークする条件",
+  "LabelSettingsMdnsDefaultName": "オーディオブック",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "「シリーズを続ける」で前の本をスキップ",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "「シリーズを続ける」のホームページ棚は、1冊以上完了していて進行中の本がないシリーズの最初の未開始の本を表示します。この設定を有効にすると、最初の未開始の本ではなく、最後に完了した本からシリーズが継続されます。",
   "LabelSettingsParseSubtitles": "サブタイトルを抽出する",

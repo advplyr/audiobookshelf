@@ -2,6 +2,7 @@ const Path = require('path')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
+const os = require('os')
 const util = require('util')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
@@ -39,6 +40,7 @@ const CronManager = require('./managers/CronManager')
 const ApiCacheManager = require('./managers/ApiCacheManager')
 const BinaryManager = require('./managers/BinaryManager')
 const ShareManager = require('./managers/ShareManager')
+const MdnsManager = require('./managers/MdnsManager')
 const LibraryScanner = require('./scanner/LibraryScanner')
 
 //Import the main Passport and Express-Session library
@@ -137,6 +139,7 @@ class Server {
     this.cronManager = new CronManager(this.podcastManager, this.playbackSessionManager)
     this.apiCacheManager = new ApiCacheManager()
     this.binaryManager = new BinaryManager()
+    this.mdnsManager = new MdnsManager()
 
     // Routers
     this.apiRouter = new ApiRouter(this)
@@ -220,7 +223,7 @@ class Server {
   }
 
   /**
-   * Listen for SIGINT and uncaught exceptions
+   * Listen for SIGINT, SIGTERM and uncaught exceptions
    */
   initProcessEventListeners() {
     let sigintAlreadyReceived = false
@@ -235,6 +238,34 @@ class Server {
       }
       process.exit(0)
     })
+
+    /**
+     * Signals that terminated the server without a handler. Send mDNS goodbye packets first so devices on the network
+     * drop this server right away instead of caching it until the records expire, then terminate as before.
+     * mdnsManager.stop() resolves within a few seconds even if sending fails.
+     * - SIGTERM: `docker stop`, systemd (also the .deb package), kill
+     * - SIGBREAK (Ctrl+Break) and SIGHUP (console window closed, Windows kills the process ~10s later): Windows only,
+     *   on Linux a SIGHUP handler would stop `nohup` from protecting the server. The Windows app sends Ctrl+C (SIGINT).
+     */
+    const terminationSignals = process.platform === 'win32' ? ['SIGTERM', 'SIGBREAK', 'SIGHUP'] : ['SIGTERM']
+    for (const signal of terminationSignals) {
+      const onSignal = async () => {
+        process.removeListener(signal, onSignal)
+        Logger.info(`${signal} received. Shutting down...`)
+        await this.mdnsManager.stop()
+        const exitCode = 128 + (os.constants.signals[signal] || 0)
+        try {
+          // Without the listener this terminates with the default action, as if there never was a handler
+          process.kill(process.pid, signal)
+        } catch {
+          // Windows can only send SIGINT, SIGTERM and SIGKILL to a process
+          process.exit(exitCode)
+        }
+        // Still running: as PID 1 (Docker without an init process) the default action of SIGTERM is ignored
+        setTimeout(() => process.exit(exitCode), 500)
+      }
+      process.on(signal, onSignal)
+    }
 
     /**
      * @see https://nodejs.org/api/process.html#event-uncaughtexceptionmonitor
@@ -470,11 +501,17 @@ class Server {
       this.server.listen(sockPath, async () => {
         await fs.chmod(sockPath, 0o666)
         Logger.info(`Listening on unix socket ${sockPath}`)
+
+        // Not advertised, this sets the status shown in settings
+        this.mdnsManager.init({ port: this.Port, host: this.Host, basePath: global.RouterBasePath })
       })
     } else {
       this.server.listen(this.Port, this.Host, () => {
         if (this.Host) Logger.info(`Listening on http://${is.ipv6(this.Host) ? `[${this.Host}]` : this.Host}:${this.Port}`)
         else Logger.info(`Listening on port :${this.Port}`)
+
+        // A HOST name was resolved to a single address to listen on, advertise that one
+        this.mdnsManager.init({ port: this.Port, host: this.Host, basePath: global.RouterBasePath, address: this.server.address()?.address })
       })
     }
 
@@ -561,6 +598,7 @@ class Server {
    */
   async stop() {
     Logger.info('=== Stopping Server ===')
+    await this.mdnsManager.stop()
     Watcher.close()
     Logger.info('[Server] Watcher Closed')
     await SocketAuthority.close()

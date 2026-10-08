@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "完成百分比大于",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "剩余时间少于（秒）",
   "LabelSettingsLibraryMarkAsFinishedWhen": "当发生以下情况时将媒体项目标记为已完成",
+  "LabelSettingsMdnsDefaultName": "有声读物",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "“在追系列” 中仅显示后续书籍",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "主页“在追系列”书架默认会为已完成至少一本、且当前没有进行中书籍的系列，推荐第一本未开始的书。启用此设置后，将改为从已完成的最靠后一本书开始往后推荐。",
   "LabelSettingsParseSubtitles": "解析副标题",

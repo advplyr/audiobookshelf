@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Процент выполнения больше, чем",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Оставшееся время составляет менее (секунд)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Отметьте мультимедийный элемент как законченный, когда",
+  "LabelSettingsMdnsDefaultName": "Аудиокнига",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Пропустить предыдущие книги в \"Продолжить серию\"",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "На домашней странице \"Продолжить серию\" отображается первая книга, не начатая в серии, в которой закончена хотя бы одна книга и нет начатых книг. При включении этого параметра серия будет продолжена с самой последней завершенной книги, а не с первой, которая не начата.",
   "LabelSettingsParseSubtitles": "Разбор подзаголовков",

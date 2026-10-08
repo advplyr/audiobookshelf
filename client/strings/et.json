@@ -462,6 +462,7 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Ühe raamatuga seeriaid peidetakse seeria lehelt ja avalehe riiulitelt.",
   "LabelSettingsHomePageBookshelfView": "Avalehel kasuta raamaturiiulivaadet",
   "LabelSettingsLibraryBookshelfView": "Raamatukogus kasuta raamaturiiulivaadet",
+  "LabelSettingsMdnsDefaultName": "Heliraamat",
   "LabelSettingsParseSubtitles": "Lugege subtiitreid",
   "LabelSettingsParseSubtitlesHelp": "Eraldage subtiitrid heliraamatu kaustade nimedest.<br>Subtiitrid peavad olema eraldatud  kasutades \" - \".<br>Näiteks: \"Raamatu pealkiri - Siin on alapealkiri\" alapealkiri on \"Siin on alapealkiri\"",
   "LabelSettingsPreferMatchedMetadata": "Eelista sobitatud metaandmeid",

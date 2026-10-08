@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Prosent ferdig er større enn",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Gjenværende tid er mindre enn (sekunder)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Marker som ferdig når",
+  "LabelSettingsMdnsDefaultName": "Lydbok",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Hopp over tidligere bøker i \"Fortsett serien\"",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "\"Fortsett serie\"-siden viser første bok som ikke er påbegynt i serier der en bok er lest og ingen bøker leses nå. Ved å slå på denne innstillingen så vil man fortsette på serien etter siste leste bok, fremfor første bok som ikke er startet på i en serie.",
   "LabelSettingsParseSubtitles": "Analyser undertitler",

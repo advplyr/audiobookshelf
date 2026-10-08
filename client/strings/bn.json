@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "শতকরা সম্পূর্ণ এর চেয়ে বেশি",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "বাকি সময় (সেকেন্ড) এর চেয়ে কম",
   "LabelSettingsLibraryMarkAsFinishedWhen": "মিডিয়া আইটেমকে সমাপ্ত হিসাবে চিহ্নিত করুন যখন",
+  "LabelSettingsMdnsDefaultName": "অডিওবই",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "কন্টিনিউ সিরিজে আগের বইগুলো এড়িয়ে যান",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "কন্টিনিউ সিরিজের নীড় পেজ শেল্ফ দেখায় যে সিরিজে শুরু হয়নি এমন প্রথম বই যার অন্তত একটি বই শেষ হয়েছে এবং কোনো বই চলছে না। এই সেটিংটি সক্ষম করলে শুরু না হওয়া প্রথম বইটির পরিবর্তে সবচেয়ে দূরের সম্পূর্ণ বই থেকে সিরিজ চলতে থাকবে।",
   "LabelSettingsParseSubtitles": "সাবটাইটেল পার্স করুন",

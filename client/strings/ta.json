@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "விழுக்காடு நிறைவடைந்ததை விட அதிகமாக உள்ளது",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "மீதமுள்ள நேரம் (வினாடிகள்) விட குறைவாக உள்ளது",
   "LabelSettingsLibraryMarkAsFinishedWhen": "மீடியா உருப்படி எப்போது முடிந்தது எனக் குறிக்கவும்",
+  "LabelSettingsMdnsDefaultName": "ஆடியோபுக்",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "தொடரும் தொடரில் முந்தைய புத்தகங்களைத் தவிர்க்கவும்",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "தொடரின் முகப்புப் பக்க அலமாரியானது தொடரில் தொடங்காத முதல் புத்தகத்தைக் காட்டுகிறது, அதில் குறைந்தபட்சம் ஒரு புத்தகமாவது முடிக்கப்பட்டுள்ளது மற்றும் எந்த புத்தகமும் இல்லை. இந்த அமைப்பை இயக்கினால், தொடங்கப்படாத முதல் புத்தகத்திற்குப் பதிலாக, மிகத் தொலைவில் முடிந்த புத்தகத்திலிருந்து தொடர் தொடரும்.",
   "LabelSettingsParseSubtitles": "வசன வரிகளை அலசவும்",

@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Procent gennemført er større end",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Tid tilbage er mindre end (sekunder)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Marker medie indhold som færdigt når",
+  "LabelSettingsMdnsDefaultName": "Lydbog",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Spring tidligere bøger i Fortsæt serie over",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Fortsæt Serien siden viser den første bog som ikke er startet i serier med mindst en bog som ikke er startet og hvor ingen bøger i gang. Aktivering af denne indstilling vil fortsætte serien fra den sidst gennemførte bog i stedet for fra den første ikke startede bog.",
   "LabelSettingsParseSubtitles": "Fortolk undertitler",

@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "La percentuale di completamento è maggiore di",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Il tempo rimanente è inferiore a (secondi)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Contrassegna l'elemento multimediale come terminato quando",
+  "LabelSettingsMdnsDefaultName": "Audiolibro",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Salta i libri precedenti nella serie Continua",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Lo scaffale della home page Continua serie mostra il primo libro non iniziato della serie che ha almeno un libro finito e nessun libro in corso. Abilitando questa impostazione le serie continueranno dal libro completato più lontano invece che dal primo libro non iniziato.",
   "LabelSettingsParseSubtitles": "Analizza sottotitoli",

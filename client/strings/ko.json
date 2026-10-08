@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "완료율이 다음보다 큼",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "남은 시간은 (초) 미만입니다.",
   "LabelSettingsLibraryMarkAsFinishedWhen": "미디어 항목을 완료된 것으로 표시",
+  "LabelSettingsMdnsDefaultName": "오디오북",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Continue Series의 이전 책 건너뛰기",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "시리즈 계속하기 홈페이지 선반에는 시리즈 중 아직 시작하지 않은 첫 번째 책이 표시됩니다. 시리즈 중 최소 한 권은 완료되었고 진행 중인 책은 없습니다. 이 설정을 활성화하면 시작하지 않은 첫 번째 책 대신 가장 늦게 완료된 책부터 시리즈가 이어집니다.",
   "LabelSettingsParseSubtitles": "자막 파싱",

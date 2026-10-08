@@ -586,6 +586,7 @@
   "LabelSettingsDateFormat": "Formatul Datei",
   "LabelSettingsEnableWatcher": "Urmărește în mod automat bibliotecile pentru schimbări",
   "LabelSettingsEnableWatcherForLibrary": "Urmărește în mod automat biblioteca pentru schimbări",
+  "LabelSettingsMdnsDefaultName": "Carte audio",
   "LabelShowAll": "Afișează tot",
   "LabelSize": "Dimensiune",
   "LabelSleepTimer": "Timer de somn",

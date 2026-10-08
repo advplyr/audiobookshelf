@@ -21,6 +21,14 @@ services:
       # you are running ABS on
       - ./config:/config
     restart: unless-stopped
+    # Finding the server automatically (optional)
+    # Apps on your network can find this server by itself, at
+    # http://audiobook.local:13378. This does not work with the "ports"
+    # setting above. To turn it on (Linux only), delete the two "ports"
+    # lines and remove the # in front of these three lines:
+    # network_mode: host
+    # environment:
+    #   - PORT=13378
     # You can use the following user directive to run the ABS
     # docker container as a specific user. You will need to change
     # the UID and GID to the correct values for your user.

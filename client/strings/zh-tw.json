@@ -497,6 +497,7 @@
   "LabelSettingsHideSingleBookSeriesHelp": "只有一本書的系列將從系列頁面和主頁書架中隱藏.",
   "LabelSettingsHomePageBookshelfView": "首頁使用書架視圖",
   "LabelSettingsLibraryBookshelfView": "媒體庫使用書架視圖",
+  "LabelSettingsMdnsDefaultName": "有聲書",
   "LabelSettingsParseSubtitles": "解析副標題",
   "LabelSettingsParseSubtitlesHelp": "從有聲書資料夾中提取副標題.<br>副標題必須用 \" - \" 分隔.<br>例: \"書名 - 這裡是副標題\" 則顯示副標題 \"這裡是副標題\"",
   "LabelSettingsPreferMatchedMetadata": "首選匹配的元數據",

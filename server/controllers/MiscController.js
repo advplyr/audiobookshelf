@@ -15,6 +15,7 @@ const { sanitizeFilename } = require('../utils/fileUtils')
 const { sanitize } = require('../utils/htmlSanitizer')
 
 const TaskManager = require('../managers/TaskManager')
+const MdnsManager = require('../managers/MdnsManager')
 const adminStats = require('../utils/queries/adminStats')
 
 /**
@@ -160,6 +161,27 @@ class MiscController {
       return res.status(400).send('allowedOrigins must be an array')
     }
 
+    if (filteredUpdate.mdnsEnabled !== undefined) {
+      if (typeof filteredUpdate.mdnsEnabled !== 'boolean') {
+        return res.status(400).send('mdnsEnabled must be a boolean')
+      }
+      if (this.mdnsManager.lockedByEnv.enabled && filteredUpdate.mdnsEnabled !== Database.serverSettings.mdnsEnabled) {
+        return res.status(400).send('Cannot change local network discovery when DISABLE_MDNS is set in environment')
+      }
+    }
+    if (filteredUpdate.mdnsName !== undefined) {
+      // An empty name (or null) resets to the translated default name for the server language
+      const isReset = filteredUpdate.mdnsName === null || (typeof filteredUpdate.mdnsName === 'string' && !filteredUpdate.mdnsName.trim())
+      const mdnsName = isReset ? null : MdnsManager.normalizeName(filteredUpdate.mdnsName)
+      if (!isReset && !mdnsName) {
+        return res.status(400).send('mdnsName must be 1 to 63 bytes long and must not end with a number in parentheses, e.g. " (2)"')
+      }
+      if (this.mdnsManager.lockedByEnv.name && mdnsName !== Database.serverSettings.mdnsName) {
+        return res.status(400).send('Cannot change the server name when MDNS_NAME is set in environment')
+      }
+      filteredUpdate.mdnsName = mdnsName
+    }
+
     const madeUpdates = Database.serverSettings.update(filteredUpdate)
     if (madeUpdates) {
       await Database.updateServerSettings()
@@ -168,10 +190,31 @@ class MiscController {
       if (filteredUpdate.backupSchedule !== undefined) {
         this.backupManager.updateCronSchedule()
       }
+
+      // The default name is translated, so a language change can change the advertised name.
+      // Not awaited: stopping the old service and probing take a moment, GET /api/mdns reports 'updating' until applied
+      if (filteredUpdate.mdnsEnabled !== undefined || filteredUpdate.mdnsName !== undefined || filteredUpdate.language !== undefined) {
+        this.mdnsManager.apply()
+      }
     }
     return res.json({
       serverSettings: Database.serverSettings.toJSONForBrowser()
     })
+  }
+
+  /**
+   * GET: /api/mdns
+   * Current local network discovery (mDNS) state, e.g. the name and URL being advertised
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  getMdnsStatus(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`User "${req.user.username}" other than admin attempting to get mDNS status`)
+      return res.sendStatus(403)
+    }
+    res.json(this.mdnsManager.getStatus())
   }
 
   /**

@@ -28,5 +28,6 @@
   "ButtonCreate": "Stofna",
   "ButtonCreateBackup": "Búa til backup",
   "ButtonDelete": "Eyða",
-  "ButtonDownloadQueue": "Röð"
+  "ButtonDownloadQueue": "Röð",
+  "LabelSettingsMdnsDefaultName": "Hljóðbók"
 }

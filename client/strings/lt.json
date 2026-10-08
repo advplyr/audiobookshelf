@@ -427,6 +427,7 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Serijos, turinčios tik vieną knygą, bus paslėptos nuo serijų puslapio ir pagrindinio puslapio lentynų.",
   "LabelSettingsHomePageBookshelfView": "Naudoti pagrindinio puslapio knygų lentynų vaizdą",
   "LabelSettingsLibraryBookshelfView": "Naudoti bibliotekos knygų lentynų vaizdą",
+  "LabelSettingsMdnsDefaultName": "Garso knyga",
   "LabelSettingsParseSubtitles": "Analizuoti subtitrus",
   "LabelSettingsParseSubtitlesHelp": "Išskleisti subtitrus iš audioknygos aplanko pavadinimų.<br>Subtitrai turi būti atskirti brūkšniu \"-\"<br>pavyzdžiui, \"Knygos pavadinimas - Čia yra subtitrai\" turi subtitrą \"Čia yra subtitrai\"",
   "LabelSettingsPreferMatchedMetadata": "Pirmenybė atitaikytiems metaduomenis",

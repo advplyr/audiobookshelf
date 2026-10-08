@@ -602,6 +602,7 @@
   "LabelSettingsHomePageBookshelfView": "השתמש בתצוגת מדף בדף הבית",
   "LabelSettingsLibraryBookshelfView": "השתמש בתצוגת מדף בספרייה",
   "LabelSettingsLibraryMarkAsFinishedWhen": "סמן פריט מדיה כהושלם כאשר",
+  "LabelSettingsMdnsDefaultName": "ספר קולי",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "דלג על ספרים קודמים ב״המשך סדרה״",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "מדף המשך סדרות מציג את הספר הראשון שלא הושמע בסדרה שיש בה לפחות ספר אחד שהושלם ואין ספרים שכבר באמצע שמיעה. הפעלת הגדרה זו תמשיך סדרות מהספר שהושלם הכי מתקדם בסדרה במקום מהספר הראשון שלא הושמע.",
   "LabelSettingsParseSubtitles": "פענח כתוביות",

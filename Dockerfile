@@ -65,6 +65,8 @@ WORKDIR /app
 
 # Copy compiled frontend and server from build stages
 COPY --from=build-client /client/dist /app/client/dist
+# Translations are also read by the server, e.g. for the default mDNS name
+COPY --from=build-client /client/strings /app/client/strings
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 

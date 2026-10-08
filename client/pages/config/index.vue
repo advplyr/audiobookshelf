@@ -103,6 +103,30 @@
             <ui-toggle-switch v-model="newServerSettings.allowIframe" :label="$strings.LabelSettingsAllowIframe" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('allowIframe', val)" />
             <p aria-hidden="true" class="pl-4">{{ $strings.LabelSettingsAllowIframe }}</p>
           </div>
+
+          <div class="pt-4">
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsNetworkDiscovery }}</h2>
+          </div>
+
+          <div role="article" :aria-label="mdnsEnabledHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsMdnsEnabled" :value="mdnsEnabled" :disabled="updatingServerSettings || mdnsStatus.lockedByEnv?.enabled" @input="updateMdnsEnabled" />
+            <ui-tooltip aria-hidden="true" :text="mdnsEnabledHelp">
+              <p class="pl-4">
+                <span id="settings-mdns-enabled">{{ $strings.LabelSettingsMdnsEnabled }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+          <div v-if="mdnsEnabled" class="w-72 ml-14 mb-2">
+            <ui-text-input-with-label v-model="newServerSettings.mdnsName" :label="$strings.LabelSettingsMdnsName" :placeholder="mdnsStatus.defaultName" :note="mdnsStatus.lockedByEnv?.name ? $strings.MessageMdnsLockedByEnv : ''" :disabled="updatingServerSettings || mdnsStatus.lockedByEnv?.name" @keyup.enter.native="updateMdnsName" />
+            <p v-if="isMdnsNameTooLong" class="text-xs text-error px-1 pt-1">{{ $getString('MessageMdnsNameTooLong', [mdnsNameBytes]) }}</p>
+            <p class="text-xs text-gray-300 px-1 pt-1">{{ $strings.LabelSettingsMdnsNameHelp }}</p>
+            <div v-if="hasMdnsNameChanged" class="flex justify-end py-1">
+              <ui-btn color="bg-success" :loading="updatingServerSettings" :disabled="isMdnsNameTooLong" small @click="updateMdnsName">{{ $strings.ButtonSave }}</ui-btn>
+            </div>
+          </div>
+          <p v-if="mdnsStatusText" class="text-xs text-gray-200 ml-14 px-1 mb-2 break-words">{{ mdnsStatusText }}</p>
+          <p v-if="mdnsNameInUseText" class="text-xs text-warning ml-14 px-1 mb-2 break-words">{{ mdnsNameInUseText }}</p>
         </div>
 
         <div class="flex-1">
@@ -215,6 +239,13 @@
 </template>
 
 <script>
+/**
+ * mDNS status from before a change, to tell the user what changed once it is applied:
+ * { status, at: time the change was saved, keepOnRemount: true for a language change }
+ * Not component data: a language change re-mounts this page (the layout keys it by language) before it is applied.
+ */
+let mdnsChange = null
+
 export default {
   asyncData({ store, redirect }) {
     if (!store.getters['user/getIsAdminOrUp']) {
@@ -232,7 +263,15 @@ export default {
       hasPrefixesChanged: false,
       newServerSettings: {},
       showConfirmPurgeCache: false,
-      savingPrefixes: false
+      savingPrefixes: false,
+      mdnsStatus: {},
+      mdnsStatusTimeout: null,
+      mdnsPollingSince: 0,
+      mdnsBusySince: 0,
+      mdnsPollingStalled: false,
+      mdnsPollingStopped: false,
+      /** only the response to the latest GET /api/mdns is used */
+      mdnsStatusRequest: 0
     }
   },
   watch: {
@@ -263,6 +302,55 @@ export default {
     timeExample() {
       const date = new Date(2014, 2, 25, 17, 30, 0)
       return this.$formatJsTime(date, this.newServerSettings.timeFormat)
+    },
+    mdnsEnabled() {
+      // DISABLE_MDNS in the environment overrides the saved setting
+      return !!this.newServerSettings.mdnsEnabled && !this.mdnsStatus.lockedByEnv?.enabled
+    },
+    mdnsEnabledHelp() {
+      // Example address with this server's real port (the advertised URL once it is advertising)
+      const status = this.mdnsStatus
+      const port = status.port || window.location.port
+      const example = status.url || `http://${status.hostname || 'audiobook.local'}${port ? `:${port}` : ''}`
+      return this.$getString('LabelSettingsMdnsEnabledHelp', [example])
+    },
+    mdnsNameToSave() {
+      const name = (this.newServerSettings.mdnsName || '').trim()
+      const saved = this.serverSettings?.mdnsName || null
+      if (!name) return null
+      // A saved name stays as it is, even when it happens to equal the default name of the current language
+      if (name === saved) return saved
+      // No name (or typing the default name, which is in the server language) follows the server language
+      if (name === this.mdnsStatus.defaultName) return null
+      return name
+    },
+    mdnsNameBytes() {
+      // Network names are limited to 63 bytes, many characters take 2 to 4 bytes
+      return new TextEncoder().encode((this.newServerSettings.mdnsName || '').trim()).length
+    },
+    isMdnsNameTooLong() {
+      return this.mdnsNameBytes > 63
+    },
+    hasMdnsNameChanged() {
+      if (this.mdnsStatus.lockedByEnv?.name) return false
+      return this.mdnsNameToSave !== (this.serverSettings?.mdnsName || null)
+    },
+    mdnsStatusText() {
+      const status = this.mdnsStatus
+      if (this.mdnsPollingStalled) return this.$strings.MessageMdnsTakingLong
+      if (status.state === 'advertising') return this.$getString('MessageMdnsAdvertisedAs', [status.name, status.url])
+      if (status.state === 'updating') return this.$strings.MessageMdnsUpdating
+      if (status.state === 'probing') return this.$strings.MessageMdnsStarting
+      if (status.state === 'retrying') return this.$strings.MessageMdnsRetrying
+      if (status.state === 'disabled' && status.lockedByEnv?.enabled) return this.$strings.MessageMdnsLockedByEnv
+      if (status.state === 'disabled' && this.mdnsEnabled && status.reason) return this.$getString('MessageMdnsUnavailable', [status.reason])
+      return ''
+    },
+    mdnsNameInUseText() {
+      // The configured name was taken by another device, a fallback name is advertised instead
+      const { state, name, configuredName } = this.mdnsStatus
+      if (!['advertising', 'probing', 'retrying'].includes(state) || !name || !configuredName || name === configuredName) return ''
+      return this.$getString('MessageMdnsNameInUse', [configuredName, name])
     }
   },
   methods: {
@@ -296,6 +384,88 @@ export default {
         .finally(() => {
           this.savingPrefixes = false
         })
+    },
+    updateMdnsEnabled(val) {
+      this.newServerSettings.mdnsEnabled = val
+      // Don't show the reason it was off until the new status is fetched
+      if (val) this.mdnsStatus = { ...this.mdnsStatus, state: 'updating' }
+      this.updateSettingsKey('mdnsEnabled', val)
+    },
+    updateMdnsName() {
+      if (!this.hasMdnsNameChanged || this.isMdnsNameTooLong || this.updatingServerSettings) return
+      // An empty name resets to the default name
+      this.updateServerSettings({ mdnsName: this.mdnsNameToSave || '' })
+    },
+    /**
+     * Fetch the mDNS status and keep polling until it is 'advertising' or 'disabled'.
+     * Applying a change and probing the name on the network take about a second. The server reports a probe that
+     * does not finish after 30s as 'retrying' and then retries with a growing delay.
+     */
+    watchMdnsStatus() {
+      this.mdnsPollingSince = Date.now()
+      this.mdnsBusySince = 0
+      this.mdnsPollingStalled = false
+      this.fetchMdnsStatus()
+    },
+    fetchMdnsStatus() {
+      clearTimeout(this.mdnsStatusTimeout)
+      // Responses to earlier requests (e.g. from before a change) are ignored, so there is a single polling chain
+      const request = ++this.mdnsStatusRequest
+      const requestedAt = Date.now()
+      const isCurrent = () => !this.mdnsPollingStopped && request === this.mdnsStatusRequest
+      const poll = (delay) => (this.mdnsStatusTimeout = setTimeout(() => this.fetchMdnsStatus(), delay))
+      this.$axios
+        .$get('/api/mdns')
+        .then((status) => {
+          if (!isCurrent()) return
+          this.mdnsStatus = status || {}
+          if (this.mdnsStatus.lockedByEnv?.name && this.mdnsStatus.configuredName) {
+            // MDNS_NAME in the environment overrides the saved name
+            this.newServerSettings.mdnsName = this.mdnsStatus.configuredName
+          }
+
+          const now = Date.now()
+          const state = this.mdnsStatus.state
+          if (state === 'updating' || state === 'probing') {
+            this.mdnsBusySince = this.mdnsBusySince || now
+            this.mdnsPollingStalled = now - this.mdnsBusySince >= 45 * 1000
+            return poll(this.mdnsPollingStalled ? 20 * 1000 : 1000)
+          }
+          this.mdnsBusySince = 0
+          this.mdnsPollingStalled = false
+          if (state === 'advertising' || state === 'disabled') {
+            this.notifyMdnsChange(requestedAt)
+            return
+          }
+          // 'retrying': the server retries with a growing delay
+          poll(now - this.mdnsPollingSince < 5 * 60 * 1000 ? 5000 : 20 * 1000)
+        })
+        .catch((error) => {
+          console.error('Failed to get mDNS status', error)
+          if (isCurrent()) poll(20 * 1000)
+        })
+    },
+    /**
+     * @param {number} requestedAt when the request for the current status was sent
+     */
+    notifyMdnsChange(requestedAt) {
+      // Only a status requested after the change was saved shows its result
+      if (!mdnsChange || requestedAt < mdnsChange.at) return
+      const before = mdnsChange.status
+      const status = this.mdnsStatus
+      mdnsChange = null
+
+      if (status.state === 'disabled' && before.state !== 'disabled' && !this.mdnsEnabled) {
+        this.$toast.success(this.$strings.ToastMdnsDisabled)
+      } else if (status.state === 'advertising') {
+        if (!before.name || before.state === 'disabled') {
+          this.$toast.success(this.$getString('MessageMdnsAdvertisedAs', [status.name, status.url]))
+        } else if (before.hostname !== status.hostname) {
+          this.$toast.success(this.$getString('ToastMdnsAddressChanged', [status.name, status.url, before.hostname]))
+        } else if (before.name !== status.name) {
+          this.$toast.success(this.$getString('ToastMdnsNameChanged', [status.name]))
+        }
+      }
     },
     updateScannerCoverProvider(val) {
       this.updateServerSettings({
@@ -346,6 +516,8 @@ export default {
     },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
+      const mdnsStatusBefore = { ...this.mdnsStatus }
+      const typedMdnsName = this.newServerSettings.mdnsName
       this.$store.dispatch('updateServerSettings', payload).then((response) => {
         this.updatingServerSettings = false
 
@@ -353,12 +525,25 @@ export default {
           console.error('Failed to update server settins', response.error)
           this.$toast.error(response.error)
           this.initServerSettings()
+          // Keep the rejected name so it can be corrected
+          if (payload.mdnsName !== undefined) this.newServerSettings.mdnsName = typedMdnsName
+          if (payload.mdnsEnabled !== undefined) this.watchMdnsStatus()
           return
         }
 
         if (payload.language) {
           // Updating language after save allows for re-rendering
           this.$setLanguageCode(payload.language)
+        }
+
+        if (payload.mdnsName !== undefined) {
+          // The server trims and validates the name, no name shows the default name as placeholder
+          this.newServerSettings.mdnsName = this.serverSettings.mdnsName
+        }
+        // Changes are applied right away. The default name is translated, so the language can change it too
+        if (payload.mdnsEnabled !== undefined || payload.mdnsName !== undefined || payload.language !== undefined) {
+          mdnsChange = { status: mdnsStatusBefore, at: Date.now(), keepOnRemount: payload.language !== undefined }
+          this.watchMdnsStatus()
         }
       })
     },
@@ -419,6 +604,14 @@ export default {
     this.initServerSettings()
     // Fetch providers if not already loaded (for cover provider dropdown)
     this.$store.dispatch('scanners/fetchProviders')
+    this.watchMdnsStatus()
+  },
+  beforeDestroy() {
+    this.mdnsPollingStopped = true
+    // Keep the change for the page re-mounted by a language change, not for when the page is opened again later
+    if (mdnsChange?.keepOnRemount) mdnsChange.keepOnRemount = false
+    else mdnsChange = null
+    clearTimeout(this.mdnsStatusTimeout)
   }
 }
 </script>

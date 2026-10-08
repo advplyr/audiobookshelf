@@ -575,6 +575,7 @@
   "LabelSettingsExperimentalFeaturesHelp": "Funcions en desenvolupament que es beneficiarien dels teus comentaris i experiències de prova. Feu clic aquí per obrir una conversa a Github.",
   "LabelSettingsFindCovers": "Troba cobertes",
   "LabelSettingsHideSingleBookSeries": "Amaga les sèries amb un sol llibre",
+  "LabelSettingsMdnsDefaultName": "Audiollibre",
   "LabelSettingsParseSubtitles": "Analitza els subtítols",
   "LabelSettingsSortingIgnorePrefixes": "Ignora els prefixos en ordenar",
   "LabelSettingsTimeFormat": "Format d'hora",

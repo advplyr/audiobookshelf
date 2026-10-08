@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Procent ukończenia jest większy niż",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Pozostały czas jest mniejszy niż (sekund)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Oznacz element multimedialny jako ukończony, gdy",
+  "LabelSettingsMdnsDefaultName": "Audiobook",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Pomiń poprzednie książki przy kontynuacji serii",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Strona „Kontynuuj serię” wyświetla pierwszą nierozpoczętą książkę z serii, w której ukończono co najmniej jedną książkę i żadnej nie rozpoczęto. Włączając to ustawienie, będziesz kontynuować serię po przeczytaniu ostatniej książki, a nie od pierwszej nierozpoczętej książki z serii.",
   "LabelSettingsParseSubtitles": "Przetwarzaj podtytuły",

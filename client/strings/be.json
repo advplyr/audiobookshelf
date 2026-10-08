@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Працэнт завяршэння большы за",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Час, што застаўся, меншы за (секунд)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Пазначыць элемент медыя як завершаны, калі",
+  "LabelSettingsMdnsDefaultName": "Аўдыякніга",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Прапусціць папярэднія кнігі ў \"Працягнуць серыю\"",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Паліца \"Працягнуць серыю\" на галоўнай старонцы паказвае першую не пачатую кнігу ў серыях, дзе завершана хаця б адна кніга і няма кніг у працэсе чытання. Уключэнне гэтай налады дазволіць працягваць серыю з самай апошняй завершанай кнігі замест першай не пачатай.",
   "LabelSettingsParseSubtitles": "Аналізаваць падзагалоўкі",

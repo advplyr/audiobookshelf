@@ -24,5 +24,6 @@
   "ButtonSave": "ذخیره",
   "ButtonSearch": "جستجو",
   "ButtonSeries": "مجموعه",
-  "ButtonSubmit": "ثبت"
+  "ButtonSubmit": "ثبت",
+  "LabelSettingsMdnsDefaultName": "کتاب صوتی"
 }

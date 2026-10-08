@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Tamamlanma yüzdesi şundan büyükse",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Kalan süre şundan azsa (saniye)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Medya öğesini bitti olarak işaretle",
+  "LabelSettingsMdnsDefaultName": "Sesli kitap",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Seriye Devam Et'te önceki kitapları atla",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Seriye Devam Et ana sayfa rafı, en az bir kitabı bitmiş ve devam eden kitabı olmayan serilerde başlanmamış ilk kitabı gösterir. Bu ayarı etkinleştirmek, seriyi başlanmamış ilk kitaptan değil, en son tamamlanan kitaptan devam ettirir.",
   "LabelSettingsParseSubtitles": "Altyazıları ayrıştır",

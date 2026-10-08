@@ -604,6 +604,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Percento dokončenia je väčšie ako",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Zostávajúci čas je menší ako (sekúnd)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Označiť položku média ako dokončenú",
+  "LabelSettingsMdnsDefaultName": "Audiokniha",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Preskočiť predchádzajúce knihy v pokračujúcej sérii",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Polička pokračujúcich sérií na domácej stránke zobrazuje prvú nezačatú knihu série, ktorá má dokončenú aspoň jednu z kníh série a žiadne započaté knihy. Povolením tohto nastavenia bude pokračujúca séria začínať poslednou ukončenou knihou miesto prvej nepočúvanej.",
   "LabelSettingsParseSubtitles": "Parsovať podtituly",

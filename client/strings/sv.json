@@ -607,6 +607,7 @@
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Slutförd andel är större än",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Återstående tid är kortare än (sekunder)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Markera objekt som avslutade när",
+  "LabelSettingsMdnsDefaultName": "Ljudbok",
   "LabelSettingsOnlyShowLaterBooksInContinueSeries": "Hoppa över tidigare böcker i en serie",
   "LabelSettingsOnlyShowLaterBooksInContinueSeriesHelp": "Avsnittet ”Fortsätt med serien” på startsidan visar<br>nästa bok i en serie där minst en bok har avslutats,<br>och ingen annan bok har påbörjats.<br><br>När alternativet aktiveras föreslås boken efter<br>den senast avslutade i stället för den första bok<br>i serien som inte är avslutad.",
   "LabelSettingsParseSubtitles": "Hämta undertitel från bokens mapp",
