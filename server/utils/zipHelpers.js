@@ -9,7 +9,11 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
     res.attachment(filename)
 
     const archive = archiver('zip', {
-      zlib: { level: 0 } // Sets the compression level.
+      zlib: { level: 0 }, // Sets the compression level (0 = store, no CPU overhead).
+      // Increase the internal pipeline highWaterMark from 16 KiB to 512 KiB.
+      // This allows archiver to buffer more data before applying backpressure,
+      // keeping the read-from-disk and write-to-network pipelines busy.
+      highWaterMark: 524288
     })
 
     // listen for all archive data to be written
@@ -67,7 +71,9 @@ module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
     res.attachment(filename)
 
     const archive = archiver('zip', {
-      zlib: { level: 0 } // Sets the compression level.
+      zlib: { level: 0 }, // Sets the compression level (0 = store, no CPU overhead).
+      // Increase the internal pipeline highWaterMark from 16 KiB to 512 KiB.
+      highWaterMark: 524288
     })
 
     // listen for all archive data to be written
