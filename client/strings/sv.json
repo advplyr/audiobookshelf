@@ -951,7 +951,7 @@
   "NoteChapterEditorTimes": "OBS: Starttiden för första kapitlet måste vara 0:00 och starttiden för det sista kapitlet får inte överstiga ljudbokens totala längd.",
   "NoteFolderPicker": "OBS: Mappar som redan är kopplade kommer inte att visas",
   "NoteRSSFeedPodcastAppsHttps": "VARNING: De flesta poddappar kräver att RSS-flödets URL använder HTTPS",
-  "NoteRSSFeedPodcastAppsPubDate": "VARNING: Ett eller flera avsnitt saknar publiceringsdatum. Vissa poddappar kräver ett sådant datum.",
+  "NoteRSSFeedPodcastAppsPubDate": "Varning: Ett eller flera avsnitt saknar publiceringsdatum. Vissa poddappar kräver ett sådant datum.",
   "NoteUploaderFoldersWithMediaFiles": "Mappar som innehåller mediefiler hanteras som separata objekt i biblioteket.",
   "NoteUploaderOnlyAudioFiles": "Om du bara laddar upp ljudfiler kommer varje ljudfil att hanteras som en separat ljudbok.",
   "NoteUploaderUnsupportedFiles": "Filtyper som inte stöds ignoreras. När du väljer eller släpper en mapp ignoreras filer som inte tillhör ett biblioteksobjekt.",
