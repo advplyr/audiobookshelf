@@ -323,10 +323,6 @@ class OidcAuthStrategy {
             error: 'Invalid redirect_uri'
           }
         }
-        // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
-        //   for the request to mobile-redirect and as such the session is not shared
-        this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
-
         redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
       } else {
         redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`, hostUrl).toString()
@@ -350,6 +346,20 @@ class OidcAuthStrategy {
           status: 400,
           error: pkceData.error
         }
+      }
+
+      if (isMobileFlow) {
+        // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
+        //   for the request to mobile-redirect and as such the session is not shared.
+        // Everything needed to finish the sign-in is kept here as well, so a native client that does not share a
+        //   cookie with the browser that opened the login can still complete /auth/openid/callback (see restoreMobileSession)
+        this.openIdAuthSession.set(state, {
+          mobile_redirect_uri: req.query.redirect_uri,
+          sso_redirect_uri: redirectUri,
+          max_age: strategy._params.max_age,
+          code_challenge: pkceData.code_challenge,
+          redirected: false
+        })
       }
 
       req.session[sessionKey] = {
@@ -491,14 +501,22 @@ class OidcAuthStrategy {
         return res.status(400).send('State parameter mismatch')
       }
 
-      let mobile_redirect_uri = this.openIdAuthSession.get(state).mobile_redirect_uri
+      const authSession = this.openIdAuthSession.get(state)
+      const mobile_redirect_uri = authSession.mobile_redirect_uri
 
       if (!mobile_redirect_uri) {
         Logger.error('[OidcAuth] No redirect URI')
         return res.status(400).send('No redirect URI')
       }
 
-      this.openIdAuthSession.delete(state)
+      if (authSession.redirected) {
+        Logger.error('[OidcAuth] /auth/openid/mobile-redirect route: State was already used')
+        return res.status(400).send('State parameter mismatch')
+      }
+
+      // Keep the entry (until it expires or the callback consumes it) so /auth/openid/callback can restore the
+      //   sign-in for clients that have no session cookie. It can only be redirected once.
+      authSession.redirected = true
 
       const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
       // Redirect to the overwrite URI saved in the map
@@ -507,6 +525,45 @@ class OidcAuthStrategy {
       Logger.error(`[OidcAuth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
       res.status(500).send('Internal Server Error')
     }
+  }
+
+  /**
+   * Restores the sign-in data for a mobile client that calls /auth/openid/callback without the session cookie
+   * set by /auth/openid. This is the normal case for native apps that open the login in an external browser or a
+   * system auth broker (RFC 8252), since that browser and the app's HTTP client do not share cookies.
+   *
+   * Only used when there is no session. Requires that the state was issued by /auth/openid for a mobile flow, that
+   * /auth/openid/mobile-redirect already handed the code to the client, and that the client proves it started the
+   * flow: the code_verifier must match the code_challenge sent to /auth/openid. This is checked here, not left to the
+   * identity provider (which may not enforce PKCE), so a code intercepted from the redirect is useless without the
+   * verifier. The stored entry is single use and is only consumed once the verifier matches.
+   *
+   * @param {Request} req
+   * @returns {boolean} true if the session was restored
+   */
+  restoreMobileSession(req) {
+    const { state, code_verifier } = req.query
+    if (typeof state !== 'string' || typeof code_verifier !== 'string' || !/^[A-Za-z0-9\-._~]{43,128}$/.test(code_verifier)) return false
+
+    const authSession = this.openIdAuthSession.get(state)
+    if (!authSession?.redirected || !authSession.sso_redirect_uri || typeof authSession.code_challenge !== 'string') return false
+    if (OpenIDClient.generators.codeChallenge(code_verifier) !== authSession.code_challenge) {
+      Logger.warn('[OidcAuth] /auth/openid/callback: code_verifier does not match the code_challenge')
+      return false
+    }
+    this.openIdAuthSession.delete(state)
+
+    req.session[this.getStrategy()._key] = {
+      state,
+      max_age: authSession.max_age,
+      response_type: 'code',
+      code_verifier,
+      mobile: authSession.mobile_redirect_uri,
+      sso_redirect_uri: authSession.sso_redirect_uri
+    }
+    // Answer with JSON like any other mobile sign-in (normally this comes from the cookie set by /auth/openid)
+    req.cookies = { ...req.cookies, auth_method: 'openid-mobile' }
+    return true
   }
 
   /**
