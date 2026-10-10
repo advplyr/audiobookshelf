@@ -1,14 +1,16 @@
-const { createNewSortInstance } = require('../libs/fastSort')
-const Database = require('../Database')
-const Logger = require('../Logger')
-const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
+import { createNewSortInstance } from '../libs/fastSort'
+import type { SortDirection } from '../libs/fastSort'
+import Database from '../Database'
+import Logger from '../Logger'
+import { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } from '../utils/index'
+import type { ExpandedLibraryItem, LibraryItemJSON, SeriesGroup, CollapsePayload, CollapseUser, CollapseLibrary, SeriesWithBooks } from '../types/libraryHelpers'
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
 
 const VALID_COLLAPSE_SUBSERIES_SORTS = new Set(['addedAt', 'size', 'birthtimeMs', 'mtimeMs', 'media.duration', 'media.metadata.publishedYear', 'media.metadata.authorName', 'media.metadata.authorNameLF', 'media.metadata.title', 'sequence', 'progress', 'progress.createdAt', 'progress.finishedAt', 'random'])
 
-module.exports = {
+const libraryHelpers = {
   /**
    *
    * @param {import('../models/LibraryItem')[]} libraryItems
@@ -16,9 +18,9 @@ module.exports = {
    * @param {*} hideSingleBookSeries
    * @returns
    */
-  getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries) {
-    const _series = {}
-    const seriesToFilterOut = {}
+  getSeriesFromBooks(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean): SeriesGroup[] {
+    const _series: Record<string, SeriesGroup> = {}
+    const seriesToFilterOut: Record<string, boolean> = {}
     libraryItems.forEach((libraryItem) => {
       // get all book series for item that is not already filtered out
       const allBookSeries = (libraryItem.media.series || []).filter((se) => !seriesToFilterOut[se.id])
@@ -28,7 +30,8 @@ module.exports = {
         const abJson = libraryItem.toOldJSONMinified()
         abJson.sequence = bookSeries.bookSeries.sequence
         if (filterSeries) {
-          const series = libraryItem.media.series.find((se) => se.id === filterSeries)
+          // The caller filters items to the requested series before collapsing.
+          const series = libraryItem.media.series.find((se) => se.id === filterSeries)!
           abJson.filterSeriesSequence = series.bookSeries.sequence
         }
         if (!_series[bookSeries.id]) {
@@ -68,12 +71,12 @@ module.exports = {
    * @param {boolean} hideSingleBookSeries
    * @returns
    */
-  collapseBookSeries(libraryItems, filterSeries, hideSingleBookSeries) {
+  collapseBookSeries(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean): ExpandedLibraryItem[] {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
     const seriesObjects = this.getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries).filter((s) => s.id != filterSeries)
 
-    const filteredLibraryItems = []
+    const filteredLibraryItems: ExpandedLibraryItem[] = []
 
     libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
@@ -84,7 +87,7 @@ module.exports = {
         .forEach((series) => {
           // Clone the library item as we need to attach data to it, but don't
           // want to change the global copy of the library item
-          filteredLibraryItems.push(Object.assign(Object.create(Object.getPrototypeOf(li)), li, { collapsedSeries: series }))
+          filteredLibraryItems.push(Object.assign(Object.create(Object.getPrototypeOf(li) as object | null) as ExpandedLibraryItem, li, { collapsedSeries: series }))
         })
 
       // Only included books not contained in series
@@ -102,13 +105,15 @@ module.exports = {
    * @param {import('../models/Library')} library
    * @returns {Object[]}
    */
-  async handleCollapseSubseries(payload, seriesId, user, library) {
+  async handleCollapseSubseries(payload: CollapsePayload, seriesId: string, user: CollapseUser, library: CollapseLibrary): Promise<LibraryItemJSON[]> {
     if (payload.sortBy && !VALID_COLLAPSE_SUBSERIES_SORTS.has(payload.sortBy)) {
       Logger.warn(`[libraryHelpers] Invalid "sort" query string "${payload.sortBy}"`)
       payload.sortBy = undefined
     }
 
-    const seriesWithBooks = await Database.seriesModel.findByPk(seriesId, {
+    // Legacy models redefine Sequelize.init; describe the query method without its incompatible static this type.
+    const seriesModel: { findByPk(id: string, options: { include: object }): Promise<unknown> } = Database.seriesModel
+    const queryResult = await seriesModel.findByPk(seriesId, {
       include: {
         model: Database.bookModel,
         through: {
@@ -133,6 +138,8 @@ module.exports = {
         ]
       }
     })
+    // These associations are loaded by the include tree above; model JS is migrated separately.
+    const seriesWithBooks = queryResult as SeriesWithBooks | null
     if (!seriesWithBooks) {
       payload.total = 0
       return []
@@ -143,7 +150,7 @@ module.exports = {
 
     let libraryItems = books
       .map((book) => {
-        const libraryItem = book.libraryItem
+        const libraryItem = book.libraryItem!
         delete book.libraryItem
         libraryItem.media = book
         return libraryItem
@@ -160,19 +167,19 @@ module.exports = {
 
     const sortingIgnorePrefix = Database.serverSettings.sortingIgnorePrefix
 
-    let sortArray = []
+    let sortArray: SortDirection<ExpandedLibraryItem>[] = []
     const direction = payload.sortDesc ? 'desc' : 'asc'
     if (!payload.sortBy || payload.sortBy === 'sequence') {
       sortArray = [
         {
-          [direction]: (li) => {
-            const series = li.media.series.find((se) => se.id === seriesId)
+          [direction]: (li: ExpandedLibraryItem) => {
+            const series = li.media.series.find((se) => se.id === seriesId)!
             return series.bookSeries.sequence
           }
         },
         {
           // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
-          [direction]: (li) => {
+          [direction]: (li: ExpandedLibraryItem) => {
             if (sortingIgnorePrefix) {
               return li.collapsedSeries?.nameIgnorePrefix || li.media.titleIgnorePrefix
             } else {
@@ -196,7 +203,7 @@ module.exports = {
         })
       }
       sortArray.push({
-        [direction]: (li) => {
+        [direction]: (li: ExpandedLibraryItem) => {
           if (payload.sortBy === 'media.metadata.title') {
             if (sortingIgnorePrefix) {
               return li.collapsedSeries?.nameIgnorePrefix || li.media.titleIgnorePrefix
@@ -206,7 +213,8 @@ module.exports = {
           } else {
             if (payload.sortBy === 'media.metadata.authorName') return li.authorNamesFirstLast ?? ''
             if (payload.sortBy === 'media.metadata.authorNameLF') return li.authorNamesLastFirst ?? ''
-            return payload.sortBy.split('.').reduce((a, b) => a?.[b], li) ?? ''
+            // Dynamic sort fields remain untrusted; retain JS property access without coercing intermediate values.
+            return payload.sortBy!.split('.').reduce<unknown>((a, b) => (a as Record<string, unknown> | null | undefined)?.[b], li) ?? ''
           }
         }
       })
@@ -215,13 +223,15 @@ module.exports = {
     libraryItems = naturalSort(libraryItems).by(sortArray)
 
     if (payload.limit) {
-      const startIndex = payload.page * payload.limit
-      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
+      const startIndex = Number(payload.page) * Number(payload.limit)
+      // Query strings historically concatenate at the slice end; preserve that behavior.
+      const endIndex = typeof payload.limit === 'string' ? `${startIndex}${payload.limit}` : startIndex + payload.limit
+      libraryItems = libraryItems.slice(startIndex, Number(endIndex))
     }
 
     return Promise.all(
       libraryItems.map(async (li) => {
-        const filteredSeries = li.media.series.find((se) => se.id === seriesId)
+        const filteredSeries = li.media.series.find((se) => se.id === seriesId)!
         const json = li.toOldJSONMinified()
         json.media.metadata.series = {
           id: filteredSeries.id,
@@ -240,14 +250,15 @@ module.exports = {
 
           // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
           // series represents in the filtered series
-          json.collapsedSeries.seriesSequenceList = naturalSort(li.collapsedSeries.books.filter((b) => b.filterSeriesSequence).map((b) => b.filterSeriesSequence))
+          json.collapsedSeries.seriesSequenceList = naturalSort(li.collapsedSeries.books.filter((b) => b.filterSeriesSequence).map((b) => b.filterSeriesSequence!))
             .asc()
-            .reduce((ranges, currentSequence) => {
+            .reduce<Array<{ start: string | number; end: string | number; isNumber: boolean }>>((ranges, sequence) => {
+              let currentSequence: string | number = sequence
               let lastRange = ranges.at(-1)
-              let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
-              if (isNumber) currentSequence = parseFloat(currentSequence)
+              let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(sequence)
+              if (isNumber) currentSequence = parseFloat(sequence)
 
-              if (lastRange && isNumber && lastRange.isNumber && lastRange.end + 1 == currentSequence) {
+              if (lastRange && isNumber && lastRange.isNumber && Number(lastRange.end) + 1 == currentSequence) {
                 lastRange.end = currentSequence
               } else {
                 ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNumber })
@@ -259,8 +270,10 @@ module.exports = {
             .join(', ')
         }
 
-        return json
+        return Promise.resolve(json)
       })
     )
   }
 }
+
+export = libraryHelpers
