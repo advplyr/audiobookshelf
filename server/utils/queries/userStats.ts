@@ -1,17 +1,25 @@
-const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const PlaybackSession = require('../../models/PlaybackSession')
-const MediaProgress = require('../../models/MediaProgress')
-const fsExtra = require('../../libs/fsExtra')
+import * as Sequelize from 'sequelize'
+import type Book from '../../models/Book'
+import Database from '../../Database'
+import type PlaybackSession from '../../models/PlaybackSession'
+import type MediaProgress from '../../models/MediaProgress'
+import fsExtra from '../../libs/fsExtra'
 
-module.exports = {
+type ListeningStatsSession = Omit<PlaybackSession, 'mediaItem'> & { mediaItem?: Book | null }
+type FinishedStatsProgress = Omit<MediaProgress, 'mediaItem'> & { mediaItem: Book }
+type ListeningMetadata = { authors?: { name: string }[]; narrators?: string[]; genres?: string[] }
+type LongestAudiobook = { id: string; title: string | null; duration: number; finishedAt: MediaProgress['finishedAt'] }
+
+const userStats = {
   /**
    *
    * @param {string} userId
    * @param {number} year YYYY
    * @returns {Promise<PlaybackSession[]>}
    */
-  async getUserListeningSessionsForYear(userId, year) {
+  async getUserListeningSessionsForYear(userId: string, year: number) {
+    // Statistics are requested after connection and model initialization.
+    const sequelize = Database.sequelize as Sequelize.Sequelize
     const sessions = await Database.playbackSessionModel.findAll({
       where: {
         userId,
@@ -23,15 +31,17 @@ module.exports = {
       include: {
         model: Database.bookModel,
         attributes: ['id', 'coverPath'],
-        include: {
+        // Sequelize normalizes single includes to arrays; use that form for strict typings.
+        include: [{
           model: Database.libraryItemModel,
           attributes: ['id', 'mediaId', 'mediaType']
-        },
+        }],
         required: false
       },
-      order: Database.sequelize.random()
+      order: sequelize.random()
     })
-    return sessions
+    // Only books are included; missing book associations remain null.
+    return sessions as ListeningStatsSession[]
   },
 
   /**
@@ -40,7 +50,9 @@ module.exports = {
    * @param {number} year YYYY
    * @returns {Promise<MediaProgress[]>}
    */
-  async getBookMediaProgressFinishedForYear(userId, year) {
+  async getBookMediaProgressFinishedForYear(userId: string, year: number) {
+    // Statistics are requested after connection and model initialization.
+    const sequelize = Database.sequelize as Sequelize.Sequelize
     const progresses = await Database.mediaProgressModel.findAll({
       where: {
         userId,
@@ -53,22 +65,24 @@ module.exports = {
       include: {
         model: Database.bookModel,
         attributes: ['id', 'title', 'coverPath'],
-        include: {
+        // Sequelize normalizes single includes to arrays; use that form for strict typings.
+        include: [{
           model: Database.libraryItemModel,
           attributes: ['id', 'mediaId', 'mediaType']
-        },
+        }],
         required: true
       },
-      order: Database.sequelize.random()
+      order: sequelize.random()
     })
-    return progresses
+    // The required book join guarantees a populated mediaItem for these rows.
+    return progresses as FinishedStatsProgress[]
   },
 
   /**
    * @param {string} userId
    * @param {number} year YYYY
    */
-  async getStatsForYear(userId, year) {
+  async getStatsForYear(userId: string, year: number) {
     const listeningSessions = await this.getUserListeningSessionsForYear(userId, year)
     const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
 
@@ -76,22 +90,22 @@ module.exports = {
     let totalPodcastListeningTime = 0
     let totalListeningTime = 0
 
-    let authorListeningMap = {}
-    let genreListeningMap = {}
-    let narratorListeningMap = {}
-    let monthListeningMap = {}
-    let bookListeningMap = {}
+    let authorListeningMap: Record<string, number> = {}
+    let genreListeningMap: Record<string, number> = {}
+    let narratorListeningMap: Record<string, number> = {}
+    let monthListeningMap: Record<string, number> = {}
+    let bookListeningMap: Record<string, number> = {}
 
-    const booksWithCovers = []
-    const finishedBooksWithCovers = []
+    const booksWithCovers: string[] = []
+    const finishedBooksWithCovers: string[] = []
 
     // Get finished book stats
     const numBooksFinished = bookProgressesFinished.length
-    let longestAudiobookFinished = null
+    let longestAudiobookFinished: LongestAudiobook | null = null
     for (const mediaProgress of bookProgressesFinished) {
       // Grab first 5 that have a cover
-      if (mediaProgress.mediaItem?.coverPath && !finishedBooksWithCovers.includes(mediaProgress.mediaItem.libraryItem.id) && finishedBooksWithCovers.length < 5 && (await fsExtra.pathExists(mediaProgress.mediaItem.coverPath))) {
-        finishedBooksWithCovers.push(mediaProgress.mediaItem.libraryItem.id)
+      if (mediaProgress.mediaItem?.coverPath && !finishedBooksWithCovers.includes(mediaProgress.mediaItem.libraryItem!.id) && finishedBooksWithCovers.length < 5 && (await fsExtra.pathExists(mediaProgress.mediaItem.coverPath))) {
+        finishedBooksWithCovers.push(mediaProgress.mediaItem.libraryItem!.id)
       }
 
       if (mediaProgress.duration && (!longestAudiobookFinished?.duration || mediaProgress.duration > longestAudiobookFinished.duration)) {
@@ -107,8 +121,8 @@ module.exports = {
     // Get listening session stats
     for (const ls of listeningSessions) {
       // Grab first 25 that have a cover
-      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem.id) && !finishedBooksWithCovers.includes(ls.mediaItem.libraryItem.id) && booksWithCovers.length < 25 && (await fsExtra.pathExists(ls.mediaItem.coverPath))) {
-        booksWithCovers.push(ls.mediaItem.libraryItem.id)
+      if (ls.mediaItem?.coverPath && !booksWithCovers.includes(ls.mediaItem.libraryItem!.id) && !finishedBooksWithCovers.includes(ls.mediaItem.libraryItem!.id) && booksWithCovers.length < 25 && (await fsExtra.pathExists(ls.mediaItem.coverPath))) {
+        booksWithCovers.push(ls.mediaItem.libraryItem!.id)
       }
 
       const listeningSessionListeningTime = ls.timeListening || 0
@@ -127,20 +141,22 @@ module.exports = {
           bookListeningMap[ls.displayTitle] += listeningSessionListeningTime
         }
 
-        const authors = ls.mediaMetadata?.authors || []
+        // Playback metadata retains the legacy author/narrator/genre array shape.
+        const metadata = ls.mediaMetadata as ListeningMetadata | null | undefined
+        const authors = metadata?.authors || []
         authors.forEach((au) => {
           if (!authorListeningMap[au.name]) authorListeningMap[au.name] = 0
           authorListeningMap[au.name] += listeningSessionListeningTime
         })
 
-        const narrators = ls.mediaMetadata?.narrators || []
+        const narrators = metadata?.narrators || []
         narrators.forEach((narrator) => {
           if (!narratorListeningMap[narrator]) narratorListeningMap[narrator] = 0
           narratorListeningMap[narrator] += listeningSessionListeningTime
         })
 
         // Filter out bad genres like "audiobook" and "audio book"
-        const genres = (ls.mediaMetadata?.genres || []).filter((g) => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
+        const genres = (metadata?.genres || []).filter((g) => g && !g.toLowerCase().includes('audiobook') && !g.toLowerCase().includes('audio book'))
         genres.forEach((genre) => {
           if (!genreListeningMap[genre]) genreListeningMap[genre] = 0
           genreListeningMap[genre] += listeningSessionListeningTime
@@ -163,7 +179,7 @@ module.exports = {
       .sort((a, b) => b.time - a.time)
       .slice(0, 3)
 
-    let mostListenedNarrator = null
+    let mostListenedNarrator: { name: string; time: number } | null = null
     for (const narrator in narratorListeningMap) {
       if (!mostListenedNarrator?.time || narratorListeningMap[narrator] > mostListenedNarrator.time) {
         mostListenedNarrator = {
@@ -182,7 +198,7 @@ module.exports = {
       .sort((a, b) => b.time - a.time)
       .slice(0, 3)
 
-    let mostListenedMonth = null
+    let mostListenedMonth: { month: number; time: number } | null = null
     for (const month in monthListeningMap) {
       if (!mostListenedMonth?.time || monthListeningMap[month] > mostListenedMonth.time) {
         mostListenedMonth = {
@@ -209,3 +225,6 @@ module.exports = {
     }
   }
 }
+
+
+export = userStats
