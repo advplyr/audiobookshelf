@@ -1,10 +1,11 @@
-const ffprobe = require('../libs/nodeFfprobe')
-const MediaProbeData = require('../scanner/MediaProbeData')
+import ffprobe from '../libs/nodeFfprobe'
+import MediaProbeData from '../scanner/MediaProbeData'
+import type { ParsedProbeData, ProbeChapter, ProbeFailure, ProbeNumber, ProbeStream, ProbeTags, ProbedMedia, RawProbeChapter, RawProbeData, RawProbeStream } from '../types/prober'
 
-const Logger = require('../Logger')
+import Logger from '../Logger'
 
-function tryGrabBitRate(stream, all_streams, total_bit_rate) {
-  if (!isNaN(stream.bit_rate) && stream.bit_rate) {
+function tryGrabBitRate(stream: RawProbeStream, all_streams: RawProbeStream[], total_bit_rate: number | null): number | null {
+  if (!isNaN(Number(stream.bit_rate)) && stream.bit_rate) {
     return Number(stream.bit_rate)
   }
   if (!stream.tags) {
@@ -13,13 +14,13 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
 
   // Attempt to get bitrate from bps tags
   const bps = stream.tags.BPS || stream.tags['BPS-eng'] || stream.tags['BPS_eng']
-  if (bps && !isNaN(bps)) {
+  if (bps && !isNaN(Number(bps))) {
     return Number(bps)
   }
 
   const tagDuration = stream.tags.DURATION || stream.tags['DURATION-eng'] || stream.tags['DURATION_eng']
   const tagBytes = stream.tags.NUMBER_OF_BYTES || stream.tags['NUMBER_OF_BYTES-eng'] || stream.tags['NUMBER_OF_BYTES_eng']
-  if (tagDuration && tagBytes && !isNaN(tagDuration) && !isNaN(tagBytes)) {
+  if (tagDuration && tagBytes && !isNaN(Number(tagDuration)) && !isNaN(Number(tagBytes))) {
     const calculatedBps = Math.floor((Number(tagBytes) * 8) / Number(tagDuration))
     if (calculatedBps && !isNaN(calculatedBps)) {
       return calculatedBps
@@ -29,7 +30,7 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   if (total_bit_rate && stream.codec_type === 'video') {
     let estimated_bit_rate = total_bit_rate
     all_streams.forEach((stream) => {
-      if (stream.bit_rate && !isNaN(stream.bit_rate)) {
+      if (stream.bit_rate && !isNaN(Number(stream.bit_rate))) {
         estimated_bit_rate -= Number(stream.bit_rate)
       }
     })
@@ -45,10 +46,11 @@ function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   }
 }
 
-function tryGrabFrameRate(stream) {
-  let avgFrameRate = stream.avg_frame_rate || stream.r_frame_rate
-  if (!avgFrameRate) return null
-  const parts = avgFrameRate.split('/')
+function tryGrabFrameRate(stream: RawProbeStream): number | null {
+  const frameRate = stream.avg_frame_rate || stream.r_frame_rate
+  if (!frameRate) return null
+  const parts = frameRate.split('/')
+  let avgFrameRate: number
   if (parts.length === 2) {
     avgFrameRate = Number(parts[0]) / Number(parts[1])
   } else {
@@ -58,30 +60,30 @@ function tryGrabFrameRate(stream) {
   return null
 }
 
-function tryGrabSampleRate(stream) {
+function tryGrabSampleRate(stream: RawProbeStream): number | null {
   const sample_rate = stream.sample_rate
-  if (!isNaN(sample_rate)) return Number(sample_rate)
+  if (!isNaN(Number(sample_rate))) return Number(sample_rate)
   return null
 }
 
-function tryGrabChannelLayout(stream) {
+function tryGrabChannelLayout(stream: RawProbeStream): string | null | undefined {
   const layout = stream.channel_layout
   if (!layout) return null
   return String(layout).split('(').shift()
 }
 
-function tryGrabTags(stream, ...tags) {
+function tryGrabTags(stream: { tags?: ProbeTags }, ...tags: string[]): string | null {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
     const tagKey = Object.keys(stream.tags).find((t) => t.toLowerCase() === tags[i].toLowerCase())
-    const value = stream.tags[tagKey]
+    const value = stream.tags[String(tagKey)]
     if (value && value.trim()) return value.trim()
   }
   return null
 }
 
-function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
-  const info = {
+function parseMediaStreamInfo(stream: RawProbeStream, all_streams: RawProbeStream[], total_bit_rate: number | null): ProbeStream {
+  const info: ProbeStream = {
     index: stream.index,
     type: stream.codec_type,
     codec: stream.codec_name || null,
@@ -104,8 +106,8 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     info.is_avc = stream.is_avc !== '0' && stream.is_avc !== 'false'
     info.pix_fmt = stream.pix_fmt || null
     info.frame_rate = tryGrabFrameRate(stream)
-    info.width = !isNaN(stream.width) ? Number(stream.width) : null
-    info.height = !isNaN(stream.height) ? Number(stream.height) : null
+    info.width = !isNaN(Number(stream.width)) ? Number(stream.width) : null
+    info.height = !isNaN(Number(stream.height)) ? Number(stream.height) : null
     info.color_range = stream.color_range || null
     info.color_space = stream.color_space || null
     info.color_transfer = stream.color_transfer || null
@@ -119,8 +121,8 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   return info
 }
 
-function isNullOrNaN(val) {
-  return val === null || isNaN(val)
+function isNullOrNaN(val: ProbeNumber): boolean {
+  return val === null || isNaN(Number(val))
 }
 
 /* Example chapter object
@@ -136,7 +138,7 @@ function isNullOrNaN(val) {
       }
  * }
  */
-function parseChapters(_chapters) {
+function parseChapters(_chapters?: RawProbeChapter[]): ProbeChapter[] {
   if (!_chapters) return []
 
   return _chapters
@@ -156,12 +158,11 @@ function parseChapters(_chapters) {
     })
     .sort((a, b) => a.start - b.start)
     .map((chap, index) => {
-      chap.id = index
-      return chap
+      return Object.assign(chap, { id: index })
     })
 }
 
-function parseTags(format, verbose) {
+function parseTags(format: { tags?: ProbeTags }, verbose: boolean): Record<string, string | null | undefined> {
   if (!format.tags) {
     return {}
   }
@@ -169,7 +170,7 @@ function parseTags(format, verbose) {
     Logger.debug('Tags', format.tags)
   }
 
-  const tags = {
+  const tags: Record<string, string | null | undefined> = {
     file_tag_encoder: tryGrabTags(format, 'encoder', 'tsse', 'tss'),
     file_tag_encodedby: tryGrabTags(format, 'encoded_by', 'tenc', 'ten'),
     file_tag_title: tryGrabTags(format, 'title', 'tit2', 'tt2'),
@@ -227,7 +228,7 @@ function parseTags(format, verbose) {
   return tags
 }
 
-function getDefaultAudioStream(audioStreams) {
+function getDefaultAudioStream(audioStreams: ProbeStream[]): ProbeStream | null {
   if (!audioStreams || !audioStreams.length) return null
   if (audioStreams.length === 1) return audioStreams[0]
   const defaultStream = audioStreams.find((a) => a.is_default)
@@ -235,19 +236,19 @@ function getDefaultAudioStream(audioStreams) {
   return defaultStream
 }
 
-function parseProbeData(data, verbose = false) {
+function parseProbeData(data: RawProbeData, verbose = false): ParsedProbeData | null {
   try {
     const { format, streams, chapters } = data
 
-    const sizeBytes = !isNaN(format.size) ? Number(format.size) : null
+    const sizeBytes = !isNaN(Number(format.size)) ? Number(format.size) : null
     const sizeMb = sizeBytes !== null ? Number((sizeBytes / (1024 * 1024)).toFixed(2)) : null
 
-    let cleanedData = {
+    let cleanedData: ParsedProbeData = {
       format: format.format_long_name || format.name || 'Unknown',
-      duration: !isNaN(format.duration) ? Number(format.duration) : null,
+      duration: !isNaN(Number(format.duration)) ? Number(format.duration) : null,
       size: sizeBytes,
       sizeMb,
-      bit_rate: !isNaN(format.bit_rate) ? Number(format.bit_rate) : null,
+      bit_rate: !isNaN(Number(format.bit_rate)) ? Number(format.bit_rate) : null,
       tags: parseTags(format, verbose)
     }
     if (verbose && format.tags) {
@@ -262,7 +263,7 @@ function parseProbeData(data, verbose = false) {
     if (cleanedData.audio_stream && cleanedData.video_stream) {
       const videoBitrate = cleanedData.video_stream.bit_rate
       // If audio stream bitrate larger then video, most likely incorrect
-      if (cleanedData.audio_stream.bit_rate > videoBitrate) {
+      if (Number(cleanedData.audio_stream.bit_rate) > Number(videoBitrate)) {
         cleanedData.video_stream.bit_rate = cleanedData.bit_rate
       }
     }
@@ -288,15 +289,16 @@ function parseProbeData(data, verbose = false) {
  * Run ffprobe on audio filepath
  * @param {string} filepath
  * @param {boolean} [verbose=false]
- * @returns {import('../scanner/MediaProbeData')|{error:string}}
  */
-function probe(filepath, verbose = false) {
+export function probe(filepath: string, verbose = false): Promise<ProbedMedia | ProbeFailure> {
   if (process.env.FFPROBE_PATH) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
   }
 
   return ffprobe(filepath)
-    .then((raw) => {
+    .then((output) => {
+      // ffprobe emits JSON; retain legacy parse/error handling rather than validating it here.
+      const raw = output as RawProbeData
       if (raw.error) {
         return {
           error: raw.error.string
@@ -309,34 +311,32 @@ function probe(filepath, verbose = false) {
           error: rawProbeData ? 'Invalid media file: no audio or video streams found' : 'Probe Failed'
         }
       } else {
-        const probeData = new MediaProbeData()
+        const probeData = new MediaProbeData(undefined)
         probeData.setData(rawProbeData)
-        return probeData
+        // JS inference only sees constructor nulls; setData populates the successful result.
+        return probeData as ProbedMedia
       }
     })
-    .catch((err) => {
+    .catch((err: unknown) => {
       return {
         error: err
       }
     })
 }
-module.exports.probe = probe
 
 /**
  * Ffprobe for audio file path
  *
  * @param {string} filepath
- * @returns {Object} ffprobe json output
  */
-function rawProbe(filepath) {
+export function rawProbe(filepath: string): Promise<unknown> {
   if (process.env.FFPROBE_PATH) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
   }
 
-  return ffprobe(filepath).catch((err) => {
+  return ffprobe(filepath).catch((err: unknown) => {
     return {
       error: err
     }
   })
 }
-module.exports.rawProbe = rawProbe
