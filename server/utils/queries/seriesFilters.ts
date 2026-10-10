@@ -1,14 +1,26 @@
-const Sequelize = require('sequelize')
-const Logger = require('../../Logger')
-const Database = require('../../Database')
-const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+import * as Sequelize from 'sequelize'
+import type { IncludeOptions, OrderItem, ProjectionAlias, WhereOptions } from 'sequelize'
+import type Library from '../../models/Library'
+import type User from '../../models/User'
+import type { Where } from 'sequelize/types/utils'
+import type Series from '../../models/Series'
+import type Feed from '../../models/Feed'
+import type BookSeries from '../../models/BookSeries'
+import type { BookExpandedWithLibraryItem } from '../../models/Book'
 
-module.exports = {
-  decode(text) {
+type SeriesPermissions = { accessAllTags?: boolean; itemTagsSelected?: string[]; selectedTagsNotAccessible?: boolean }
+type SeriesRow = Series & { bookSeries: (BookSeries & { book: BookExpandedWithLibraryItem })[]; feeds?: Feed[]; dataValues: { totalDuration?: number | null } }
+type OldSeries = ReturnType<Series['toOldJSON']> & { totalDuration?: number; rssFeed?: ReturnType<Feed['toOldJSONMinified']>; books?: unknown[] }
+import Logger from '../../Logger'
+import Database from '../../Database'
+import libraryItemsBookFilters from './libraryItemsBookFilters'
+
+const seriesFilters = {
+  decode(text: string) {
     try {
       return Buffer.from(decodeURIComponent(text), 'base64').toString()
     } catch (error) {
-      Logger.warn(`[seriesFilters] Failed to decode filter value "${text}": ${error.message}`)
+      Logger.warn(`[seriesFilters] Failed to decode filter value "${text}": ${error instanceof Error ? error.message : String(error)}`)
       return null
     }
   },
@@ -26,7 +38,8 @@ module.exports = {
    * @param {number} offset
    * @returns {Promise<{ series:object[], count:number }>}
    */
-  async getFilteredSeries(library, user, filterBy, sortBy, sortDesc, include, limit, offset) {
+  async getFilteredSeries(library: Library, user: User, filterBy: string, sortBy: string, sortDesc: boolean, include: string[], limit: number, offset: number) {
+    const permissions = user.permissions as SeriesPermissions | null
     let filterValue = null
     let filterGroup = null
     if (filterBy) {
@@ -36,16 +49,19 @@ module.exports = {
       filterValue = group ? this.decode(filterBy.replace(`${group}.`, '')) : null
     }
 
-    const seriesIncludes = []
+    const seriesIncludes: IncludeOptions[] = []
     if (include.includes('rssfeed')) {
       seriesIncludes.push({
         model: Database.feedModel
       })
     }
 
-    const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
+    // The legacy query's JSDoc describes one predicate, but returns an array.
+    const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user) as unknown as {
+      bookWhere: Extract<WhereOptions, unknown[]>; replacements: Record<string, string | string[] | null>
+    }
 
-    const seriesWhere = [
+    const seriesWhere: (Where | { libraryId: string })[] = [
       {
         libraryId: library.id
       }
@@ -53,7 +69,7 @@ module.exports = {
 
     // Handle library setting to hide single book series
     // TODO: Merge with existing query
-    if (library.settings.hideSingleBookSeries) {
+    if (library.settings!.hideSingleBookSeries) {
       seriesWhere.push(
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id)`), {
           [Sequelize.Op.gt]: 1
@@ -64,7 +80,7 @@ module.exports = {
     // Handle filters
     // TODO: Simplify and break-out
     let attrQuery = null
-    if (['genres', 'tags', 'narrators'].includes(filterGroup)) {
+    if (['genres', 'tags', 'narrators'].includes(filterGroup as string)) {
       attrQuery = `SELECT count(*) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (SELECT count(*) FROM json_each(b.${filterGroup}) WHERE json_valid(b.${filterGroup}) AND json_each.value = :filterValue) > 0`
       userPermissionBookWhere.replacements.filterValue = filterValue
     } else if (filterGroup === 'authors') {
@@ -79,18 +95,18 @@ module.exports = {
     } else if (filterGroup === 'progress') {
       if (filterValue === 'not-finished') {
         attrQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = 0)'
-        userPermissionBookWhere.replacements.userId = user.id
+        userPermissionBookWhere.replacements.userId = user.id as string
       } else if (filterValue === 'finished') {
         const progQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished IS NULL OR mp.isFinished = 0)'
         seriesWhere.push(Sequelize.where(Sequelize.literal(`(${progQuery})`), 0))
-        userPermissionBookWhere.replacements.userId = user.id
+        userPermissionBookWhere.replacements.userId = user.id as string
       } else if (filterValue === 'not-started') {
         const progQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.isFinished = 1 OR mp.currentTime > 0)'
         seriesWhere.push(Sequelize.where(Sequelize.literal(`(${progQuery})`), 0))
-        userPermissionBookWhere.replacements.userId = user.id
+        userPermissionBookWhere.replacements.userId = user.id as string
       } else if (filterValue === 'in-progress') {
         attrQuery = 'SELECT count(*) FROM books b, bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = b.id AND mp.userId = :userId WHERE bs.seriesId = series.id AND bs.bookId = b.id AND (mp.currentTime > 0 OR mp.ebookProgress > 0) AND mp.isFinished = 0'
-        userPermissionBookWhere.replacements.userId = user.id
+        userPermissionBookWhere.replacements.userId = user.id as string
       }
     }
 
@@ -102,8 +118,8 @@ module.exports = {
       if (!user.canAccessExplicitContent) {
         attrQuery += ' AND b.explicit = 0'
       }
-      if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
-        if (user.permissions.selectedTagsNotAccessible) {
+      if (!permissions?.accessAllTags && permissions?.itemTagsSelected?.length) {
+        if (permissions.selectedTagsNotAccessible) {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
         } else {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) > 0'
@@ -119,8 +135,8 @@ module.exports = {
       )
     }
 
-    const order = []
-    let seriesAttributes = {
+    const order: OrderItem[] = []
+    const seriesAttributes: { include: ProjectionAlias[] } = {
       include: []
     }
 
@@ -147,7 +163,7 @@ module.exports = {
       seriesAttributes.include.push([Sequelize.literal('(SELECT MAX(b.updatedAt) FROM books b, bookSeries bs WHERE bs.seriesId = series.id AND b.id = bs.bookId)'), 'mostRecentBookUpdated'])
       order.push(['mostRecentBookUpdated', dir])
     } else if (sortBy === 'random') {
-      order.push(Database.sequelize.random())
+      order.push((Database.sequelize as Sequelize.Sequelize).random())
     }
 
     const { rows: series, count } = await Database.seriesModel.findAndCountAll({
@@ -161,7 +177,7 @@ module.exports = {
       include: [
         {
           model: Database.bookSeriesModel,
-          include: {
+          include: [{
             model: Database.bookModel,
             where: userPermissionBookWhere.bookWhere,
             include: [
@@ -175,7 +191,7 @@ module.exports = {
                 model: Database.seriesModel
               }
             ]
-          },
+          }],
           separate: true
         },
         ...seriesIncludes
@@ -184,9 +200,10 @@ module.exports = {
     })
 
     // Map series to old series
-    const allOldSeries = []
-    for (const s of series) {
-      const oldSeries = s.toOldJSON()
+    const allOldSeries: OldSeries[] = []
+    // The includes load each join, expanded book and optional RSS feed.
+    for (const s of series as SeriesRow[]) {
+      const oldSeries: OldSeries = s.toOldJSON()
 
       if (s.dataValues.totalDuration) {
         oldSeries.totalDuration = s.dataValues.totalDuration
@@ -207,7 +224,8 @@ module.exports = {
       })
       oldSeries.books = s.bookSeries.map((bs) => {
         const libraryItem = bs.book.libraryItem
-        delete bs.book.libraryItem
+        // Remove the reverse link before assigning the media to its library item.
+        delete (bs.book as Partial<BookExpandedWithLibraryItem>).libraryItem
         libraryItem.media = bs.book
         const oldLibraryItem = libraryItem.toOldJSONMinified()
         return oldLibraryItem
@@ -221,3 +239,5 @@ module.exports = {
     }
   }
 }
+
+export = seriesFilters
