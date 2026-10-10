@@ -7,6 +7,7 @@ declare global {
   // Initialized by the server before sorting and directory metadata parsing are used.
   var ServerSettings: {
     sortingPrefixes: string[] | null | undefined
+    authOpenIDMatchExistingBy?: ServerSettings['authOpenIDMatchExistingBy']
     sortingIgnorePrefix?: boolean
     scannerParseSubtitle?: boolean
     podcastEpisodeSchedule?: ServerSettings['podcastEpisodeSchedule']
