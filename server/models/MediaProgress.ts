@@ -1,44 +1,65 @@
-const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
-const { isNullOrNaN } = require('../utils')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BelongsToGetAssociationMixin, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type Book from './Book'
+import type PodcastEpisode from './PodcastEpisode'
+import type User from './User'
+import type { ProgressUpdatePayload } from './User'
+import Logger from '../Logger'
+import utils from '../utils'
 
-class MediaProgress extends Model {
-  constructor(values, options) {
+const { isNullOrNaN } = utils
+
+type MediaProgressAttributes = {
+  id: string
+  mediaItemId: string | null
+  mediaItemType: string | null
+  duration: number | null
+  currentTime: number | null
+  isFinished: boolean | null
+  hideFromContinueListening: boolean | null
+  ebookLocation: string | null
+  ebookProgress: number | null
+  finishedAt: Date | string | number | null
+  extraData: { libraryItemId?: string | null; progress?: number } | null
+  userId?: string | null
+  updatedAt?: Date
+  createdAt?: Date
+  podcastId: string | null
+  book?: Book | null
+  podcastEpisode?: PodcastEpisode | null
+  mediaItem?: Book | PodcastEpisode | null
+}
+
+type MediaProgressCreation = Optional<MediaProgressAttributes, 'id' | 'mediaItemId' | 'mediaItemType' | 'duration' | 'currentTime' | 'isFinished' | 'hideFromContinueListening' | 'ebookLocation' | 'ebookProgress' | 'finishedAt' | 'extraData' | 'userId' | 'updatedAt' | 'createdAt' | 'podcastId'>
+
+class MediaProgress extends Model<MediaProgressAttributes, MediaProgressCreation> {
+  declare id: string
+  declare mediaItemId: string | null
+  declare mediaItemType: string | null
+  declare duration: number | null
+  declare currentTime: number | null
+  declare isFinished: boolean | null
+  declare hideFromContinueListening: boolean | null
+  declare ebookLocation: string | null
+  declare ebookProgress: number | null
+  declare finishedAt: Date | string | number | null
+  declare extraData: { libraryItemId?: string | null; progress?: number } | null
+  declare userId: string | null
+  declare updatedAt: Date
+  declare createdAt: Date
+  declare podcastId: string | null
+  declare book?: Book | null
+  declare podcastEpisode?: PodcastEpisode | null
+  declare mediaItem?: Book | PodcastEpisode | null
+  declare getBook: BelongsToGetAssociationMixin<Book>
+  declare getPodcastEpisode: BelongsToGetAssociationMixin<PodcastEpisode>
+
+
+  constructor(values?: MediaProgressCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {UUIDV4} */
-    this.mediaItemId
-    /** @type {string} */
-    this.mediaItemType
-    /** @type {number} */
-    this.duration
-    /** @type {number} */
-    this.currentTime
-    /** @type {boolean} */
-    this.isFinished
-    /** @type {boolean} */
-    this.hideFromContinueListening
-    /** @type {string} */
-    this.ebookLocation
-    /** @type {number} */
-    this.ebookProgress
-    /** @type {Date} */
-    this.finishedAt
-    /** @type {Object} */
-    this.extraData
-    /** @type {UUIDV4} */
-    this.userId
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {Date} */
-    this.createdAt
-    /** @type {UUIDV4} */
-    this.podcastId
   }
 
-  static removeById(mediaProgressId) {
+  static removeById(mediaProgressId: string) {
     return this.destroy({
       where: {
         id: mediaProgressId
@@ -54,8 +75,19 @@ class MediaProgress extends Model {
    *
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof MediaProgress, MediaProgress>(
       {
         id: {
           type: DataTypes.UUID,
@@ -109,10 +141,12 @@ class MediaProgress extends Model {
     })
     MediaProgress.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-    MediaProgress.addHook('afterFind', (findResult) => {
+    MediaProgress.addHook('afterFind', (findResult: MediaProgress | readonly MediaProgress[] | null) => {
       if (!findResult) return
 
-      if (!Array.isArray(findResult)) findResult = [findResult]
+      // Sequelize types results as readonly arrays; retain Array.isArray's runtime check.
+      const isArray: (value: MediaProgress | readonly MediaProgress[]) => value is readonly MediaProgress[] = Array.isArray
+      if (!isArray(findResult)) findResult = [findResult]
 
       for (const instance of findResult) {
         if (instance.mediaItemType === 'book' && instance.book !== undefined) {
@@ -136,8 +170,10 @@ class MediaProgress extends Model {
     })
 
     // update the potentially cached user after destroying the media progress
-    MediaProgress.addHook('afterDestroy', (instance) => {
-      user.mediaProgressRemoved(instance)
+    MediaProgress.addHook('afterDestroy', (instance: MediaProgress) => {
+      // The associated user model is registered by Database.buildModels.
+      const userModel = user as unknown as Pick<typeof User, 'mediaProgressRemoved'>
+      userModel.mediaProgressRemoved(instance)
     })
 
     user.hasMany(MediaProgress, {
@@ -146,10 +182,11 @@ class MediaProgress extends Model {
     MediaProgress.belongsTo(user)
   }
 
-  getMediaItem(options) {
+  getMediaItem(options?: FindOptions) {
     if (!this.mediaItemType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaItemType)}`
-    return this[mixinMethodName](options)
+    // The persisted discriminator selects one of the two association mixins.
+    return this[mixinMethodName as 'getBook' | 'getPodcastEpisode'](options)
   }
 
   getOldMediaProgress() {
@@ -178,7 +215,7 @@ class MediaProgress extends Model {
   get progress() {
     // Value between 0 and 1
     if (!this.duration) return 0
-    return Math.max(0, Math.min(this.currentTime / this.duration, 1))
+    return Math.max(0, Math.min(Number(this.currentTime) / this.duration, 1))
   }
 
   /**
@@ -187,7 +224,7 @@ class MediaProgress extends Model {
    * @param {import('./User').ProgressUpdatePayload} progressPayload
    * @returns {Promise<MediaProgress>}
    */
-  async applyProgressUpdate(progressPayload) {
+  async applyProgressUpdate(progressPayload: ProgressUpdatePayload) {
     if (!this.extraData) this.extraData = {}
     if (progressPayload.isFinished !== undefined) {
       if (progressPayload.isFinished && !this.isFinished) {
@@ -203,9 +240,9 @@ class MediaProgress extends Model {
         delete progressPayload.finishedAt
         delete progressPayload.currentTime
       }
-    } else if (!isNaN(progressPayload.progress) && progressPayload.progress !== this.progress) {
+    } else if (Reflect.apply(isNaN, undefined, [progressPayload.progress]) === false && progressPayload.progress !== this.progress) {
       // Old model stored progress on object
-      this.extraData.progress = Math.min(1, Math.max(0, progressPayload.progress))
+      this.extraData.progress = Math.min(1, Math.max(0, progressPayload.progress!))
       this.changed('extraData', true)
     }
 
@@ -216,13 +253,13 @@ class MediaProgress extends Model {
       this.hideFromContinueListening = false
     }
 
-    const timeRemaining = this.duration - this.currentTime
+    const timeRemaining = Number(this.duration) - Number(this.currentTime)
 
     // Check if progress is far enough to mark as finished
     //   - If markAsFinishedPercentComplete is provided, use that otherwise use markAsFinishedTimeRemaining (default 10 seconds)
     let shouldMarkAsFinished = false
     if (this.duration) {
-      if (!isNullOrNaN(progressPayload.markAsFinishedPercentComplete) && progressPayload.markAsFinishedPercentComplete > 0) {
+      if (!isNullOrNaN(progressPayload.markAsFinishedPercentComplete) && progressPayload.markAsFinishedPercentComplete! > 0) {
         const markAsFinishedPercentComplete = Number(progressPayload.markAsFinishedPercentComplete) / 100
         shouldMarkAsFinished = markAsFinishedPercentComplete < this.progress
         if (shouldMarkAsFinished) {
@@ -251,7 +288,7 @@ class MediaProgress extends Model {
 
     // For local sync
     if (progressPayload.lastUpdate) {
-      if (isNaN(new Date(progressPayload.lastUpdate))) {
+      if (isNaN(new Date(progressPayload.lastUpdate).valueOf())) {
         Logger.warn(`[MediaProgress] Invalid date provided for lastUpdate: ${progressPayload.lastUpdate} (media item ${this.mediaItemId})`)
       } else {
         const escapedDate = this.sequelize.escape(new Date(progressPayload.lastUpdate))
@@ -267,4 +304,4 @@ class MediaProgress extends Model {
   }
 }
 
-module.exports = MediaProgress
+export = MediaProgress
