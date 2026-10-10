@@ -5,7 +5,6 @@ import type Library from '../../models/Library'
 import type LibraryItem from '../../models/LibraryItem'
 import type User from '../../models/User'
 import type Book from '../../models/Book'
-import type { BookExpanded } from '../../models/Book'
 import type Podcast from '../../models/Podcast'
 import type PodcastEpisode from '../../models/PodcastEpisode'
 import type Series from '../../models/Series'
@@ -138,8 +137,7 @@ const libraryFilters = {
             oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
-            // The legacy LibraryItem annotation says BigInt; SQLite returns a number.
-            oldLibraryItem.media.size = li.size as unknown as number
+            oldLibraryItem.media.size = li.size
           }
           if (li.mediaItemShare) {
             oldLibraryItem.mediaItemShare = li.mediaItemShare
@@ -157,8 +155,7 @@ const libraryFilters = {
             oldLibraryItem.rssFeed = li.rssFeed.toOldJSONMinified()
           }
           if (li.size && !oldLibraryItem.media.size) {
-            // The legacy LibraryItem annotation says BigInt; SQLite returns a number.
-            oldLibraryItem.media.size = li.size as unknown as number
+            oldLibraryItem.media.size = li.size
           }
           if (li.numEpisodesIncomplete) {
             oldLibraryItem.numEpisodesIncomplete = li.numEpisodesIncomplete
@@ -349,7 +346,7 @@ const libraryFilters = {
           bs.book.authors = [] // Not needed
           bs.book.series = [] // Not needed
           // Empty author and series lists above complete the expanded book shape.
-          libraryItem.media = bs.book as BookExpanded
+          libraryItem.media = bs.book
           const oldLibraryItem = libraryItem.toOldJSONMinified()
           return oldLibraryItem
         })
@@ -464,7 +461,7 @@ const libraryFilters = {
    * @param {number} offset
    * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
-  async getLibraryItemsForAuthor(author: Author, user: User | null | undefined, limit: number, offset: number) {
+  async getLibraryItemsForAuthor(author: Author, user: User | null | undefined, limit: number | undefined, offset: number | undefined) {
     const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(author.libraryId, user, 'authors', author.id, 'addedAt', true, false, [], limit, offset)
     return {
       count,

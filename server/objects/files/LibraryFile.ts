@@ -16,6 +16,8 @@ interface LibraryFileData {
   fileType: LibraryFileType
 }
 
+type LibraryFileInput = Partial<Omit<LibraryFileData, 'metadata'>> & { metadata?: Partial<FileMetadataJSON> }
+
 class LibraryFile {
   ino: string | null | undefined = null
   metadata: FileMetadata | null = null
@@ -23,13 +25,13 @@ class LibraryFile {
   addedAt: number | null | undefined = null
   updatedAt: number | null | undefined = null
 
-  constructor(file?: Partial<LibraryFileData> | null) {
+  constructor(file?: LibraryFileInput | null) {
     if (file) {
       this.construct(file)
     }
   }
 
-  construct(file: Partial<LibraryFileData>) {
+  construct(file: LibraryFileInput) {
     this.ino = file.ino
     this.metadata = new FileMetadata(file.metadata)
     this.isSupplementary = file.isSupplementary === undefined ? null : file.isSupplementary

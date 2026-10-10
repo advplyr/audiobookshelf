@@ -1,5 +1,4 @@
 import * as Sequelize from 'sequelize'
-import type { ModelStatic } from 'sequelize'
 import type LibraryItem from '../../models/LibraryItem'
 import type Library from '../../models/Library'
 import type User from '../../models/User'
@@ -212,9 +211,7 @@ const libraryItemFilters = {
    * @returns {Promise<{ id:string, title:string, size:number }[]>}
    */
   async getLargestItems(libraryId: string, limit: number): Promise<LargestItem[]> {
-    // The legacy model overrides init with its one-argument database initializer.
-    const libraryItemModel = Database.libraryItemModel as unknown as ModelStatic<LibraryItem>
-    const libraryItems = await libraryItemModel.findAll({
+    const libraryItems = await Database.libraryItemModel.findAll({
       attributes: ['id', 'mediaId', 'mediaType', 'size'],
       where: {
         libraryId
@@ -233,7 +230,7 @@ const libraryItemFilters = {
       limit
     })
     // SQLite BIGINT values are numbers; afterFind normalizes the included media.
-    return (libraryItems as unknown as LargestItemRow[]).map((libraryItem) => {
+    return (libraryItems as LargestItemRow[]).map((libraryItem) => {
       return {
         id: libraryItem.id,
         title: libraryItem.media.title,

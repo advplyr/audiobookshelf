@@ -8,6 +8,8 @@ declare global {
   var ServerSettings: {
     sortingPrefixes: string[] | null | undefined
     authOpenIDMatchExistingBy?: ServerSettings['authOpenIDMatchExistingBy']
+    storeMetadataWithItem?: ServerSettings['storeMetadataWithItem']
+    metadataFileFormat?: ServerSettings['metadataFileFormat']
     sortingIgnorePrefix?: boolean
     scannerParseSubtitle?: boolean
     podcastEpisodeSchedule?: ServerSettings['podcastEpisodeSchedule']
