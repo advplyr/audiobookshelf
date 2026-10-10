@@ -175,7 +175,7 @@ const cleanStringForSearch = (str: string | null | undefined): string => {
     .trim()
 }
 
-const getTitleParts = (title: string): [string, string | null] => {
+const getTitleParts = (title: string | null | undefined): [string, string | null] => {
   if (!title) return ['', null]
   const prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
   for (const prefix of prefixesToIgnore) {
@@ -193,7 +193,7 @@ const getTitleParts = (title: string): [string, string | null] => {
  * @param {string} title
  * @returns {string}
  */
-const getTitleIgnorePrefix = (title: string): string => {
+const getTitleIgnorePrefix = (title: string | null | undefined): string => {
   return getTitleParts(title)[0]
 }
 
@@ -203,7 +203,9 @@ const getTitleIgnorePrefix = (title: string): string => {
  * @param {string} title
  * @returns {string}
  */
-const getTitlePrefixAtEnd = (title: string): string => {
+function getTitlePrefixAtEnd(title: string): string
+function getTitlePrefixAtEnd(title: string | null | undefined): string | null | undefined
+function getTitlePrefixAtEnd(title: string | null | undefined): string | null | undefined {
   let [sort, prefix] = getTitleParts(title)
   return prefix ? `${sort}, ${prefix}` : title
 }
