@@ -1,26 +1,38 @@
-const { DataTypes, Model, Sequelize } = require('sequelize')
+import { DataTypes, Model, Sequelize } from 'sequelize'
+import type { Attributes, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, WhereOptions } from 'sequelize'
+import type { BookExpanded, BookExpandedWithLibraryItem } from './Book'
 
-class Collection extends Model {
-  constructor(values, options) {
+// Association boundaries are expanded by the queries below; legacy JSON remains opaque here.
+type CollectionFeed = { toOldJSON(): unknown }
+type CollectionUser = { checkCanAccessLibraryItemWithTags(tags: string[]): boolean; readonly canAccessExplicitContent: boolean }
+type CollectionAttributes = {
+  id: string
+  name: string | null
+  description: string | null
+  libraryId?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+type CollectionCreation = Optional<CollectionAttributes, keyof CollectionAttributes>
+type CollectionExpandedJSON = Omit<ReturnType<Collection['toOldJSON']>, 'books'> & { books: unknown[]; rssFeed?: unknown }
+
+class Collection extends Model<CollectionAttributes, CollectionCreation> {
+  declare static sequelize: Sequelize
+  // Preserve the existing static assignment in getOldCollectionsJsonExpanded.
+  declare static books?: BookExpandedWithLibraryItem[]
+  declare id: string
+  declare name: string | null
+  declare description: string | null
+  declare libraryId: string | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare books?: BookExpandedWithLibraryItem[]
+  declare feeds?: CollectionFeed[]
+  declare getBooks: (options?: FindOptions) => Promise<BookExpandedWithLibraryItem[]>
+  declare getFeeds: (options?: FindOptions) => Promise<CollectionFeed[]>
+
+  constructor(values?: CollectionCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.name
-    /** @type {string} */
-    this.description
-    /** @type {UUIDV4} */
-    this.libraryId
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {Date} */
-    this.createdAt
-
-    // Expanded properties
-
-    /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
-    this.books
   }
 
   /**
@@ -31,8 +43,8 @@ class Collection extends Model {
    * @param {string[]} [include]
    * @async
    */
-  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
-    let collectionWhere = null
+  static async getOldCollectionsJsonExpanded(user: CollectionUser | null, libraryId?: string, include?: string[]) {
+    let collectionWhere: WhereOptions<CollectionAttributes> | null = null
     if (libraryId) {
       collectionWhere = {
         libraryId
@@ -48,7 +60,8 @@ class Collection extends Model {
     }
 
     const collections = await this.findAll({
-      where: collectionWhere,
+      // Sequelize accepts null as an unfiltered query.
+      where: collectionWhere as WhereOptions<CollectionAttributes>,
       include: [
         {
           model: this.sequelize.models.book,
@@ -92,7 +105,7 @@ class Collection extends Model {
           }) || []
 
         // Users with restricted permissions will not see this collection
-        if (!books.length && c.books.length) {
+        if (!books.length && c.books!.length) {
           return null
         }
 
@@ -115,7 +128,7 @@ class Collection extends Model {
    * @param {string} collectionId
    * @returns {Promise<Collection>}
    */
-  static async getExpandedById(collectionId) {
+  static async getExpandedById(collectionId: string) {
     return this.findByPk(collectionId, {
       include: [
         {
@@ -148,7 +161,7 @@ class Collection extends Model {
    * @param {string} libraryId
    * @returns {Promise<number>} number of collections destroyed
    */
-  static async removeAllForLibrary(libraryId) {
+  static async removeAllForLibrary(libraryId: string) {
     if (!libraryId) return 0
     return this.destroy({
       where: {
@@ -161,8 +174,15 @@ class Collection extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Keep Sequelize's inherited static contract; application initialization uses one argument.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS, attributes: ModelAttributes<M, Partial<Attributes<M>>>, options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels always supplies the Sequelize instance.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Collection, Collection>(
       {
         id: {
           type: DataTypes.UUID,
@@ -219,7 +239,7 @@ class Collection extends Model {
    * @param {string[]} [include]
    * @async
    */
-  async getOldJsonExpanded(user, include) {
+  async getOldJsonExpanded(user: CollectionUser | null, include?: string[]) {
     this.books = await this.getBooksExpandedWithLibraryItem()
 
     // Filter books using user permissions
@@ -260,7 +280,7 @@ class Collection extends Model {
    * @param {string[]} [libraryItemIds=[]]
    * @returns
    */
-  toOldJSON(libraryItemIds = []) {
+  toOldJSON<T = string>(libraryItemIds: T[] = []) {
     return {
       id: this.id,
       libraryId: this.libraryId,
@@ -277,10 +297,11 @@ class Collection extends Model {
       throw new Error('Books are required to expand Collection')
     }
 
-    const json = this.toOldJSON()
+    const json: CollectionExpandedJSON = this.toOldJSON<unknown>()
     json.books = this.books.map((book) => {
-      const libraryItem = book.libraryItem
-      delete book.libraryItem
+      // The query includes a library item for each book. Its serializer is still JavaScript.
+      const libraryItem = book.libraryItem as { media: BookExpanded; toOldJSONExpanded(): unknown }
+      delete (book as Partial<BookExpandedWithLibraryItem>).libraryItem
       libraryItem.media = book
       return libraryItem.toOldJSONExpanded()
     })
@@ -289,4 +310,4 @@ class Collection extends Model {
   }
 }
 
-module.exports = Collection
+export = Collection
