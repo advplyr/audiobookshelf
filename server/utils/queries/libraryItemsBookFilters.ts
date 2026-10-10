@@ -869,7 +869,7 @@ const libraryItemsBookFilters = {
         libraryItem.media = book
         return libraryItem
       })
-      .filter((s) => s)
+      .filter((s): s is BookItem => !!s)
 
     return {
       libraryItems,
