@@ -397,7 +397,7 @@ const libraryItemsBookFilters = {
     countCache.clear()
   },
 
-  async findAndCountAll(this: void, findOptions: QueryOptions, limit: number | null, offset: number | null, useCountCache: boolean) {
+  async findAndCountAll(this: void, findOptions: QueryOptions, limit: number | null | undefined, offset: number | null | undefined, useCountCache: boolean) {
     const model = Database.bookModel
     const queryOptions = findOptions as FindAndCountOptions
     if (useCountCache) {
@@ -437,7 +437,7 @@ const libraryItemsBookFilters = {
    * @param {boolean} isHomePage for home page shelves
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId: string | null, user: User | null | undefined, filterGroup: string | null, filterValue: string | null, sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean, include: string[], limit: number | null, offset: number | null, isHomePage = false) {
+  async getFilteredLibraryItems(libraryId: string | null, user: User | null | undefined, filterGroup: string | null, filterValue: string | null, sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean, include: string[], limit: number | null | undefined, offset: number | null | undefined, isHomePage = false) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
@@ -714,7 +714,7 @@ const libraryItemsBookFilters = {
       }
 
       if (includeMediaItemShare) {
-        libraryItem.mediaItemShare = ShareManager.findByMediaItemId(libraryItem.mediaId)
+        libraryItem.mediaItemShare = ShareManager.findByMediaItemId(libraryItem.mediaId!)
       }
 
       libraryItem.media = book

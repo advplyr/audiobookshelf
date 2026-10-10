@@ -579,7 +579,7 @@ const libraryItemsPodcastFilters = {
       } = ep.toOldJSONExpanded(ep.podcast.libraryItem.id)
 
       oldPodcastEpisodeJson.podcast = oldPodcastJson
-      oldPodcastEpisodeJson.libraryId = ep.podcast.libraryItem.libraryId
+      oldPodcastEpisodeJson.libraryId = ep.podcast.libraryItem.libraryId!
       return oldPodcastEpisodeJson
     })
 
