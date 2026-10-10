@@ -31,7 +31,7 @@ class LibraryItemScanData {
     this.relPath = data.relPath
     /** @type {boolean} */
     this.isFile = data.isFile
-    /** @type {import('../utils/scandir').LibraryItemFilenameMetadata} */
+    /** @type {import('../types/scandir').LibraryItemFilenameMetadata} */
     this.mediaMetadata = data.mediaMetadata
     /** @type {import('../objects/files/LibraryFile')[]} */
     this.libraryFiles = data.libraryFiles
