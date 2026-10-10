@@ -1,35 +1,51 @@
-const { DataTypes, Model } = require('sequelize')
-const oldDevice = require('../objects/DeviceInfo')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import oldDevice from '../objects/DeviceInfo'
 
-class Device extends Model {
-  constructor(values, options) {
+type DeviceAttributes = {
+  id: string | null
+  deviceId: string | null
+  clientName: string | null
+  clientVersion: string | null
+  ipAddress: string | null
+  deviceName: string | null
+  deviceVersion: string | null
+  extraData: DeviceExtraData
+  userId?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+type DeviceCreation = Optional<DeviceAttributes, 'id' | 'deviceId' | 'clientName' | 'clientVersion' | 'ipAddress' | 'deviceName' | 'deviceVersion' | 'extraData' | 'userId' | 'createdAt' | 'updatedAt'>
+
+type DeviceExtraData = {
+  manufacturer?: string | null
+  model?: string | null
+  osName?: string | null
+  osVersion?: string | null
+  browserName?: string | null
+}
+
+type OldDeviceData = ReturnType<oldDevice['toJSON']>
+
+class Device extends Model<DeviceAttributes, DeviceCreation> {
+  declare id: string | null
+  declare deviceId: string | null
+  declare clientName: string | null
+  declare clientVersion: string | null
+  declare ipAddress: string | null
+  declare deviceName: string | null
+  declare deviceVersion: string | null
+  declare extraData: DeviceExtraData
+  declare userId: string | null
+  declare createdAt: Date
+  declare updatedAt: Date
+
+  constructor(values?: DeviceCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.deviceId
-    /** @type {string} */
-    this.clientName
-    /** @type {string} */
-    this.clientVersion
-    /** @type {string} */
-    this.ipAddress
-    /** @type {string} */
-    this.deviceName
-    /** @type {string} */
-    this.deviceVersion
-    /** @type {object} */
-    this.extraData
-    /** @type {UUIDV4} */
-    this.userId
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
   }
 
-  static async getOldDeviceByDeviceId(deviceId) {
+  static async getOldDeviceByDeviceId(deviceId: string) {
     const device = await this.findOne({
       where: {
         deviceId
@@ -39,12 +55,12 @@ class Device extends Model {
     return device.getOldDevice()
   }
 
-  static createFromOld(oldDevice) {
+  static createFromOld(oldDevice: OldDeviceData) {
     const device = this.getFromOld(oldDevice)
     return this.create(device)
   }
 
-  static updateFromOld(oldDevice) {
+  static updateFromOld(oldDevice: OldDeviceData) {
     const device = this.getFromOld(oldDevice)
     return this.update(device, {
       where: {
@@ -53,8 +69,8 @@ class Device extends Model {
     })
   }
 
-  static getFromOld(oldDeviceInfo) {
-    let extraData = {}
+  static getFromOld(oldDeviceInfo: OldDeviceData) {
+    let extraData: DeviceExtraData = {}
 
     if (oldDeviceInfo.manufacturer) {
       extraData.manufacturer = oldDeviceInfo.manufacturer
@@ -89,8 +105,19 @@ class Device extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Device, Device>(
       {
         id: {
           type: DataTypes.UUID,
@@ -174,4 +201,4 @@ class Device extends Model {
   }
 }
 
-module.exports = Device
+export = Device
