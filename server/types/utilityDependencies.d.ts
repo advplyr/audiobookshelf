@@ -1,5 +1,6 @@
 // Boundaries used by the foundation utilities; parsed XML remains untrusted.
 declare module 'uuid' {
+  export function v4(): string
   export function validate(value: string): boolean
 }
 
