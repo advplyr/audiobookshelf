@@ -1,21 +1,32 @@
-const { DataTypes, Model } = require('sequelize')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 
-const oldEmailSettings = require('../objects/settings/EmailSettings')
-const oldServerSettings = require('../objects/settings/ServerSettings')
-const oldNotificationSettings = require('../objects/settings/NotificationSettings')
+import oldEmailSettings from '../objects/settings/EmailSettings'
+import oldServerSettings from '../objects/settings/ServerSettings'
+import oldNotificationSettings from '../objects/settings/NotificationSettings'
 
-class Setting extends Model {
-  constructor(values, options) {
+// Stored rows share the legacy settings envelope; older rows may omit fields.
+type SettingValue = NonNullable<ConstructorParameters<typeof oldEmailSettings>[0]> &
+  NonNullable<ConstructorParameters<typeof oldServerSettings>[0]> &
+  NonNullable<ConstructorParameters<typeof oldNotificationSettings>[0]> & { id?: string }
+
+type SettingAttributes = {
+  key: string
+  value: SettingValue
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+type SettingCreation = Optional<SettingAttributes, 'createdAt' | 'updatedAt'>
+
+class Setting extends Model<SettingAttributes, SettingCreation> {
+  declare key: string
+  declare value: SettingValue
+  declare createdAt: Date
+  declare updatedAt: Date
+
+  constructor(values?: SettingCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {string} */
-    this.key
-    /** @type {Object} */
-    this.value
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
   }
 
   static async getOldSettings() {
@@ -33,7 +44,7 @@ class Setting extends Model {
     }
   }
 
-  static updateSettingObj(setting) {
+  static updateSettingObj(setting: SettingValue & { id: string }) {
     return this.upsert({
       key: setting.id,
       value: setting
@@ -44,8 +55,19 @@ class Setting extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Setting, Setting>(
       {
         key: {
           type: DataTypes.STRING,
@@ -61,4 +83,4 @@ class Setting extends Model {
   }
 }
 
-module.exports = Setting
+export = Setting
