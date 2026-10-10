@@ -50,6 +50,8 @@ export default [
       ...tsPlugin.configs.recommended.rules,
       ...tsPlugin.configs['recommended-type-checked'].rules,
       '@typescript-eslint/no-explicit-any': 'error',
+      // CommonJS export assignments need ambient namespaces for named type exports.
+      '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
       // Keep coercion diagnostics visible while preserving behavior during migration.
       '@typescript-eslint/no-base-to-string': 'warn'
     }
