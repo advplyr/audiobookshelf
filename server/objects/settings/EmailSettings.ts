@@ -1,17 +1,62 @@
-const Logger = require('../../Logger')
-const { areEquivalent, copyValue, isNullOrNaN } = require('../../utils')
+import Logger from '../../Logger'
+import utils from '../../utils'
 
-/**
- * @typedef EreaderDeviceObject
- * @property {string} name
- * @property {string} email
- * @property {string} availabilityOption
- * @property {string[]} users
- */
+const { areEquivalent, copyValue, isNullOrNaN } = utils
+
+type EreaderDeviceObject = {
+  name?: string | null
+  email?: string | null
+  availabilityOption?: string | null
+  users?: Array<string | null> | null
+}
+
+type EmailSettingsData = {
+  host: string | null | undefined
+  port: number | null | undefined
+  secure: boolean
+  rejectUnauthorized: boolean
+  user: string | null | undefined
+  pass: string | null | undefined
+  testAddress: string | null | undefined
+  fromAddress: string | null | undefined
+  ereaderDevices: EreaderDeviceObject[]
+}
+
+type EmailSettingsUpdate = Omit<Partial<EmailSettingsData>, 'port' | 'secure' | 'rejectUnauthorized' | 'ereaderDevices'> & {
+  port?: number | string | null
+  secure?: boolean | number | string | null
+  rejectUnauthorized?: boolean | number | string | null
+  ereaderDevices?: EreaderDeviceObject[] | string | null
+}
+
+type DeviceUser = {
+  id: string
+  isAdminOrUp: boolean
+  isUser: boolean
+}
+
+type EmailTransport = {
+  host: string | null | undefined
+  secure: boolean
+  port?: number
+  auth?: { user: string; pass: string | null }
+  tls?: { rejectUnauthorized: false }
+}
 
 // REF: https://nodemailer.com/smtp/
 class EmailSettings {
-  constructor(settings = null) {
+  declare id: string
+  declare host: EmailSettingsData['host']
+  declare port: EmailSettingsData['port']
+  declare secure: boolean
+  declare rejectUnauthorized: boolean
+  declare user: EmailSettingsData['user']
+  declare pass: EmailSettingsData['pass']
+  declare testAddress: EmailSettingsData['testAddress']
+  declare fromAddress: EmailSettingsData['fromAddress']
+  declare ereaderDevices: EreaderDeviceObject[]
+
+  constructor(settings: Partial<EmailSettingsData> | null = null) {
     this.id = 'email-settings'
     this.host = null
     this.port = 465
@@ -30,7 +75,7 @@ class EmailSettings {
     }
   }
 
-  construct(settings) {
+  construct(settings: Partial<EmailSettingsData>) {
     this.host = settings.host
     this.port = settings.port
     this.secure = !!settings.secure
@@ -62,7 +107,7 @@ class EmailSettings {
     }
   }
 
-  update(payload) {
+  update(payload: EmailSettingsUpdate | null | undefined) {
     if (!payload) return false
 
     if (payload.port !== undefined) {
@@ -93,17 +138,22 @@ class EmailSettings {
           }
           return device
         })
-        .filter((d) => d)
+        .filter((d): d is EreaderDeviceObject => !!d)
     }
 
     let hasUpdates = false
 
+    // Values are normalized above; copyValue also converts empty strings to null.
+    const assignField = <Key extends keyof EmailSettingsData>(settings: EmailSettingsData, key: Key) => {
+      settings[key] = copyValue(payload[key]) as EmailSettingsData[Key]
+    }
     const json = this.toJSON()
-    for (const key in json) {
+    for (const field in json) {
+      const key = field as keyof typeof json
       if (key === 'id') continue
 
       if (payload[key] !== undefined && !areEquivalent(payload[key], json[key])) {
-        this[key] = copyValue(payload[key])
+        assignField(this, key)
         hasUpdates = true
       }
     }
@@ -111,8 +161,8 @@ class EmailSettings {
     return hasUpdates
   }
 
-  getTransportObject() {
-    const payload = {
+  getTransportObject(): EmailTransport {
+    const payload: EmailTransport = {
       host: this.host,
       secure: this.secure
     }
@@ -143,7 +193,7 @@ class EmailSettings {
    * @param {import('../../models/User')} user
    * @returns {boolean}
    */
-  checkUserCanAccessDevice(device, user) {
+  checkUserCanAccessDevice(device: EreaderDeviceObject, user: DeviceUser) {
     let deviceAvailability = device.availabilityOption || 'adminOrUp'
     if (deviceAvailability === 'adminOrUp' && user.isAdminOrUp) return true
     if (deviceAvailability === 'userOrUp' && (user.isAdminOrUp || user.isUser)) return true
@@ -161,7 +211,7 @@ class EmailSettings {
    * @param {import('../../models/User')} user
    * @returns {EreaderDeviceObject[]}
    */
-  getEReaderDevices(user) {
+  getEReaderDevices(user: DeviceUser) {
     return this.ereaderDevices.filter((device) => this.checkUserCanAccessDevice(device, user))
   }
 
@@ -171,8 +221,8 @@ class EmailSettings {
    * @param {string} deviceName
    * @returns {EreaderDeviceObject}
    */
-  getEReaderDevice(deviceName) {
+  getEReaderDevice(deviceName: string) {
     return this.ereaderDevices.find((d) => d.name === deviceName)
   }
 }
-module.exports = EmailSettings
+export = EmailSettings
