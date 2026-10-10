@@ -12,7 +12,7 @@ import type BookAuthor from '../../models/BookAuthor'
 import type Feed from '../../models/Feed'
 import type { MediaItemShareForClient } from '../../models/MediaItemShare'
 
-type Predicate = Where | Sequelize.WhereAttributeHash
+type Predicate = Where | MutableWhere
 type MutableWhere = Sequelize.WhereAttributeHash & { [Sequelize.Op.and]?: Predicate[]; [Sequelize.Op.or]?: Predicate[] }
 type Replacements = Record<string, string | string[] | null>
 type SeriesDetails = { id: string; name: string | null; sequence: string | null }

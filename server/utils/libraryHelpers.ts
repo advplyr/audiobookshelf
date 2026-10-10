@@ -165,7 +165,7 @@ const libraryHelpers = {
       payload.total = libraryItems.length
     }
 
-    const sortingIgnorePrefix = Database.serverSettings.sortingIgnorePrefix
+    const sortingIgnorePrefix = Database.serverSettings!.sortingIgnorePrefix
 
     let sortArray: SortDirection<ExpandedLibraryItem>[] = []
     const direction = payload.sortDesc ? 'desc' : 'asc'
