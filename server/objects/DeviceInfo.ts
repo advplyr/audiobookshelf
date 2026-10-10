@@ -1,11 +1,55 @@
-const uuidv4 = require('uuid').v4
-const { stripAllTags } = require('../utils/htmlSanitizer')
+import { v4 as uuidv4 } from 'uuid'
+import htmlSanitizer from '../utils/htmlSanitizer'
+
+const { stripAllTags } = htmlSanitizer
+
+type DeviceData = {
+  id?: string | null
+  userId?: string | null
+  deviceId?: string | null
+  ipAddress?: string | null
+  browserName?: string | null
+  browserVersion?: string | null
+  osName?: string | null
+  osVersion?: string | null
+  deviceType?: string | null
+  clientVersion?: string | null
+  manufacturer?: string | null
+  model?: string | null
+  sdkVersion?: string | null
+  clientName?: string | null
+  deviceName?: string | null
+}
+
+type ClientDeviceInfo = Omit<DeviceData, 'sdkVersion'> & { sdkVersion?: string | number | null }
+
+type UserAgent = {
+  browser: { name?: string; version?: string }
+  os: { name?: string; version?: string }
+  device: { type?: string }
+}
 
 class DeviceInfo {
+  declare id: string | null | undefined
+  declare userId: string | null | undefined
+  declare deviceId: string | null | undefined
+  declare ipAddress: string | null | undefined
+  declare browserName: string | null | undefined
+  declare browserVersion: string | null | undefined
+  declare osName: string | null | undefined
+  declare osVersion: string | null | undefined
+  declare deviceType: string | null | undefined
+  declare clientVersion: string | null | undefined
+  declare manufacturer: string | null | undefined
+  declare model: string | null | undefined
+  declare sdkVersion: string | null | undefined
+  declare clientName: string | null | undefined
+  declare deviceName: string | null | undefined
+
   /** @type {string[]} Fields to sanitize when loading from stored data */
   static stringFields = ['deviceId', 'clientVersion', 'manufacturer', 'model', 'sdkVersion', 'clientName', 'deviceName']
 
-  constructor(deviceInfo = null) {
+  constructor(deviceInfo: DeviceData | null = null) {
     this.id = null
     this.userId = null
     this.deviceId = null
@@ -32,16 +76,17 @@ class DeviceInfo {
     }
   }
 
-  construct(deviceInfo) {
-    for (const key in deviceInfo) {
+  construct(deviceInfo: DeviceData) {
+    for (const field in deviceInfo) {
+      const key = field as keyof DeviceData
       if (deviceInfo[key] !== undefined && this[key] !== undefined) {
         this[key] = DeviceInfo.stringFields.includes(key) ? stripAllTags(deviceInfo[key]) : deviceInfo[key]
       }
     }
   }
 
-  toJSON() {
-    const obj = {
+  toJSON(): DeviceData {
+    const obj: DeviceData = {
       id: this.id,
       userId: this.userId,
       deviceId: this.deviceId,
@@ -58,7 +103,8 @@ class DeviceInfo {
       clientName: this.clientName,
       deviceName: this.deviceName
     }
-    for (const key in obj) {
+    for (const field in obj) {
+      const key = field as keyof DeviceData
       if (obj[key] === null || obj[key] === undefined) {
         delete obj[key]
       }
@@ -81,7 +127,13 @@ class DeviceInfo {
     return 'temp-' + Buffer.from(keys.join('-'), 'utf-8').toString('base64')
   }
 
-  setData(ip, ua, clientDeviceInfo, serverVersion, userId) {
+  setData(
+    ip: string | null | undefined,
+    ua: UserAgent | null | undefined,
+    clientDeviceInfo: ClientDeviceInfo | null | undefined,
+    serverVersion: string,
+    userId: string | undefined
+  ) {
     this.id = uuidv4()
     this.userId = userId
     this.deviceId = clientDeviceInfo?.deviceId || this.id
@@ -122,12 +174,13 @@ class DeviceInfo {
     }
   }
 
-  update(deviceInfo) {
+  update(deviceInfo: DeviceData & { toJSON?(): DeviceData }) {
     const deviceInfoJson = deviceInfo.toJSON ? deviceInfo.toJSON() : deviceInfo
     const existingDeviceInfoJson = this.toJSON()
 
     let hasUpdates = false
-    for (const key in deviceInfoJson) {
+    for (const field in deviceInfoJson) {
+      const key = field as keyof DeviceData
       if (['id', 'deviceId'].includes(key)) continue
 
       if (deviceInfoJson[key] !== existingDeviceInfoJson[key]) {
@@ -136,7 +189,8 @@ class DeviceInfo {
       }
     }
 
-    for (const key in existingDeviceInfoJson) {
+    for (const field in existingDeviceInfoJson) {
+      const key = field as keyof DeviceData
       if (['id', 'deviceId'].includes(key)) continue
 
       if (existingDeviceInfoJson[key] && !deviceInfoJson[key]) {
@@ -148,4 +202,4 @@ class DeviceInfo {
     return hasUpdates
   }
 }
-module.exports = DeviceInfo
+export = DeviceInfo
