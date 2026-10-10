@@ -1,23 +1,29 @@
-const { DataTypes, Model } = require('sequelize')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 
-class BookSeries extends Model {
-  constructor(values, options) {
+type BookSeriesAttributes = {
+  id: string
+  sequence: string | null
+  bookId?: string | null
+  seriesId?: string | null
+  createdAt?: Date
+}
+
+type BookSeriesCreation = Optional<BookSeriesAttributes, 'id' | 'sequence' | 'bookId' | 'seriesId' | 'createdAt'>
+
+class BookSeries extends Model<BookSeriesAttributes, BookSeriesCreation> {
+  declare id: string
+  declare sequence: string | null
+  declare bookId: string | null
+  declare seriesId: string | null
+  declare createdAt: Date
+
+  constructor(values?: BookSeriesCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.sequence
-    /** @type {UUIDV4} */
-    this.bookId
-    /** @type {UUIDV4} */
-    this.seriesId
-    /** @type {Date} */
-    this.createdAt
   }
 
-  static removeByIds(seriesId = null, bookId = null) {
-    const where = {}
+  static removeByIds(seriesId: string | null = null, bookId: string | null = null) {
+    const where: { seriesId?: string; bookId?: string } = {}
     if (seriesId) where.seriesId = seriesId
     if (bookId) where.bookId = bookId
     return this.destroy({
@@ -29,8 +35,19 @@ class BookSeries extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof BookSeries, BookSeries>(
       {
         id: {
           type: DataTypes.UUID,
@@ -75,4 +92,4 @@ class BookSeries extends Model {
   }
 }
 
-module.exports = BookSeries
+export = BookSeries
