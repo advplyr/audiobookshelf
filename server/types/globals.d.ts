@@ -1,6 +1,9 @@
 export {}
 
 declare global {
+  // Optional before server initialization; comic extraction falls back to os.tmpdir().
+  var MetadataPath: string | undefined
+
   // Initialized by the server before sorting and directory metadata parsing are used.
   var ServerSettings: {
     sortingPrefixes: string[] | null | undefined
