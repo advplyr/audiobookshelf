@@ -1,30 +1,43 @@
-const { DataTypes, Model, where, fn, col, literal } = require('sequelize')
+import { DataTypes, Model, where, fn, col, literal } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type { BookExpanded } from './Book'
+import type LibraryItem from './LibraryItem'
 
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils/index')
+import utils from '../utils/index'
+import type { BelongsToManyGetAssociationsMixin, Order } from 'sequelize'
+import type BookSeries from './BookSeries'
 
-class Series extends Model {
-  constructor(values, options) {
+const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = utils
+
+type SeriesAttributes = {
+  id: string
+  name: string | null
+  nameIgnorePrefix: string | null
+  description: string | null
+  libraryId?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+type SeriesCreation = Optional<SeriesAttributes, 'id' | 'name' | 'nameIgnorePrefix' | 'description' | 'libraryId' | 'createdAt' | 'updatedAt'>
+
+type SeriesBook = BookExpanded & { libraryItem?: LibraryItem; bookSeries?: BookSeries }
+
+class Series extends Model<SeriesAttributes, SeriesCreation> {
+  // Query methods are used after Database.buildModels initializes the model.
+  declare static sequelize: Sequelize
+  declare id: string
+  declare name: string | null
+  declare nameIgnorePrefix: string | null
+  declare description: string | null
+  declare libraryId: string | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare books?: SeriesBook[]
+  declare getBooks: BelongsToManyGetAssociationsMixin<SeriesBook>
+
+  constructor(values?: SeriesCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.name
-    /** @type {string} */
-    this.nameIgnorePrefix
-    /** @type {string} */
-    this.description
-    /** @type {UUIDV4} */
-    this.libraryId
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
-
-    // Expanded properties
-
-    /** @type {import('./Book').BookExpandedWithLibraryItem[]} - only set when expanded */
-    this.books
   }
 
   /**
@@ -32,7 +45,7 @@ class Series extends Model {
    * @param {string} seriesId
    * @returns {Promise<boolean>}
    */
-  static async checkExistsById(seriesId) {
+  static async checkExistsById(seriesId: string) {
     return (await this.count({ where: { id: seriesId } })) > 0
   }
 
@@ -43,7 +56,7 @@ class Series extends Model {
    * @param {string} libraryId
    * @returns {Promise<Series>}
    */
-  static async getByNameAndLibrary(seriesName, libraryId) {
+  static async getByNameAndLibrary(seriesName: string, libraryId: string) {
     return this.findOne({
       where: [
         where(fn('lower', col('name')), seriesName.toLowerCase()),
@@ -59,7 +72,7 @@ class Series extends Model {
    * @param {string} seriesId
    * @returns {Promise<Series>}
    */
-  static async getExpandedById(seriesId) {
+  static async getExpandedById(seriesId: string) {
     const series = await this.findByPk(seriesId)
     if (!series) return null
     series.books = await series.getBooksExpandedWithLibraryItem()
@@ -72,7 +85,7 @@ class Series extends Model {
    * @param {string} libraryId
    * @returns {Promise<Series>}
    */
-  static async findOrCreateByNameAndLibrary(seriesName, libraryId) {
+  static async findOrCreateByNameAndLibrary(seriesName: string, libraryId: string) {
     const series = await this.getByNameAndLibrary(seriesName, libraryId)
     if (series) return series
     return this.create({
@@ -86,8 +99,19 @@ class Series extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Series, Series>(
       {
         id: {
           type: DataTypes.UUID,
@@ -161,7 +185,8 @@ class Series extends Model {
           }
         }
       ],
-      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]]
+      // Sequelize supports a single-literal order tuple, omitted from its type union.
+      order: [[literal('CAST(`bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]] as unknown as Order
     })
   }
 
@@ -169,7 +194,7 @@ class Series extends Model {
     return {
       id: this.id,
       name: this.name,
-      nameIgnorePrefix: getTitlePrefixAtEnd(this.name),
+      nameIgnorePrefix: getTitlePrefixAtEnd(this.name!),
       description: this.description,
       addedAt: this.createdAt.valueOf(),
       updatedAt: this.updatedAt.valueOf(),
@@ -177,7 +202,7 @@ class Series extends Model {
     }
   }
 
-  toJSONMinimal(sequence) {
+  toJSONMinimal(sequence?: string | null) {
     return {
       id: this.id,
       name: this.name,
@@ -186,4 +211,4 @@ class Series extends Model {
   }
 }
 
-module.exports = Series
+export = Series
