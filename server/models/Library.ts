@@ -1,51 +1,61 @@
-const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type LibraryFolder from './LibraryFolder'
+import Logger from '../Logger'
 
-/**
- * @typedef LibrarySettingsObject
- * @property {number} coverAspectRatio BookCoverAspectRatio
- * @property {boolean} disableWatcher
- * @property {boolean} skipMatchingMediaWithAsin
- * @property {boolean} skipMatchingMediaWithIsbn
- * @property {string} autoScanCronExpression
- * @property {boolean} audiobooksOnly
- * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
- * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
- * @property {string[]} metadataPrecedence
- * @property {number} markAsFinishedTimeRemaining Time remaining in seconds to mark as finished. (defaults to 10s)
- * @property {number} markAsFinishedPercentComplete Percent complete to mark as finished (0-100). If this is set it will be used over markAsFinishedTimeRemaining.
- */
+type LibrarySettings = {
+  coverAspectRatio?: number
+  disableWatcher?: boolean
+  skipMatchingMediaWithAsin?: boolean
+  skipMatchingMediaWithIsbn?: boolean
+  autoScanCronExpression?: string | null
+  podcastSearchRegion?: string
+  audiobooksOnly?: boolean
+  epubsAllowScriptedContent?: boolean
+  hideSingleBookSeries?: boolean
+  onlyShowLaterBooksInContinueSeries?: boolean
+  metadataPrecedence?: string[]
+  markAsFinishedTimeRemaining?: number
+  markAsFinishedPercentComplete?: number | null
+}
 
-class Library extends Model {
-  constructor(values, options) {
+type LibraryAttributes = {
+  id: string
+  name: string | null
+  displayOrder: number | null
+  icon: string | null
+  mediaType: string | null
+  provider: string | null
+  lastScan: Date | null
+  lastScanVersion: string | null
+  settings: LibrarySettings | null
+  extraData: { lastScanMetadataPrecedence?: string[]; [key: string]: unknown } | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+type LibraryCreation = Optional<LibraryAttributes, 'id' | 'name' | 'displayOrder' | 'icon' | 'mediaType' | 'provider' | 'lastScan' | 'lastScanVersion' | 'settings' | 'extraData' | 'createdAt' | 'updatedAt'>
+
+class Library extends Model<LibraryAttributes, LibraryCreation> {
+  // Query methods are used after Database.buildModels initializes the model.
+  declare static sequelize: Sequelize
+  declare id: string
+  declare name: string | null
+  declare displayOrder: number | null
+  declare icon: string | null
+  declare mediaType: string | null
+  declare provider: string | null
+  declare lastScan: Date | null
+  declare lastScanVersion: string | null
+  declare settings: LibrarySettings | null
+  declare extraData: { lastScanMetadataPrecedence?: string[]; [key: string]: unknown } | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare libraryFolders?: LibraryFolder[]
+
+
+  constructor(values?: LibraryCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.name
-    /** @type {number} */
-    this.displayOrder
-    /** @type {string} */
-    this.icon
-    /** @type {string} */
-    this.mediaType
-    /** @type {string} */
-    this.provider
-    /** @type {Date} */
-    this.lastScan
-    /** @type {string} */
-    this.lastScanVersion
-    /** @type {LibrarySettingsObject} */
-    this.settings
-    /** @type {Object} */
-    this.extraData
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {import('./LibraryFolder')[]|undefined} */
-    this.libraryFolders
   }
 
   /**
@@ -53,7 +63,7 @@ class Library extends Model {
    * @param {string} mediaType
    * @returns
    */
-  static getDefaultLibrarySettingsForMediaType(mediaType) {
+  static getDefaultLibrarySettingsForMediaType(mediaType: string | null | undefined) {
     if (mediaType === 'podcast') {
       return {
         coverAspectRatio: 1, // Square
@@ -101,7 +111,7 @@ class Library extends Model {
    * @param {string} libraryId
    * @returns {Promise<Library>}
    */
-  static findByIdWithFolders(libraryId) {
+  static findByIdWithFolders(libraryId: string) {
     return this.findByPk(libraryId, {
       include: this.sequelize.models.libraryFolder
     })
@@ -122,10 +132,11 @@ class Library extends Model {
   /**
    * Get the largest value in the displayOrder column
    * Used for setting a new libraries display order
-   * @returns {Promise<number>}
+   * @returns {Promise<number|null>}
    */
   static getMaxDisplayOrder() {
-    return this.max('displayOrder') || 0
+    // Sequelize returns a Promise; an empty table still resolves to null, as before.
+    return this.max<number | null, Library>('displayOrder')
   }
 
   /**
@@ -140,7 +151,7 @@ class Library extends Model {
       const library = libraries[i]
       if (library.displayOrder !== i + 1) {
         Logger.debug(`[Library] Updating display order of library from ${library.displayOrder} to ${i + 1}`)
-        await library.update({ displayOrder: i + 1 }).catch((error) => {
+        await library.update({ displayOrder: i + 1 }).catch((error: unknown) => {
           Logger.error(`[Library] Failed to update library display order to ${i + 1}`, error)
         })
       }
@@ -151,8 +162,19 @@ class Library extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Library, Library>(
       {
         id: {
           type: DataTypes.UUID,
@@ -219,4 +241,8 @@ class Library extends Model {
   }
 }
 
-module.exports = Library
+declare namespace Library {
+  export type LibrarySettingsObject = LibrarySettings
+}
+
+export = Library

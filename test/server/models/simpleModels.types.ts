@@ -5,6 +5,8 @@ import type BookSeries from '../../../server/models/BookSeries'
 import type BookAuthor from '../../../server/models/BookAuthor'
 import type CustomMetadataProvider from '../../../server/models/CustomMetadataProvider'
 import type Session from '../../../server/models/Session'
+import type Library from '../../../server/models/Library'
+import type { LibrarySettingsObject } from '../../../server/models/Library'
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
 type Assert<T extends true> = T
@@ -19,5 +21,7 @@ export type SimpleModelsContract = [
   Assert<Equal<keyof ReturnType<CustomMetadataProvider['toClientJson']>, 'id' | 'name' | 'mediaType' | 'slug'>>,
   Assert<Equal<CreationAttributes<Session>['refreshToken'], string>>,
   Assert<Equal<Session['lastRefreshTokenExpiresAt'], Date | null>>,
-  Assert<Equal<Awaited<ReturnType<typeof Session.createSession>>, Session>>
+  Assert<Equal<Awaited<ReturnType<typeof Session.createSession>>, Session>>,
+  Assert<Equal<ReturnType<typeof Library.getMaxDisplayOrder>, Promise<number | null>>>,
+  Assert<Equal<LibrarySettingsObject['markAsFinishedPercentComplete'], number | null | undefined>>
 ]
