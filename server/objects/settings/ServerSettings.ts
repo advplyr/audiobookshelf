@@ -1,9 +1,11 @@
-const Path = require('path')
-const packageJson = require('../../../package.json')
-const { BookshelfView } = require('../../utils/constants')
-const Logger = require('../../Logger')
-const User = require('../../models/User')
-const { sanitize } = require('../../utils/htmlSanitizer')
+import Path from 'path'
+import packageJson from '../../../package.json'
+import { BookshelfView } from '../../utils/constants'
+import Logger from '../../Logger'
+import User from '../../models/User'
+import htmlSanitizer from '../../utils/htmlSanitizer'
+
+const { sanitize } = htmlSanitizer
 
 const PATCHABLE_SETTINGS_KEYS = new Set([
   'scannerParseSubtitle',
@@ -28,9 +30,126 @@ const PATCHABLE_SETTINGS_KEYS = new Set([
   'sortingIgnorePrefix'
 ])
 
+type ServerSettingsValues = {
+  id: string
+  tokenSecret: string | null | undefined
+  scannerParseSubtitle: boolean | undefined
+  scannerFindCovers: boolean
+  scannerCoverProvider: string
+  scannerPreferMatchedMetadata: boolean
+  scannerDisableWatcher: boolean
+  storeCoverWithItem: boolean
+  storeMetadataWithItem: boolean
+  metadataFileFormat: string
+  rateLimitLoginRequests: number
+  rateLimitLoginWindow: number
+  allowIframe: boolean
+  backupPath: string
+  backupSchedule: string | false
+  backupsToKeep: number
+  maxBackupSize: number
+  loggerDailyLogsToKeep: number
+  loggerScannerLogsToKeep: number
+  homeBookshelfView: number | undefined
+  bookshelfView: number
+  podcastEpisodeSchedule: string
+  sortingIgnorePrefix: boolean
+  sortingPrefixes: string[]
+  chromecastEnabled: boolean
+  dateFormat: string
+  timeFormat: string
+  language: string
+  allowedOrigins: string[]
+  logLevel: number
+  version: string | null
+  buildNumber: number
+  authLoginCustomMessage: string | null
+  authActiveAuthMethods: string[]
+  authOpenIDIssuerURL: string | null
+  authOpenIDAuthorizationURL: string | null
+  authOpenIDTokenURL: string | null
+  authOpenIDUserInfoURL: string | null
+  authOpenIDJwksURL: string | null
+  authOpenIDLogoutURL: string | null
+  authOpenIDClientID: string | null
+  authOpenIDClientSecret: string | null
+  authOpenIDTokenSigningAlgorithm: string
+  authOpenIDButtonText: string
+  authOpenIDAutoLaunch: boolean
+  authOpenIDAutoRegister: boolean
+  authOpenIDMatchExistingBy: string | null
+  authOpenIDMobileRedirectURIs: string[]
+  authOpenIDGroupClaim: string
+  authOpenIDAdvancedPermsClaim: string
+  authOpenIDSubfolderForRedirectURLs: string | undefined
+}
+
+type StoredServerSettings = Omit<Partial<ServerSettingsValues>, 'rateLimitLoginRequests' | 'rateLimitLoginWindow'> & {
+  rateLimitLoginRequests?: unknown
+  rateLimitLoginWindow?: unknown
+  storeCoverWithBook?: unknown
+  storeMetadataWithBook?: unknown
+}
+
+type PrivateSettingKey = 'tokenSecret' | 'authOpenIDClientID' | 'authOpenIDClientSecret' | 'authOpenIDMobileRedirectURIs' | 'authOpenIDGroupClaim' | 'authOpenIDAdvancedPermsClaim'
+type BrowserSettings = Omit<ServerSettingsValues, PrivateSettingKey> & { timeZone: string }
+
 class ServerSettings {
+  declare id: string
+  declare tokenSecret: string | null | undefined
+  declare scannerParseSubtitle: boolean | undefined
+  declare scannerFindCovers: boolean
+  declare scannerCoverProvider: string
+  declare scannerPreferMatchedMetadata: boolean
+  declare scannerDisableWatcher: boolean
+  declare storeCoverWithItem: boolean
+  declare storeMetadataWithItem: boolean
+  declare metadataFileFormat: string
+  declare rateLimitLoginRequests: number
+  declare rateLimitLoginWindow: number
+  declare allowIframe: boolean
+  declare backupPath: string
+  declare backupSchedule: string | false
+  declare backupsToKeep: number
+  declare maxBackupSize: number
+  declare loggerDailyLogsToKeep: number
+  declare loggerScannerLogsToKeep: number
+  declare homeBookshelfView: number | undefined
+  declare bookshelfView: number
+  declare podcastEpisodeSchedule: string
+  declare sortingIgnorePrefix: boolean
+  declare sortingPrefixes: string[]
+  declare chromecastEnabled: boolean
+  declare dateFormat: string
+  declare timeFormat: string
+  declare language: string
+  declare allowedOrigins: string[]
+  declare logLevel: number
+  declare version: string | null
+  declare buildNumber: number
+  declare authLoginCustomMessage: string | null
+  declare authActiveAuthMethods: string[]
+  declare authOpenIDIssuerURL: string | null
+  declare authOpenIDAuthorizationURL: string | null
+  declare authOpenIDTokenURL: string | null
+  declare authOpenIDUserInfoURL: string | null
+  declare authOpenIDJwksURL: string | null
+  declare authOpenIDLogoutURL: string | null
+  declare authOpenIDClientID: string | null
+  declare authOpenIDClientSecret: string | null
+  declare authOpenIDTokenSigningAlgorithm: string
+  declare authOpenIDButtonText: string
+  declare authOpenIDAutoLaunch: boolean
+  declare authOpenIDAutoRegister: boolean
+  declare authOpenIDMatchExistingBy: string | null
+  declare authOpenIDMobileRedirectURIs: string[]
+  declare authOpenIDGroupClaim: string
+  declare authOpenIDAdvancedPermsClaim: string
+  declare authOpenIDSubfolderForRedirectURLs: string | undefined
+
+
   static patchableSettingsKeys = PATCHABLE_SETTINGS_KEYS
-  constructor(settings) {
+  constructor(settings?: StoredServerSettings | null) {
     this.id = 'server-settings'
     /** @type {string} JWT secret key ONLY used when JWT_SECRET_KEY is not set in ENV */
     this.tokenSecret = null
@@ -53,7 +172,8 @@ class ServerSettings {
     this.allowIframe = false
 
     // Backups
-    this.backupPath = Path.join(global.MetadataPath, 'backups')
+    // Server initialization supplies MetadataPath before settings are constructed.
+    this.backupPath = Path.join(global.MetadataPath!, 'backups')
     this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
     this.maxBackupSize = 1
@@ -113,7 +233,7 @@ class ServerSettings {
     }
   }
 
-  construct(settings) {
+  construct(settings: StoredServerSettings) {
     this.tokenSecret = settings.tokenSecret
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
@@ -125,11 +245,11 @@ class ServerSettings {
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
     this.metadataFileFormat = settings.metadataFileFormat || 'json'
 
-    this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
-    this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
+    this.rateLimitLoginRequests = Reflect.apply(isNaN, undefined, [settings.rateLimitLoginRequests]) === false ? Number(settings.rateLimitLoginRequests) : 10
+    this.rateLimitLoginWindow = Reflect.apply(isNaN, undefined, [settings.rateLimitLoginWindow]) === false ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
     this.allowIframe = !!settings.allowIframe
 
-    this.backupPath = settings.backupPath || Path.join(global.MetadataPath, 'backups')
+    this.backupPath = settings.backupPath || Path.join(global.MetadataPath!, 'backups')
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
     this.maxBackupSize = settings.maxBackupSize === 0 ? 0 : settings.maxBackupSize || 1
@@ -296,8 +416,8 @@ class ServerSettings {
     }
   }
 
-  toJSONForBrowser() {
-    const json = this.toJSON()
+  toJSONForBrowser(): BrowserSettings {
+    const json: Omit<ServerSettingsValues, PrivateSettingKey> & Partial<Pick<ServerSettingsValues, PrivateSettingKey>> & { timeZone?: string } = this.toJSON()
     delete json.tokenSecret
     delete json.authOpenIDClientID
     delete json.authOpenIDClientSecret
@@ -305,7 +425,8 @@ class ServerSettings {
     delete json.authOpenIDGroupClaim
     delete json.authOpenIDAdvancedPermsClaim
     json.timeZone = ServerSettings.getHostTimeZone()
-    return json
+    // The private keys have been deleted and timeZone has been assigned above.
+    return json as BrowserSettings
   }
 
   get supportedAuthMethods() {
@@ -346,7 +467,11 @@ class ServerSettings {
   }
 
   get authFormData() {
-    const clientFormData = {
+    const clientFormData: {
+      authLoginCustomMessage: string
+      authOpenIDButtonText?: string
+      authOpenIDAutoLaunch?: boolean
+    } = {
       authLoginCustomMessage: sanitize(this.authLoginCustomMessage)
     }
     if (this.authActiveAuthMethods.includes('openid')) {
@@ -362,20 +487,24 @@ class ServerSettings {
    * @param {Object} payload
    * @returns {boolean} true if updates were made
    */
-  update(payload) {
+  update(payload: Partial<ServerSettingsValues>) {
+    const assignField = <Key extends keyof ServerSettingsValues>(settings: ServerSettingsValues, key: Key) => {
+      settings[key] = payload[key] as ServerSettingsValues[Key]
+    }
     let hasUpdates = false
-    for (const key in payload) {
+    for (const field in payload) {
+      const key = field as keyof ServerSettingsValues
       if (!PATCHABLE_SETTINGS_KEYS.has(key)) continue
 
       if (this[key] !== payload[key]) {
         if (key === 'logLevel') {
-          Logger.setLogLevel(payload[key])
+          Logger.setLogLevel(payload[key]!)
         }
-        this[key] = payload[key]
+        assignField(this, key)
         hasUpdates = true
       }
     }
     return hasUpdates
   }
 }
-module.exports = ServerSettings
+export = ServerSettings
