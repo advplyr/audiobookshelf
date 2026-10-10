@@ -50,3 +50,90 @@ describe('scanUtils', async () => {
     })
   })
 })
+
+
+describe('scanUtils compatibility', () => {
+  const fileItem = (path) => ({
+    name: Path.posix.basename(path),
+    path,
+    fullpath: `/library/${path}`,
+    reldirpath: Path.posix.dirname(path) === '.' ? '' : Path.posix.dirname(path),
+    extension: Path.posix.extname(path),
+    deep: path.split('/').length - 1
+  })
+
+  it('preserves missing metadata and empty titles', () => {
+    expect(scanUtils.getBookDataFromDir('')).to.deep.equal({
+      title: '', subtitle: null, asin: null, authors: [], narrators: [],
+      seriesName: null, seriesSequence: null, publishedYear: null
+    })
+    expect(scanUtils.getBookDataFromDir('Author/Title - Subtitle').title).to.equal('Title - Subtitle')
+    expect(scanUtils.getBookDataFromDir('Author/Title', true).subtitle).to.equal('')
+  })
+
+  it('extracts series, year, subtitle, narrator and ASIN together', () => {
+    expect(scanUtils.getBookDataFromDir('Author/Series/Book 2 - 2020 - Title - Subtitle {Jane Doe} [B0015T963C]', true)).to.deep.equal({
+      title: 'Title', subtitle: 'Subtitle', asin: 'B0015T963C', authors: ['Author'],
+      narrators: ['Jane Doe'], seriesName: 'Series', seriesSequence: '2', publishedYear: '2020'
+    })
+  })
+
+  it('distinguishes numbered titles from series sequences', () => {
+    expect(scanUtils.getBookDataFromDir('Author/Series/101 Dalmations').seriesSequence).to.equal(null)
+    expect(scanUtils.getBookDataFromDir('Author/Series/0.5 - Title').seriesSequence).to.equal('0.5')
+    expect(scanUtils.getBookDataFromDir('Author/Book 2 - Title').title).to.equal('Book 2 - Title')
+  })
+
+  it('excludes root podcast files and ebook-only podcast directories', () => {
+    const items = ['episode.mp3', 'Podcast/episode.MP3', 'Ebooks/book.epub'].map(fileItem)
+    expect(scanUtils.groupFileItemsIntoLibraryItemDirs('podcast', items, false)).to.deep.equal({ Podcast: ['episode.MP3'] })
+    expect(scanUtils.groupFileItemsIntoLibraryItemDirs('book', [fileItem('Ebooks/book.epub')], true)).to.deep.equal({})
+  })
+
+  it('includes cover and metadata-only directories when requested by the watcher', () => {
+    const items = ['Cover/cover.jpg', 'Metadata/metadata.json', 'Unknown/file.xyz', 'cover.jpg'].map(fileItem)
+    expect(scanUtils.groupFileItemsIntoLibraryItemDirs('book', items, false)).to.deep.equal({})
+    expect(scanUtils.groupFileItemsIntoLibraryItemDirs('book', items, false, true)).to.deep.equal({
+      Cover: ['cover.jpg'], Metadata: ['metadata.json']
+    })
+  })
+
+  it('preserves the error for a root-file and directory name collision', () => {
+    const items = ['book.mp3', 'book.mp3/track.mp3'].map(fileItem)
+    expect(() => scanUtils.groupFileItemsIntoLibraryItemDirs('book', items, false)).to.throw(TypeError)
+  })
+
+  it('returns only a title for podcasts and normalizes Windows paths', () => {
+    const previousIsWin = global.isWin
+    try {
+      global.isWin = true
+      expect(scanUtils.getDataFromMediaDir('podcast', '/library', 'Author\\Podcast')).to.deep.equal({
+        mediaMetadata: { title: 'Podcast' }, relPath: 'Author/Podcast', path: '/library/Author/Podcast'
+      })
+    } finally {
+      global.isWin = previousIsWin
+    }
+  })
+
+  it('recognizes audio extensions case-insensitively', () => {
+    expect(scanUtils.checkFilepathIsAudioFile('/library/book.MP3')).to.equal(true)
+    expect(scanUtils.checkFilepathIsAudioFile('/library/book.epub')).to.equal(false)
+    expect(scanUtils.checkFilepathIsAudioFile('/library/book')).to.equal(false)
+  })
+
+  it('builds library files with real temporary file metadata', async () => {
+    const fs = require('fs/promises')
+    const os = require('os')
+    const directory = await fs.mkdtemp(Path.join(os.tmpdir(), 'abs-scandir-'))
+    try {
+      await fs.writeFile(Path.join(directory, 'track.mp3'), 'audio')
+      const files = await scanUtils.buildLibraryFile(directory, ['track.mp3'])
+      expect(files).to.have.length(1)
+      expect(files[0].fileType).to.equal('audio')
+      expect(files[0].metadata.filename).to.equal('track.mp3')
+      expect(await scanUtils.buildLibraryFile(directory, [])).to.deep.equal([])
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true })
+    }
+  })
+})
