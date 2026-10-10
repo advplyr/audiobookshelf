@@ -1,35 +1,41 @@
-const { DataTypes, Model, Op } = require('sequelize')
+import { DataTypes, Model, Op } from 'sequelize'
+import type User from './User'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 
-class Session extends Model {
-  constructor(values, options) {
+type SessionAttributes = {
+  id: string
+  ipAddress: string | null
+  userAgent: string | null
+  refreshToken: string
+  createdAt?: Date
+  updatedAt?: Date
+  userId?: string
+  expiresAt: Date
+  lastRefreshToken: string | null
+  lastRefreshTokenExpiresAt: Date | null
+}
+
+type SessionCreation = Optional<SessionAttributes, 'id' | 'ipAddress' | 'userAgent' | 'createdAt' | 'updatedAt' | 'lastRefreshToken' | 'lastRefreshTokenExpiresAt'> & { userId: string }
+
+class Session extends Model<SessionAttributes, SessionCreation> {
+  declare id: string
+  declare ipAddress: string | null
+  declare userAgent: string | null
+  declare refreshToken: string
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare userId: string
+  declare expiresAt: Date
+  declare lastRefreshToken: string | null
+  declare lastRefreshTokenExpiresAt: Date | null
+
+  declare user?: User
+
+  constructor(values?: SessionCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.ipAddress
-    /** @type {string} */
-    this.userAgent
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {UUIDV4} */
-    this.userId
-    /** @type {Date} */
-    this.expiresAt
-    /** @type {string} */
-    this.lastRefreshToken
-    /** @type {Date} */
-    this.lastRefreshTokenExpiresAt
-
-    // Expanded properties
-
-    /** @type {import('./User').User} */
-    this.user
   }
 
-  static async createSession(userId, ipAddress, userAgent, refreshToken, expiresAt) {
+  static async createSession(userId: string, ipAddress: string | null | undefined, userAgent: string | null | undefined, refreshToken: string, expiresAt: Date) {
     const session = await Session.create({ userId, ipAddress, userAgent, refreshToken, expiresAt })
     return session
   }
@@ -53,8 +59,19 @@ class Session extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Session, Session>(
       {
         id: {
           type: DataTypes.UUID,
@@ -97,4 +114,4 @@ class Session extends Model {
   }
 }
 
-module.exports = Session
+export = Session
