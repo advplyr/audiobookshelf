@@ -1,8 +1,11 @@
 export {}
 
 declare global {
-  // Initialized by the server before title sorting is used.
-  var ServerSettings: { sortingPrefixes: string[] | null | undefined }
+  // Initialized by the server before sorting and directory metadata parsing are used.
+  var ServerSettings: {
+    sortingPrefixes: string[] | null | undefined
+    scannerParseSubtitle?: boolean
+  }
 
   // Server initialization sets this flag; earlier consumers may see undefined.
   var isWin: boolean | undefined
