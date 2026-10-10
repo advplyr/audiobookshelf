@@ -6,4 +6,7 @@ declare global {
 
   // Server initialization sets this flag; earlier consumers may see undefined.
   var isWin: boolean | undefined
+
+  // Optional SSRF bypass predicate initialized from server configuration.
+  var DisableSsrfRequestFilter: ((url: string) => boolean) | undefined
 }
