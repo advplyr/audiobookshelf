@@ -1,83 +1,102 @@
-const Path = require('path')
-const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
+import Path from 'path'
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BelongsToGetAssociationMixin, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize, Transaction } from 'sequelize'
+import type Book from './Book'
+import type { BookExpanded, BookExpandedWithLibraryItem } from './Book'
+import type Podcast from './Podcast'
+import type { PodcastExpanded } from './Podcast'
+import type LibraryItem from './LibraryItem'
+import type Collection from './Collection'
+import type Series from './Series'
+import type Playlist from './Playlist'
+import type FeedEpisode from './FeedEpisode'
+import Logger from '../Logger'
+import RSS from '../libs/rss'
+import type { CustomElement } from '../libs/rss'
 
-const RSS = require('../libs/rss')
+type FeedOptions = { preventIndexing: boolean; ownerName: string; ownerEmail: string }
+type FeedExpandedProperties = { feedEpisodes: FeedEpisode[] }
+type FeedExpanded = Feed & FeedExpandedProperties
+type FeedLibraryItem = (LibraryItem & { mediaType: 'podcast'; media: PodcastExpanded }) | (LibraryItem & { mediaType: 'book'; media: BookExpanded })
+type FeedCollection = Omit<Collection, 'books'> & { books: BookExpandedWithLibraryItem[] }
+type FeedSeries = Omit<Series, 'books'> & { books: BookExpandedWithLibraryItem[] }
+type FeedSource = FeedLibraryItem | BookExpandedWithLibraryItem[]
+type EpisodeCreator = (source: FeedSource, feed: Feed, slug: string, transaction?: Transaction) => Promise<FeedEpisode[]>
+type FeedAttributes = {
+  id: string
+  slug: string | null
+  entityType: string | null
+  entityId: string | null
+  serverAddress: string | null
+  feedURL: string | null
+  imageURL: string | null
+  siteURL: string | null
+  title: string | null
+  description: string | null
+  author: string | null
+  podcastType: string | null
+  language: string | null
+  ownerName: string | null
+  ownerEmail: string | null
+  coverPath: string | null
+  entityUpdatedAt: Date | null
+  explicit: boolean | null
+  preventIndexing: boolean | null
+  userId?: string | null
+  createdAt?: Date
+  updatedAt?: Date
+  libraryItem?: LibraryItem | null
+  collection?: Collection | null
+  series?: Series | null
+  playlist?: Playlist | null
+  entity?: LibraryItem | Collection | Series | Playlist | null
+}
+type FeedCreation = Optional<FeedAttributes, keyof FeedAttributes>
 
-/**
- * @typedef FeedOptions
- * @property {boolean} preventIndexing
- * @property {string} ownerName
- * @property {string} ownerEmail
- */
+class Feed extends Model<FeedAttributes, FeedCreation> {
+  declare static sequelize: Sequelize
+  declare id: string
+  declare slug: string | null
+  declare entityType: string | null
+  declare entityId: string | null
+  declare serverAddress: string | null
+  declare feedURL: string | null
+  declare imageURL: string | null
+  declare siteURL: string | null
+  declare title: string | null
+  declare description: string | null
+  declare author: string | null
+  declare podcastType: string | null
+  declare language: string | null
+  declare ownerName: string | null
+  declare ownerEmail: string | null
+  declare coverPath: string | null
+  declare entityUpdatedAt: Date | null
+  declare explicit: boolean | null
+  declare preventIndexing: boolean | null
+  declare userId: string | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare feedEpisodes?: FeedEpisode[]
+  declare libraryItem?: LibraryItem | null
+  declare collection?: Collection | null
+  declare series?: Series | null
+  declare playlist?: Playlist | null
+  declare entity?: LibraryItem | Collection | Series | Playlist | null
+  declare getLibraryItem: BelongsToGetAssociationMixin<LibraryItem>
+  declare getCollection: BelongsToGetAssociationMixin<Collection>
+  declare getSeries: BelongsToGetAssociationMixin<Series>
+  declare getPlaylist: BelongsToGetAssociationMixin<Playlist>
 
-/**
- * @typedef FeedExpandedProperties
- * @property {import('./FeedEpisode')} feedEpisodes
- *
- * @typedef {Feed & FeedExpandedProperties} FeedExpanded
- */
-
-class Feed extends Model {
-  constructor(values, options) {
+  constructor(values?: FeedCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {string} */
-    this.slug
-    /** @type {string} */
-    this.entityType
-    /** @type {UUIDV4} */
-    this.entityId
-    /** @type {Date} */
-    this.entityUpdatedAt
-    /** @type {string} */
-    this.serverAddress
-    /** @type {string} */
-    this.feedURL
-    /** @type {string} */
-    this.imageURL
-    /** @type {string} */
-    this.siteURL
-    /** @type {string} */
-    this.title
-    /** @type {string} */
-    this.description
-    /** @type {string} */
-    this.author
-    /** @type {string} */
-    this.podcastType
-    /** @type {string} */
-    this.language
-    /** @type {string} */
-    this.ownerName
-    /** @type {string} */
-    this.ownerEmail
-    /** @type {boolean} */
-    this.explicit
-    /** @type {boolean} */
-    this.preventIndexing
-    /** @type {string} */
-    this.coverPath
-    /** @type {UUIDV4} */
-    this.userId
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
-
-    // Expanded properties
-
-    /** @type {import('./FeedEpisode')[]} - only set if expanded */
-    this.feedEpisodes
   }
 
   /**
    * @param {string} feedId
    * @returns {Promise<boolean>} - true if feed was removed
    */
-  static async removeById(feedId) {
+  static async removeById(feedId: string) {
     return (
       (await this.destroy({
         where: {
@@ -93,7 +112,7 @@ class Feed extends Model {
    * @param {Date|null|undefined} entityUpdatedAt
    * @returns {string}
    */
-  static getFeedImageURL(slug, coverPath, entityUpdatedAt) {
+  static getFeedImageURL(slug: string | null, coverPath?: string | null, entityUpdatedAt?: Date | null) {
     if (!coverPath) return '/Logo.png'
     const cacheBuster = entityUpdatedAt != null ? `?ts=${entityUpdatedAt.valueOf()}` : ''
     return `/feed/${slug}/cover${Path.extname(coverPath)}${cacheBuster}`
@@ -109,7 +128,7 @@ class Feed extends Model {
    *
    * @returns {Feed}
    */
-  static getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions = null) {
+  static getFeedObjForLibraryItem(userId: string | null, libraryItem: FeedLibraryItem, slug: string, serverAddress: string, feedOptions: FeedOptions | null = null) {
     const media = libraryItem.media
 
     let entityUpdatedAt = libraryItem.updatedAt
@@ -124,7 +143,7 @@ class Feed extends Model {
       entityUpdatedAt = libraryItem.media.updatedAt
     }
 
-    const feedObj = {
+    const feedObj: FeedCreation = {
       slug,
       entityType: 'libraryItem',
       entityId: libraryItem.id,
@@ -135,8 +154,8 @@ class Feed extends Model {
       siteURL: `/item/${libraryItem.id}`,
       title: media.title,
       description: media.description,
-      author: libraryItem.mediaType === 'podcast' ? media.author : media.authorName,
-      podcastType: libraryItem.mediaType === 'podcast' ? media.podcastType : 'serial',
+      author: libraryItem.mediaType === 'podcast' ? (media as Podcast).author : (media as Book).authorName,
+      podcastType: libraryItem.mediaType === 'podcast' ? (media as Podcast).podcastType : 'serial',
       language: media.language,
       explicit: media.explicit,
       coverPath: media.coverPath,
@@ -162,11 +181,11 @@ class Feed extends Model {
    *
    * @returns {Promise<FeedExpanded>}
    */
-  static async createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions) {
+  static async createFeedForLibraryItem(userId: string | null, libraryItem: FeedLibraryItem, slug: string, serverAddress: string, feedOptions?: FeedOptions | null) {
     const feedObj = this.getFeedObjForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
-    const feedEpisodeModel = this.sequelize.models.feedEpisode
+    const feedEpisodeModel = this.sequelize.models.feedEpisode as typeof FeedEpisode
 
     const transaction = await this.sequelize.transaction()
     try {
@@ -198,7 +217,7 @@ class Feed extends Model {
    *
    * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
    */
-  static getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions = null) {
+  static getFeedObjForCollection(userId: string | null, collectionExpanded: FeedCollection, slug: string, serverAddress: string, feedOptions: FeedOptions | null = null) {
     const booksWithTracks = collectionExpanded.books.filter((book) => book.includedAudioFiles.length)
 
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
@@ -208,7 +227,7 @@ class Feed extends Model {
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
 
-    const allBookAuthorNames = booksWithTracks.reduce((authorNames, book) => {
+    const allBookAuthorNames = booksWithTracks.reduce<(string | null)[]>((authorNames, book) => {
       const bookAuthorsToAdd = book.authors.filter((author) => !authorNames.includes(author.name)).map((author) => author.name)
       return authorNames.concat(bookAuthorsToAdd)
     }, [])
@@ -217,7 +236,7 @@ class Feed extends Model {
       author += ' & more'
     }
 
-    const feedObj = {
+    const feedObj: FeedCreation = {
       slug,
       entityType: 'collection',
       entityId: collectionExpanded.id,
@@ -257,11 +276,11 @@ class Feed extends Model {
    *
    * @returns {Promise<FeedExpanded>}
    */
-  static async createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions) {
+  static async createFeedForCollection(userId: string | null, collectionExpanded: FeedCollection, slug: string, serverAddress: string, feedOptions?: FeedOptions | null) {
     const { feedObj, booksWithTracks } = this.getFeedObjForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
-    const feedEpisodeModel = this.sequelize.models.feedEpisode
+    const feedEpisodeModel = this.sequelize.models.feedEpisode as typeof FeedEpisode
 
     const transaction = await this.sequelize.transaction()
     try {
@@ -288,7 +307,7 @@ class Feed extends Model {
    *
    * @returns {{ feedObj: Feed, booksWithTracks: import('./Book').BookExpandedWithLibraryItem[] }}
    */
-  static getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions = null) {
+  static getFeedObjForSeries(userId: string | null, seriesExpanded: FeedSeries, slug: string, serverAddress: string, feedOptions: FeedOptions | null = null) {
     const booksWithTracks = seriesExpanded.books.filter((book) => book.includedAudioFiles.length)
     const entityUpdatedAt = booksWithTracks.reduce((mostRecent, book) => {
       const updatedAt = book.libraryItem.updatedAt > book.updatedAt ? book.libraryItem.updatedAt : book.updatedAt
@@ -297,7 +316,7 @@ class Feed extends Model {
 
     const firstBookWithCover = booksWithTracks.find((book) => book.coverPath)
 
-    const allBookAuthorNames = booksWithTracks.reduce((authorNames, book) => {
+    const allBookAuthorNames = booksWithTracks.reduce<(string | null)[]>((authorNames, book) => {
       const bookAuthorsToAdd = book.authors.filter((author) => !authorNames.includes(author.name)).map((author) => author.name)
       return authorNames.concat(bookAuthorsToAdd)
     }, [])
@@ -306,7 +325,7 @@ class Feed extends Model {
       author += ' & more'
     }
 
-    const feedObj = {
+    const feedObj: FeedCreation = {
       slug,
       entityType: 'series',
       entityId: seriesExpanded.id,
@@ -346,11 +365,11 @@ class Feed extends Model {
    *
    * @returns {Promise<FeedExpanded>}
    */
-  static async createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions) {
+  static async createFeedForSeries(userId: string | null, seriesExpanded: FeedSeries, slug: string, serverAddress: string, feedOptions?: FeedOptions | null) {
     const { feedObj, booksWithTracks } = this.getFeedObjForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions)
 
     /** @type {typeof import('./FeedEpisode')} */
-    const feedEpisodeModel = this.sequelize.models.feedEpisode
+    const feedEpisodeModel = this.sequelize.models.feedEpisode as typeof FeedEpisode
 
     const transaction = await this.sequelize.transaction()
     try {
@@ -375,8 +394,15 @@ class Feed extends Model {
    *
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Keep Sequelize's inherited static contract; application initialization uses one argument.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS, attributes: ModelAttributes<M, Partial<Attributes<M>>>, options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels always supplies the Sequelize instance.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Feed, Feed>(
       {
         id: {
           type: DataTypes.UUID,
@@ -449,10 +475,11 @@ class Feed extends Model {
     })
     Feed.belongsTo(playlist, { foreignKey: 'entityId', constraints: false })
 
-    Feed.addHook('afterFind', (findResult) => {
+    Feed.addHook('afterFind', (findResult: Feed | readonly Feed[] | null) => {
       if (!findResult) return
 
-      if (!Array.isArray(findResult)) findResult = [findResult]
+      const isArray: (value: Feed | readonly Feed[]) => value is readonly Feed[] = Array.isArray
+      if (!isArray(findResult)) findResult = [findResult]
       for (const instance of findResult) {
         if (instance.entityType === 'libraryItem' && instance.libraryItem !== undefined) {
           instance.entity = instance.libraryItem
@@ -487,43 +514,45 @@ class Feed extends Model {
    */
   async updateFeedForEntity() {
     /** @type {typeof import('./FeedEpisode')} */
-    const feedEpisodeModel = this.sequelize.models.feedEpisode
+    const feedEpisodeModel = this.sequelize.models.feedEpisode as typeof FeedEpisode
 
-    let feedObj = null
-    let feedEpisodeCreateFunc = null
-    let feedEpisodeCreateFuncEntity = null
+    let feedObj: FeedCreation | null = null
+    // Each entity branch pairs its bound creator with the matching expanded source.
+    let feedEpisodeCreateFunc: EpisodeCreator | null = null
+    let feedEpisodeCreateFuncEntity: FeedSource | null = null
 
     if (this.entityType === 'libraryItem') {
       /** @type {typeof import('./LibraryItem')} */
-      const libraryItemModel = this.sequelize.models.libraryItem
+      // Expanded query boundary for the remaining JavaScript library item model.
+      const libraryItemModel = this.sequelize.models.libraryItem as unknown as { getExpandedById(id: string): Promise<FeedLibraryItem | null> }
 
-      const itemExpanded = await libraryItemModel.getExpandedById(this.entityId)
-      feedObj = Feed.getFeedObjForLibraryItem(this.userId, itemExpanded, this.slug, this.serverAddress)
+      const itemExpanded = await libraryItemModel.getExpandedById(this.entityId!)
+      feedObj = Feed.getFeedObjForLibraryItem(this.userId, itemExpanded!, this.slug!, this.serverAddress!)
 
-      feedEpisodeCreateFuncEntity = itemExpanded
-      if (itemExpanded.mediaType === 'podcast') {
-        feedEpisodeCreateFunc = feedEpisodeModel.createFromPodcastEpisodes.bind(feedEpisodeModel)
+      feedEpisodeCreateFuncEntity = itemExpanded!
+      if (itemExpanded!.mediaType === 'podcast') {
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromPodcastEpisodes.bind(feedEpisodeModel) as EpisodeCreator
       } else {
-        feedEpisodeCreateFunc = feedEpisodeModel.createFromAudiobookTracks.bind(feedEpisodeModel)
+        feedEpisodeCreateFunc = feedEpisodeModel.createFromAudiobookTracks.bind(feedEpisodeModel) as EpisodeCreator
       }
     } else if (this.entityType === 'collection') {
       /** @type {typeof import('./Collection')} */
-      const collectionModel = this.sequelize.models.collection
+      const collectionModel = this.sequelize.models.collection as typeof Collection
 
-      const collectionExpanded = await collectionModel.getExpandedById(this.entityId)
-      const feedObjData = Feed.getFeedObjForCollection(this.userId, collectionExpanded, this.slug, this.serverAddress)
+      const collectionExpanded = await collectionModel.getExpandedById(this.entityId!) as FeedCollection
+      const feedObjData = Feed.getFeedObjForCollection(this.userId, collectionExpanded, this.slug!, this.serverAddress!)
       feedObj = feedObjData.feedObj
       feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
-      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel) as EpisodeCreator
     } else if (this.entityType === 'series') {
       /** @type {typeof import('./Series')} */
-      const seriesModel = this.sequelize.models.series
+      const seriesModel = this.sequelize.models.series as typeof Series
 
-      const seriesExpanded = await seriesModel.getExpandedById(this.entityId)
-      const feedObjData = Feed.getFeedObjForSeries(this.userId, seriesExpanded, this.slug, this.serverAddress)
+      const seriesExpanded = await seriesModel.getExpandedById(this.entityId!) as FeedSeries
+      const feedObjData = Feed.getFeedObjForSeries(this.userId, seriesExpanded, this.slug!, this.serverAddress!)
       feedObj = feedObjData.feedObj
       feedEpisodeCreateFuncEntity = feedObjData.booksWithTracks
-      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel)
+      feedEpisodeCreateFunc = feedEpisodeModel.createFromBooks.bind(feedEpisodeModel) as EpisodeCreator
     } else {
       Logger.error(`[Feed] Invalid entity type ${this.entityType} for feed ${this.id}`)
       return null
@@ -533,10 +562,10 @@ class Feed extends Model {
     try {
       const updatedFeed = await this.update(feedObj, { transaction })
 
-      const existingFeedEpisodeIds = this.feedEpisodes.map((ep) => ep.id)
+      const existingFeedEpisodeIds = this.feedEpisodes!.map((ep) => ep.id)
 
       // Create new feed episodes
-      updatedFeed.feedEpisodes = await feedEpisodeCreateFunc(feedEpisodeCreateFuncEntity, updatedFeed, this.slug, transaction)
+      updatedFeed.feedEpisodes = await feedEpisodeCreateFunc(feedEpisodeCreateFuncEntity, updatedFeed, this.slug!, transaction)
 
       const newFeedEpisodeIds = updatedFeed.feedEpisodes.map((ep) => ep.id)
       const feedEpisodeIdsToRemove = existingFeedEpisodeIds.filter((epid) => !newFeedEpisodeIds.includes(epid))
@@ -562,18 +591,19 @@ class Feed extends Model {
     }
   }
 
-  getEntity(options) {
+  getEntity(options?: FindOptions) {
     if (!this.entityType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.entityType)}`
-    return this[mixinMethodName](options)
+    // The discriminator selects the corresponding registered association mixin.
+    return this[mixinMethodName as 'getLibraryItem' | 'getCollection' | 'getSeries' | 'getPlaylist'](options)
   }
 
   /**
    *
    * @param {string} hostPrefix
    */
-  buildXml(hostPrefix) {
-    const customElements = [
+  buildXml(hostPrefix: string) {
+    const customElements: CustomElement[] = [
       { language: this.language || 'en' },
       { author: this.author || 'advplyr' },
       { 'itunes:author': this.author || 'advplyr' },
@@ -592,7 +622,7 @@ class Feed extends Model {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
     }
 
-    const itunesOwnersData = []
+    const itunesOwnersData: CustomElement[] = []
     if (this.ownerName || this.author) {
       itunesOwnersData.push({ 'itunes:name': this.ownerName || this.author })
     }
@@ -625,7 +655,7 @@ class Feed extends Model {
     }
 
     const rssfeed = new RSS(rssData)
-    this.feedEpisodes.forEach((ep) => {
+    this.feedEpisodes!.forEach((ep) => {
       rssfeed.item(ep.getRSSData(hostPrefix))
     })
     return rssfeed.xml()
@@ -636,8 +666,8 @@ class Feed extends Model {
    * @param {string} id
    * @returns {string}
    */
-  getEpisodePath(id) {
-    const episode = this.feedEpisodes.find((ep) => ep.id === id)
+  getEpisodePath(id: string) {
+    const episode = this.feedEpisodes!.find((ep) => ep.id === id)
     if (!episode) return null
     return episode.filePath
   }
@@ -691,4 +721,8 @@ class Feed extends Model {
   }
 }
 
-module.exports = Feed
+declare namespace Feed {
+  export type { FeedOptions, FeedExpandedProperties, FeedExpanded }
+}
+
+export = Feed
