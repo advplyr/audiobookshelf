@@ -1,10 +1,10 @@
-const Path = require('path')
-const { Response } = require('express')
-const Logger = require('../Logger')
-const archiver = require('../libs/archiver')
+import Path from 'path'
+import type { Response } from 'express'
+import Logger from '../Logger'
+import archiver from '../libs/archiver'
 
-module.exports.zipDirectoryPipe = (path, filename, res) => {
-  return new Promise((resolve, reject) => {
+export function zipDirectoryPipe(path: string, filename: string, res: Response): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     // create a file to stream archive data to
     res.attachment(filename)
 
@@ -28,7 +28,7 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
     })
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
-    archive.on('warning', function (err) {
+    archive.on('warning', function (err: NodeJS.ErrnoException) {
       if (err.code === 'ENOENT') {
         // log warning
         Logger.warn(`[DownloadManager] Archiver warning: ${err.message}`)
@@ -39,7 +39,7 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
         reject(err)
       }
     })
-    archive.on('error', function (err) {
+    archive.on('error', function (err: NodeJS.ErrnoException) {
       Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
       reject(err)
     })
@@ -49,7 +49,8 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
 
     archive.directory(path, false)
 
-    archive.finalize()
+    // Completion still follows the response close event; preserve existing finalize handling.
+    void archive.finalize()
   })
 }
 
@@ -61,8 +62,8 @@ module.exports.zipDirectoryPipe = (path, filename, res) => {
  * @param {Response} res - Response object to pipe the archive data to.
  * @returns {Promise<void>} - Promise that resolves when the zip operation completes.
  */
-module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
-  return new Promise((resolve, reject) => {
+export function zipDirectoriesPipe(pathObjects: { path: string; isFile: boolean }[], filename: string, res: Response): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     // create a file to stream archive data to
     res.attachment(filename)
 
@@ -86,7 +87,7 @@ module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
     })
 
     // good practice to catch warnings (ie stat failures and other non-blocking errors)
-    archive.on('warning', function (err) {
+    archive.on('warning', function (err: NodeJS.ErrnoException) {
       if (err.code === 'ENOENT') {
         // log warning
         Logger.warn(`[DownloadManager] Archiver warning: ${err.message}`)
@@ -97,7 +98,7 @@ module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
         reject(err)
       }
     })
-    archive.on('error', function (err) {
+    archive.on('error', function (err: NodeJS.ErrnoException) {
       Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
       reject(err)
     })
@@ -115,18 +116,19 @@ module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
       }
     })
 
-    archive.finalize()
+    // Completion still follows the response close event; preserve existing finalize handling.
+    void archive.finalize()
   })
 }
 
 /**
  * Handles errors that occur during the download process.
  *
- * @param {*} error
+ * @param {NodeJS.ErrnoException} error
  * @param {Response} res
- * @returns {*}
+ * @returns {Response|undefined}
  */
-module.exports.handleDownloadError = (error, res) => {
+export function handleDownloadError(error: NodeJS.ErrnoException, res: Response): Response | undefined {
   if (!res.headersSent) {
     if (error.code === 'ENOENT') {
       return res.status(404).send('File not found')
