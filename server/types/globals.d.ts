@@ -1,6 +1,9 @@
 import type ServerSettings from '../objects/settings/ServerSettings'
 
 declare global {
+  // Server startup sets the configuration directory before Database.init.
+  var ConfigPath: string | undefined
+
   // Optional before server initialization; comic extraction falls back to os.tmpdir().
   var MetadataPath: string | undefined
 
