@@ -1,6 +1,7 @@
 import { DataTypes, Model } from 'sequelize'
 import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize, Transaction } from 'sequelize'
 import type PodcastEpisode from './PodcastEpisode'
+import type LibraryItem from './LibraryItem'
 import type { RssPodcastEpisode } from '../utils/podcastUtils'
 import { getTitlePrefixAtEnd, getTitleIgnorePrefix } from '../utils'
 import Logger from '../Logger'
@@ -67,6 +68,7 @@ class Podcast extends Model<PodcastAttributes, PodcastCreation> {
   declare genres: string[] | null
   declare createdAt: Date
   declare updatedAt: Date
+  declare libraryItem?: LibraryItem
   declare podcastEpisodes?: PodcastEpisode[]
 
   constructor(values?: PodcastCreation, options?: BuildOptions) {

@@ -1,5 +1,6 @@
 import { DataTypes, Model } from 'sequelize'
 import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type Podcast from './Podcast'
 import type AudioFile from '../objects/files/AudioFile'
 import type { RssPodcastEpisode } from '../utils/podcastUtils'
 import libraryItemsPodcastFilters from '../utils/queries/libraryItemsPodcastFilters'
@@ -52,6 +53,7 @@ class PodcastEpisode extends Model<PodcastEpisodeAttributes, PodcastEpisodeCreat
   declare chapters: ChapterObject[] | null
   declare extraData: { guid?: string | null; oldEpisodeId?: string | null } | null
   declare podcastId: string | null
+  declare podcast?: Podcast
   declare createdAt: Date
   declare updatedAt: Date
 
