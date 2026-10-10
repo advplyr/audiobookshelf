@@ -1,22 +1,60 @@
-const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const Logger = require('../../Logger')
-const authorFilters = require('./authorFilters')
+import * as Sequelize from 'sequelize'
+import type { CountOptions, FindAndCountOptions, FindOptions, IncludeOptions, Order, OrderItem, ProjectionAlias, WhereOptions } from 'sequelize'
+import type { Where } from 'sequelize/types/utils'
+import type Book from '../../models/Book'
+import type LibraryItem from '../../models/LibraryItem'
+import type Library from '../../models/Library'
+import type User from '../../models/User'
+import type Series from '../../models/Series'
+import type Author from '../../models/Author'
+import type BookSeries from '../../models/BookSeries'
+import type BookAuthor from '../../models/BookAuthor'
+import type Feed from '../../models/Feed'
+import type { MediaItemShareForClient } from '../../models/MediaItemShare'
 
-const ShareManager = require('../../managers/ShareManager')
-const { profile } = require('../profiler')
-const stringifySequelizeQuery = require('../stringifySequelizeQuery')
-const countCache = new Map()
+type Predicate = Where | Sequelize.WhereAttributeHash
+type MutableWhere = Sequelize.WhereAttributeHash & { [Sequelize.Op.and]?: Predicate[]; [Sequelize.Op.or]?: Predicate[] }
+type Replacements = Record<string, string | string[] | null>
+type SeriesDetails = { id: string; name: string | null; sequence: string | null }
+type CollapsedSeries = SeriesDetails & { nameIgnorePrefix: string | null; numBooks: number; libraryItemIds: string[] }
+// Includes are assembled per query; required associations are asserted where consumed.
+type BookItem = Omit<LibraryItem, 'media'> & { media: Omit<Book, 'libraryItem'>; series?: SeriesDetails; collapsedSeries?: CollapsedSeries; feeds?: Feed[]; rssFeed?: Feed; mediaItemShare?: MediaItemShareForClient | null }
+type SeriesJoin = Series & { bookSeries?: BookSeries }
+type BookRow = Omit<Book, 'libraryItem'> & {
+  libraryItem?: BookItem
+  bookSeries?: (BookSeries & { series?: SeriesJoin })[]
+  bookAuthors?: (BookAuthor & { author: Author })[]
+}
+type SeriesRow = Omit<Series, 'books'> & {
+  books?: (BookRow & { bookSeries: BookSeries })[]
+  bookSeries?: (BookSeries & { book: BookRow })[]
+  dataValues: { numBooks: number; maxSequence: number | null }
+}
+type CollapseEntry = { id: string; numBooks: number; libraryItemIds: string[] }
+// A null limit/where/attributes retains Sequelize's legacy unbounded/default behavior.
+type QueryOptions = Omit<FindAndCountOptions, 'limit' | 'where' | 'attributes'> & { limit?: number | null; where?: WhereOptions | null; attributes?: FindOptions['attributes'] | null }
+type CountRow = { value: string; numItems: number }
+type NarratorRow = { value: string; numBooks: number }
+type StatsRow = { totalSize: number | null; totalDuration: number | null; numAudioFiles: number | null; totalItems: number }
+import Database from '../../Database'
+import Logger from '../../Logger'
+import authorFilters from './authorFilters'
 
-module.exports = {
+import ShareManager from '../../managers/ShareManager'
+import profiler from '../profiler'
+const { profile } = profiler
+import stringifySequelizeQuery from '../stringifySequelizeQuery'
+const countCache = new Map<string | undefined, number>()
+
+const libraryItemsBookFilters = {
   /**
    * User permissions to restrict books for explicit content & tags
    * @param {import('../../models/User')} user
    * @returns {{ bookWhere:Sequelize.WhereOptions, replacements:object }}
    */
-  getUserPermissionBookWhereQuery(user) {
-    const bookWhere = []
-    const replacements = {}
+  getUserPermissionBookWhereQuery(user: User | null | undefined) {
+    const bookWhere: Predicate[] = []
+    const replacements: Replacements = {}
     if (!user) return { bookWhere, replacements }
 
     if (!user.canAccessExplicitContent) {
@@ -49,8 +87,8 @@ module.exports = {
    * @param {string} value
    * @returns {Sequelize.WhereOptions}
    */
-  getCollapseSeriesMediaProgressFilter(value) {
-    const mediaWhere = {}
+  getCollapseSeriesMediaProgressFilter(value: string | null) {
+    const mediaWhere: MutableWhere = {}
     if (value === 'not-finished') {
       mediaWhere['$books.mediaProgresses.isFinished$'] = {
         [Sequelize.Op.or]: [null, false]
@@ -100,11 +138,11 @@ module.exports = {
    * @param {[string]} value
    * @returns {object} { Sequelize.WhereOptions, string[] }
    */
-  getMediaGroupQuery(group, value) {
+  getMediaGroupQuery(group: string | null, value: string | null) {
     if (!group) return { mediaWhere: {}, replacements: {} }
 
-    let mediaWhere = {}
-    const replacements = {}
+    let mediaWhere: MutableWhere | Predicate[] | Where = {}
+    const replacements: Replacements = {}
 
     if (group === 'progress') {
       if (value === 'not-finished') {
@@ -218,15 +256,15 @@ module.exports = {
         }
       }
     } else if (group === 'missing') {
-      if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {
-        let key = value
+      if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value!)) {
+        let key = value!
         if (value === 'cover') key = 'coverPath'
         mediaWhere[key] = {
           [Sequelize.Op.or]: [null, '']
         }
-      } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value)) {
-        mediaWhere[value] = {
-          [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value)), 0)]
+      } else if (['genres', 'tags', 'narrators', 'chapters'].includes(value!)) {
+        mediaWhere[value!] = {
+          [Sequelize.Op.or]: [null, Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col(value!)), 0)]
         }
       } else if (value === 'authors') {
         mediaWhere['$authors.id$'] = null
@@ -234,8 +272,8 @@ module.exports = {
         mediaWhere['$series.id$'] = null
       }
     } else if (group === 'publishedDecades') {
-      const startYear = parseInt(value)
-      const endYear = parseInt(value, 10) + 9
+      const startYear = parseInt(value!)
+      const endYear = parseInt(value!, 10) + 9
       mediaWhere = Sequelize.where(Sequelize.literal('CAST(publishedYear AS INTEGER)'), {
         [Sequelize.Op.between]: [startYear, endYear]
       })
@@ -251,10 +289,10 @@ module.exports = {
    * @param {boolean} collapseseries
    * @returns {Sequelize.order}
    */
-  getOrder(sortBy, sortDesc, collapseseries) {
+  getOrder(sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean): OrderItem[] {
     const dir = sortDesc ? 'DESC' : 'ASC'
 
-    const getTitleOrder = () => {
+    const getTitleOrder = (): OrderItem => {
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [Sequelize.literal('`libraryItem`.`titleIgnorePrefix` COLLATE NOCASE'), dir]
       } else {
@@ -287,15 +325,15 @@ module.exports = {
       return [getTitleOrder()]
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
+      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]] as unknown as OrderItem[]
     } else if (sortBy === 'progress') {
-      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]] as unknown as OrderItem[]
     } else if (sortBy === 'progress.createdAt') {
-      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.createdAt ${dir} NULLS LAST`)]] as unknown as OrderItem[]
     } else if (sortBy === 'progress.finishedAt') {
-      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]]
+      return [[Sequelize.literal(`mediaProgresses.finishedAt ${dir} NULLS LAST`)]] as unknown as OrderItem[]
     } else if (sortBy === 'random') {
-      return [Database.sequelize.random()]
+      return [(Database.sequelize as Sequelize.Sequelize).random()]
     }
     return []
   },
@@ -309,13 +347,14 @@ module.exports = {
    * @param {Sequelize.WhereOptions} seriesWhere
    * @returns {object} { booksToExclude, bookSeriesToInclude }
    */
-  async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere, replacements = {}) {
+  async getCollapseSeriesBooksToExclude(bookFindOptions: Omit<IncludeOptions, 'where'> & { where?: WhereOptions | null }, seriesWhere: WhereOptions | null, replacements: Replacements = {}) {
     const allSeries = await Database.seriesModel.findAll({
       attributes: ['id', 'name', [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']],
       distinct: true,
       subQuery: false,
       replacements,
-      where: seriesWhere,
+      // Null means no series predicate in Sequelize.
+      where: seriesWhere as WhereOptions,
       include: [
         {
           model: Database.bookModel,
@@ -323,24 +362,25 @@ module.exports = {
           through: {
             attributes: ['id', 'seriesId', 'bookId', 'sequence']
           },
-          ...bookFindOptions,
+          ...bookFindOptions as IncludeOptions,
           required: true
         }
       ],
       order: [Sequelize.literal('CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]
-    })
-    const bookSeriesToInclude = []
-    const booksToInclude = []
-    let booksToExclude = []
-    allSeries.forEach((s) => {
+    } satisfies FindAndCountOptions as FindAndCountOptions)
+    const bookSeriesToInclude: CollapseEntry[] = []
+    const booksToInclude: string[] = []
+    let booksToExclude: string[] = []
+    const seriesRows = allSeries as SeriesRow[]
+    seriesRows.forEach((s) => {
       let found = false
-      for (let book of s.books) {
+      for (const book of s.books!) {
         if (!found && !booksToInclude.includes(book.id)) {
           booksToInclude.push(book.id)
           bookSeriesToInclude.push({
             id: book.bookSeries.id,
             numBooks: s.dataValues.numBooks,
-            libraryItemIds: s.books?.map((b) => b.libraryItem.id) || []
+            libraryItemIds: s.books?.map((b) => b.libraryItem!.id) || []
           })
           booksToExclude = booksToExclude.filter((bid) => bid !== book.id)
           found = true
@@ -352,33 +392,34 @@ module.exports = {
     return { booksToExclude, bookSeriesToInclude }
   },
 
-  clearCountCache(hook) {
+  clearCountCache(this: void, hook: string) {
     Logger.debug(`[LibraryItemsBookFilters] book.${hook}: Clearing count cache`)
     countCache.clear()
   },
 
-  async findAndCountAll(findOptions, limit, offset, useCountCache) {
+  async findAndCountAll(this: void, findOptions: QueryOptions, limit: number | null, offset: number | null, useCountCache: boolean) {
     const model = Database.bookModel
+    const queryOptions = findOptions as FindAndCountOptions
     if (useCountCache) {
       const countCacheKey = stringifySequelizeQuery(findOptions)
       Logger.debug(`[LibraryItemsBookFilters] countCacheKey: ${countCacheKey}`)
       if (!countCache.has(countCacheKey)) {
-        const count = await model.count(findOptions)
+        const count = await model.count(queryOptions as CountOptions)
         countCache.set(countCacheKey, count)
       }
 
       findOptions.limit = limit || null
-      findOptions.offset = offset
+      findOptions.offset = offset as number
 
-      const rows = await model.findAll(findOptions)
+      const rows = await model.findAll(queryOptions)
 
-      return { rows, count: countCache.get(countCacheKey) }
+      return { rows, count: countCache.get(countCacheKey)! }
     }
 
     findOptions.limit = limit || null
-    findOptions.offset = offset
+    findOptions.offset = offset as number
 
-    return await model.findAndCountAll(findOptions)
+    return await model.findAndCountAll(queryOptions)
   },
 
   /**
@@ -396,7 +437,7 @@ module.exports = {
    * @param {boolean} isHomePage for home page shelves
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset, isHomePage = false) {
+  async getFilteredLibraryItems(libraryId: string | null, user: User | null | undefined, filterGroup: string | null, filterValue: string | null, sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean, include: string[], limit: number | null, offset: number | null, isHomePage = false) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
@@ -407,38 +448,38 @@ module.exports = {
     const includeRSSFeed = include.includes('rssfeed')
     const includeMediaItemShare = !!user?.isAdminOrUp && include.includes('share')
 
-    let bookAttributes = null
+    let bookAttributes: { include: ProjectionAlias[] } | null = null
 
-    const libraryItemWhere = {
+    const libraryItemWhere: MutableWhere = {
       libraryId
     }
 
-    let seriesInclude = {
+    let seriesInclude: IncludeOptions = {
       model: Database.bookSeriesModel,
       attributes: ['id', 'seriesId', 'sequence', 'createdAt'],
-      include: {
+      include: [{
         model: Database.seriesModel,
         attributes: ['id', 'name', 'nameIgnorePrefix']
-      },
+      }],
       order: [['createdAt', 'ASC']],
       separate: true
     }
 
-    let authorInclude = {
+    let authorInclude: IncludeOptions = {
       model: Database.bookAuthorModel,
       attributes: ['authorId', 'createdAt'],
-      include: {
+      include: [{
         model: Database.authorModel,
         attributes: ['id', 'name']
-      },
+      }],
       order: [['createdAt', 'ASC']],
       separate: true
     }
 
     const sortOrder = this.getOrder(sortBy, sortDesc, collapseseries)
 
-    const libraryItemIncludes = []
-    const bookIncludes = []
+    const libraryItemIncludes: IncludeOptions[] = []
+    const bookIncludes: IncludeOptions[] = []
 
     if (filterGroup === 'feed-open' || includeRSSFeed) {
       const rssFeedRequired = filterGroup === 'feed-open'
@@ -503,7 +544,7 @@ module.exports = {
       })
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
-        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')])
+        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')] as unknown as OrderItem)
       }
     } else if (filterGroup === 'issues') {
       libraryItemWhere[Sequelize.Op.or] = [
@@ -515,7 +556,7 @@ module.exports = {
         }
       ]
     } else if (filterGroup === 'progress' && user) {
-      const mediaProgressWhere = {
+      const mediaProgressWhere: { userId: string; hideFromContinueListening?: boolean } = {
         userId: user.id
       }
       // Respect hide from continue listening for home page shelf
@@ -530,17 +571,17 @@ module.exports = {
       })
     } else if (filterGroup === 'recent') {
       libraryItemWhere['createdAt'] = {
-        [Sequelize.Op.gte]: new Date(new Date() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
+        [Sequelize.Op.gte]: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       }
     }
 
     // When sorting by progress but not filtering by progress, include media progresses
-    if (filterGroup !== 'progress' && ['progress.createdAt', 'progress.finishedAt', 'progress'].includes(sortBy)) {
+    if (filterGroup !== 'progress' && ['progress.createdAt', 'progress.finishedAt', 'progress'].includes(sortBy!)) {
       bookIncludes.push({
         model: Database.mediaProgressModel,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt', 'createdAt', 'finishedAt'],
         where: {
-          userId: user.id
+          userId: user!.id
         },
         required: false
       })
@@ -555,10 +596,10 @@ module.exports = {
     bookWhere.push(...userPermissionBookWhere.bookWhere)
 
     // Handle collapsed series
-    let collapseSeriesBookSeries = []
+    let collapseSeriesBookSeries: CollapseEntry[] = []
     if (collapseseries) {
-      let seriesBookWhere = null
-      let seriesWhere = null
+      let seriesBookWhere: WhereOptions | null = null
+      let seriesWhere: WhereOptions | null = null
       if (filterGroup === 'progress') {
         seriesWhere = this.getCollapseSeriesMediaProgressFilter(filterValue)
       } else if (filterGroup === 'missing' && filterValue === 'authors') {
@@ -569,7 +610,7 @@ module.exports = {
         seriesBookWhere = bookWhere
       }
 
-      const bookFindOptions = {
+      const bookFindOptions: Omit<IncludeOptions, 'where'> & { where?: WhereOptions | null } = {
         where: seriesBookWhere,
         include: [
           {
@@ -591,18 +632,18 @@ module.exports = {
         })
       }
       collapseSeriesBookSeries = bookSeriesToInclude
-      if (!bookAttributes?.include) bookAttributes = { include: [] }
+      if (!(bookAttributes as { include?: ProjectionAlias[] } | null)?.include) bookAttributes = { include: [] }
 
       // When collapsing series and sorting by title then use the series name instead of the book title
       //  for this set an attribute "display_title" to use in sorting
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`titleIgnorePrefix\`)`), 'display_title'])
+        bookAttributes!.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`titleIgnorePrefix\`)`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`title\`)`), 'display_title'])
+        bookAttributes!.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`title\`)`), 'display_title'])
       }
     }
 
-    const findOptions = {
+    const findOptions: QueryOptions = {
       where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
@@ -625,8 +666,8 @@ module.exports = {
     const findAndCountAll = process.env.QUERY_PROFILING ? profile(this.findAndCountAll) : this.findAndCountAll
     const { rows: books, count } = await findAndCountAll(findOptions, limit, offset, !filterGroup && !userPermissionBookWhere.bookWhere.length)
 
-    const libraryItems = books.map((bookExpanded) => {
-      const libraryItem = bookExpanded.libraryItem
+    const libraryItems = (books as BookRow[]).map((bookExpanded) => {
+      const libraryItem = bookExpanded.libraryItem!
       const book = bookExpanded
 
       if (filterGroup === 'series' && book.series?.length) {
@@ -642,7 +683,7 @@ module.exports = {
 
       book.series =
         book.bookSeries?.map((bs) => {
-          const series = bs.series
+          const series = bs.series!
           delete bs.series
           series.bookSeries = bs
           return series
@@ -654,14 +695,14 @@ module.exports = {
 
       // For showing details of collapsed series
       if (collapseseries && book.series?.length) {
-        const collapsedSeries = book.series.find((bs) => collapseSeriesBookSeries.some((cbs) => cbs.id === bs.bookSeries.id))
+        const collapsedSeries = book.series.find((bs) => collapseSeriesBookSeries.some((cbs) => cbs.id === bs.bookSeries!.id))
         if (collapsedSeries) {
-          const collapseSeriesObj = collapseSeriesBookSeries.find((csbs) => csbs.id === collapsedSeries.bookSeries.id)
+          const collapseSeriesObj = collapseSeriesBookSeries.find((csbs) => csbs.id === collapsedSeries.bookSeries!.id)
           libraryItem.collapsedSeries = {
             id: collapsedSeries.id,
             name: collapsedSeries.name,
             nameIgnorePrefix: collapsedSeries.nameIgnorePrefix,
-            sequence: collapsedSeries.bookSeries.sequence,
+            sequence: collapsedSeries.bookSeries!.sequence,
             numBooks: collapseSeriesObj?.numBooks || 0,
             libraryItemIds: collapseSeriesObj?.libraryItemIds || []
           }
@@ -701,25 +742,25 @@ module.exports = {
    * @param {number} offset
    * @returns {Promise<{ libraryItems:import('../../models/LibraryItem')[], count:number }>}
    */
-  async getContinueSeriesLibraryItems(library, user, include, limit, offset) {
+  async getContinueSeriesLibraryItems(library: Library, user: User, include: string[], limit: number, offset: number) {
     const libraryId = library.id
-    const libraryItemIncludes = []
+    const libraryItemIncludes: IncludeOptions[] = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
         model: Database.feedModel
       })
     }
 
-    const bookWhere = []
+    const bookWhere: Predicate[] = []
     // TODO: Permissions should also be applied to subqueries
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
     bookWhere.push(...userPermissionBookWhere.bookWhere)
 
-    let includeAttributes = [[Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']]
+    const includeAttributes: ProjectionAlias[] = [[Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']]
     let booksNotFinishedQuery = `SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL)`
 
-    if (library.settings.onlyShowLaterBooksInContinueSeries) {
+    if (library.settings!.onlyShowLaterBooksInContinueSeries) {
       const maxSequenceQuery = `(SELECT CAST(max(bs.sequence) as FLOAT) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.isFinished = 1 AND mp.userId = :userId AND bs.seriesId = series.id)`
       includeAttributes.push([Sequelize.literal(`${maxSequenceQuery}`), 'maxSequence'])
 
@@ -753,18 +794,18 @@ module.exports = {
         userId: user.id,
         ...userPermissionBookWhere.replacements
       },
-      include: {
+      include: [{
         model: Database.bookSeriesModel,
         attributes: ['bookId', 'sequence'],
         separate: true,
         subQuery: false,
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]] as unknown as Order,
         where: {
           '$book.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, 0]
           }
         },
-        include: {
+        include: [{
           model: Database.bookModel,
           where: bookWhere,
           include: [
@@ -786,24 +827,24 @@ module.exports = {
               required: false
             }
           ]
-        }
-      },
-      order: [[Sequelize.literal('recent_progress DESC')]],
+        }]
+      }],
+      order: [[Sequelize.literal('recent_progress DESC')]] as unknown as Order,
       distinct: true,
       subQuery: false,
       limit,
       offset
     })
 
-    const libraryItems = series
+    const libraryItems = (series as SeriesRow[])
       .map((s) => {
-        if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
+        if (!s.bookSeries!.length) return null // this is only possible if user has restricted books in series
 
         let bookIndex = 0
         // if the library setting is toggled, only show later entries in series, otherwise skip
-        if (library.settings.onlyShowLaterBooksInContinueSeries) {
-          bookIndex = s.bookSeries.findIndex(function (b) {
-            return parseFloat(b.dataValues.sequence) > s.dataValues.maxSequence
+        if (library.settings!.onlyShowLaterBooksInContinueSeries) {
+          bookIndex = s.bookSeries!.findIndex(function (b) {
+            return parseFloat(b.dataValues.sequence!) > s.dataValues.maxSequence!
           })
           if (bookIndex === -1) {
             // no later books than maxSequence
@@ -811,8 +852,8 @@ module.exports = {
           }
         }
 
-        const libraryItem = s.bookSeries[bookIndex].book.libraryItem
-        const book = s.bookSeries[bookIndex].book
+        const libraryItem = s.bookSeries![bookIndex].book.libraryItem!
+        const book = s.bookSeries![bookIndex].book
         delete book.libraryItem
 
         book.series = []
@@ -820,7 +861,7 @@ module.exports = {
         libraryItem.series = {
           id: s.id,
           name: s.name,
-          sequence: s.bookSeries[bookIndex].sequence
+          sequence: s.bookSeries![bookIndex].sequence
         }
         if (libraryItem.feeds?.length) {
           libraryItem.rssFeed = libraryItem.feeds[0]
@@ -846,7 +887,7 @@ module.exports = {
    * @param {number} limit
    * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
-  async getDiscoverLibraryItems(libraryId, user, include, limit) {
+  async getDiscoverLibraryItems(libraryId: string, user: User, include: string[], limit: number) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
     // Step 1: Get the first book of every series that hasnt been started yet
@@ -862,27 +903,27 @@ module.exports = {
         ...userPermissionBookWhere.replacements
       },
       attributes: ['id'],
-      include: {
+      include: [{
         model: Database.bookSeriesModel,
         attributes: ['bookId', 'sequence'],
         separate: true,
         required: true,
-        include: {
+        include: [{
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere
-        },
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        }],
+        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]] as unknown as Order,
         limit: 1
-      },
+      }],
       subQuery: false,
       limit,
-      order: Database.sequelize.random()
-    })
+      order: (Database.sequelize as Sequelize.Sequelize).random()
+    } satisfies FindAndCountOptions)
 
-    const booksFromSeriesToInclude = seriesNotStarted.map((se) => se.bookSeries?.[0]?.bookId).filter((bid) => bid)
+    const booksFromSeriesToInclude = (seriesNotStarted as SeriesRow[]).map((se) => se.bookSeries?.[0]?.bookId).filter((bid) => bid)
 
     // optional include rssFeed
-    const libraryItemIncludes = []
+    const libraryItemIncludes: IncludeOptions[] = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
         model: Database.feedModel
@@ -933,7 +974,7 @@ module.exports = {
       distinct: true,
       col: 'id',
       subQuery: false
-    })
+    } satisfies FindAndCountOptions as CountOptions)
 
     // Step 2b: Select random IDs with lightweight includes only
     const randomSelection = await Database.bookModel.findAll({
@@ -944,8 +985,8 @@ module.exports = {
       subQuery: false,
       distinct: true,
       limit,
-      order: Database.sequelize.random()
-    })
+      order: (Database.sequelize as Sequelize.Sequelize).random()
+    } satisfies FindAndCountOptions as FindAndCountOptions)
 
     const selectedIds = randomSelection.map((b) => b.id).filter(Boolean)
     if (!selectedIds.length) {
@@ -973,35 +1014,35 @@ module.exports = {
         {
           model: Database.bookAuthorModel,
           attributes: ['authorId'],
-          include: {
+          include: [{
             model: Database.authorModel
-          },
+          }],
           separate: true
         },
         {
           model: Database.bookSeriesModel,
           attributes: ['seriesId', 'sequence'],
-          include: {
+          include: [{
             model: Database.seriesModel
-          },
+          }],
           separate: true
         }
       ],
       subQuery: false
-    })
+    } satisfies FindAndCountOptions)
 
-    const booksById = new Map(books.map((b) => [b.id, b]))
-    const orderedBooks = selectedIds.map((id) => booksById.get(id)).filter(Boolean)
+    const booksById = new Map((books as BookRow[]).map((b) => [b.id, b]))
+    const orderedBooks = selectedIds.map((id) => booksById.get(id)).filter((book): book is BookRow => !!book)
 
     // Step 3: Map books to library items
     const libraryItems = orderedBooks.map((bookExpanded) => {
-      const libraryItem = bookExpanded.libraryItem
+      const libraryItem = bookExpanded.libraryItem!
       const book = bookExpanded
       delete book.libraryItem
 
       book.series =
         book.bookSeries?.map((bs) => {
-          const series = bs.series
+          const series = bs.series!
           delete bs.series
           series.bookSeries = bs
           return series
@@ -1031,7 +1072,7 @@ module.exports = {
    * @param {oldCollection} collection
    * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
-  async getLibraryItemsForCollection(collection) {
+  async getLibraryItemsForCollection(collection: { books?: string[] } | null | undefined) {
     if (!collection?.books?.length) {
       Logger.error(`[libraryItemsBookFilters] Invalid collection`, collection)
       return []
@@ -1060,10 +1101,10 @@ module.exports = {
           }
         }
       ]
-    })
+    } satisfies FindAndCountOptions)
 
-    return books.map((book) => {
-      const libraryItem = book.libraryItem
+    return (books as BookRow[]).map((book) => {
+      const libraryItem = book.libraryItem!
       delete book.libraryItem
       libraryItem.media = book
       return libraryItem
@@ -1076,7 +1117,7 @@ module.exports = {
    * @param {import('../../models/User')} [user]
    * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
-  async getLibraryItemsForSeries(series, user) {
+  async getLibraryItemsForSeries(series: Series, user?: User) {
     const { libraryItems } = await this.getFilteredLibraryItems(series.libraryId, user, 'series', series.id, null, null, false, [], null, null)
     return libraryItems
   },
@@ -1090,7 +1131,7 @@ module.exports = {
    * @param {number} offset
    * @returns {{book:object[], narrators:object[], authors:object[], tags:object[], series:object[]}}
    */
-  async search(user, library, query, limit, offset) {
+  async search(user: User, library: Library, query: string, limit: number, offset: number) {
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
 
     const textSearchQuery = await Database.createTextSearchQuery(query)
@@ -1129,16 +1170,16 @@ module.exports = {
         },
         {
           model: Database.bookSeriesModel,
-          include: {
+          include: [{
             model: Database.seriesModel
-          },
+          }],
           separate: true
         },
         {
           model: Database.bookAuthorModel,
-          include: {
+          include: [{
             model: Database.authorModel
-          },
+          }],
           separate: true
         }
       ],
@@ -1146,23 +1187,23 @@ module.exports = {
       distinct: true,
       limit,
       offset
-    })
+    } satisfies FindAndCountOptions as FindAndCountOptions)
 
     const itemMatches = []
 
-    for (const book of books) {
-      const libraryItem = book.libraryItem
+    for (const book of books as BookRow[]) {
+      const libraryItem = book.libraryItem!
       delete book.libraryItem
 
-      book.series = book.bookSeries.map((bs) => {
-        const series = bs.series
+      book.series = book.bookSeries!.map((bs) => {
+        const series = bs.series!
         delete bs.series
         series.bookSeries = bs
         return series
       })
       delete book.bookSeries
 
-      book.authors = book.bookAuthors.map((ba) => ba.author)
+      book.authors = book.bookAuthors!.map((ba) => ba.author)
       delete book.bookAuthors
 
       libraryItem.media = book
@@ -1175,7 +1216,7 @@ module.exports = {
 
     // Search narrators
     const narratorMatches = []
-    const [narratorResults] = await Database.sequelize.query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
+    const [narratorResults] = await (Database.sequelize as Sequelize.Sequelize).query(`SELECT value, count(*) AS numBooks FROM books b, libraryItems li, json_each(b.narrators) WHERE json_valid(b.narrators) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value LIMIT :limit OFFSET :offset;`, {
       replacements: {
         libraryId: library.id,
         limit,
@@ -1183,7 +1224,7 @@ module.exports = {
       },
       raw: true
     })
-    for (const row of narratorResults) {
+    for (const row of narratorResults as NarratorRow[]) {
       narratorMatches.push({
         name: row.value,
         numBooks: row.numBooks
@@ -1192,7 +1233,7 @@ module.exports = {
 
     // Search tags
     const tagMatches = []
-    const [tagResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [tagResults] = await (Database.sequelize as Sequelize.Sequelize).query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.tags) WHERE json_valid(b.tags) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
         libraryId: library.id,
         limit,
@@ -1200,7 +1241,7 @@ module.exports = {
       },
       raw: true
     })
-    for (const row of tagResults) {
+    for (const row of tagResults as CountRow[]) {
       tagMatches.push({
         name: row.value,
         numItems: row.numItems
@@ -1209,7 +1250,7 @@ module.exports = {
 
     // Search genres
     const genreMatches = []
-    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
+    const [genreResults] = await (Database.sequelize as Sequelize.Sequelize).query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND ${matchJsonValue} AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC LIMIT :limit OFFSET :offset;`, {
       replacements: {
         libraryId: library.id,
         limit,
@@ -1217,7 +1258,7 @@ module.exports = {
       },
       raw: true
     })
-    for (const row of genreResults) {
+    for (const row of genreResults as CountRow[]) {
       genreMatches.push({
         name: row.value,
         numItems: row.numItems
@@ -1236,26 +1277,26 @@ module.exports = {
         ]
       },
       replacements: userPermissionBookWhere.replacements,
-      include: {
+      include: [{
         separate: true,
         model: Database.bookSeriesModel,
-        include: {
+        include: [{
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere,
-          include: {
+          include: [{
             model: Database.libraryItemModel
-          }
-        }
-      },
+          }]
+        }]
+      }],
       subQuery: false,
       distinct: true,
       limit,
       offset
-    })
+    } satisfies FindAndCountOptions as FindAndCountOptions)
     const seriesMatches = []
-    for (const series of allSeries) {
-      const books = series.bookSeries.map((bs) => {
-        const libraryItem = bs.book.libraryItem
+    for (const series of allSeries as SeriesRow[]) {
+      const books = series.bookSeries!.map((bs) => {
+        const libraryItem = bs.book.libraryItem!
         libraryItem.media = bs.book
         libraryItem.media.authors = []
         libraryItem.media.series = []
@@ -1287,15 +1328,15 @@ module.exports = {
    * @param {string} libraryId
    * @returns {{genre:string, count:number}[]}
    */
-  async getGenresWithCount(libraryId) {
+  async getGenresWithCount(libraryId: string) {
     const genres = []
-    const [genreResults] = await Database.sequelize.query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC;`, {
+    const [genreResults] = await (Database.sequelize as Sequelize.Sequelize).query(`SELECT value, count(*) AS numItems FROM books b, libraryItems li, json_each(b.genres) WHERE json_valid(b.genres) AND b.id = li.mediaId AND li.libraryId = :libraryId GROUP BY value ORDER BY numItems DESC;`, {
       replacements: {
         libraryId
       },
       raw: true
     })
-    for (const row of genreResults) {
+    for (const row of genreResults as CountRow[]) {
       genres.push({
         genre: row.value,
         count: row.numItems
@@ -1309,12 +1350,13 @@ module.exports = {
    * @param {string} libraryId
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
-  async getBookLibraryStats(libraryId) {
-    const [statResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, SUM(json_array_length(b.audioFiles)) AS numAudioFiles, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.libraryId = :libraryId;`, {
+  async getBookLibraryStats(libraryId: string) {
+    const [statRows] = await (Database.sequelize as Sequelize.Sequelize).query(`SELECT SUM(li.size) AS totalSize, SUM(b.duration) AS totalDuration, SUM(json_array_length(b.audioFiles)) AS numAudioFiles, COUNT(*) AS totalItems FROM libraryItems li, books b WHERE b.id = li.mediaId AND li.libraryId = :libraryId;`, {
       replacements: {
         libraryId
       }
     })
+    const statResults = statRows as StatsRow[]
     return {
       totalSize: statResults?.[0]?.totalSize || 0,
       totalDuration: statResults?.[0]?.totalDuration || 0,
@@ -1329,25 +1371,27 @@ module.exports = {
    * @param {number} limit
    * @returns {Promise<{ id:string, title:string, duration:number }[]>}
    */
-  async getLongestBooks(libraryId, limit) {
+  async getLongestBooks(libraryId: string, limit: number) {
     const books = await Database.bookModel.findAll({
       attributes: ['id', 'title', 'duration'],
-      include: {
+      include: [{
         model: Database.libraryItemModel,
         attributes: ['id', 'libraryId'],
         where: {
           libraryId
         }
-      },
+      }],
       order: [['duration', 'DESC']],
       limit
-    })
-    return books.map((book) => {
+    } satisfies FindAndCountOptions)
+    return (books as BookRow[]).map((book) => {
       return {
-        id: book.libraryItem.id,
+        id: book.libraryItem!.id,
         title: book.title,
         duration: book.duration
       }
     })
   }
 }
+
+export = libraryItemsBookFilters
