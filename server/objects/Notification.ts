@@ -1,7 +1,42 @@
-const uuidv4 = require("uuid").v4
+import { v4 as uuidv4 } from 'uuid'
+
+type NotificationPayload = {
+  libraryId?: string | null
+  eventName: string
+  urls: string[]
+  titleTemplate: string
+  bodyTemplate: string
+  type?: string | null
+  enabled?: boolean
+}
+
+type NotificationData = Partial<NotificationPayload> & {
+  id?: string | null
+  lastFiredAt?: number | null
+  lastAttemptFailed?: boolean
+  numConsecutiveFailedAttempts?: number
+  numTimesFired?: number
+  createdAt?: number | null
+}
+
+type TemplateData = Record<string, string | number | boolean | null | undefined>
 
 class Notification {
-  constructor(notification = null) {
+  declare id: string | null | undefined
+  declare libraryId: string | null
+  declare eventName: string | undefined
+  declare urls: string[]
+  declare titleTemplate: string
+  declare bodyTemplate: string
+  declare type: string | null
+  declare enabled: boolean
+  declare lastFiredAt: number | null
+  declare lastAttemptFailed: boolean
+  declare numConsecutiveFailedAttempts: number
+  declare numTimesFired: number
+  declare createdAt: number | null | undefined
+
+  constructor(notification: NotificationData | null = null) {
     this.id = null
     this.libraryId = null
     this.eventName = ''
@@ -22,7 +57,7 @@ class Notification {
     }
   }
 
-  construct(notification) {
+  construct(notification: NotificationData) {
     this.id = notification.id
     this.libraryId = notification.libraryId || null
     this.eventName = notification.eventName
@@ -56,7 +91,7 @@ class Notification {
     }
   }
 
-  setData(payload) {
+  setData(payload: NotificationPayload) {
     this.id = uuidv4()
     this.libraryId = payload.libraryId || null
     this.eventName = payload.eventName
@@ -68,7 +103,7 @@ class Notification {
     this.createdAt = Date.now()
   }
 
-  update(payload) {
+  update(payload: Partial<NotificationPayload>) {
     if (!this.enabled && payload.enabled) {
       // Reset
       this.lastFiredAt = null
@@ -76,7 +111,7 @@ class Notification {
       this.numConsecutiveFailedAttempts = 0
     }
 
-    const keysToUpdate = ['libraryId', 'eventName', 'urls', 'titleTemplate', 'bodyTemplate', 'enabled', 'type']
+    const keysToUpdate = ['libraryId', 'eventName', 'urls', 'titleTemplate', 'bodyTemplate', 'enabled', 'type'] as const
     var hasUpdated = false
     for (const key of keysToUpdate) {
       if (payload[key] !== undefined) {
@@ -86,7 +121,10 @@ class Notification {
             hasUpdated = true
           }
         } else if (payload[key] !== this[key]) {
-          this[key] = payload[key]
+          // Narrow the heterogeneous fields without changing the update order.
+          if (key === 'enabled') this[key] = payload[key]
+          else if (key === 'libraryId' || key === 'type') this[key] = payload[key]
+          else this[key] = payload[key]
           hasUpdated = true
         }
       }
@@ -94,35 +132,35 @@ class Notification {
     return hasUpdated
   }
 
-  updateNotificationFired(success) {
+  updateNotificationFired(success: boolean) {
     this.lastFiredAt = Date.now()
     this.lastAttemptFailed = !success
     this.numConsecutiveFailedAttempts = success ? 0 : this.numConsecutiveFailedAttempts + 1
     this.numTimesFired++
   }
 
-  replaceVariablesInTemplate(templateText, data) {
+  replaceVariablesInTemplate(templateText: string, data: TemplateData) {
     const ptrn = /{{ ?([a-zA-Z]+) ?}}/mg
 
     var match
     var updatedTemplate = templateText
     while ((match = ptrn.exec(templateText)) != null) {
       if (data[match[1]]) {
-        updatedTemplate = updatedTemplate.replace(match[0], data[match[1]])
+        updatedTemplate = updatedTemplate.replace(match[0], String(data[match[1]]))
       }
     }
     return updatedTemplate
   }
 
-  parseTitleTemplate(data) {
+  parseTitleTemplate(data: TemplateData) {
     return this.replaceVariablesInTemplate(this.titleTemplate, data)
   }
 
-  parseBodyTemplate(data) {
+  parseBodyTemplate(data: TemplateData) {
     return this.replaceVariablesInTemplate(this.bodyTemplate, data)
   }
 
-  getApprisePayload(data) {
+  getApprisePayload(data: TemplateData) {
     return {
       urls: this.urls,
       title: this.parseTitleTemplate(data),
@@ -130,4 +168,4 @@ class Notification {
     }
   }
 }
-module.exports = Notification
+export = Notification
