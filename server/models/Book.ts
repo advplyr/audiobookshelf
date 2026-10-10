@@ -96,6 +96,7 @@ class Book extends Model<BookAttributes, BookCreation> {
   declare chapters: ChapterObject[] | null
   declare createdAt: Date
   declare updatedAt: Date
+  declare libraryItem?: LibraryItem
   declare authors?: Author[]
   declare series?: SeriesExpanded[]
 
