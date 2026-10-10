@@ -1,14 +1,20 @@
-const Sequelize = require('sequelize')
-const Database = require('../../Database')
+import * as Sequelize from 'sequelize'
+import type Author from '../../models/Author'
+import type BookAuthor from '../../models/BookAuthor'
+import Database from '../../Database'
 
-module.exports = {
+type AuthorCountRow = BookAuthor & { author: Pick<Author, 'name'> }
+type AuthorSearchRow = Author & { dataValues: { numBooks: number } }
+type TextQuery = Pick<InstanceType<typeof Database.TextSearchQuery>, 'matchExpression'>
+
+const authorFilters = {
   /**
    * Get authors total count
    *
    * @param {string} libraryId
    * @returns {Promise<number>} count
    */
-  async getAuthorsTotalCount(libraryId) {
+  async getAuthorsTotalCount(libraryId: string) {
     const authorsCount = await Database.authorModel.count({
       where: {
         libraryId: libraryId
@@ -24,7 +30,7 @@ module.exports = {
    * @param {number} limit
    * @returns {Promise<{id:string, name:string, count:number}>}
    */
-  async getAuthorsWithCount(libraryId, limit) {
+  async getAuthorsWithCount(libraryId: string, limit: number) {
     const authors = await Database.bookAuthorModel.findAll({
       include: [
         {
@@ -41,11 +47,12 @@ module.exports = {
       order: [[Sequelize.literal('count'), 'DESC']],
       limit: limit
     })
-    return authors.map((au) => {
+    // The inner author join and COUNT projection populate these extra fields.
+    return (authors as AuthorCountRow[]).map((au) => {
       return {
         id: au.authorId,
         name: au.author.name,
-        count: au.get('count') // Use get method to access aliased attributes
+        count: au.get('count') as number // Use get method to access aliased attributes
       }
     })
   },
@@ -59,7 +66,7 @@ module.exports = {
    * @param {number} offset
    * @returns {Promise<Object[]>} oldAuthor with numBooks
    */
-  async search(libraryId, query, limit, offset) {
+  async search(libraryId: string, query: TextQuery, limit: number, offset: number) {
     const matchAuthor = query.matchExpression('name')
     const authors = await Database.authorModel.findAll({
       where: {
@@ -72,10 +79,14 @@ module.exports = {
       offset
     })
     const authorMatches = []
-    for (const author of authors) {
+    // SQLite COUNT produces a number for each selected author.
+    for (const author of authors as AuthorSearchRow[]) {
       const oldAuthor = author.toOldJSONExpanded(author.dataValues.numBooks)
       authorMatches.push(oldAuthor)
     }
     return authorMatches
   }
 }
+
+
+export = authorFilters
