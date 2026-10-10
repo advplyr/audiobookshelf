@@ -420,9 +420,21 @@ class Database {
    */
   async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
-    await this.userModel.createRootUser(username, pash, auth)
-    this.hasRootUser = true
-    return true
+    const transaction = await this.sequelize.transaction()
+    try {
+      const rootCount = await this.userModel.count({ where: { type: 'root' }, transaction })
+      if (rootCount > 0) {
+        await transaction.rollback()
+        return false
+      }
+      await this.userModel.createRootUser(username, pash, auth, transaction)
+      await transaction.commit()
+      this.hasRootUser = true
+      return true
+    } catch (error) {
+      await transaction.rollback()
+      throw error
+    }
   }
 
   updateServerSettings() {

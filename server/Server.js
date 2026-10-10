@@ -47,6 +47,22 @@ const expressSession = require('express-session')
 const MemoryStore = require('./libs/memorystore')
 
 /**
+ * Normalize to '' (root) or '/segment' with no trailing slash.
+ * Matches audiobookshelf-client-react `src/lib/basePath.ts`.
+ * @param {string|null|undefined} basePath
+ * @returns {string}
+ */
+function normalizeBasePath(basePath) {
+  if (!basePath) return ''
+
+  const trimmed = basePath.trim()
+  if (!trimmed || trimmed === '/') return ''
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash
+}
+
+/**
  * `next()` for a custom server is a NextCustomServer wrapper. After prepare(),
  * `.server` is another NextServer wrapper; the Node server with `nextConfig` is
  * one more `.server` down. Older react clients have no basePath and must keep
@@ -66,7 +82,7 @@ class Server {
     global.isWin = process.platform === 'win32'
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
-    global.RouterBasePath = ROUTER_BASE_PATH
+    global.RouterBasePath = normalizeBasePath(ROUTER_BASE_PATH)
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
 
@@ -472,7 +488,11 @@ class Server {
     const rootUsername = newRoot.username || 'root'
     const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    await Database.createRootUser(rootUsername, rootPash, this.auth)
+    const created = await Database.createRootUser(rootUsername, rootPash, this.auth)
+    if (!created) {
+      Logger.error(`[Server] attempt to init server when server already has a root user`)
+      return res.sendStatus(500)
+    }
 
     res.sendStatus(200)
   }
