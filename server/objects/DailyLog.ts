@@ -1,15 +1,26 @@
-const Path = require('path')
-const date = require('../libs/dateAndTime')
-const fs = require('../libs/fsExtra')
-const fileUtils = require('../utils/fileUtils')
-const Logger = require('../Logger')
+import Path from 'path'
+import date from '../libs/dateAndTime'
+import fs from '../libs/fsExtra'
+import fileUtils from '../utils/fileUtils'
+import Logger from '../Logger'
+import type { LogObject } from '../managers/LogManager'
 
 class DailyLog {
+  declare id: string
+  declare dailyLogDirPath: string
+  declare filename: string
+  declare fullPath: string
+  declare createdAt: number
+  // Existing log files may contain any valid JSON value; loading does not validate its shape.
+  declare logs: unknown[]
+  declare bufferedLogLines: string[]
+  declare locked: boolean
+
   /**
    * 
    * @param {string} dailyLogDirPath Path to daily logs /metadata/logs/daily
    */
-  constructor(dailyLogDirPath) {
+  constructor(dailyLogDirPath: string) {
     this.id = date.format(new Date(), 'YYYY-MM-DD')
 
     this.dailyLogDirPath = dailyLogDirPath
@@ -47,7 +58,7 @@ class DailyLog {
   /**
    * Append all buffered lines to daily log file
    */
-  appendBufferedLogs() {
+  appendBufferedLogs(): Promise<void> {
     let buffered = [...this.bufferedLogLines]
     this.bufferedLogLines = []
 
@@ -62,7 +73,7 @@ class DailyLog {
    * 
    * @param {import('../managers/LogManager').LogObject} logObj 
    */
-  appendLog(logObj) {
+  appendLog(logObj: LogObject) {
     this.logs.push(logObj)
     return this.appendLogLine(JSON.stringify(logObj) + '\n')
   }
@@ -72,14 +83,14 @@ class DailyLog {
    * 
    * @param {string} line 
    */
-  async appendLogLine(line) {
+  async appendLogLine(line: string): Promise<void> {
     if (this.locked) {
       this.bufferedLogLines.push(line)
       return
     }
     this.locked = true
 
-    await fs.writeFile(this.fullPath, line, { flag: "a+" }).catch((error) => {
+    await fs.writeFile(this.fullPath, line, { flag: "a+" }).catch((error: unknown) => {
       console.log('[DailyLog] Append log failed', error)
     })
 
@@ -114,7 +125,8 @@ class DailyLog {
         return null
       }
       try {
-        return JSON.parse(t)
+        const value: unknown = JSON.parse(t)
+        return value
       } catch (err) {
         console.error('Failed to parse log line', t, err)
         hasFailures = true
@@ -132,4 +144,4 @@ class DailyLog {
     Logger.debug(`[DailyLog] ${this.id}: Loaded ${this.logs.length} Logs`)
   }
 }
-module.exports = DailyLog
+export = DailyLog
