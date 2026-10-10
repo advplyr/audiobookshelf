@@ -10,8 +10,7 @@ import libraryItemsBookFilters from './libraryItemsBookFilters'
 import libraryItemsPodcastFilters from './libraryItemsPodcastFilters'
 
 // Search serializers are owned by the media-specific query modules.
-// The book query's legacy JSDoc omits Promise and some returned groups.
-type BookSearch = { book: unknown[]; narrators: unknown[]; authors: unknown[]; tags: unknown[]; genres: unknown[]; series: unknown[] }
+type BookSearch = Awaited<ReturnType<typeof libraryItemsBookFilters.search>>
 type PodcastSearch = Awaited<ReturnType<typeof libraryItemsPodcastFilters.search>>
 type LargestItem = { id: string; title: string | null; size: number | null }
 type LargestItemRow = Omit<LibraryItem, 'size' | 'media'> & LargestItem & { media: { title: string | null } }
@@ -200,7 +199,7 @@ const libraryItemFilters = {
    */
   search(user: User, library: Library, query: string, limit: number): Promise<BookSearch | PodcastSearch> {
     if (library.isBook) {
-      return libraryItemsBookFilters.search(user, library, query, limit, 0) as unknown as Promise<BookSearch>
+      return libraryItemsBookFilters.search(user, library, query, limit, 0)
     } else {
       return libraryItemsPodcastFilters.search(user, library, query, limit, 0)
     }

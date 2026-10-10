@@ -1,5 +1,5 @@
 import * as Sequelize from 'sequelize'
-import type { IncludeOptions, OrderItem, ProjectionAlias, WhereOptions } from 'sequelize'
+import type { IncludeOptions, OrderItem, ProjectionAlias } from 'sequelize'
 import type Library from '../../models/Library'
 import type User from '../../models/User'
 import type { Where } from 'sequelize/types/utils'
@@ -8,7 +8,6 @@ import type Feed from '../../models/Feed'
 import type BookSeries from '../../models/BookSeries'
 import type { BookExpandedWithLibraryItem } from '../../models/Book'
 
-type SeriesPermissions = { accessAllTags?: boolean; itemTagsSelected?: string[]; selectedTagsNotAccessible?: boolean }
 type SeriesRow = Series & { bookSeries: (BookSeries & { book: BookExpandedWithLibraryItem })[]; feeds?: Feed[]; dataValues: { totalDuration?: number | null } }
 type OldSeries = ReturnType<Series['toOldJSON']> & { totalDuration?: number; rssFeed?: ReturnType<Feed['toOldJSONMinified']>; books?: unknown[] }
 import Logger from '../../Logger'
@@ -39,7 +38,7 @@ const seriesFilters = {
    * @returns {Promise<{ series:object[], count:number }>}
    */
   async getFilteredSeries(library: Library, user: User, filterBy: string, sortBy: string, sortDesc: boolean, include: string[], limit: number, offset: number) {
-    const permissions = user.permissions as SeriesPermissions | null
+    const permissions = user.permissions
     let filterValue = null
     let filterGroup = null
     if (filterBy) {
@@ -56,10 +55,7 @@ const seriesFilters = {
       })
     }
 
-    // The legacy query's JSDoc describes one predicate, but returns an array.
-    const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user) as unknown as {
-      bookWhere: Extract<WhereOptions, unknown[]>; replacements: Record<string, string | string[] | null>
-    }
+    const userPermissionBookWhere = libraryItemsBookFilters.getUserPermissionBookWhereQuery(user)
 
     const seriesWhere: (Where | { libraryId: string })[] = [
       {
