@@ -72,6 +72,10 @@ describe('general utilities', () => {
       expect(utils.getTitleIgnorePrefix('The Book')).to.equal('Book')
       expect(utils.getTitlePrefixAtEnd('The Book')).to.equal('Book, The')
       expect(utils.getTitlePrefixAtEnd('Other')).to.equal('Other')
+      expect(utils.getTitleIgnorePrefix(null)).to.equal('')
+      expect(utils.getTitleIgnorePrefix(undefined)).to.equal('')
+      expect(utils.getTitlePrefixAtEnd(null)).to.equal(null)
+      expect(utils.getTitlePrefixAtEnd(undefined)).to.equal(undefined)
       delete global.ServerSettings
       expect(utils.getTitleIgnorePrefix('')).to.equal('')
       expect(() => utils.getTitleIgnorePrefix('Book')).to.throw(TypeError)

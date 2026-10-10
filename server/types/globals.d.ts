@@ -1,4 +1,4 @@
-export {}
+import type ServerSettings from '../objects/settings/ServerSettings'
 
 declare global {
   // Optional before server initialization; comic extraction falls back to os.tmpdir().
@@ -8,6 +8,7 @@ declare global {
   var ServerSettings: {
     sortingPrefixes: string[] | null | undefined
     scannerParseSubtitle?: boolean
+    podcastEpisodeSchedule?: ServerSettings['podcastEpisodeSchedule']
   }
 
   // Server initialization sets this flag; earlier consumers may see undefined.

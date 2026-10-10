@@ -1,73 +1,76 @@
-const { DataTypes, Model } = require('sequelize')
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
-const Logger = require('../Logger')
-const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize, Transaction } from 'sequelize'
+import type PodcastEpisode from './PodcastEpisode'
+import type { RssPodcastEpisode } from '../utils/podcastUtils'
+import { getTitlePrefixAtEnd, getTitleIgnorePrefix } from '../utils'
+import Logger from '../Logger'
+import libraryItemsPodcastFilters from '../utils/queries/libraryItemsPodcastFilters'
+import htmlSanitizer from '../utils/htmlSanitizer'
 
-/**
- * @typedef PodcastExpandedProperties
- * @property {import('./PodcastEpisode')[]} podcastEpisodes
- *
- * @typedef {Podcast & PodcastExpandedProperties} PodcastExpanded
- */
+type PodcastRequest = { [key: string]: unknown; metadata?: Record<string, unknown> }
+type PodcastCreateRequest = PodcastRequest & { metadata: Record<string, unknown> }
+type PodcastExpanded = Podcast & { podcastEpisodes: PodcastEpisode[] }
+type PodcastStringKey = 'title' | 'titleIgnorePrefix' | 'author' | 'releaseDate' | 'feedURL' | 'imageURL' | 'description' | 'itunesPageURL' | 'itunesId' | 'itunesArtistId' | 'language' | 'podcastType'
+type PodcastAttributes = {
+  id: string
+  title: string | null
+  titleIgnorePrefix: string | null
+  author: string | null
+  releaseDate: string | null
+  feedURL: string | null
+  imageURL: string | null
+  description: string | null
+  itunesPageURL: string | null
+  itunesId: string | null
+  itunesArtistId: string | null
+  language: string | null
+  podcastType: string | null
+  autoDownloadSchedule: string | null
+  coverPath: string | null
+  explicit: boolean | null
+  autoDownloadEpisodes: boolean | null
+  maxEpisodesToKeep: number | null
+  maxNewEpisodesToDownload: number | null
+  numEpisodes: number | null
+  lastEpisodeCheck: Date | number | null
+  tags: string[] | null
+  genres: string[] | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+type PodcastCreation = Optional<PodcastAttributes, keyof PodcastAttributes>
+type ExpandedMetadata = ReturnType<Podcast['oldMetadataToJSON']> & { titleIgnorePrefix?: string | null | undefined }
 
-class Podcast extends Model {
-  constructor(values, options) {
+class Podcast extends Model<PodcastAttributes, PodcastCreation> {
+  declare id: string
+  declare title: string | null
+  declare titleIgnorePrefix: string | null
+  declare author: string | null
+  declare releaseDate: string | null
+  declare feedURL: string | null
+  declare imageURL: string | null
+  declare description: string | null
+  declare itunesPageURL: string | null
+  declare itunesId: string | null
+  declare itunesArtistId: string | null
+  declare language: string | null
+  declare podcastType: string | null
+  declare autoDownloadSchedule: string | null
+  declare coverPath: string | null
+  declare explicit: boolean | null
+  declare autoDownloadEpisodes: boolean | null
+  declare maxEpisodesToKeep: number | null
+  declare maxNewEpisodesToDownload: number | null
+  declare numEpisodes: number | null
+  declare lastEpisodeCheck: Date | number | null
+  declare tags: string[] | null
+  declare genres: string[] | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare podcastEpisodes?: PodcastEpisode[]
+
+  constructor(values?: PodcastCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {string} */
-    this.id
-    /** @type {string} */
-    this.title
-    /** @type {string} */
-    this.titleIgnorePrefix
-    /** @type {string} */
-    this.author
-    /** @type {string} */
-    this.releaseDate
-    /** @type {string} */
-    this.feedURL
-    /** @type {string} */
-    this.imageURL
-    /** @type {string} */
-    this.description
-    /** @type {string} */
-    this.itunesPageURL
-    /** @type {string} */
-    this.itunesId
-    /** @type {string} */
-    this.itunesArtistId
-    /** @type {string} */
-    this.language
-    /** @type {string} */
-    this.podcastType
-    /** @type {boolean} */
-    this.explicit
-    /** @type {boolean} */
-    this.autoDownloadEpisodes
-    /** @type {string} */
-    this.autoDownloadSchedule
-    /** @type {Date} */
-    this.lastEpisodeCheck
-    /** @type {number} */
-    this.maxEpisodesToKeep
-    /** @type {number} */
-    this.maxNewEpisodesToDownload
-    /** @type {string} */
-    this.coverPath
-    /** @type {string[]} */
-    this.tags
-    /** @type {string[]} */
-    this.genres
-    /** @type {Date} */
-    this.createdAt
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {number} */
-    this.numEpisodes
-
-    /** @type {import('./PodcastEpisode')[]} */
-    this.podcastEpisodes
   }
 
   /**
@@ -76,12 +79,13 @@ class Podcast extends Model {
    * @param {Object} payload
    * @param {import('sequelize').Transaction} transaction
    */
-  static async createFromRequest(payload, transaction) {
+  static async createFromRequest(payload: PodcastCreateRequest, transaction?: Transaction) {
     const title = typeof payload.metadata.title === 'string' ? payload.metadata.title : null
     // cron expression validated in controller
     const autoDownloadSchedule = typeof payload.autoDownloadSchedule === 'string' ? payload.autoDownloadSchedule : null
-    const genres = Array.isArray(payload.metadata.genres) && payload.metadata.genres.every((g) => typeof g === 'string' && g.length) ? payload.metadata.genres : []
-    const tags = Array.isArray(payload.tags) && payload.tags.every((t) => typeof t === 'string' && t.length) ? payload.tags : []
+    const isArray: (value: unknown) => value is unknown[] = Array.isArray
+    const genres = isArray(payload.metadata.genres) && payload.metadata.genres.every((g): g is string => typeof g === 'string' && !!g.length) ? payload.metadata.genres : []
+    const tags = isArray(payload.tags) && payload.tags.every((t): t is string => typeof t === 'string' && !!t.length) ? payload.tags : []
 
     const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
     stringKeys.forEach((key) => {
@@ -124,8 +128,15 @@ class Podcast extends Model {
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Keep Sequelize's inherited static contract; application initialization uses one argument.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS, attributes: ModelAttributes<M, Partial<Attributes<M>>>, options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels always supplies the Sequelize instance.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Podcast, Podcast>(
       {
         id: {
           type: DataTypes.UUID,
@@ -162,12 +173,14 @@ class Podcast extends Model {
       }
     )
 
-    Podcast.addHook('afterDestroy', async (instance) => {
+    Podcast.addHook('afterDestroy', () => {
       libraryItemsPodcastFilters.clearCountCache('podcast', 'afterDestroy')
+      return Promise.resolve()
     })
 
-    Podcast.addHook('afterCreate', async (instance) => {
+    Podcast.addHook('afterCreate', () => {
       libraryItemsPodcastFilters.clearCountCache('podcast', 'afterCreate')
+      return Promise.resolve()
     })
   }
 
@@ -208,17 +221,18 @@ class Podcast extends Model {
    * @param {Object} payload - Old podcast object
    * @returns {Promise<boolean>}
    */
-  async updateFromRequest(payload) {
+  async updateFromRequest(payload: PodcastRequest | null | undefined) {
     if (!payload) return false
 
     let hasUpdates = false
 
     if (payload.metadata) {
+      const metadata = payload.metadata
       const stringKeys = ['title', 'author', 'releaseDate', 'feedUrl', 'imageUrl', 'description', 'itunesPageUrl', 'itunesId', 'itunesArtistId', 'language', 'type']
       stringKeys.forEach((key) => {
         // Convert numbers to strings
-        if (typeof payload.metadata[key] === 'number') {
-          payload.metadata[key] = String(payload.metadata[key])
+        if (typeof metadata[key] === 'number') {
+          metadata[key] = String(metadata[key])
         }
 
         let newKey = key
@@ -231,17 +245,19 @@ class Podcast extends Model {
         } else if (key === 'itunesPageUrl') {
           newKey = 'itunesPageURL'
         }
-        if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && payload.metadata[key] !== this[newKey]) {
+        // These aliases cover every field in stringKeys.
+        const propertyKey = newKey as PodcastStringKey
+        if ((typeof metadata[key] === 'string' || metadata[key] === null) && metadata[key] !== this[propertyKey]) {
           // Sanitize description HTML
-          if (key === 'description' && payload.metadata[key]) {
-            const sanitizedDescription = htmlSanitizer.sanitize(payload.metadata[key])
-            if (sanitizedDescription !== payload.metadata[key]) {
-              Logger.debug(`[Podcast] "${this.title}" Sanitized description from "${payload.metadata[key]}" to "${sanitizedDescription}"`)
-              payload.metadata[key] = sanitizedDescription
+          if (key === 'description' && metadata[key]) {
+            const sanitizedDescription = htmlSanitizer.sanitize(metadata[key])
+            if (sanitizedDescription !== metadata[key]) {
+              Logger.debug(`[Podcast] "${this.title}" Sanitized description from "${metadata[key]}" to "${sanitizedDescription}"`)
+              metadata[key] = sanitizedDescription
             }
           }
 
-          this[newKey] = payload.metadata[key] || null
+          this[propertyKey] = (metadata[key] as string | null) || null
 
           if (key === 'title') {
             this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
@@ -251,20 +267,22 @@ class Podcast extends Model {
         }
       })
 
-      if (payload.metadata.explicit !== undefined && payload.metadata.explicit !== this.explicit) {
-        this.explicit = !!payload.metadata.explicit
+      if (metadata.explicit !== undefined && metadata.explicit !== this.explicit) {
+        this.explicit = !!metadata.explicit
         hasUpdates = true
       }
 
-      if (Array.isArray(payload.metadata.genres) && !payload.metadata.genres.some((item) => typeof item !== 'string') && JSON.stringify(this.genres) !== JSON.stringify(payload.metadata.genres)) {
-        this.genres = payload.metadata.genres
+      if (Array.isArray(metadata.genres) && !metadata.genres.some((item) => typeof item !== 'string') && JSON.stringify(this.genres) !== JSON.stringify(metadata.genres)) {
+        // The preceding check rejects every non-string element.
+        this.genres = metadata.genres as string[]
         this.changed('genres', true)
         hasUpdates = true
       }
     }
 
     if (Array.isArray(payload.tags) && !payload.tags.some((item) => typeof item !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
-      this.tags = payload.tags
+      // The preceding check rejects every non-string element.
+      this.tags = payload.tags as string[]
       this.changed('tags', true)
       hasUpdates = true
     }
@@ -283,7 +301,7 @@ class Podcast extends Model {
       hasUpdates = true
     }
 
-    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload']
+    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload'] as const
     numberKeys.forEach((key) => {
       if (typeof payload[key] === 'number' && payload[key] !== this[key]) {
         this[key] = payload[key]
@@ -299,17 +317,17 @@ class Podcast extends Model {
     return hasUpdates
   }
 
-  checkCanDirectPlay(supportedMimeTypes, episodeId) {
+  checkCanDirectPlay(supportedMimeTypes: unknown, episodeId: string) {
     if (!Array.isArray(supportedMimeTypes)) {
       Logger.error(`[Podcast] checkCanDirectPlay: supportedMimeTypes is not an array`, supportedMimeTypes)
       return false
     }
-    const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+    const episode = this.podcastEpisodes!.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[Podcast] checkCanDirectPlay: episode not found`, episodeId)
       return false
     }
-    return supportedMimeTypes.includes(episode.audioFile.mimeType)
+    return supportedMimeTypes.includes(episode.audioFile!.mimeType)
   }
 
   /**
@@ -321,8 +339,8 @@ class Podcast extends Model {
    * @param {string} episodeId
    * @returns {import('./Book').AudioTrack[]}
    */
-  getTracklist(libraryItemId, episodeId) {
-    const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+  getTracklist(libraryItemId: string, episodeId: string) {
+    const episode = this.podcastEpisodes!.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[Podcast] getTracklist: episode not found`, episodeId)
       return []
@@ -337,8 +355,8 @@ class Podcast extends Model {
    * @param {string} episodeId
    * @returns {import('./PodcastEpisode').ChapterObject[]}
    */
-  getChapters(episodeId) {
-    const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+  getChapters(episodeId: string) {
+    const episode = this.podcastEpisodes!.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[Podcast] getChapters: episode not found`, episodeId)
       return []
@@ -347,8 +365,8 @@ class Podcast extends Model {
     return structuredClone(episode.chapters) || []
   }
 
-  getPlaybackTitle(episodeId) {
-    const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+  getPlaybackTitle(episodeId: string) {
+    const episode = this.podcastEpisodes!.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[Podcast] getPlaybackTitle: episode not found`, episodeId)
       return ''
@@ -361,8 +379,8 @@ class Podcast extends Model {
     return this.author
   }
 
-  getPlaybackDuration(episodeId) {
-    const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+  getPlaybackDuration(episodeId: string) {
+    const episode = this.podcastEpisodes!.find((ep) => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[Podcast] getPlaybackDuration: episode not found`, episodeId)
       return 0
@@ -376,9 +394,9 @@ class Podcast extends Model {
    * @returns {number} - Unix timestamp
    */
   getLatestEpisodePublishedAt() {
-    return this.podcastEpisodes.reduce((latest, episode) => {
-      if (episode.publishedAt?.valueOf() > latest) {
-        return episode.publishedAt.valueOf()
+    return this.podcastEpisodes!.reduce((latest, episode) => {
+      if (Number(episode.publishedAt?.valueOf()) > latest) {
+        return episode.publishedAt!.valueOf()
       }
       return latest
     }, 0)
@@ -390,10 +408,10 @@ class Podcast extends Model {
    * @param {import('../utils/podcastUtils').RssPodcastEpisode} feedEpisode - object from rss feed
    * @returns {boolean}
    */
-  checkHasEpisodeByFeedEpisode(feedEpisode) {
+  checkHasEpisodeByFeedEpisode(feedEpisode: RssPodcastEpisode) {
     const guid = feedEpisode.guid
     const url = feedEpisode.enclosure.url
-    return this.podcastEpisodes.some((ep) => ep.checkMatchesGuidOrEnclosureUrl(guid, url))
+    return this.podcastEpisodes!.some((ep) => ep.checkMatchesGuidOrEnclosureUrl(guid, url))
   }
 
   /**
@@ -418,7 +436,7 @@ class Podcast extends Model {
   }
 
   oldMetadataToJSONExpanded() {
-    const oldMetadataJSON = this.oldMetadataToJSON()
+    const oldMetadataJSON: ExpandedMetadata = this.oldMetadataToJSON()
     oldMetadataJSON.titleIgnorePrefix = getTitlePrefixAtEnd(this.title)
     return oldMetadataJSON
   }
@@ -428,7 +446,7 @@ class Podcast extends Model {
    *
    * @param {string} libraryItemId
    */
-  toOldJSON(libraryItemId) {
+  toOldJSON(libraryItemId: string) {
     if (!libraryItemId) {
       throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
     }
@@ -479,7 +497,7 @@ class Podcast extends Model {
    *
    * @param {string} libraryItemId
    */
-  toOldJSONExpanded(libraryItemId) {
+  toOldJSONExpanded(libraryItemId: string) {
     if (!libraryItemId) {
       throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
     }
@@ -495,4 +513,8 @@ class Podcast extends Model {
   }
 }
 
-module.exports = Podcast
+declare namespace Podcast {
+  export type { PodcastExpanded }
+}
+
+export = Podcast
