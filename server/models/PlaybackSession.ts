@@ -1,60 +1,113 @@
-const { DataTypes, Model } = require('sequelize')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BelongsToGetAssociationMixin, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize, UpsertOptions, WhereOptions } from 'sequelize'
+import type Book from './Book'
+import type PodcastEpisode from './PodcastEpisode'
+import type Device from './Device'
+import type DeviceInfo from '../objects/DeviceInfo'
 
-const oldPlaybackSession = require('../objects/PlaybackSession')
+import oldPlaybackSession from '../objects/PlaybackSession'
 
-class PlaybackSession extends Model {
-  constructor(values, options) {
+type PlaybackSessionAttributes = {
+  id: string | null
+  mediaItemId: string | null
+  mediaItemType: string | null
+  displayTitle: string | null
+  displayAuthor: string | null
+  duration: number | null
+  playMethod: number | null
+  mediaPlayer: string | null
+  startTime: number | null
+  currentTime: number | null
+  serverVersion: string | null
+  coverPath: string | null
+  timeListening: number | null
+  mediaMetadata: unknown
+  date: string | null
+  dayOfWeek: string | null
+  extraData: { libraryItemId?: string | null } | null
+  userId?: string | null
+  deviceId?: string | null
+  libraryId?: string | null
+  updatedAt?: Date | number | string | null
+  createdAt?: Date | number | string | null
+  book?: Book | null
+  podcastEpisode?: PodcastEpisode | null
+  mediaItem?: Book | PodcastEpisode | null
+  device?: Device | null
+}
+
+type PlaybackSessionCreation = Omit<Optional<PlaybackSessionAttributes, 'id' | 'mediaItemId' | 'mediaItemType' | 'displayTitle' | 'displayAuthor' | 'duration' | 'playMethod' | 'mediaPlayer' | 'startTime' | 'currentTime' | 'serverVersion' | 'coverPath' | 'timeListening' | 'mediaMetadata' | 'date' | 'dayOfWeek' | 'extraData' | 'userId' | 'deviceId' | 'libraryId' | 'updatedAt' | 'createdAt'>, 'createdAt' | 'updatedAt'> & {
+  createdAt?: Date | number | string | null
+  updatedAt?: Date | number | string | null
+}
+
+// Legacy objects remain JavaScript; describe the persisted fields at this boundary.
+type LegacyPlaybackSessionData = {
+  id?: string | null
+  episodeId?: string | null
+  bookId?: string | null
+  libraryId?: string | null
+  libraryItemId?: string | null
+  displayTitle?: string | null
+  displayAuthor?: string | null
+  duration?: number | null
+  playMethod?: number | null
+  mediaPlayer?: string | null
+  startTime?: number | null
+  currentTime?: number | null
+  serverVersion?: string | null
+  startedAt?: number | null
+  updatedAt?: number | null
+  userId?: string | null
+  deviceInfo?: DeviceInfo | null
+  timeListening?: number | null
+  coverPath?: string | null
+  mediaMetadata?: unknown
+  date?: string | null
+  dayOfWeek?: string | null
+}
+
+class PlaybackSession extends Model<PlaybackSessionAttributes, PlaybackSessionCreation> {
+  // Query methods are used after Database.buildModels initializes the model.
+  declare static sequelize: Sequelize
+  declare id: string | null
+  declare mediaItemId: string | null
+  declare mediaItemType: string | null
+  declare displayTitle: string | null
+  declare displayAuthor: string | null
+  declare duration: number | null
+  declare playMethod: number | null
+  declare mediaPlayer: string | null
+  declare startTime: number | null
+  declare currentTime: number | null
+  declare serverVersion: string | null
+  declare coverPath: string | null
+  declare timeListening: number | null
+  declare mediaMetadata: unknown
+  declare date: string | null
+  declare dayOfWeek: string | null
+  declare extraData: { libraryItemId?: string | null } | null
+  declare userId: string | null
+  declare deviceId: string | null
+  declare libraryId: string | null
+  declare updatedAt: Date
+  declare createdAt: Date
+  declare book?: Book | null
+  declare podcastEpisode?: PodcastEpisode | null
+  declare mediaItem?: Book | PodcastEpisode | null
+  declare device?: Device | null
+  declare getBook: BelongsToGetAssociationMixin<Book>
+  declare getPodcastEpisode: BelongsToGetAssociationMixin<PodcastEpisode>
+
+
+  constructor(values?: PlaybackSessionCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {UUIDV4} */
-    this.id
-    /** @type {UUIDV4} */
-    this.mediaItemId
-    /** @type {string} */
-    this.mediaItemType
-    /** @type {string} */
-    this.displayTitle
-    /** @type {string} */
-    this.displayAuthor
-    /** @type {number} */
-    this.duration
-    /** @type {number} */
-    this.playMethod
-    /** @type {string} */
-    this.mediaPlayer
-    /** @type {number} */
-    this.startTime
-    /** @type {number} */
-    this.currentTime
-    /** @type {string} */
-    this.serverVersion
-    /** @type {string} */
-    this.coverPath
-    /** @type {number} */
-    this.timeListening
-    /** @type {Object} */
-    this.mediaMetadata
-    /** @type {string} */
-    this.date
-    /** @type {string} */
-    this.dayOfWeek
-    /** @type {Object} */
-    this.extraData
-    /** @type {UUIDV4} */
-    this.userId
-    /** @type {UUIDV4} */
-    this.deviceId
-    /** @type {UUIDV4} */
-    this.libraryId
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {Date} */
-    this.createdAt
   }
 
-  static async getOldPlaybackSessions(where = null) {
+  static async getOldPlaybackSessions(where: WhereOptions<PlaybackSessionAttributes> | null = null) {
     const playbackSessions = await this.findAll({
-      where,
+      // Sequelize treats a null where clause as no filter.
+      where: where as WhereOptions<PlaybackSessionAttributes>,
       include: [
         {
           model: this.sequelize.models.device
@@ -64,7 +117,7 @@ class PlaybackSession extends Model {
     return playbackSessions.map((session) => this.getOldPlaybackSession(session))
   }
 
-  static async getById(sessionId) {
+  static async getById(sessionId: string) {
     const playbackSession = await this.findByPk(sessionId, {
       include: [
         {
@@ -76,7 +129,7 @@ class PlaybackSession extends Model {
     return this.getOldPlaybackSession(playbackSession)
   }
 
-  static getOldPlaybackSession(playbackSessionExpanded) {
+  static getOldPlaybackSession(playbackSessionExpanded: PlaybackSession) {
     const isPodcastEpisode = playbackSessionExpanded.mediaItemType === 'podcastEpisode'
 
     return new oldPlaybackSession({
@@ -107,7 +160,7 @@ class PlaybackSession extends Model {
     })
   }
 
-  static removeById(sessionId) {
+  static removeById(sessionId: string) {
     return this.destroy({
       where: {
         id: sessionId
@@ -115,14 +168,14 @@ class PlaybackSession extends Model {
     })
   }
 
-  static createFromOld(oldPlaybackSession) {
+  static createFromOld(oldPlaybackSession: LegacyPlaybackSessionData) {
     const playbackSession = this.getFromOld(oldPlaybackSession)
-    return this.upsert(playbackSession, {
-      silent: true
-    })
+    // Preserve the runtime silent option, omitted by Sequelize's UpsertOptions type.
+    const options: UpsertOptions<PlaybackSessionAttributes> & { silent: boolean } = { silent: true }
+    return this.upsert(playbackSession, options)
   }
 
-  static updateFromOld(oldPlaybackSession) {
+  static updateFromOld(oldPlaybackSession: LegacyPlaybackSessionData) {
     const playbackSession = this.getFromOld(oldPlaybackSession)
     return this.update(playbackSession, {
       where: {
@@ -132,7 +185,7 @@ class PlaybackSession extends Model {
     })
   }
 
-  static getFromOld(oldPlaybackSession) {
+  static getFromOld(oldPlaybackSession: LegacyPlaybackSessionData): PlaybackSessionCreation {
     return {
       id: oldPlaybackSession.id,
       mediaItemId: oldPlaybackSession.episodeId || oldPlaybackSession.bookId,
@@ -161,18 +214,30 @@ class PlaybackSession extends Model {
     }
   }
 
-  getMediaItem(options) {
+  getMediaItem(options?: FindOptions) {
     if (!this.mediaItemType) return Promise.resolve(null)
     const mixinMethodName = `get${this.sequelize.uppercaseFirst(this.mediaItemType)}`
-    return this[mixinMethodName](options)
+    // The persisted discriminator selects one of the two association mixins.
+    return this[mixinMethodName as 'getBook' | 'getPodcastEpisode'](options)
   }
 
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Retain Sequelize's static signature for its polymorphic model methods.
+  // Application code uses the single-argument initializer, as before migration.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS,
+    attributes: ModelAttributes<M, Partial<Attributes<M>>>,
+    options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels supplies a Sequelize instance; the other overload preserves
+    // the inherited static contract required by Sequelize's generic query methods.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof PlaybackSession, PlaybackSession>(
       {
         id: {
           type: DataTypes.UUID,
@@ -231,10 +296,12 @@ class PlaybackSession extends Model {
     })
     PlaybackSession.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-    PlaybackSession.addHook('afterFind', (findResult) => {
+    PlaybackSession.addHook('afterFind', (findResult: PlaybackSession | readonly PlaybackSession[] | null) => {
       if (!findResult) return
 
-      if (!Array.isArray(findResult)) findResult = [findResult]
+      // Sequelize types results as readonly arrays; retain Array.isArray's runtime check.
+      const isArray: (value: PlaybackSession | readonly PlaybackSession[]) => value is readonly PlaybackSession[] = Array.isArray
+      if (!isArray(findResult)) findResult = [findResult]
 
       for (const instance of findResult) {
         if (instance.mediaItemType === 'book' && instance.book !== undefined) {
@@ -254,4 +321,4 @@ class PlaybackSession extends Model {
   }
 }
 
-module.exports = PlaybackSession
+export = PlaybackSession
