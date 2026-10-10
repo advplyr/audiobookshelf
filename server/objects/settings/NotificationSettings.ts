@@ -1,9 +1,34 @@
-const Logger = require('../../Logger')
-const Notification = require('../Notification')
-const { isNullOrNaN } = require('../../utils')
+import Logger from '../../Logger'
+import Notification from '../Notification'
+import utils from '../../utils'
+
+const { isNullOrNaN } = utils
+
+type NotificationSettingsData = {
+  appriseType?: string
+  appriseApiUrl?: string | null
+  notifications?: NonNullable<ConstructorParameters<typeof Notification>[0]>[] | null
+  maxFailedAttempts?: number
+  maxNotificationQueue?: number
+  notificationDelay?: number
+}
+
+type NotificationSettingsUpdate = {
+  appriseApiUrl?: string | null
+  maxFailedAttempts?: unknown
+  maxNotificationQueue?: unknown
+}
 
 class NotificationSettings {
-  constructor(settings = null) {
+  declare id: string
+  declare appriseType: string | undefined
+  declare appriseApiUrl: string | null
+  declare notifications: Notification[]
+  declare maxFailedAttempts: number
+  declare maxNotificationQueue: number
+  declare notificationDelay: number
+
+  constructor(settings: NotificationSettingsData | null = null) {
     this.id = 'notification-settings'
     this.appriseType = 'api'
     this.appriseApiUrl = null
@@ -17,7 +42,7 @@ class NotificationSettings {
     }
   }
 
-  construct(settings) {
+  construct(settings: NotificationSettingsData) {
     this.appriseType = settings.appriseType
     this.appriseApiUrl = settings.appriseApiUrl || null
     this.notifications = (settings.notifications || []).map((n) => new Notification(n))
@@ -46,7 +71,7 @@ class NotificationSettings {
    * @param {string} eventName
    * @returns {boolean} - TRUE if there are active notifications for the event
    */
-  getHasActiveNotificationsForEvent(eventName) {
+  getHasActiveNotificationsForEvent(eventName: string) {
     return this.notifications.some((n) => n.eventName === eventName && n.enabled)
   }
 
@@ -54,15 +79,15 @@ class NotificationSettings {
    * @param {string} eventName
    * @returns {Notification[]}
    */
-  getActiveNotificationsForEvent(eventName) {
+  getActiveNotificationsForEvent(eventName: string) {
     return this.notifications.filter((n) => n.eventName === eventName && n.enabled)
   }
 
-  getNotification(id) {
+  getNotification(id: string) {
     return this.notifications.find((n) => n.id === id)
   }
 
-  removeNotification(id) {
+  removeNotification(id: string) {
     if (this.notifications.some((n) => n.id === id)) {
       this.notifications = this.notifications.filter((n) => n.id !== id)
       return true
@@ -70,7 +95,7 @@ class NotificationSettings {
     return false
   }
 
-  update(payload) {
+  update(payload: NotificationSettingsUpdate | null | undefined) {
     if (!payload) return false
 
     var hasUpdates = false
@@ -94,7 +119,7 @@ class NotificationSettings {
     return hasUpdates
   }
 
-  createNotification(payload) {
+  createNotification(payload: Parameters<Notification['setData']>[0] | null | undefined) {
     if (!payload) return false
     if (!payload.eventName || !payload.urls.length) return false
 
@@ -104,7 +129,7 @@ class NotificationSettings {
     return true
   }
 
-  updateNotification(payload) {
+  updateNotification(payload: (Parameters<Notification['update']>[0] & { id?: string }) | null | undefined) {
     if (!payload) return false
     const notification = this.notifications.find((n) => n.id === payload.id)
     if (!notification) {
@@ -115,4 +140,4 @@ class NotificationSettings {
     return notification.update(payload)
   }
 }
-module.exports = NotificationSettings
+export = NotificationSettings
