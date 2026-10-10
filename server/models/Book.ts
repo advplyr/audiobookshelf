@@ -1,144 +1,121 @@
-const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
-const { getTitlePrefixAtEnd, getTitleIgnorePrefix } = require('../utils')
-const parseNameString = require('../utils/parsers/parseNameString')
-const htmlSanitizer = require('../utils/htmlSanitizer')
-const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
-const SocketAuthority = require('../SocketAuthority')
+import { DataTypes, Model } from 'sequelize'
+import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type Author from './Author'
+import type Series from './Series'
+import type BookSeries from './BookSeries'
+import type BookAuthor from './BookAuthor'
+import type LibraryItem from './LibraryItem'
+import type AudioFile from '../objects/files/AudioFile'
+import type EBookFile from '../objects/files/EBookFile'
+import Logger from '../Logger'
+import { getTitlePrefixAtEnd, getTitleIgnorePrefix } from '../utils'
+import * as parseNameString from '../utils/parsers/parseNameString'
+import htmlSanitizer from '../utils/htmlSanitizer'
+import libraryItemsBookFilters from '../utils/queries/libraryItemsBookFilters'
+import SocketAuthority from '../SocketAuthority'
 
-/**
- * @typedef EBookFileObject
- * @property {string} ino
- * @property {string} ebookFormat
- * @property {number} addedAt
- * @property {number} updatedAt
- * @property {{filename:string, ext:string, path:string, relPath:strFing, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
- */
+type AudioFileJSON = ReturnType<AudioFile['toJSON']>
+// Historical file JSON may omit fields added by later versions.
+type AudioFileObject = Partial<Omit<AudioFileJSON, 'metadata'>> & { metadata: Partial<AudioFileJSON['metadata']> }
+type EBookFileJSON = ReturnType<EBookFile['toJSON']>
+type StoredEBookFile = Partial<Omit<EBookFileJSON, 'metadata'>> & { metadata: Partial<EBookFileJSON['metadata']> }
+// Scanners pass a complete file to the ebook parsers; persisted historical JSON can be partial.
+type EBookFileObject = {
+  ino: string
+  ebookFormat: string
+  addedAt: number
+  updatedAt: number
+  metadata: { filename: string; ext: string; path: string; relPath: string; size: number; mtimeMs: number; ctimeMs: number; birthtimeMs: number }
+}
+type ChapterObject = { id: number; start: number; end: number; title: string }
+type AudioTrackProperties = { title: string | null | undefined; contentUrl: string; startOffset: number }
+type AudioTrack = AudioFileObject & AudioTrackProperties
+type SeriesExpandedProperties = { bookSeries?: BookSeries }
+type SeriesExpanded = Series & SeriesExpandedProperties
+type BookExpandedProperties = { authors: Author[]; series: SeriesExpanded[] }
+type BookExpanded = Book & BookExpandedProperties
+type BookExpandedWithLibraryItemProperties = { libraryItem: LibraryItem }
+type BookExpandedWithLibraryItem = BookExpanded & BookExpandedWithLibraryItemProperties
+type BookRequest = { metadata?: Record<string, unknown>; tags?: unknown }
+type ExpandedMetadata = ReturnType<Book['oldMetadataToJSON']> & {
+  titleIgnorePrefix?: string | null | undefined
+  authorName?: string
+  authorNameLF?: string
+  narratorName?: string
+  seriesName?: string
+  descriptionPlain?: string | null
+}
+type BookAttributes = {
+  id: string
+  title: string | null
+  titleIgnorePrefix: string | null
+  subtitle: string | null
+  publishedYear: string | null
+  publishedDate: string | null
+  publisher: string | null
+  description: string | null
+  isbn: string | null
+  asin: string | null
+  language: string | null
+  coverPath: string | null
+  explicit: boolean | null
+  abridged: boolean | null
+  duration: number | null
+  narrators: string[] | null
+  tags: string[] | null
+  genres: string[] | null
+  audioFiles: AudioFileObject[] | null
+  ebookFile: StoredEBookFile | null
+  chapters: ChapterObject[] | null
+  createdAt?: Date
+  updatedAt?: Date
+}
+type BookCreation = Optional<BookAttributes, keyof BookAttributes>
 
-/**
- * @typedef ChapterObject
- * @property {number} id
- * @property {number} start
- * @property {number} end
- * @property {string} title
- */
+class Book extends Model<BookAttributes, BookCreation> {
+  declare id: string
+  declare title: string | null
+  declare titleIgnorePrefix: string | null
+  declare subtitle: string | null
+  declare publishedYear: string | null
+  declare publishedDate: string | null
+  declare publisher: string | null
+  declare description: string | null
+  declare isbn: string | null
+  declare asin: string | null
+  declare language: string | null
+  declare coverPath: string | null
+  declare explicit: boolean | null
+  declare abridged: boolean | null
+  declare duration: number | null
+  declare narrators: string[] | null
+  declare tags: string[] | null
+  declare genres: string[] | null
+  declare audioFiles: AudioFileObject[] | null
+  declare ebookFile: StoredEBookFile | null
+  declare chapters: ChapterObject[] | null
+  declare createdAt: Date
+  declare updatedAt: Date
+  declare authors?: Author[]
+  declare series?: SeriesExpanded[]
 
-/**
- * @typedef SeriesExpandedProperties
- * @property {{sequence:string}} bookSeries
- *
- * @typedef {import('./Series') & SeriesExpandedProperties} SeriesExpanded
- *
- * @typedef BookExpandedProperties
- * @property {import('./Author')[]} authors
- * @property {SeriesExpanded[]} series
- *
- * @typedef {Book & BookExpandedProperties} BookExpanded
- *
- * Collections use BookExpandedWithLibraryItem
- * @typedef BookExpandedWithLibraryItemProperties
- * @property {import('./LibraryItem')} libraryItem
- *
- * @typedef {BookExpanded & BookExpandedWithLibraryItemProperties} BookExpandedWithLibraryItem
- */
-
-/**
- * @typedef AudioFileObject
- * @property {number} index
- * @property {string} ino
- * @property {{filename:string, ext:string, path:string, relPath:string, size:number, mtimeMs:number, ctimeMs:number, birthtimeMs:number}} metadata
- * @property {number} addedAt
- * @property {number} updatedAt
- * @property {number} trackNumFromMeta
- * @property {number} discNumFromMeta
- * @property {number} trackNumFromFilename
- * @property {number} discNumFromFilename
- * @property {boolean} manuallyVerified
- * @property {string} format
- * @property {number} duration
- * @property {number} bitRate
- * @property {string} language
- * @property {string} codec
- * @property {string} timeBase
- * @property {number} channels
- * @property {string} channelLayout
- * @property {ChapterObject[]} chapters
- * @property {Object} metaTags
- * @property {string} mimeType
- *
- * @typedef AudioTrackProperties
- * @property {string} title
- * @property {string} contentUrl
- * @property {number} startOffset
- *
- * @typedef {AudioFileObject & AudioTrackProperties} AudioTrack
- */
-
-class Book extends Model {
-  constructor(values, options) {
+  constructor(values?: BookCreation, options?: BuildOptions) {
     super(values, options)
-
-    /** @type {string} */
-    this.id
-    /** @type {string} */
-    this.title
-    /** @type {string} */
-    this.titleIgnorePrefix
-    /** @type {string} */
-    this.subtitle
-    /** @type {string} */
-    this.publishedYear
-    /** @type {string} */
-    this.publishedDate
-    /** @type {string} */
-    this.publisher
-    /** @type {string} */
-    this.description
-    /** @type {string} */
-    this.isbn
-    /** @type {string} */
-    this.asin
-    /** @type {string} */
-    this.language
-    /** @type {boolean} */
-    this.explicit
-    /** @type {boolean} */
-    this.abridged
-    /** @type {string} */
-    this.coverPath
-    /** @type {number} */
-    this.duration
-    /** @type {string[]} */
-    this.narrators
-    /** @type {AudioFileObject[]} */
-    this.audioFiles
-    /** @type {EBookFileObject} */
-    this.ebookFile
-    /** @type {ChapterObject[]} */
-    this.chapters
-    /** @type {string[]} */
-    this.tags
-    /** @type {string[]} */
-    this.genres
-    /** @type {Date} */
-    this.updatedAt
-    /** @type {Date} */
-    this.createdAt
-
-    // Expanded properties
-
-    /** @type {import('./Author')[]} - optional if expanded */
-    this.authors
-    /** @type {import('./Series')[]} - optional if expanded */
-    this.series
   }
 
   /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
-  static init(sequelize) {
-    super.init(
+  static init(sequelize: Sequelize): void
+  // Keep Sequelize's inherited static contract; application initialization uses one argument.
+  static init<MS extends ModelStatic<Model>, M extends InstanceType<MS>>(
+    this: MS, attributes: ModelAttributes<M, Partial<Attributes<M>>>, options: InitOptions<M>
+  ): MS
+  static init(sequelizeOrAttributes: Sequelize | ModelAttributes): void | ModelStatic<Model> {
+    // Database.buildModels always supplies the Sequelize instance.
+    const sequelize = sequelizeOrAttributes as Sequelize
+    super.init<typeof Book, Book>(
       {
         id: {
           type: DataTypes.UUID,
@@ -195,12 +172,14 @@ class Book extends Model {
       }
     )
 
-    Book.addHook('afterDestroy', async (instance) => {
+    Book.addHook('afterDestroy', () => {
       libraryItemsBookFilters.clearCountCache('afterDestroy')
+      return Promise.resolve()
     })
 
-    Book.addHook('afterCreate', async (instance) => {
+    Book.addHook('afterCreate', () => {
       libraryItemsBookFilters.clearCountCache('afterCreate')
+      return Promise.resolve()
     })
   }
 
@@ -258,7 +237,8 @@ class Book extends Model {
   }
 
   get includedAudioFiles() {
-    return this.audioFiles.filter((af) => !af.exclude)
+    // File-dependent operations require loaded audio file JSON, as before migration.
+    return this.audioFiles!.filter((af) => !af.exclude)
   }
 
   get hasMediaFiles() {
@@ -275,7 +255,7 @@ class Book extends Model {
    * @param {string[]} supportedMimeTypes
    * @returns {boolean}
    */
-  checkCanDirectPlay(supportedMimeTypes) {
+  checkCanDirectPlay(supportedMimeTypes: unknown) {
     if (!Array.isArray(supportedMimeTypes)) {
       Logger.error(`[Book] checkCanDirectPlay: supportedMimeTypes is not an array`, supportedMimeTypes)
       return false
@@ -290,14 +270,15 @@ class Book extends Model {
    * @param {string} libraryItemId
    * @returns {AudioTrack[]}
    */
-  getTracklist(libraryItemId) {
+  getTracklist(libraryItemId: string) {
     let startOffset = 0
     return this.includedAudioFiles.map((af) => {
-      const track = structuredClone(af)
+      const track = structuredClone(af) as AudioTrack
       track.title = af.metadata.filename
       track.startOffset = startOffset
       track.contentUrl = `/api/items/${libraryItemId}/file/${track.ino}`
-      startOffset += track.duration
+      // Retain native addition for legacy JSON (null, missing fields and string coercion).
+      startOffset += track.duration as number
       return track
     })
   }
@@ -329,9 +310,10 @@ class Book extends Model {
    */
   get size() {
     let total = 0
-    this.audioFiles.forEach((af) => (total += af.metadata.size))
+    // Keep native addition rather than normalizing historical JSON values.
+    this.audioFiles!.forEach((af) => (total += af.metadata.size as number))
     if (this.ebookFile) {
-      total += this.ebookFile.metadata.size
+      total += this.ebookFile.metadata.size as number
     }
     return total
   }
@@ -342,9 +324,9 @@ class Book extends Model {
       chapters: this.chapters?.map((c) => ({ ...c })) || [],
       title: this.title,
       subtitle: this.subtitle,
-      authors: this.authors.map((a) => a.name),
+      authors: this.authors!.map((a) => a.name),
       narrators: this.narrators,
-      series: this.series.map((se) => {
+      series: this.series!.map((se) => {
         const sequence = se.bookSeries?.sequence || ''
         if (!sequence) return se.name
         return `${se.name} #${sequence}`
@@ -367,29 +349,30 @@ class Book extends Model {
    * @param {Object} payload - old book object
    * @returns {Promise<boolean>}
    */
-  async updateFromRequest(payload) {
+  async updateFromRequest(payload: BookRequest | null | undefined) {
     if (!payload) return false
 
     let hasUpdates = false
 
     if (payload.metadata) {
-      const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language']
+      const metadata = payload.metadata
+      const metadataStringKeys = ['title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language'] as const
       metadataStringKeys.forEach((key) => {
-        if (typeof payload.metadata[key] == 'number') {
-          payload.metadata[key] = String(payload.metadata[key])
+        if (typeof metadata[key] == 'number') {
+          metadata[key] = String(metadata[key])
         }
 
-        if ((typeof payload.metadata[key] === 'string' || payload.metadata[key] === null) && this[key] !== payload.metadata[key]) {
+        if ((typeof metadata[key] === 'string' || metadata[key] === null) && this[key] !== metadata[key]) {
           // Sanitize description HTML
-          if (key === 'description' && payload.metadata[key]) {
-            const sanitizedDescription = htmlSanitizer.sanitize(payload.metadata[key])
-            if (sanitizedDescription !== payload.metadata[key]) {
-              Logger.debug(`[Book] "${this.title}" Sanitized description from "${payload.metadata[key]}" to "${sanitizedDescription}"`)
-              payload.metadata[key] = sanitizedDescription
+          if (key === 'description' && metadata[key]) {
+            const sanitizedDescription = htmlSanitizer.sanitize(metadata[key])
+            if (sanitizedDescription !== metadata[key]) {
+              Logger.debug(`[Book] "${this.title}" Sanitized description from "${metadata[key]}" to "${sanitizedDescription}"`)
+              metadata[key] = sanitizedDescription
             }
           }
 
-          this[key] = payload.metadata[key] || null
+          this[key] = (metadata[key] as string | null) || null
 
           if (key === 'title') {
             this.titleIgnorePrefix = getTitleIgnorePrefix(this.title)
@@ -398,18 +381,19 @@ class Book extends Model {
           hasUpdates = true
         }
       })
-      if (payload.metadata.explicit !== undefined && this.explicit !== !!payload.metadata.explicit) {
-        this.explicit = !!payload.metadata.explicit
+      if (metadata.explicit !== undefined && this.explicit !== !!metadata.explicit) {
+        this.explicit = !!metadata.explicit
         hasUpdates = true
       }
-      if (payload.metadata.abridged !== undefined && this.abridged !== !!payload.metadata.abridged) {
-        this.abridged = !!payload.metadata.abridged
+      if (metadata.abridged !== undefined && this.abridged !== !!metadata.abridged) {
+        this.abridged = !!metadata.abridged
         hasUpdates = true
       }
-      const arrayOfStringsKeys = ['narrators', 'genres']
+      const arrayOfStringsKeys = ['narrators', 'genres'] as const
       arrayOfStringsKeys.forEach((key) => {
-        if (Array.isArray(payload.metadata[key]) && !payload.metadata[key].some((item) => typeof item !== 'string') && JSON.stringify(this[key]) !== JSON.stringify(payload.metadata[key])) {
-          this[key] = payload.metadata[key]
+        if (Array.isArray(metadata[key]) && !metadata[key].some((item) => typeof item !== 'string') && JSON.stringify(this[key]) !== JSON.stringify(metadata[key])) {
+          // Every array element was checked above.
+          this[key] = metadata[key] as string[]
           this.changed(key, true)
           hasUpdates = true
         }
@@ -417,7 +401,8 @@ class Book extends Model {
     }
 
     if (Array.isArray(payload.tags) && !payload.tags.some((tag) => typeof tag !== 'string') && JSON.stringify(this.tags) !== JSON.stringify(payload.tags)) {
-      this.tags = payload.tags
+      // Every array element was checked above.
+      this.tags = payload.tags as string[]
       this.changed('tags', true)
       hasUpdates = true
     }
@@ -437,7 +422,7 @@ class Book extends Model {
    * @param {string} libraryId
    * @returns {Promise<{authorsRemoved: import('./Author')[], authorsAdded: import('./Author')[]}>}
    */
-  async updateAuthorsFromRequest(authors, libraryId) {
+  async updateAuthorsFromRequest(authors: string[] | null | undefined, libraryId: string) {
     if (!Array.isArray(authors)) return null
 
     if (!this.authors) {
@@ -445,14 +430,14 @@ class Book extends Model {
     }
 
     /** @type {typeof import('./Author')} */
-    const authorModel = this.sequelize.models.author
+    const authorModel = this.sequelize.models.author as typeof Author
 
     /** @type {typeof import('./BookAuthor')} */
-    const bookAuthorModel = this.sequelize.models.bookAuthor
+    const bookAuthorModel = this.sequelize.models.bookAuthor as typeof BookAuthor
 
     const authorsCleaned = authors.map((a) => a.toLowerCase()).filter((a) => a)
-    const authorsRemoved = this.authors.filter((au) => !authorsCleaned.includes(au.name.toLowerCase()))
-    const newAuthorNames = authors.filter((a) => !this.authors.some((au) => au.name.toLowerCase() === a.toLowerCase()))
+    const authorsRemoved = this.authors.filter((au) => !authorsCleaned.includes(au.name!.toLowerCase()))
+    const newAuthorNames = authors.filter((a) => !this.authors!.some((au) => au.name!.toLowerCase() === a.toLowerCase()))
 
     for (const author of authorsRemoved) {
       await bookAuthorModel.removeByIds(author.id, this.id)
@@ -463,7 +448,7 @@ class Book extends Model {
       Logger.debug(`[Book] "${this.title}" Removed author "${author.name}"`)
       this.authors = this.authors.filter((au) => au.id !== author.id)
     }
-    const authorsAdded = []
+    const authorsAdded: Author[] = []
     for (const authorName of newAuthorNames) {
       const { author, created } = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
       await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
@@ -492,7 +477,7 @@ class Book extends Model {
    * @param {string} libraryId
    * @returns {Promise<{seriesRemoved: import('./Series')[], seriesAdded: import('./Series')[], hasUpdates: boolean}>}
    */
-  async updateSeriesFromRequest(seriesObjects, libraryId) {
+  async updateSeriesFromRequest(seriesObjects: { name: string; sequence?: unknown }[] | null | undefined, libraryId: string) {
     if (!Array.isArray(seriesObjects) || seriesObjects.some((se) => !se.name || typeof se.name !== 'string')) return null
 
     if (!this.series) {
@@ -500,28 +485,28 @@ class Book extends Model {
     }
 
     /** @type {typeof import('./Series')} */
-    const seriesModel = this.sequelize.models.series
+    const seriesModel = this.sequelize.models.series as typeof Series
 
     /** @type {typeof import('./BookSeries')} */
-    const bookSeriesModel = this.sequelize.models.bookSeries
+    const bookSeriesModel = this.sequelize.models.bookSeries as typeof BookSeries
 
     const seriesNamesCleaned = seriesObjects.map((se) => se.name.toLowerCase())
-    const seriesRemoved = this.series.filter((se) => !seriesNamesCleaned.includes(se.name.toLowerCase()))
-    const seriesAdded = []
+    const seriesRemoved = this.series.filter((se) => !seriesNamesCleaned.includes(se.name!.toLowerCase()))
+    const seriesAdded: SeriesExpanded[] = []
     let hasUpdates = false
     for (const seriesObj of seriesObjects) {
       const seriesObjSequence = typeof seriesObj.sequence === 'string' ? seriesObj.sequence : null
 
-      const existingSeries = this.series.find((se) => se.name.toLowerCase() === seriesObj.name.toLowerCase())
+      const existingSeries = this.series.find((se) => se.name!.toLowerCase() === seriesObj.name.toLowerCase())
       if (existingSeries) {
-        if (existingSeries.bookSeries.sequence !== seriesObjSequence) {
-          existingSeries.bookSeries.sequence = seriesObjSequence
-          await existingSeries.bookSeries.save()
+        if (existingSeries.bookSeries!.sequence !== seriesObjSequence) {
+          existingSeries.bookSeries!.sequence = seriesObjSequence
+          await existingSeries.bookSeries!.save()
           hasUpdates = true
           Logger.debug(`[Book] "${this.title}" Updated series "${existingSeries.name}" sequence ${seriesObjSequence}`)
         }
       } else {
-        const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
+        const series: SeriesExpanded = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
         series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
         this.series.push(series)
         seriesAdded.push(series)
@@ -548,8 +533,8 @@ class Book extends Model {
    * Old model kept metadata in a separate object
    */
   oldMetadataToJSON() {
-    const authors = this.authors.map((au) => ({ id: au.id, name: au.name }))
-    const series = this.series.map((se) => ({ id: se.id, name: se.name, sequence: se.bookSeries.sequence }))
+    const authors = this.authors!.map((au) => ({ id: au.id, name: au.name }))
+    const series = this.series!.map((se) => ({ id: se.id, name: se.name, sequence: se.bookSeries!.sequence }))
     return {
       title: this.title,
       subtitle: this.subtitle,
@@ -592,7 +577,7 @@ class Book extends Model {
   }
 
   oldMetadataToJSONExpanded() {
-    const oldMetadataJSON = this.oldMetadataToJSON()
+    const oldMetadataJSON: ExpandedMetadata = this.oldMetadataToJSON()
     oldMetadataJSON.titleIgnorePrefix = getTitlePrefixAtEnd(this.title)
     oldMetadataJSON.authorName = this.authorName
     oldMetadataJSON.authorNameLF = this.authorNameLF
@@ -609,7 +594,7 @@ class Book extends Model {
    *
    * @param {string} libraryItemId
    */
-  toOldJSON(libraryItemId) {
+  toOldJSON(libraryItemId: string) {
     if (!libraryItemId) {
       throw new Error(`[Book] Cannot convert to old JSON because libraryItemId is not provided`)
     }
@@ -665,7 +650,7 @@ class Book extends Model {
    *
    * @param {string} libraryItemId
    */
-  toOldJSONExpanded(libraryItemId) {
+  toOldJSONExpanded(libraryItemId: string) {
     if (!libraryItemId) {
       throw new Error(`[Book] Cannot convert to old JSON because libraryItemId is not provided`)
     }
@@ -688,4 +673,8 @@ class Book extends Model {
   }
 }
 
-module.exports = Book
+declare namespace Book {
+  export type { EBookFileObject, ChapterObject, SeriesExpandedProperties, SeriesExpanded, BookExpandedProperties, BookExpanded, BookExpandedWithLibraryItemProperties, BookExpandedWithLibraryItem, AudioFileObject, AudioTrackProperties, AudioTrack }
+}
+
+export = Book

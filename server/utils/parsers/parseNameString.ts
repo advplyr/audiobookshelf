@@ -10,7 +10,7 @@ type NameParts = {
   last_name?: string
 }
 
-function parseName(name: string): NameParts {
+function parseName(name: unknown): NameParts {
   const parts = parseFullName(name)
   let firstName = parts.first
   if (firstName && parts.middle) firstName += ' ' + parts.middle
@@ -33,7 +33,7 @@ function checkIsALastName(name: string): boolean {
 }
 
 // Handle name already in First Last format and return Last, First
-export function nameToLastFirst(firstLast: string): string | undefined {
+export function nameToLastFirst(firstLast: unknown): string | undefined {
   const nameObj = parseName(firstLast)
   if (!nameObj.last_name) return nameObj.first_name
   else if (!nameObj.first_name) return nameObj.last_name
