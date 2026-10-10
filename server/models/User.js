@@ -189,7 +189,7 @@ class User extends Model {
    * @param {import('../Auth')} auth
    * @returns {Promise<User>}
    */
-  static async createRootUser(username, pash, auth) {
+  static async createRootUser(username, pash, auth, transaction = null) {
     const userId = uuidv4()
 
     const token = auth.generateAccessToken({ id: userId, username })
@@ -207,7 +207,7 @@ class User extends Model {
         seriesHideFromContinueListening: []
       }
     }
-    return this.create(newUser)
+    return this.create(newUser, { transaction })
   }
 
   /**
