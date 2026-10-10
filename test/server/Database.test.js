@@ -118,8 +118,9 @@ describe('Database', () => {
     const library = await Database.libraryModel.create({ name: 'Library', mediaType: 'book' })
     await Database.libraryItemModel.create({ libraryId: library.id, mediaId: book.id, mediaType: 'book' })
     await Database.playbackSessionModel.bulkCreate([{ timeListening: 3 }, { timeListening: 4 }])
-    const oldProgress = await Database.mediaProgressModel.create({ userId: user.id, mediaItemId: book.id, mediaItemType: 'book', updatedAt: new Date(2020, 0, 1) })
-    const newProgress = await Database.mediaProgressModel.create({ userId: user.id, mediaItemId: book.id, mediaItemType: 'book', updatedAt: new Date(2021, 0, 1) })
+    // Sequelize otherwise replaces updatedAt during creation, making the duplicate winner nondeterministic.
+    const oldProgress = await Database.mediaProgressModel.create({ userId: user.id, mediaItemId: book.id, mediaItemType: 'book', updatedAt: new Date(2020, 0, 1) }, { silent: true })
+    const newProgress = await Database.mediaProgressModel.create({ userId: user.id, mediaItemId: book.id, mediaItemType: 'book', updatedAt: new Date(2021, 0, 1) }, { silent: true })
     await Database.sessionModel.createSession(user.id, null, null, 'test-expired-token', new Date(2000, 0, 1))
     await Database.sessionModel.createSession(user.id, null, null, 'test-current-token', new Date(2100, 0, 1))
     const apiKey = await Database.apiKeyModel.create({ name: 'Expired test key', isActive: true, expiresAt: new Date(2000, 0, 1), userId: user.id })
