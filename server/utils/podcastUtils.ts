@@ -1,72 +1,33 @@
-const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
-const Logger = require('../Logger')
-const { xmlToJSON, timestampToSeconds } = require('./index')
-const htmlSanitizer = require('../utils/htmlSanitizer')
-const Fuse = require('../libs/fusejs')
+import axios from 'axios'
+import ssrfFilter from 'ssrf-req-filter'
+import Logger from '../Logger'
+import { xmlToJSON, timestampToSeconds } from './index'
+import htmlSanitizer from '../utils/htmlSanitizer'
+import Fuse from '../libs/fusejs'
+import type { RssXmlNode, RssMetadataValue, RssPodcastEpisode, RssPodcastMetadata, RssPodcast, RssItem, RssCategory, RssChannel, RssXmlDocument, ParsedPodcastFeed, RssEnclosure, EpisodeMatch, RedirectRequestError } from '../types/podcastUtils'
+export type { RssPodcastChapter, RssPodcastEpisode, RssPodcastMetadata, RssPodcast } from '../types/podcastUtils'
 
-/**
- * @typedef RssPodcastChapter
- * @property {number} id
- * @property {string} title
- * @property {number} start
- * @property {number} end
- */
-
-/**
- * @typedef RssPodcastEpisode
- * @property {string} title
- * @property {string} subtitle
- * @property {string} description
- * @property {string} descriptionPlain
- * @property {string} pubDate
- * @property {string} episodeType
- * @property {string} season
- * @property {string} episode
- * @property {string} author
- * @property {string} duration
- * @property {number|null} durationSeconds - Parsed from duration string if duration is valid
- * @property {string} explicit
- * @property {number} publishedAt - Unix timestamp
- * @property {{ url: string, type?: string, length?: string }} enclosure
- * @property {string} guid
- * @property {string} chaptersUrl
- * @property {string} chaptersType
- * @property {RssPodcastChapter[]} chapters
- */
-
-/**
- * @typedef RssPodcastMetadata
- * @property {string} title
- * @property {string} language
- * @property {string} explicit
- * @property {string} author
- * @property {string} pubDate
- * @property {string} link
- * @property {string} image
- * @property {string[]} categories
- * @property {string} feedUrl
- * @property {string} description
- * @property {string} descriptionPlain
- * @property {string} type
- */
-
-/**
- * @typedef RssPodcast
- * @property {RssPodcastMetadata} metadata
- * @property {RssPodcastEpisode[]} episodes
- * @property {number} numEpisodes
- */
-
-function extractFirstArrayItem(json, key) {
-  if (!json[key]?.length) return null
-  return json[key][0]
+// Keep sibling calls tied to the live CommonJS exports, including callers that replace a helper.
+const podcastUtils = module.exports as {
+  parsePodcastRssFeedXml: typeof parsePodcastRssFeedXml
+  getPodcastFeed: typeof getPodcastFeed
+  findMatchingEpisodesInFeed: typeof findMatchingEpisodesInFeed
 }
 
-function extractStringOrStringify(json) {
+type ExtractedEpisode = Partial<Omit<RssPodcastEpisode, 'enclosure' | 'publishedAt'>> & { enclosure: RssEnclosure }
+
+function extractFirstArrayItem(json: RssXmlNode, key: string): RssMetadataValue {
+  // xml2js stores element values in arrays; retain the legacy array-like access.
+  const values = json[key] as Array<string | RssXmlNode> | undefined
+  if (!values?.length) return null
+  return values[0]
+}
+
+function extractStringOrStringify(json: RssXmlNode): string {
   try {
-    if (typeof json[Object.keys(json)[0]]?.[0] === 'string') {
-      return json[Object.keys(json)[0]][0]
+    const firstValue = json[Object.keys(json)[0]] as unknown[] | undefined
+    if (typeof firstValue?.[0] === 'string') {
+      return firstValue[0]
     }
     // Handles case where html was included without being wrapped in CDATA
     return JSON.stringify(json)
@@ -75,7 +36,7 @@ function extractStringOrStringify(json) {
   }
 }
 
-function extractFirstArrayItemString(json, key) {
+function extractFirstArrayItemString(json: RssXmlNode, key: string): string {
   const item = extractFirstArrayItem(json, key)
   if (!item) return ''
   if (typeof item === 'object') {
@@ -86,7 +47,7 @@ function extractFirstArrayItemString(json, key) {
   return typeof item === 'string' ? item : ''
 }
 
-function extractImage(channel) {
+function extractImage(channel: RssChannel): string | null {
   if (!channel.image || !channel.image.url || !channel.image.url.length) {
     if (!channel['itunes:image'] || !channel['itunes:image'].length || !channel['itunes:image'][0]['$']) {
       return null
@@ -97,10 +58,10 @@ function extractImage(channel) {
   return channel.image.url[0] || null
 }
 
-function extractCategories(channel) {
+function extractCategories(channel: RssCategory): string[] {
   if (!channel['itunes:category'] || !channel['itunes:category'].length) return []
   var categories = channel['itunes:category']
-  var cleanedCats = []
+  var cleanedCats: string[] = []
   categories.forEach((cat) => {
     if (!cat['$'] || !cat['$'].text) return
     var cattext = cat['$'].text
@@ -118,8 +79,8 @@ function extractCategories(channel) {
   return cleanedCats
 }
 
-function extractPodcastMetadata(channel) {
-  const metadata = {
+function extractPodcastMetadata(channel: RssChannel): RssPodcastMetadata {
+  const metadata: RssPodcastMetadata = {
     image: extractImage(channel),
     categories: extractCategories(channel),
     feedUrl: null,
@@ -142,29 +103,30 @@ function extractPodcastMetadata(channel) {
 
   const arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
   arrayFields.forEach((key) => {
-    const cleanKey = key.split(':').pop()
+    const cleanKey = key.split(':').pop()!
     let value = extractFirstArrayItem(channel, key)
-    if (value?.['_']) value = value['_']
+    if (typeof value === 'object' && value?.['_']) value = value['_']
     metadata[cleanKey] = value
   })
   return metadata
 }
 
-function extractEpisodeData(item) {
+function extractEpisodeData(item: RssItem): ExtractedEpisode | null {
   // Episode must have url
   let enclosure
 
   if (item.enclosure?.[0]?.['$']?.url) {
     enclosure = item.enclosure[0]['$']
   } else if (item['media:content']?.find((c) => c?.['$']?.url && (c?.['$']?.type ?? '').startsWith('audio'))) {
-    enclosure = item['media:content'].find((c) => (c['$']?.type ?? '').startsWith('audio'))['$']
+    enclosure = item['media:content'].find((c) => (c['$']?.type ?? '').startsWith('audio'))!['$']
   } else {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
-  const episode = {
-    enclosure: enclosure
+  const episode: ExtractedEpisode = {
+    // Successful URL trimming below establishes the required enclosure URL.
+    enclosure: enclosure as RssEnclosure
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
@@ -193,10 +155,10 @@ function extractEpisodeData(item) {
     const pubDate = extractFirstArrayItem(item, 'pubDate')
     if (typeof pubDate === 'string') {
       episode.pubDate = pubDate
-    } else if (typeof pubDate?._ === 'string') {
+    } else if (typeof pubDate === 'object' && typeof pubDate?._ === 'string') {
       episode.pubDate = pubDate._
     } else {
-      Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
+      Logger.error(`[podcastUtils] Invalid pubDate ${String(item['pubDate'])} for ${episode.enclosure.url}`)
     }
   }
 
@@ -204,16 +166,16 @@ function extractEpisodeData(item) {
     const guidItem = extractFirstArrayItem(item, 'guid')
     if (typeof guidItem === 'string') {
       episode.guid = guidItem
-    } else if (typeof guidItem?._ === 'string') {
+    } else if (typeof guidItem === 'object' && typeof guidItem?._ === 'string') {
       episode.guid = guidItem._
     } else {
       Logger.error(`[podcastUtils] Invalid guid for ${episode.enclosure.url}`, item['guid'])
     }
   }
 
-  const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle'] as const
   arrayFields.forEach((key) => {
-    const cleanKey = key.split(':').pop()
+    const cleanKey = key.split(':').pop() as 'title' | 'episodeType' | 'season' | 'episode' | 'author' | 'duration' | 'explicit' | 'subtitle'
     episode[cleanKey] = extractFirstArrayItemString(item, key)
   })
 
@@ -250,11 +212,12 @@ function extractEpisodeData(item) {
     } else {
       episode.chapters = cleanedChapters.map((chapter, index) => {
         const nextChapter = cleanedChapters[index + 1]
-        const end = nextChapter ? nextChapter.start : episode.durationSeconds
+        const end = nextChapter ? nextChapter.start : episode.durationSeconds!
         return {
-          id: chapter.id,
-          title: chapter.title,
-          start: chapter.start,
+          // The some() check above ensures every chapter parsed successfully.
+          id: chapter!.id,
+          title: chapter!.title,
+          start: chapter!.start,
           end
         }
       })
@@ -264,12 +227,12 @@ function extractEpisodeData(item) {
   return episode
 }
 
-function cleanEpisodeData(data) {
+function cleanEpisodeData(data: ExtractedEpisode): RssPodcastEpisode {
   const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
-  const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
+  const publishedAt = pubJsDate && !isNaN(Number(pubJsDate)) ? pubJsDate.valueOf() : null
 
   return {
-    title: data.title,
+    title: data.title!,
     subtitle: data.subtitle || '',
     description: data.description || '',
     descriptionPlain: data.descriptionPlain || '',
@@ -290,8 +253,8 @@ function cleanEpisodeData(data) {
   }
 }
 
-function extractPodcastEpisodes(items) {
-  const episodes = []
+function extractPodcastEpisodes(items: RssItem[]): RssPodcastEpisode[] {
+  const episodes: RssPodcastEpisode[] = []
   items.forEach((item) => {
     const extracted = extractEpisodeData(item)
     if (extracted) {
@@ -301,7 +264,7 @@ function extractPodcastEpisodes(items) {
   return episodes
 }
 
-function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
+function cleanPodcastJson(rssJson: NonNullable<RssXmlDocument['rss']>, excludeEpisodeMetadata: boolean): RssPodcast | null {
   if (!rssJson.channel?.length) {
     Logger.error(`[podcastUtil] Invalid podcast no channel object`)
     return null
@@ -311,7 +274,7 @@ function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
     Logger.error(`[podcastUtil] Invalid podcast no episodes`)
     return null
   }
-  const podcast = {
+  const podcast: { metadata: RssPodcastMetadata; episodes?: RssPodcastEpisode[]; numEpisodes?: number } = {
     metadata: extractPodcastMetadata(channel)
   }
   if (!excludeEpisodeMetadata) {
@@ -319,12 +282,14 @@ function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
   } else {
     podcast.numEpisodes = channel.item.length
   }
-  return podcast
+  // The branches above always set exactly one of episodes and numEpisodes.
+  return podcast as RssPodcast
 }
 
-module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = false, includeRaw = false) => {
+export const parsePodcastRssFeedXml = async (xml: string | Buffer | null | undefined, excludeEpisodeMetadata = false, includeRaw = false): Promise<ParsedPodcastFeed | null> => {
   if (!xml) return null
-  const json = await xmlToJSON(xml)
+  // Preserve permissive RSS parsing; this boundary describes xml2js output, without validating it.
+  const json = (await xmlToJSON(xml)) as RssXmlDocument | null
   if (!json?.rss) {
     Logger.error('[podcastUtils] Invalid XML or RSS feed')
     return null
@@ -353,7 +318,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
  * @param {boolean} [excludeEpisodeMetadata=false]
  * @returns {Promise<RssPodcast|null>}
  */
-module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
+export const getPodcastFeed = (feedUrl: string, excludeEpisodeMetadata = false): Promise<RssPodcast | null> => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
 
   let userAgent = 'audiobookshelf (+https://audiobookshelf.org; like iTMS)'
@@ -376,14 +341,15 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
     httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
     httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
   })
-    .then(async (data) => {
+    .then(async (data: { data: Buffer | string; headers?: Record<string, string> }) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
       //  See: https://github.com/advplyr/audiobookshelf/issues/1489
       const contentType = data.headers?.['content-type'] || '' // e.g. text/xml; charset=iso-8859-1
+      const responseBody: { toString(encoding?: BufferEncoding): string } = data.data
       if (contentType.toLowerCase().includes('iso-8859-1')) {
-        data.data = data.data.toString('latin1')
+        data.data = responseBody.toString('latin1')
       } else {
-        data.data = data.data.toString()
+        data.data = responseBody.toString()
       }
 
       if (!data?.data) {
@@ -391,7 +357,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
         return null
       }
       Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-      const payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+      const payload = await podcastUtils.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
       if (!payload) {
         return null
       }
@@ -401,13 +367,15 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
 
       return payload.podcast
     })
-    .catch((error) => {
+    .catch((error: unknown) => {
+      // Keep legacy redirect handling, including errors for malformed redirect error objects.
+      const requestError = error as RedirectRequestError
       // Check for failures due to redirecting from http to https. If original url was http, upgrade to https and try again
-      if (error.code === 'ERR_FR_REDIRECTION_FAILURE' && error.cause.code === 'ERR_INVALID_PROTOCOL') {
-        if (feedUrl.startsWith('http://') && error.request._options.protocol === 'https:') {
-          Logger.info('Redirection from http to https detected. Upgrading Request', error.request._options.href)
+      if (requestError.code === 'ERR_FR_REDIRECTION_FAILURE' && requestError.cause.code === 'ERR_INVALID_PROTOCOL') {
+        if (feedUrl.startsWith('http://') && requestError.request._options.protocol === 'https:') {
+          Logger.info('Redirection from http to https detected. Upgrading Request', requestError.request._options.href)
           feedUrl = feedUrl.replace('http://', 'https://')
-          return this.getPodcastFeed(feedUrl, excludeEpisodeMetadata)
+          return podcastUtils.getPodcastFeed(feedUrl, excludeEpisodeMetadata)
         }
       }
       Logger.error('[podcastUtils] getPodcastFeed Error', error)
@@ -416,12 +384,12 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
 }
 
 // Return array of episodes ordered by closest match using fuse.js
-module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
-  const feed = await this.getPodcastFeed(feedUrl).catch(() => {
+export const findMatchingEpisodes = async (feedUrl: string, searchTitle: string): Promise<EpisodeMatch[] | null> => {
+  const feed = await podcastUtils.getPodcastFeed(feedUrl).catch(() => {
     return null
   })
 
-  return this.findMatchingEpisodesInFeed(feed, searchTitle)
+  return podcastUtils.findMatchingEpisodesInFeed(feed, searchTitle)
 }
 
 /**
@@ -431,7 +399,7 @@ module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
  * @param {number} [threshold=0.4] - 0.0 for perfect match, 1.0 for match anything
  * @returns {Array<{ episode: RssPodcastEpisode }>}
  */
-module.exports.findMatchingEpisodesInFeed = (feed, searchTitle, threshold = 0.4) => {
+export const findMatchingEpisodesInFeed = (feed: RssPodcast | null | undefined, searchTitle: string, threshold = 0.4): EpisodeMatch[] | null => {
   if (!feed?.episodes) {
     return null
   }
@@ -446,7 +414,7 @@ module.exports.findMatchingEpisodesInFeed = (feed, searchTitle, threshold = 0.4)
   }
   const fuse = new Fuse(feed.episodes, fuseOptions)
 
-  const matches = []
+  const matches: EpisodeMatch[] = []
   fuse.search(searchTitle).forEach((match) => {
     matches.push({
       episode: match.item
