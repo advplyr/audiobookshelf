@@ -9,3 +9,5 @@ export const writeFile: typeof import('fs/promises').writeFile
 export const readdir: typeof import('fs/promises').readdir
 export function pathExists(path: PathLike): Promise<boolean>
 export function remove(path: PathLike): Promise<void>
+
+export function ensureDir(path: PathLike): Promise<void | string>
