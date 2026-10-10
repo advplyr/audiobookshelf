@@ -40,7 +40,7 @@ module.exports.checkFilepathIsAudioFile = checkFilepathIsAudioFile
 
 /**
  * @param {string} mediaType
- * @param {import('./fileUtils').FilePathItem[]} fileItems
+ * @param {import('../types/fileUtils').FilePathItem[]} fileItems
  * @param {boolean} audiobooksOnly
  * @param {boolean} [includeNonMediaFiles=false] - Used by the watcher to re-scan when covers/metadata files are added/removed
  * @returns {Record<string,string[]>} map of files grouped into potential libarary item dirs
@@ -53,9 +53,9 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems, audiobooksOnly,
 
   // Step 2: Separate media files and other files
   //     - Directories without a media file will not be included (unless includeNonMediaFiles is true)
-  /** @type {import('./fileUtils').FilePathItem[]} */
+  /** @type {import('../types/fileUtils').FilePathItem[]} */
   const mediaFileItems = []
-  /** @type {import('./fileUtils').FilePathItem[]} */
+  /** @type {import('../types/fileUtils').FilePathItem[]} */
   const otherFileItems = []
   itemsFiltered.forEach((item) => {
     if (isMediaFile(mediaType, item.extension, audiobooksOnly) || (includeNonMediaFiles && isScannableNonMediaFile(item.extension))) {

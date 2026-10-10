@@ -6,6 +6,7 @@ const sinon = require('sinon')
 const Logger = require('../../../server/Logger')
 const LibraryFile = require('../../../server/objects/files/LibraryFile')
 const FileMetadata = require('../../../server/objects/metadata/FileMetadata')
+const { filePathToPOSIX } = require('../../../server/utils/fileUtils')
 
 function metadataFor(filename) {
   const ext = Path.extname(filename)
@@ -73,7 +74,7 @@ describe('LibraryFile', () => {
       expect(file.metadata.filename).to.equal('Book.mp3')
       expect(file.metadata.ext).to.equal('.mp3')
       expect(file.metadata.relPath).to.equal('Author/Book.mp3')
-      expect(file.metadata.path).to.equal(filePath)
+      expect(file.metadata.path).to.equal(filePathToPOSIX(filePath))
       expect(file.metadata.size).to.equal(3)
       expect(file.addedAt).to.be.a('number')
     } finally {
