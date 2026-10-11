@@ -675,7 +675,7 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
       {
         libraryId: libraryId
       },
-      sequelize.where(sequelize.literal('(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>"$.ino" = :inode)'), {
+      sequelize.where(sequelize.literal(`(SELECT count(*) FROM json_each(libraryFiles) WHERE json_valid(json_each.value) AND json_each.value->>'$.ino' = :inode)`), {
         [sequelize.Op.gt]: 0
       })
     ],

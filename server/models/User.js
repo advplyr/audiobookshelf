@@ -438,7 +438,7 @@ class User extends Model {
     if (cachedUser) return cachedUser
 
     const user = await this.findOne({
-      where: sequelize.where(sequelize.literal(`extraData->>"authOpenIDSub"`), sub),
+      where: sequelize.where(sequelize.literal(`extraData->>'authOpenIDSub'`), sub),
       include: this.sequelize.models.mediaProgress
     })
 
