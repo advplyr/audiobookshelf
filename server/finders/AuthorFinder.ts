@@ -1,16 +1,17 @@
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const Path = require('path')
-const Audnexus = require('../providers/Audnexus')
+import fs from '../libs/fsExtra'
+import Logger from '../Logger'
+import Path from 'path'
+import Audnexus from '../providers/Audnexus'
 
-const { downloadImageFile } = require('../utils/fileUtils')
+import { downloadImageFile } from '../utils/fileUtils'
 
 class AuthorFinder {
+  declare audnexus: Audnexus
   constructor() {
     this.audnexus = new Audnexus()
   }
 
-  findAuthorByASIN(asin, region) {
+  findAuthorByASIN(asin: string | null | undefined, region?: string | null) {
     if (!asin) return null
     return this.audnexus.findAuthorByASIN(asin, region)
   }
@@ -22,9 +23,9 @@ class AuthorFinder {
    * @param {Object} [options={}] 
    * @returns {Promise<import('../providers/Audnexus').AuthorSearchObj>}
    */
-  async findAuthorByName(name, region, options = {}) {
+  async findAuthorByName(name: string, region?: string | null, options: { maxLevenshtein?: string | number | null } = {}) {
     if (!name) return null
-    const maxLevenshtein = !isNaN(options.maxLevenshtein) ? Number(options.maxLevenshtein) : 3
+    const maxLevenshtein = !isNaN(options.maxLevenshtein as number) ? Number(options.maxLevenshtein) : 3
 
     const author = await this.audnexus.findAuthorByName(name, region, maxLevenshtein)
     if (!author?.name) {
@@ -40,8 +41,8 @@ class AuthorFinder {
    * @param {string} url 
    * @returns {Promise<{path:string, error:string}>}
    */
-  async saveAuthorImage(authorId, url) {
-    const authorDir = Path.join(global.MetadataPath, 'authors')
+  async saveAuthorImage(authorId: string, url: string) {
+    const authorDir = Path.join(global.MetadataPath!, 'authors')
 
     if (!await fs.pathExists(authorDir)) {
       await fs.ensureDir(authorDir)
@@ -56,7 +57,7 @@ class AuthorFinder {
       return {
         path: outputPath
       }
-    }).catch((err) => {
+    }).catch((err: Error) => {
       let errorMsg = err.message || 'Unknown error'
       Logger.error(`[AuthorFinder] Download image file failed for "${url}"`, errorMsg)
       return {
@@ -65,4 +66,4 @@ class AuthorFinder {
     })
   }
 }
-module.exports = new AuthorFinder()
+export = new AuthorFinder()
