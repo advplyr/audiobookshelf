@@ -1,8 +1,18 @@
-const axios = require('axios').default
-const Logger = require('../Logger')
-const { isValidASIN } = require('../utils/index')
+import axios from 'axios'
+import Logger from '../Logger'
+import { isValidASIN } from '../utils/index'
+
+type AudibleItem = {
+  title?: string; subtitle?: string; asin?: string; authors?: { name: string }[]; narrators?: { name: string }[]
+  publisherName?: string; summary?: string; releaseDate?: string; image?: string
+  genres?: { type: string; name: string }[]
+  seriesPrimary?: { name: string; position?: string }; seriesSecondary?: { name: string; position?: string }
+  language?: string; runtimeLengthMin?: number | string; formatType?: string; isbn?: string
+  region?: string; rating?: unknown; isAdult?: boolean
+}
 
 class Audible {
+  declare regionMap: Record<string, string>
   #responseTimeout = 10000
 
   constructor() {
@@ -29,7 +39,7 @@ class Audible {
    * @param {string} sequence
    * @returns {string}
    */
-  cleanSeriesSequence(seriesName, sequence) {
+  cleanSeriesSequence(seriesName: string, sequence: string | null | undefined) {
     if (!sequence) return ''
     // match any number with optional decimal (e.g, 1 or 1.5 or .5)
     let numberFound = sequence.match(/\.\d+|\d+(?:\.\d+)?/)
@@ -40,7 +50,7 @@ class Audible {
     return updatedSequence
   }
 
-  cleanResult(item) {
+  cleanResult(item: AudibleItem) {
     const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin, formatType, isbn } = item
 
     const series = []
@@ -57,8 +67,8 @@ class Audible {
       })
     }
 
-    let genresCleaned = []
-    let tagsCleaned = []
+    let genresCleaned: string[] = []
+    let tagsCleaned: string[] = []
 
     if (genres && Array.isArray(genres)) {
       genresCleaned = [...new Set(genres.filter((g) => g.type == 'genre').map((g) => g.name))]
@@ -80,7 +90,7 @@ class Audible {
       tags: tagsCleaned.length ? tagsCleaned : null,
       series: series.length ? series : null,
       language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
-      duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
+      duration: runtimeLengthMin && !isNaN(runtimeLengthMin as number) ? Number(runtimeLengthMin) : 0,
       region: item.region || null,
       rating: item.rating || null,
       abridged: formatType === 'abridged',
@@ -95,7 +105,7 @@ class Audible {
    * @param {number} [timeout] response timeout in ms
    * @returns {Promise<Object>}
    */
-  asinSearch(asin, region, timeout = this.#responseTimeout) {
+  asinSearch(asin: string | null | undefined, region: string | null | undefined, timeout = this.#responseTimeout) {
     if (!asin) return null
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
@@ -104,14 +114,14 @@ class Audible {
     var url = `https://api.audnex.us/books/${asin}${regionQuery}`
     Logger.debug(`[Audible] ASIN url: ${url}`)
     return axios
-      .get(url, {
+      .get<AudibleItem>(url, {
         timeout
       })
       .then((res) => {
         if (!res?.data?.asin) return null
         return res.data
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         Logger.error('[Audible] ASIN search error', error.message)
         return null
       })
@@ -126,14 +136,14 @@ class Audible {
    * @param {number} [timeout] response timeout in ms
    * @returns {Promise<Object[]>}
    */
-  async search(title, author, asin, region, timeout = this.#responseTimeout) {
+  async search(title: string, author: string | null | undefined, asin: string | null | undefined, region: string | null | undefined, timeout = this.#responseTimeout) {
     if (region && !this.regionMap[region]) {
       Logger.error(`[Audible] search: Invalid region ${region}`)
       region = ''
     }
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
-    let items = []
+    let items: (AudibleItem | null)[] = []
     if (asin && isValidASIN(asin.toUpperCase())) {
       const item = await this.asinSearch(asin, region, timeout)
       if (item) items.push(item)
@@ -145,7 +155,7 @@ class Audible {
     }
 
     if (!items.length) {
-      const queryObj = {
+      const queryObj: Record<string, string> = {
         num_results: '10',
         products_sort_by: 'Relevance',
         title: title
@@ -156,20 +166,24 @@ class Audible {
       const url = `https://api.audible${tld}/1.0/catalog/products?${queryString}`
       Logger.debug(`[Audible] Search url: ${url}`)
       items = await axios
-        .get(url, {
+        .get<{ products?: { asin: string }[] }>(url, {
           timeout
         })
         .then((res) => {
           if (!res?.data?.products) return []
-          return Promise.all(res.data.products.map((result) => this.asinSearch(result.asin, region, timeout)))
+          // Promise.all already assimilates nulls; Promise.resolve keeps that behavior explicit.
+          return Promise.all(res.data.products.map((result) => Promise.resolve(this.asinSearch(result.asin, region, timeout))))
         })
-        .catch((error) => {
+        .catch((error: Error) => {
           Logger.error('[Audible] query search error', error.message)
           return []
         })
     }
-    return items.filter(Boolean).map((item) => this.cleanResult(item)) || []
+    return items.filter((item): item is AudibleItem => Boolean(item)).map((item) => this.cleanResult(item)) || []
   }
 }
 
-module.exports = Audible
+declare namespace Audible {
+  type SearchItem = AudibleItem
+}
+export = Audible

@@ -1,12 +1,17 @@
-const axios = require('axios').default
-const Database = require('../Database')
-const Logger = require('../Logger')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+import axios from 'axios'
+import type { AxiosRequestConfig } from 'axios'
+import Database from '../Database'
+import Logger from '../Logger'
+import htmlSanitizer from '../utils/htmlSanitizer'
+
+type Series = { series: string; sequence?: string }
+type Payload = Partial<Record<'title' | 'subtitle' | 'author' | 'narrator' | 'publisher' | 'publishedYear' | 'description' | 'cover' | 'isbn' | 'asin' | 'language', string>> & {
+  genres?: string[]; tags?: string[]; series?: Series[]; duration?: number
+}
 
 class CustomProviderAdapter {
   #responseTimeout = 10000
 
-  constructor() {}
 
   /**
    *
@@ -18,7 +23,7 @@ class CustomProviderAdapter {
    * @param {number} [timeout] response timeout in ms
    * @returns {Promise<Object[]>}
    */
-  async search(title, author, isbn, providerSlug, mediaType, timeout = this.#responseTimeout) {
+  async search(title: string, author: string | null | undefined, isbn: string | null | undefined, providerSlug: string, mediaType: string, timeout = this.#responseTimeout) {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
     const providerId = providerSlug.split('custom-')[1]
@@ -29,7 +34,7 @@ class CustomProviderAdapter {
     }
 
     // Setup query params
-    const queryObj = {
+    const queryObj: Record<string, string> = {
       mediaType,
       query: title
     }
@@ -45,7 +50,7 @@ class CustomProviderAdapter {
     Logger.debug(`[CustomMetadataProvider] Search url: ${url}`)
 
     // Setup headers
-    const axiosOptions = {
+    const axiosOptions: AxiosRequestConfig = {
       timeout
     }
     if (provider.authHeaderValue) {
@@ -55,12 +60,12 @@ class CustomProviderAdapter {
     }
 
     const matches = await axios
-      .get(url, axiosOptions)
+      .get<{ matches?: Record<string, unknown>[] }>(url, axiosOptions)
       .then((res) => {
         if (!res?.data || !Array.isArray(res.data.matches)) return null
         return res.data.matches
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         Logger.error('[CustomMetadataProvider] Search error', error.message)
         return []
       })
@@ -69,17 +74,18 @@ class CustomProviderAdapter {
       throw new Error('Custom provider returned malformed response')
     }
 
-    const toStringOrUndefined = (value) => {
+    const toStringOrUndefined = (value: unknown) => {
       if (typeof value === 'string' || typeof value === 'number') return String(value)
       if (Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number')) return value.join(',')
       return undefined
     }
-    const validateSeriesArray = (series) => {
+    const validateSeriesArray = (series: unknown) => {
       if (!Array.isArray(series) || !series.length) return undefined
-      return series
+      // Read unknown properties only; the original guards below validate their values.
+      return (series as ({ series?: unknown; sequence?: unknown } | null | undefined)[])
         .map((s) => {
           if (!s?.series || typeof s.series !== 'string') return undefined
-          const _series = {
+          const _series: Series = {
             series: s.series
           }
           if (s.sequence && (typeof s.sequence === 'string' || typeof s.sequence === 'number')) {
@@ -95,7 +101,7 @@ class CustomProviderAdapter {
      * @param {string|string[]} tagsGenres
      * @returns {string[]}
      */
-    const validateTagsGenresArray = (tagsGenres) => {
+    const validateTagsGenresArray = (tagsGenres: unknown): string[] | undefined => {
       if (!tagsGenres || (typeof tagsGenres !== 'string' && !Array.isArray(tagsGenres))) return undefined
 
       // If string, split by comma and trim each item
@@ -104,18 +110,19 @@ class CustomProviderAdapter {
       else if (!tagsGenres.every((t) => typeof t === 'string')) return undefined
 
       // Trim and filter out empty strings
-      tagsGenres = tagsGenres.map((t) => t.trim()).filter(Boolean)
-      if (!tagsGenres.length) return undefined
+      // Both branches above establish an array whose entries are strings.
+      const values = (tagsGenres as string[]).map((t) => t.trim()).filter(Boolean)
+      if (!values.length) return undefined
 
       // Dedup
-      return [...new Set(tagsGenres)]
+      return [...new Set(values)]
     }
 
     // re-map keys to throw out
     return matches.map((match) => {
       const { title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration } = match
 
-      const payload = {
+      const payload: Payload = {
         title: toStringOrUndefined(title),
         subtitle: toStringOrUndefined(subtitle),
         author: toStringOrUndefined(author),
@@ -130,13 +137,14 @@ class CustomProviderAdapter {
         tags: validateTagsGenresArray(tags),
         series: validateSeriesArray(series),
         language: toStringOrUndefined(language),
-        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined
+        // The global isNaN intentionally coerces unknown API values at runtime.
+        duration: !isNaN(duration as number) && duration !== null ? Number(duration) : undefined
       }
 
       // Remove undefined values
       for (const key in payload) {
-        if (payload[key] === undefined) {
-          delete payload[key]
+        if (payload[key as keyof Payload] === undefined) {
+          delete payload[key as keyof Payload]
         }
       }
 
@@ -145,4 +153,4 @@ class CustomProviderAdapter {
   }
 }
 
-module.exports = CustomProviderAdapter
+export = CustomProviderAdapter
