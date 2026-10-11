@@ -1,17 +1,23 @@
-const axios = require('axios')
-const packageJson = require('../../package.json')
-const Logger = require('../Logger')
-const { isNullOrNaN } = require('../utils/index')
+import axios from 'axios'
+import type { AxiosRequestConfig, AxiosResponse } from 'axios'
+import packageJson from '../../package.json'
+import Logger from '../Logger'
+import { isNullOrNaN } from '../utils/index'
+
+type TrackOptions = { artist?: string; isrc?: string; title?: string; album?: string; limit?: string | number | null }
+// axios ignores the legacy third argument; keep the same call and receiver.
+const legacyAxios: {
+  get(url: string, params: AxiosRequestConfig, config: AxiosRequestConfig): Promise<AxiosResponse<{ recordings?: Record<string, unknown>[] }>>
+} = axios
 
 class MusicBrainz {
-  constructor() { }
 
   get userAgentString() {
     return `audiobookshelf/${packageJson.version} (https://audiobookshelf.org)`
   }
 
   // https://musicbrainz.org/doc/MusicBrainz_API/Search
-  searchTrack(options) {
+  searchTrack(options: TrackOptions) {
     let luceneParts = []
     if (options.artist) {
       luceneParts.push(`artist:${options.artist}`)
@@ -40,12 +46,12 @@ class MusicBrainz {
         'User-Agent': this.userAgentString
       }
     }
-    return axios.get('https://musicbrainz.org/ws/2/recording', { params: query }, config).then((response) => {
+    return legacyAxios.get('https://musicbrainz.org/ws/2/recording', { params: query }, config).then((response) => {
       return response.data.recordings || []
-    }).catch((error) => {
+    }).catch((error: unknown) => {
       Logger.error(`[MusicBrainz] search request error`, error)
       return []
     })
   }
 }
-module.exports = MusicBrainz
+export = MusicBrainz

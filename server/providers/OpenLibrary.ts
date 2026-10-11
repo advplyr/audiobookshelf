@@ -1,6 +1,19 @@
-const axios = require('axios').default
+import axios from 'axios'
+
+type WorkResponse = {
+  covers?: number[]; first_publish_date?: string; description?: string | { value?: string }
+}
+type SearchDoc = {
+  key: string; title: string; author_name?: string[]; first_publish_year?: string | number
+  cover_edition_key?: string
+}
+type WorksData = {
+  id?: string; key?: string; covers?: string[]; first_publish_date?: string; description?: string | null
+  errorMsg?: string; errorCode?: number
+}
 
 class OpenLibrary {
+  declare baseUrl: string
   #responseTimeout = 10000
 
   constructor() {
@@ -13,33 +26,33 @@ class OpenLibrary {
    * @param {number} timeout
    * @returns {Promise<Object>}
    */
-  get(uri, timeout = this.#responseTimeout) {
+  get<T>(uri: string, timeout = this.#responseTimeout) {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
     return axios
-      .get(`${this.baseUrl}/${uri}`, {
+      .get<T>(`${this.baseUrl}/${uri}`, {
         timeout
       })
       .then((res) => {
         return res.data
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         console.error('Failed', error.message)
         return null
       })
   }
 
-  async isbnLookup(isbn) {
-    var lookupData = await this.get(`/isbn/${isbn}`)
+  async isbnLookup(isbn: string) {
+    var lookupData = await this.get<Record<string, unknown>>(`/isbn/${isbn}`)
     if (!lookupData) {
       return {
-        errorCode: 404
+        errorCode: 404 as const
       }
     }
     return lookupData
   }
 
-  async getWorksData(worksKey) {
-    var worksData = await this.get(`${worksKey}.json`)
+  async getWorksData(worksKey: string): Promise<WorksData> {
+    var worksData = await this.get<WorkResponse>(`${worksKey}.json`)
     if (!worksData) {
       return {
         errorMsg: 'Works Data Request failed',
@@ -65,16 +78,17 @@ class OpenLibrary {
     }
   }
 
-  parsePublishYear(doc, worksData) {
-    if (doc.first_publish_year && !isNaN(doc.first_publish_year)) return String(doc.first_publish_year)
+  parsePublishYear(doc: SearchDoc, worksData: WorksData) {
+    // Keep global isNaN coercion for API years; the assertion changes only its TypeScript input view.
+    if (doc.first_publish_year && !isNaN(doc.first_publish_year as number)) return String(doc.first_publish_year)
     if (worksData.first_publish_date) {
       var year = worksData.first_publish_date.split('-')[0]
-      if (!isNaN(year)) return String(year)
+      if (!isNaN(year as unknown as number)) return String(year)
     }
     return null
   }
 
-  async cleanSearchDoc(doc) {
+  async cleanSearchDoc(doc: SearchDoc) {
     var worksData = await this.getWorksData(doc.key)
     return {
       title: doc.title,
@@ -86,14 +100,14 @@ class OpenLibrary {
     }
   }
 
-  async search(query) {
+  async search(query: Record<string, string | number>) {
     var queryString = Object.keys(query)
       .map((key) => key + '=' + query[key])
       .join('&')
-    var lookupData = await this.get(`/search.json?${queryString}`)
+    var lookupData = await this.get<{ docs: SearchDoc[] }>(`/search.json?${queryString}`)
     if (!lookupData) {
       return {
-        errorCode: 404
+        errorCode: 404 as const
       }
     }
     var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
@@ -106,16 +120,16 @@ class OpenLibrary {
    * @param {number} timeout
    * @returns {Promise<Object[]>}
    */
-  async searchTitle(title, timeout = this.#responseTimeout) {
+  async searchTitle(title: string, timeout = this.#responseTimeout) {
     title = encodeURIComponent(title)
-    var lookupData = await this.get(`/search.json?title=${title}`, timeout)
+    var lookupData = await this.get<{ docs: SearchDoc[] }>(`/search.json?title=${title}`, timeout)
     if (!lookupData) {
       return {
-        errorCode: 404
+        errorCode: 404 as const
       }
     }
     var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
     return searchDocs
   }
 }
-module.exports = OpenLibrary
+export = OpenLibrary
