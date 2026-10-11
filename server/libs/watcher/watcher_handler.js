@@ -91,7 +91,7 @@ class WatcherHandler {
         var _a, _b;
         if (isInitial)
             return events;
-        const depth = this.options.recursive ? (_a = this.options.depth) !== null && _a !== void 0 ? _a : constants_1.DEPTH : Math.min(1, (_b = this.options.depth) !== null && _b !== void 0 ? _b : constants_1.DEPTH), [directories, files] = await utils_1.default.fs.readdir(targetPath, this.options.ignore, depth, this.watcher._closeSignal), targetSubPaths = [...directories, ...files];
+        const depth = this.options.recursive ? (_a = this.options.depth) !== null && _a !== void 0 ? _a : constants_1.DEPTH : Math.min(1, (_b = this.options.depth) !== null && _b !== void 0 ? _b : constants_1.DEPTH), [directories, files] = await utils_1.default.fs.readdir(targetPath, this.options.ignore, depth, this.watcher._closeSignal, undefined, this.options.followSymlinks), targetSubPaths = [...directories, ...files];
         await Promise.all(targetSubPaths.map(targetSubPath => {
             if (this.watcher.isIgnored(targetSubPath, this.options.ignore))
                 return;
@@ -229,7 +229,7 @@ class WatcherHandler {
             await this.onWatcherEvent("change" /* CHANGE */, this.filePath, isInitial);
         }
         else { // Multiple initial paths
-            const depth = this.options.recursive && (constants_1.HAS_NATIVE_RECURSION && this.options.native !== false) ? (_a = this.options.depth) !== null && _a !== void 0 ? _a : constants_1.DEPTH : Math.min(1, (_b = this.options.depth) !== null && _b !== void 0 ? _b : constants_1.DEPTH), [directories, files] = await utils_1.default.fs.readdir(this.folderPath, this.options.ignore, depth, this.watcher._closeSignal, this.options.readdirMap), targetPaths = [this.folderPath, ...directories, ...files];
+            const depth = this.options.recursive && (constants_1.HAS_NATIVE_RECURSION && this.options.native !== false) ? (_a = this.options.depth) !== null && _a !== void 0 ? _a : constants_1.DEPTH : Math.min(1, (_b = this.options.depth) !== null && _b !== void 0 ? _b : constants_1.DEPTH), [directories, files] = await utils_1.default.fs.readdir(this.folderPath, this.options.ignore, depth, this.watcher._closeSignal, this.options.readdirMap, this.options.followSymlinks), targetPaths = [this.folderPath, ...directories, ...files];
             await Promise.all(targetPaths.map(targetPath => {
                 if (this.watcher._poller.stats.has(targetPath))
                     return; // Already polled
