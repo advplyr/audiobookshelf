@@ -67,9 +67,9 @@ class LibraryItem extends Model<LibraryItemAttributes, LibraryItemCreation> {
   declare isInvalid: boolean | null
   declare mtime: Date | number | null
   declare ctime: Date | number | null
-  declare birthtime: Date | null
+  declare birthtime: Date | number | null
   declare size: number | null
-  declare lastScan: Date | null
+  declare lastScan: Date | number | null
   declare lastScanVersion: string | null
   declare libraryFiles: StoredLibraryFile[] | null
   declare extraData: LibraryItemAttributes['extraData']

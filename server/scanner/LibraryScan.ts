@@ -1,70 +1,72 @@
-const Path = require('path')
-const uuidv4 = require('uuid').v4
-const fs = require('../libs/fsExtra')
-const date = require('../libs/dateAndTime')
+import Path from 'path'
+import { v4 as uuidv4 } from 'uuid'
+import fs from '../libs/fsExtra'
+import date from '../libs/dateAndTime'
 
-const Logger = require('../Logger')
-const { secondsToTimestamp, elapsedPretty } = require('../utils/index')
+import Logger from '../Logger'
+import { secondsToTimestamp, elapsedPretty } from '../utils/index'
+import type Library from '../models/Library'
+
+interface LibraryScanLogEntry {
+  timestamp: string
+  message: string
+  levelName: string
+  level: number
+}
 
 class LibraryScan {
-  constructor() {
-    this.id = null
-    this.type = null
-    /** @type {import('../models/Library')} */
-    this.library = null
-    this.verbose = false
+  id: string | null = null
+  type: string | null = null
+  library: Library | null = null
+  verbose = false
 
-    this.startedAt = null
-    this.finishedAt = null
-    this.elapsed = null
+  startedAt: number | null = null
+  finishedAt: number | null = null
+  elapsed: number | null = null
 
-    this.resultsMissing = 0
-    this.resultsAdded = 0
-    this.resultsUpdated = 0
+  resultsMissing = 0
+  resultsAdded = 0
+  resultsUpdated = 0
 
-    /** @type {string[]} */
-    this.authorsRemovedFromBooks = []
-    /** @type {Set<string>} */
-    this.authorsNumBooksChangedIds = new Set()
-    /** @type {string[]} */
-    this.seriesRemovedFromBooks = []
+  authorsRemovedFromBooks: string[] = []
+  authorsNumBooksChangedIds: Set<string> = new Set()
+  seriesRemovedFromBooks: string[] = []
 
-    this.logs = []
-  }
+  logs: LibraryScanLogEntry[] = []
 
   get libraryId() {
-    return this.library.id
+    return this.library!.id
   }
   get libraryName() {
-    return this.library.name
+    return this.library!.name
   }
   get libraryMediaType() {
-    return this.library.mediaType
+    return this.library!.mediaType
   }
   get libraryFolders() {
-    return this.library.libraryFolders
+    return this.library!.libraryFolders
   }
 
-  get timestamp() {
+  get timestamp(): string {
     return new Date().toISOString()
   }
 
-  get resultStats() {
+  get resultStats(): string {
     return `${this.resultsAdded} Added | ${this.resultsUpdated} Updated | ${this.resultsMissing} Missing`
   }
   get elapsedTimestamp() {
-    return secondsToTimestamp(this.elapsed / 1000)
+    return secondsToTimestamp((this.elapsed ?? 0) / 1000)
   }
-  get logFilename() {
+  get logFilename(): string {
     return date.format(new Date(), 'YYYY-MM-DD') + '_' + this.id + '.txt'
   }
-  get scanResultsString() {
+  get scanResultsString(): string {
     const strs = []
     if (this.resultsAdded) strs.push(`${this.resultsAdded} added`)
     if (this.resultsUpdated) strs.push(`${this.resultsUpdated} updated`)
     if (this.resultsMissing) strs.push(`${this.resultsMissing} missing`)
     const changesDetected = strs.length > 0 ? strs.join(', ') : 'No changes needed'
-    const timeElapsed = `(${elapsedPretty(this.elapsed / 1000)})`
+    const timeElapsed = `(${elapsedPretty((this.elapsed ?? 0) / 1000)})`
     return `${changesDetected} ${timeElapsed}`
   }
 
@@ -82,7 +84,7 @@ class LibraryScan {
     return {
       id: this.id,
       type: this.type,
-      library: this.library.toJSON(),
+      library: this.library!.toJSON(),
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
       elapsed: this.elapsed,
@@ -92,12 +94,7 @@ class LibraryScan {
     }
   }
 
-  /**
-   *
-   * @param {import('../models/Library')} library
-   * @param {string} type
-   */
-  setData(library, type = 'scan') {
+  setData(library: Library, type = 'scan') {
     this.id = uuidv4()
     this.type = type
     this.library = library
@@ -107,10 +104,10 @@ class LibraryScan {
 
   setComplete() {
     this.finishedAt = Date.now()
-    this.elapsed = this.finishedAt - this.startedAt
+    this.elapsed = this.finishedAt - (this.startedAt ?? 0)
   }
 
-  addLog(level, ...args) {
+  addLog(level: number, ...args: unknown[]) {
     const logObj = {
       timestamp: this.timestamp,
       message: args.join(' '),
@@ -125,7 +122,7 @@ class LibraryScan {
   }
 
   async saveLog() {
-    const scanLogDir = Path.join(global.MetadataPath, 'logs', 'scans')
+    const scanLogDir = Path.join(global.MetadataPath!, 'logs', 'scans')
 
     if (!(await fs.pathExists(scanLogDir))) {
       await fs.mkdir(scanLogDir)
@@ -141,4 +138,5 @@ class LibraryScan {
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
   }
 }
-module.exports = LibraryScan
+
+export = LibraryScan
