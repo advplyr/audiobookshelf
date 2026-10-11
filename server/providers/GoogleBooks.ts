@@ -1,12 +1,21 @@
-const axios = require('axios')
-const Logger = require('../Logger')
+import axios from 'axios'
+import Logger from '../Logger'
+
+type IndustryIdentifier = { type?: string; identifier?: string }
+type GoogleVolume = {
+  id?: string
+  volumeInfo?: {
+    title?: string; subtitle?: string; authors?: string[]; publisher?: string
+    publisherDate?: string; description?: string; industryIdentifiers?: IndustryIdentifier[]
+    categories?: string[]; imageLinks?: Record<string, string>
+  }
+}
 
 class GoogleBooks {
   #responseTimeout = 10000
 
-  constructor() {}
 
-  extractIsbn(industryIdentifiers) {
+  extractIsbn(industryIdentifiers: IndustryIdentifier[] | null | undefined) {
     if (!industryIdentifiers || !industryIdentifiers.length) return null
 
     var isbnObj = industryIdentifiers.find((i) => i.type === 'ISBN_13') || industryIdentifiers.find((i) => i.type === 'ISBN_10')
@@ -14,7 +23,7 @@ class GoogleBooks {
     return null
   }
 
-  cleanResult(item) {
+  cleanResult(item: GoogleVolume) {
     var { id, volumeInfo } = item
     if (!volumeInfo) return null
     const { title, subtitle, authors, publisher, publisherDate, description, industryIdentifiers, categories, imageLinks } = volumeInfo
@@ -22,7 +31,7 @@ class GoogleBooks {
     let cover = null
     // Selects the largest cover assuming the largest is the last key in the object
     if (imageLinks && Object.keys(imageLinks).length) {
-      cover = imageLinks[Object.keys(imageLinks).pop()]
+      cover = imageLinks[Object.keys(imageLinks).pop()!]
       cover = cover?.replace(/^http:/, 'https:') || null
     }
 
@@ -47,7 +56,7 @@ class GoogleBooks {
    * @param {number} [timeout] response timeout in ms
    * @returns {Promise<Object[]>}
    **/
-  async search(title, author, timeout = this.#responseTimeout) {
+  async search(title: string, author: string | null | undefined, timeout = this.#responseTimeout) {
     if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
 
     title = encodeURIComponent(title)
@@ -59,14 +68,14 @@ class GoogleBooks {
     const url = `https://www.googleapis.com/books/v1/volumes?${queryString}`
     Logger.debug(`[GoogleBooks] Search url: ${url}`)
     const items = await axios
-      .get(url, {
+      .get<{ items?: GoogleVolume[] }>(url, {
         timeout
       })
       .then((res) => {
         if (!res || !res.data || !res.data.items) return []
         return res.data.items
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         Logger.error('[GoogleBooks] Volume search error', error.message)
         return []
       })
@@ -74,4 +83,4 @@ class GoogleBooks {
   }
 }
 
-module.exports = GoogleBooks
+export = GoogleBooks
