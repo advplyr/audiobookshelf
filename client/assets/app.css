@@ -250,3 +250,12 @@ Bookshelf Label
 .abs-btn:disabled::before {
   background-color: rgba(0, 0, 0, 0.2);
 }
+
+/* Padding for toastification toasts on the bottom to not cover media player*/
+.media-player .Vue-Toastification__toast.toast-mb-40 {
+  margin-bottom: calc(var(--spacing) * 40);
+}
+
+.media-player .Vue-Toastification__toast.toast-mb-48 {
+  margin-bottom: calc(var(--spacing) * 48);
+}
