@@ -28,14 +28,19 @@ function bufferEq(a, b) {
 }
 
 bufferEq.install = function () {
-  Buffer.prototype.equal = SlowBuffer.prototype.equal = function equal(that) {
+  Buffer.prototype.equal = function equal(that) {
     return bufferEq(this, that);
   };
+  if (SlowBuffer && SlowBuffer.prototype) {
+    SlowBuffer.prototype.equal = Buffer.prototype.equal;
+  }
 };
 
 var origBufEqual = Buffer.prototype.equal;
-var origSlowBufEqual = SlowBuffer.prototype.equal;
+var origSlowBufEqual = SlowBuffer && SlowBuffer.prototype ? SlowBuffer.prototype.equal : undefined;
 bufferEq.restore = function () {
   Buffer.prototype.equal = origBufEqual;
-  SlowBuffer.prototype.equal = origSlowBufEqual;
+  if (SlowBuffer && SlowBuffer.prototype) {
+    SlowBuffer.prototype.equal = origSlowBufEqual;
+  }
 };
