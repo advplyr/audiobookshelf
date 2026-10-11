@@ -1002,6 +1002,9 @@ class LibraryItem extends Model {
       throw new Error(`[LibraryItem] Cannot convert to old JSON without media for library item "${this.id}"`)
     }
 
+    const computedNumFiles = Number(this.dataValues?.computedNumFiles)
+    const numFiles = Number.isFinite(computedNumFiles) ? computedNumFiles : this.libraryFiles?.length || 0
+
     return {
       id: this.id,
       ino: this.ino,
@@ -1020,7 +1023,7 @@ class LibraryItem extends Model {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toOldJSONMinified(),
-      numFiles: this.libraryFiles.length,
+      numFiles,
       size: this.size
     }
   }
