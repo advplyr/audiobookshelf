@@ -26,6 +26,7 @@
           <ui-btn v-if="chapters.length" color="bg-primary" small class="mx-1 whitespace-nowrap" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
           <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg-bg' : 'bg-primary'" class="mx-1 whitespace-nowrap" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
           <ui-btn color="bg-primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
+          <ui-btn color="bg-primary" small class="mx-1 whitespace-nowrap" @click="openCueImportModal">{{ $strings.ButtonImportCue }}</ui-btn>
           <div class="grow" />
           <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
           <ui-btn v-if="hasChanges" color="bg-success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
@@ -262,6 +263,9 @@
       </div>
     </modals-modal>
 
+    <input ref="cueFileInput" type="file" accept=".cue" class="hidden" @change="onCueFileSelected" />
+    <modals-chapters-cue-import-modal v-model="showCueImportModal" :cue-file="cueImportFile" @apply="applyCueChapters" />
+
     <!-- create bulk chapters modal -->
     <modals-modal v-model="showBulkChapterModal" name="bulk-chapters" :width="400">
       <template #outer>
@@ -358,7 +362,16 @@ export default {
       bulkChapterInput: '',
       showBulkChapterModal: false,
       bulkChapterCount: 1,
-      detectedPattern: null
+      detectedPattern: null,
+      showCueImportModal: false,
+      cueImportFile: null
+    }
+  },
+  watch: {
+    showCueImportModal(newValue) {
+      if (!newValue) {
+        this.cueImportFile = null
+      }
     }
   },
   computed: {
@@ -408,6 +421,36 @@ export default {
         return number.toString()
       }
       return number.toString().padStart(pattern.originalPadding, '0')
+    },
+    openCueImportModal() {
+      if (this.$refs.cueFileInput) {
+        this.$refs.cueFileInput.click()
+      }
+    },
+    onCueFileSelected(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      this.cueImportFile = file
+      this.showCueImportModal = true
+      event.target.value = ''
+    },
+    applyCueChapters(cueChapters) {
+      const chapters = (cueChapters || []).map((chapter, index) => ({
+        id: index,
+        start: chapter.start,
+        end: null,
+        title: chapter.title || `Track ${index + 1}`
+      }))
+
+      for (let i = 0; i < chapters.length; i++) {
+        const nextChapter = chapters[i + 1]
+        chapters[i].end = nextChapter ? nextChapter.start : this.mediaDuration
+      }
+
+      this.newChapters = chapters
+      this.lockedChapters = new Set()
+      this.checkChapters()
     },
     setChaptersFromTracks() {
       let currentStartTime = 0
