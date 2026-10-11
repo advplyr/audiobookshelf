@@ -69,6 +69,33 @@ describe('parseNameString', () => {
       expect(result.names).to.deep.equal(['张三', '李四'])
     })
 
+    // Regression: https://github.com/advplyr/audiobookshelf/issues/5367
+    // Some taggers join first/last names with U+202F (narrow no-break space) or
+    // U+00A0 (no-break space) instead of a regular space. Those are not matched
+    // by ' ', so every chunk read as a space-less "last name" and the whole
+    // First Last list was flipped into "Last, First" pairing mode.
+    it('does not pair a First Last list joined by narrow no-break spaces (U+202F)', () => {
+      const result = parse('Joanna\u202fWyatt, Paul\u202fPanting, Stephen\u202fWebb, Julian\u202fGlover')
+      expect(result.names).to.deep.equal(['Joanna Wyatt', 'Paul Panting', 'Stephen Webb', 'Julian Glover'])
+    })
+
+    it('does not pair a First Last list joined by no-break spaces (U+00A0)', () => {
+      const result = parse('Jane\u00a0Doe, John\u00a0Smith')
+      expect(result.names).to.deep.equal(['Jane Doe', 'John Smith'])
+    })
+
+    it('keeps every name in a large odd-length First Last list joined by narrow no-break spaces', () => {
+      const expected = ['Joanna Wyatt', 'Paul Panting', 'Stephen Webb', 'Julian Glover', 'Tim Bentinck']
+      const input = expected.map((n) => n.replace(' ', '\u202f')).join(', ')
+      const result = parse(input)
+      expect(result.names).to.deep.equal(expected)
+    })
+
+    it('still pairs a genuine Last, First list that uses narrow no-break spaces inside first/last parts', () => {
+      const result = parse('von\u202fMises, Ludwig, Smith, John')
+      expect(result.names).to.deep.equal(['Ludwig von Mises', 'John Smith'])
+    })
+
     it('removes duplicate names', () => {
       const result = parse('John Smith & John Smith')
       expect(result.names).to.deep.equal(['John Smith'])
