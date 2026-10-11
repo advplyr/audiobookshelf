@@ -6,6 +6,25 @@ const fs = require('fs')
 const Logger = require('../../../server/Logger')
 
 describe('fileUtils', () => {
+  describe('encodeUriPath', () => {
+    it('encodes path segments while preserving path separators', () => {
+      const testCases = [
+        { path: '/Test Book/cover.jpg', expected: '/Test%20Book/cover.jpg' },
+        { path: '/Test 1% Book/cover.jpg', expected: '/Test%201%25%20Book/cover.jpg' },
+        { path: '/100% Complete/cover.jpg', expected: '/100%25%20Complete/cover.jpg' },
+        { path: '/%/cover.jpg', expected: '/%25/cover.jpg' },
+        { path: '/%20/cover.jpg', expected: '/%2520/cover.jpg' },
+        { path: '/%25/cover.jpg', expected: '/%2525/cover.jpg' },
+        { path: '/Test%Book/cover.jpg', expected: '/Test%25Book/cover.jpg' },
+        { path: '/Tést Book/cover.jpg', expected: '/T%C3%A9st%20Book/cover.jpg' }
+      ]
+
+      testCases.forEach(({ path, expected }) => {
+        expect(fileUtils.encodeUriPath(path)).to.equal(expected)
+      })
+    })
+  })
+
   it('shouldIgnoreFile', () => {
     global.isWin = process.platform === 'win32'
 
