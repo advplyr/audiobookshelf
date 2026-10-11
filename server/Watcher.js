@@ -226,6 +226,11 @@ class FolderWatcher extends EventEmitter {
     }
     Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
     this.addFileUpdate(libraryId, pathTo, 'renamed')
+    // Also queue the old path so a library item left behind at that path is checked. When the inode did not follow
+    // the rename (e.g. FUSE mounts with path-derived inodes) the new path is not matched to the existing item
+    if (!this.checkShouldIgnorePath(pathFrom)) {
+      this.addFileUpdate(libraryId, pathFrom, 'deleted')
+    }
   }
 
   /**

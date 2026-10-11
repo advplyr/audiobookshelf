@@ -558,8 +558,24 @@ class LibraryScanner {
     }
 
     // Second pass: Check for new/updated/removed items
-    const itemGroupingResults = {}
+    //    Paths that still exist are checked before paths that were removed, so an item that was moved is matched by
+    //    inode at its new path before its old path is checked (otherwise it would first be set as missing).
+    //    New items are scanned last, so an item that was moved without keeping its inode is already set as missing
+    //    and can be reused for the new path (see BookScanner.findMissingBookLibraryItemMatch)
+    const itemDirsRemoved = []
+    const itemDirs = []
     for (const itemDir in fileUpdateGroup) {
+      if (await fs.pathExists(Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir))) {
+        itemDirs.push(itemDir)
+      } else {
+        itemDirsRemoved.push(itemDir)
+      }
+    }
+    itemDirs.push(...itemDirsRemoved)
+
+    const itemGroupingResults = {}
+    const newItemDirs = []
+    for (const itemDir of itemDirs) {
       const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
 
       const itemDirParts = itemDir.split('/').slice(0, -1)
@@ -639,6 +655,12 @@ class LibraryScanner {
         itemGroupingResults[itemDir] = ScanResult.NOTHING
         continue
       }
+
+      newItemDirs.push(itemDir)
+    }
+
+    for (const itemDir of newItemDirs) {
+      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
 
       Logger.debug(`[LibraryScanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
       const isSingleMediaItem = isSingleMediaFile(fileUpdateGroup, itemDir)

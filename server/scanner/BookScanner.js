@@ -82,10 +82,19 @@ class BookScanner {
       ]
     })
 
+    // Last known audio files and duration, kept on the book if this scan leaves it with no media files (see below)
+    const audioFilesBeforeScan = media.audioFiles
+    const durationBeforeScan = media.duration
+
     let hasMediaChanges = libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length
     if (hasMediaChanges) {
       // Filter out audio files that were removed
       media.audioFiles = media.audioFiles.filter((af) => !libraryItemData.checkAudioFileRemoved(af))
+
+      // Filter out audio files that were not already in the library files. Audio files kept on a book that was set as
+      // missing (see below) were already removed from the library files so are not picked up as removed above
+      const existingAudioLibraryFiles = libraryItemData.audioLibraryFiles.filter((lf) => !libraryItemData.audioLibraryFilesAdded.includes(lf))
+      media.audioFiles = media.audioFiles.filter((af) => existingAudioLibraryFiles.some((lf) => lf.metadata.path === af.metadata.path || lf.ino === af.ino))
 
       // Update audio files that were modified
       if (libraryItemData.audioLibraryFilesModified.length) {
@@ -385,6 +394,15 @@ class BookScanner {
       }
     }
 
+    // If no media files are left the library item is set as missing below. Keep the last known audio files and
+    // duration on the book (same as an item set as missing by a library scan) so that it can still be matched by
+    // findMissingBookLibraryItemMatch if the files show up in another folder
+    const hasNoMediaFiles = !media.audioFiles.length && !media.ebookFile
+    if (hasNoMediaFiles && audioFilesBeforeScan.length) {
+      media.audioFiles = audioFilesBeforeScan
+      media.duration = durationBeforeScan
+    }
+
     existingLibraryItem.media = media
 
     let libraryItemUpdated = false
@@ -397,7 +415,7 @@ class BookScanner {
     }
 
     // If book has no audio files and no ebook then it is considered missing
-    if (!media.audioFiles.length && !media.ebookFile) {
+    if (hasNoMediaFiles) {
       if (!existingLibraryItem.isMissing) {
         libraryScan.addLog(LogLevel.INFO, `Book "${bookMetadata.title}" has no audio files and no ebook file. Setting library item as missing`)
         existingLibraryItem.isMissing = true
@@ -478,6 +496,7 @@ class BookScanner {
     const missingItemMatch = await this.findMissingBookLibraryItemMatch(libraryItemData.libraryId, bookMetadata, scannedAudioFiles, duration, libraryScan)
     if (missingItemMatch) {
       libraryScan.addLog(LogLevel.INFO, `Missing library item "${missingItemMatch.relPath}" matched new folder "${libraryItemData.relPath}" by metadata, reusing existing item`)
+      libraryItemData.reusedMissingLibraryItem = true
       await libraryItemData.checkLibraryItemData(missingItemMatch, libraryScan)
       const { libraryItem } = await this.rescanExistingBookLibraryItem(missingItemMatch, libraryItemData, librarySettings, libraryScan)
       return libraryItem

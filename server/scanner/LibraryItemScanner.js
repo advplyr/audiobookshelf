@@ -190,7 +190,9 @@ class LibraryItemScanner {
     } else {
       newLibraryItem = await PodcastScanner.scanNewPodcastLibraryItem(libraryItemData, librarySettings, libraryScan)
     }
-    if (newLibraryItem) {
+    if (newLibraryItem && libraryItemData.reusedMissingLibraryItem) {
+      libraryScan.addLog(LogLevel.INFO, `Reused missing library item "${newLibraryItem.relPath}" with id "${newLibraryItem.id}"`)
+    } else if (newLibraryItem) {
       libraryScan.addLog(LogLevel.INFO, `Created new library item "${newLibraryItem.relPath}" with id "${newLibraryItem.id}"`)
 
       if (newLibraryItem.mediaType === 'book') {

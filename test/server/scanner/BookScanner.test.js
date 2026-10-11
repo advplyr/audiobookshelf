@@ -1,9 +1,14 @@
 const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 const sinon = require('sinon')
+const Path = require('path')
 
 const Database = require('../../../server/Database')
 const BookScanner = require('../../../server/scanner/BookScanner')
+const AudioFileScanner = require('../../../server/scanner/AudioFileScanner')
+const LibraryItemScanData = require('../../../server/scanner/LibraryItemScanData')
+const LibraryFile = require('../../../server/objects/files/LibraryFile')
+const CoverManager = require('../../../server/managers/CoverManager')
 const Logger = require('../../../server/Logger')
 
 /**
@@ -179,5 +184,159 @@ describe('BookScanner.findMissingBookLibraryItemMatch', () => {
     await createBookItem({ title: 'Still Here', asin: 'BPRESENT00', duration: 100, audioFiles: [af(1, 100)], isMissing: false })
     const result = await find({ asin: 'BPRESENT00', title: 'Still Here', authors: [] }, [af(1, 100)], 100)
     expect(result).to.be.null
+  })
+})
+
+/**
+ * Unit tests for BookScanner.rescanExistingBookLibraryItem when a rescan leaves the book with no media files -
+ * the last known audio files & duration are kept so the missing item can still be matched when the files show
+ * up in another folder (e.g. files moved one by one while the old folder is left behind).
+ */
+describe('BookScanner.rescanExistingBookLibraryItem - item left with no media files', () => {
+  let library
+  let libraryFolder
+  let libraryScan
+
+  beforeEach(async () => {
+    global.ServerSettings = {}
+    Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+    Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
+    await Database.buildModels()
+    Database.serverSettings = { scannerFindCovers: false }
+    global.MetadataPath = '/metadata'
+
+    sinon.stub(Logger, 'info')
+    sinon.stub(Logger, 'debug')
+    sinon.stub(BookScanner, 'saveMetadataFile').resolves()
+    sinon.stub(CoverManager, 'saveEmbeddedCoverArt').resolves(null)
+    sinon.stub(AudioFileScanner, 'runSmartTrackOrder').callsFake((relPath, audioFiles) => audioFiles)
+    sinon.stub(AudioFileScanner, 'executeMediaFileScans').callsFake(async (mediaType, libraryItemData, libraryFiles) => libraryFiles.map((f) => af(f, 100)))
+
+    /** minimal LibraryScan stand-in */
+    libraryScan = { addLog() {}, seriesRemovedFromBooks: [], authorsRemovedFromBooks: [], authorsNumBooksChangedIds: new Set() }
+
+    library = await Database.libraryModel.create({ name: 'Test Library', mediaType: 'book' })
+    libraryFolder = await Database.libraryFolderModel.create({ path: '/lib', libraryId: library.id })
+  })
+
+  afterEach(async () => {
+    sinon.restore()
+    Database.serverSettings = null
+    await Database.sequelize.close()
+  })
+
+  /** Library file as scanned from disk */
+  const lf = (dir, filename, ino, size) =>
+    new LibraryFile({
+      ino,
+      metadata: { filename, ext: Path.extname(filename), path: `/lib/${dir}/${filename}`, relPath: filename, size, mtimeMs: 0, ctimeMs: 0, birthtimeMs: 0 },
+      addedAt: 0,
+      updatedAt: 0
+    })
+  /** Audio file object as stored on the book / returned from an audio file scan */
+  const af = (libraryFile, duration) => ({ ...libraryFile.toJSON(), duration, metaTags: {}, chapters: [] })
+
+  const scanData = (dir, libraryFiles) =>
+    new LibraryItemScanData({
+      libraryFolderId: libraryFolder.id,
+      libraryId: library.id,
+      mediaType: 'book',
+      ino: `ino-${dir}`,
+      mtimeMs: 0,
+      ctimeMs: 0,
+      birthtimeMs: 0,
+      path: `/lib/${dir}`,
+      relPath: dir,
+      isFile: false,
+      mediaMetadata: { title: 'Moved Book' },
+      libraryFiles
+    })
+
+  async function createBookItem(libraryFiles) {
+    const audioLibraryFiles = libraryFiles.filter((f) => f.fileType === 'audio')
+    const book = await Database.bookModel.create({
+      title: 'Moved Book',
+      duration: audioLibraryFiles.length * 100,
+      audioFiles: audioLibraryFiles.map((f) => af(f, 100)),
+      tags: [],
+      narrators: [],
+      genres: [],
+      chapters: []
+    })
+    return Database.libraryItemModel.create({
+      ino: 'ino-Old',
+      path: '/lib/Old',
+      relPath: 'Old',
+      mediaId: book.id,
+      mediaType: 'book',
+      libraryId: library.id,
+      libraryFolderId: libraryFolder.id,
+      isMissing: false,
+      libraryFiles: libraryFiles.map((f) => f.toJSON())
+    })
+  }
+
+  /** Same steps as LibraryItemScanner.scanLibraryItem */
+  async function rescan(libraryItemId, libraryItemData) {
+    const libraryItem = await Database.libraryItemModel.findByPk(libraryItemId)
+    await libraryItemData.checkLibraryItemData(libraryItem, libraryScan)
+    return BookScanner.rescanExistingBookLibraryItem(libraryItem, libraryItemData, {}, libraryScan)
+  }
+
+  it('keeps the last known audio files and duration when all audio files were removed', async () => {
+    const notes = lf('Old', 'notes.txt', '3', 10)
+    const libraryItem = await createBookItem([lf('Old', '01.mp3', '1', 111), lf('Old', '02.mp3', '2', 222), notes])
+
+    // Old folder still exists but only the text file is left in it
+    const { wasUpdated } = await rescan(libraryItem.id, scanData('Old', [notes]))
+    expect(wasUpdated).to.be.true
+
+    const savedLibraryItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+    expect(savedLibraryItem.isMissing).to.be.true
+    expect(savedLibraryItem.libraryFiles.map((f) => f.metadata.filename)).to.deep.equal(['notes.txt'])
+
+    const savedBook = await Database.bookModel.findByPk(libraryItem.mediaId)
+    expect(savedBook.duration).to.equal(200)
+    expect(savedBook.audioFiles.map((f) => f.metadata.size)).to.deep.equal([111, 222])
+  })
+
+  it('leaves the missing item matchable by findMissingBookLibraryItemMatch', async () => {
+    const libraryItem = await createBookItem([lf('Old', '01.mp3', '1', 111), lf('Old', '02.mp3', '2', 222)])
+    await rescan(libraryItem.id, scanData('Old', []))
+
+    const newAudioFiles = [af(lf('New', '01.mp3', '11', 111), 100), af(lf('New', '02.mp3', '12', 222), 100)]
+    const match = await BookScanner.findMissingBookLibraryItemMatch(library.id, { asin: null, title: 'Different Title', authors: [] }, newAudioFiles, 200, libraryScan)
+    expect(match?.id).to.equal(libraryItem.id)
+  })
+
+  it('replaces the kept audio files when the item is reused for a new folder', async () => {
+    const libraryItem = await createBookItem([lf('Old', '01.mp3', '1', 111), lf('Old', '02.mp3', '2', 222)])
+    await rescan(libraryItem.id, scanData('Old', []))
+
+    // Same files at a new path with new inodes
+    await rescan(libraryItem.id, scanData('New', [lf('New', '01.mp3', '11', 111), lf('New', '02.mp3', '12', 222)]))
+
+    const savedLibraryItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+    expect(savedLibraryItem.isMissing).to.be.false
+    expect(savedLibraryItem.path).to.equal('/lib/New')
+
+    const savedBook = await Database.bookModel.findByPk(libraryItem.mediaId)
+    expect(savedBook.duration).to.equal(200)
+    expect(savedBook.audioFiles.map((f) => f.metadata.path)).to.deep.equal(['/lib/New/01.mp3', '/lib/New/02.mp3'])
+  })
+
+  it('replaces the kept audio files when the files are moved back to the old folder', async () => {
+    const libraryFiles = [lf('Old', '01.mp3', '1', 111), lf('Old', '02.mp3', '2', 222)]
+    const libraryItem = await createBookItem(libraryFiles)
+    await rescan(libraryItem.id, scanData('Old', []))
+
+    await rescan(libraryItem.id, scanData('Old', libraryFiles))
+
+    const savedLibraryItem = await Database.libraryItemModel.findByPk(libraryItem.id)
+    expect(savedLibraryItem.isMissing).to.be.false
+
+    const savedBook = await Database.bookModel.findByPk(libraryItem.mediaId)
+    expect(savedBook.duration).to.equal(200)
+    expect(savedBook.audioFiles.map((f) => f.metadata.path)).to.deep.equal(['/lib/Old/01.mp3', '/lib/Old/02.mp3'])
   })
 })
