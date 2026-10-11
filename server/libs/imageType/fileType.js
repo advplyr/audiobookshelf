@@ -77,6 +77,13 @@ const fileType = input => {
     };
   }
 
+  if (checkString('ftyp', { offset: 4 }) && (checkString('avif', { offset: 8 }) || checkString('avis', { offset: 8 }))) {
+    return {
+      ext: 'avif',
+      mime: 'image/avif'
+    };
+  }
+
   if (check([0x46, 0x4C, 0x49, 0x46])) {
     return {
       ext: 'flif',

@@ -22,6 +22,7 @@ describe('scanUtils', async () => {
       'Author/Series/Book4/cover.jpg',
       'Author/Series/Book4/CD1/audiofile.mp3',
       'Author/Series/Book4/CD2/audiofile.mp3',
+      'Author/Series2/Book5/deeply/nested/cover.avif',
       'Author/Series2/Book5/deeply/nested/cd 01/audiofile.mp3',
       'Author/Series2/Book5/deeply/nested/cd 02/audiofile.mp3',
       'Author/Series2/Book5/randomfile.js' // Should be ignored because it's not a book media file
@@ -46,7 +47,7 @@ describe('scanUtils', async () => {
       Book2: ['audiofile.m4b', 'disk 001/audiofile.m4b', 'disk 002/audiofile.m4b'],
       'Author/Book3': ['audiofile.mp3', 'Disc 1/audiofile.mp3', 'Disc 2/audiofile.mp3'],
       'Author/Series/Book4': ['CD1/audiofile.mp3', 'CD2/audiofile.mp3', 'cover.jpg'],
-      'Author/Series2/Book5/deeply/nested': ['cd 01/audiofile.mp3', 'cd 02/audiofile.mp3']
+      'Author/Series2/Book5/deeply/nested': ['cd 01/audiofile.mp3', 'cd 02/audiofile.mp3', 'cover.avif']
     })
   })
 })
