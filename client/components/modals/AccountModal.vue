@@ -80,6 +80,15 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
+                <p id="download-podcast-episodes-permissions-toggle">{{ $strings.LabelPermissionsDownloadPodcastEpisodes }}</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch labeledBy="download-podcast-episodes-permissions-toggle" v-model="newUser.permissions.downloadPodcastEpisodes" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
                 <p id="explicit-content-permissions-toggle">{{ $strings.LabelPermissionsAccessExplicitContent }}</p>
               </div>
               <div class="w-1/2">
@@ -361,7 +370,8 @@ export default {
         accessAllLibraries: true,
         accessAllTags: true,
         selectedTagsNotAccessible: false,
-        createEreader: type === 'admin'
+        createEreader: type === 'admin',
+        downloadPodcastEpisodes: type === 'admin'
       }
     },
     init() {
@@ -395,7 +405,8 @@ export default {
             accessAllTags: true,
             accessExplicitContent: false,
             selectedTagsNotAccessible: false,
-            createEreader: false
+            createEreader: false,
+            downloadPodcastEpisodes: false
           },
           librariesAccessible: [],
           itemTagsSelected: []

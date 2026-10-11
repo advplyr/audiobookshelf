@@ -216,6 +216,35 @@ class PodcastController {
   }
 
   /**
+   * GET: /api/podcasts/:id/feed
+   *
+   * Fetches the RSS feed for an existing podcast library item.
+   * Unlike POST /api/podcasts/feed the feed URL is never taken from the request,
+   * it is read from the library item, so this is safe to expose to non-admin users
+   * that have been granted the downloadPodcastEpisodes permission.
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async getPodcastFeedForItem(req, res) {
+    if (!req.user.canDownloadPodcastEpisodes) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to get podcast feed without permission`)
+      return res.sendStatus(403)
+    }
+
+    const url = validateUrl(req.libraryItem.media.feedURL)
+    if (!url) {
+      return res.status(400).send('Podcast does not have a valid RSS feed URL')
+    }
+
+    const podcast = await getPodcastFeed(url)
+    if (!podcast) {
+      return res.status(404).send('Podcast RSS feed request failed or invalid response data')
+    }
+    res.json({ podcast })
+  }
+
+  /**
    * POST: /api/podcasts/opml
    *
    * @this import('../routers/ApiRouter')
@@ -365,14 +394,47 @@ class PodcastController {
    * @param {Response} res
    */
   async downloadEpisodes(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to download episodes`)
+    if (!req.user.canDownloadPodcastEpisodes) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to download episodes without permission`)
       return res.sendStatus(403)
     }
 
-    const episodes = req.body
+    let episodes = req.body
     if (!Array.isArray(episodes) || !episodes.length) {
       return res.sendStatus(400)
+    }
+
+    // Admins may pass episode objects through as-is (e.g. from POST /api/podcasts/feed).
+    // For everyone else the request body is untrusted: an arbitrary enclosure url would let a
+    // non-admin make the server fetch any URL and write it into the library. Resolve each
+    // requested episode against the item's own RSS feed and download the feed's copy instead.
+    if (!req.user.isAdminOrUp) {
+      const feedUrl = validateUrl(req.libraryItem.media.feedURL)
+      if (!feedUrl) {
+        return res.status(400).send('Podcast does not have a valid RSS feed URL')
+      }
+      const podcast = await getPodcastFeed(feedUrl)
+      if (!podcast) {
+        return res.status(404).send('Podcast RSS feed request failed or invalid response data')
+      }
+
+      const feedEpisodesByGuid = new Map()
+      const feedEpisodesByUrl = new Map()
+      for (const feedEpisode of podcast.episodes) {
+        if (feedEpisode.guid) feedEpisodesByGuid.set(feedEpisode.guid, feedEpisode)
+        if (feedEpisode.enclosure?.url) feedEpisodesByUrl.set(feedEpisode.enclosure.url, feedEpisode)
+      }
+
+      const resolvedEpisodes = []
+      for (const episode of episodes) {
+        const feedEpisode = feedEpisodesByGuid.get(episode?.guid) || feedEpisodesByUrl.get(episode?.enclosure?.url)
+        if (!feedEpisode) {
+          Logger.error(`[PodcastController] User "${req.user.username}" requested episode not found in RSS feed for "${req.libraryItem.media.title}"`)
+          return res.status(400).send('One or more requested episodes were not found in the podcast RSS feed')
+        }
+        resolvedEpisodes.push(feedEpisode)
+      }
+      episodes = resolvedEpisodes
     }
 
     this.podcastManager.downloadPodcastEpisodes(req.libraryItem, episodes)
