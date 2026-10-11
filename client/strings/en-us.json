@@ -904,6 +904,7 @@
   "MessageShareURLWillBe": "Share URL will be <strong>{0}</strong>",
   "MessageStartPlaybackAtTime": "Start playback for \"{0}\" at {1}?",
   "MessageTaskAudioFileNotWritable": "Audio file \"{0}\" is not writable",
+  "MessageTaskBatchScanningLibraryItems": "Re-scanning {0} library items",
   "MessageTaskCanceledByUser": "Task canceled by user",
   "MessageTaskDownloadingEpisodeDescription": "Downloading episode \"{0}\"",
   "MessageTaskEmbeddingMetadata": "Embedding metadata",
