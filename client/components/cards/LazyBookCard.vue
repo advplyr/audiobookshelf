@@ -436,7 +436,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
+      return this.userCanStream && !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.ebookFormat
@@ -475,6 +475,9 @@ export default {
     },
     userCanDownload() {
       return this.store.getters['user/getUserCanDownload']
+    },
+    userCanStream() {
+      return this.store.getters['user/getUserCanStream']
     },
     userIsAdminOrUp() {
       return this.store.getters['user/getIsAdminOrUp']
