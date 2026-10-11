@@ -1,22 +1,133 @@
-const { LRUCache } = require('lru-cache')
-const { Request, Response } = require('express')
-const passport = require('passport')
-const OpenIDClient = require('openid-client')
-const axios = require('axios')
-const Database = require('../Database')
-const Logger = require('../Logger')
-const { getRequestOrigin } = require('../utils/requestUtils')
+import { LRUCache } from 'lru-cache'
+import type { Request, Response } from 'express'
+import passport from 'passport'
+import * as OpenIDClient from 'openid-client'
+import type { AuthorizationParameters, Client, TokenSet, UserinfoResponse } from 'openid-client'
+import axios from 'axios'
+import { z } from 'zod'
+import Database from '../Database'
+import Logger from '../Logger'
+import { getRequestOrigin } from '../utils/requestUtils'
+import type ServerSettings from '../objects/settings/ServerSettings'
+import type User from '../models/User'
+
+declare global {
+  var RouterBasePath: string
+}
+
+type SettingsJson = ReturnType<ServerSettings['toJSON']>
+type OidcUser = User & { openid_id_token?: string }
+type VerifyDone = (err: unknown, user?: User | null, info?: string) => void
+
+type OidcStrategy = OpenIDClient.Strategy<User, Client> & {
+  _key: string
+  _params: AuthorizationParameters
+}
+
+type MobileLogin = { mobile_redirect_uri: string }
+
+type OpenIdSession = {
+  state?: unknown
+  max_age?: number
+  response_type?: string
+  code_verifier?: string
+  mobile?: unknown
+  sso_redirect_uri?: string
+}
+
+type SessionRequest = Request & {
+  session: Record<string, OpenIdSession | undefined>
+}
+
+type PkceResult = { code_challenge: string; code_challenge_method: string; code_verifier?: string } | { error: string }
+
+type AuthorizationResult = { authorizationUrl: string; isMobileFlow: boolean } | { status: number; error: string }
+
+type OpenIdIssuerConfig = {
+  issuer: unknown
+  authorization_endpoint: unknown
+  token_endpoint: unknown
+  userinfo_endpoint: unknown
+  end_session_endpoint: unknown
+  jwks_uri: unknown
+  id_token_signing_alg_values_supported: unknown
+}
+
+type OpenIdIssuerResult = OpenIdIssuerConfig | { status: number; error: string }
+
+// Loose userinfo: only sub is required for login. Other claims stay on the original object.
+const openIdUserInfoSchema = z.looseObject({
+  sub: z.custom((value) => !!value)
+})
+
+const openIdIssuerConfigSchema = z.looseObject({
+  issuer: z.unknown().optional(),
+  authorization_endpoint: z.unknown().optional(),
+  token_endpoint: z.unknown().optional(),
+  userinfo_endpoint: z.unknown().optional(),
+  end_session_endpoint: z.unknown().optional(),
+  jwks_uri: z.unknown().optional(),
+  id_token_signing_alg_values_supported: z.unknown().optional()
+})
+
+function settingsJson(): SettingsJson {
+  return global.ServerSettings as SettingsJson
+}
+
+function requiredSetting(value: string | null | undefined): string {
+  if (!value) throw new Error('OpenID Connect settings are not valid')
+  return value
+}
+
+function queryValue(req: Request, name: string): unknown {
+  return req.query[name]
+}
+
+function queryText(value: unknown): string {
+  return value as string
+}
+
+function stringValue(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint' || typeof value === 'symbol' || value == null) {
+    return String(value)
+  }
+  return Object.prototype.toString.call(value)
+}
+
+function claimsOf(userinfo: object): Record<string, unknown> {
+  return userinfo as Record<string, unknown>
+}
+
+function isOpenIdLinkError(value: User | { error: string } | null): value is { error: string } {
+  if (!value || typeof value !== 'object' || !('error' in value)) return false
+  return Boolean(value.error)
+}
+
+function errorText(error: unknown): string {
+  const message = (error as { message?: unknown }).message
+  return typeof message === 'string' ? message : String(message)
+}
+
+function errorStack(error: unknown): unknown {
+  if (typeof error !== 'object' || error === null || !('stack' in error)) return undefined
+  return error.stack
+}
 
 /**
  * OpenID Connect authentication strategy
  */
 class OidcAuthStrategy {
+  name: string
+  declare strategy: OidcStrategy | null
+  declare client: Client | null
+  openIdAuthSession: LRUCache<string, MobileLogin>
+
   constructor() {
     this.name = 'openid-client'
     this.strategy = null
     this.client = null
     // Map of openId sessions indexed by oauth2 state-variable
-    this.openIdAuthSession = new LRUCache({
+    this.openIdAuthSession = new LRUCache<string, MobileLogin>({
       ttl: 10 * 60 * 1000,
       ttlAutopurge: true
     })
@@ -24,50 +135,54 @@ class OidcAuthStrategy {
 
   /**
    * Get the passport strategy instance
-   * @returns {OpenIDClient.Strategy}
    */
-  getStrategy() {
+  getStrategy(): OidcStrategy {
     if (!this.strategy) {
-      this.strategy = new OpenIDClient.Strategy(
+      const settings = settingsJson()
+      const strategy = new OpenIDClient.Strategy(
         {
           client: this.getClient(),
           params: {
-            redirect_uri: `${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`,
+            redirect_uri: `${settings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`,
             scope: this.getScope()
           }
         },
-        this.verifyCallback.bind(this)
+        (tokenset: TokenSet, userinfo: UserinfoResponse, done: VerifyDone) => {
+          void this.verifyCallback(tokenset, userinfo, done)
+        }
       )
+      this.strategy = strategy as OidcStrategy
     }
     return this.strategy
   }
 
   /**
    * Get the OpenID Connect client
-   * @returns {OpenIDClient.Client}
    */
-  getClient() {
+  getClient(): Client {
     if (!this.client) {
-      if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
+      if (!Database.serverSettings!.isOpenIDAuthSettingsValid) {
         throw new Error('OpenID Connect settings are not valid')
       }
+
+      const settings = settingsJson()
 
       // Custom req timeout see: https://github.com/panva/node-openid-client/blob/main/docs/README.md#customizing
       OpenIDClient.custom.setHttpOptionsDefaults({ timeout: 10000 })
 
       const openIdIssuerClient = new OpenIDClient.Issuer({
-        issuer: global.ServerSettings.authOpenIDIssuerURL,
-        authorization_endpoint: global.ServerSettings.authOpenIDAuthorizationURL,
-        token_endpoint: global.ServerSettings.authOpenIDTokenURL,
-        userinfo_endpoint: global.ServerSettings.authOpenIDUserInfoURL,
-        jwks_uri: global.ServerSettings.authOpenIDJwksURL,
-        end_session_endpoint: global.ServerSettings.authOpenIDLogoutURL
+        issuer: requiredSetting(settings.authOpenIDIssuerURL),
+        authorization_endpoint: requiredSetting(settings.authOpenIDAuthorizationURL),
+        token_endpoint: requiredSetting(settings.authOpenIDTokenURL),
+        userinfo_endpoint: requiredSetting(settings.authOpenIDUserInfoURL),
+        jwks_uri: requiredSetting(settings.authOpenIDJwksURL),
+        end_session_endpoint: settings.authOpenIDLogoutURL as string | undefined
       }).Client
 
       this.client = new openIdIssuerClient({
-        client_id: global.ServerSettings.authOpenIDClientID,
-        client_secret: global.ServerSettings.authOpenIDClientSecret,
-        id_token_signed_response_alg: global.ServerSettings.authOpenIDTokenSigningAlgorithm
+        client_id: requiredSetting(settings.authOpenIDClientID),
+        client_secret: requiredSetting(settings.authOpenIDClientSecret),
+        id_token_signed_response_alg: settings.authOpenIDTokenSigningAlgorithm
       })
     }
     return this.client
@@ -75,15 +190,15 @@ class OidcAuthStrategy {
 
   /**
    * Get the scope string for the OpenID Connect request
-   * @returns {string}
    */
-  getScope() {
+  getScope(): string {
+    const settings = settingsJson()
     let scope = 'openid profile email'
-    if (global.ServerSettings.authOpenIDGroupClaim) {
-      scope += ' ' + global.ServerSettings.authOpenIDGroupClaim
+    if (settings.authOpenIDGroupClaim) {
+      scope += ' ' + settings.authOpenIDGroupClaim
     }
-    if (global.ServerSettings.authOpenIDAdvancedPermsClaim) {
-      scope += ' ' + global.ServerSettings.authOpenIDAdvancedPermsClaim
+    if (settings.authOpenIDAdvancedPermsClaim) {
+      scope += ' ' + settings.authOpenIDAdvancedPermsClaim
     }
     return scope
   }
@@ -92,7 +207,7 @@ class OidcAuthStrategy {
    * Initialize the strategy with passport
    */
   init() {
-    if (!Database.serverSettings.isOpenIDAuthSettingsValid) {
+    if (!Database.serverSettings!.isOpenIDAuthSettingsValid) {
       Logger.error(`[OidcAuth] Cannot init openid auth strategy - invalid settings`)
       return
     }
@@ -110,33 +225,38 @@ class OidcAuthStrategy {
 
   /**
    * Verify callback for OpenID Connect authentication
-   * @param {Object} tokenset
-   * @param {Object} userinfo
-   * @param {Function} done - Passport callback
    */
-  async verifyCallback(tokenset, userinfo, done) {
+  async verifyCallback(tokenset: TokenSet, userinfo: UserinfoResponse, done: VerifyDone) {
     let isNewUser = false
-    let user = null
+    let user: User | null = null
     try {
       Logger.debug(`[OidcAuth] openid callback userinfo=`, JSON.stringify(userinfo, null, 2))
 
-      if (!userinfo.sub) {
+      // Property access preserves the original TypeError when userinfo is missing.
+      const subject = (userinfo as { sub?: unknown }).sub
+      if (!subject) {
+        throw new Error('Invalid userinfo, no sub')
+      }
+      const parsedUserInfo = openIdUserInfoSchema.safeParse(userinfo)
+      if (!parsedUserInfo.success) {
         throw new Error('Invalid userinfo, no sub')
       }
 
       if (!this.validateGroupClaim(userinfo)) {
-        throw new Error(`Group claim ${Database.serverSettings.authOpenIDGroupClaim} not found or empty in userinfo`)
+        throw new Error(`Group claim ${Database.serverSettings!.authOpenIDGroupClaim} not found or empty in userinfo`)
       }
 
-      user = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
+      const matched = await Database.userModel.findUserFromOpenIdUserInfo(userinfo)
 
-      if (user?.error) {
+      if (isOpenIdLinkError(matched)) {
         throw new Error('Invalid userinfo or already linked')
       }
 
+      user = matched
+
       if (!user) {
         // If no existing user was matched, auto-register if configured
-        if (global.ServerSettings.authOpenIDAutoRegister) {
+        if (settingsJson().authOpenIDAutoRegister) {
           Logger.info(`[User] openid: Auto-registering user with sub "${userinfo.sub}"`, userinfo)
           user = await Database.userModel.createUserFromOpenIdUserInfo(userinfo)
           isNewUser = true
@@ -145,19 +265,22 @@ class OidcAuthStrategy {
         }
       }
 
-      if (!user.isActive) {
+      // A missing user still throws on the isActive read, matching the previous callback.
+      const activeUser = user as User
+      if (!activeUser.isActive) {
         throw new Error('User not active or not found')
       }
 
-      await this.setUserGroup(user, userinfo)
-      await this.updateUserPermissions(user, userinfo)
+      await this.setUserGroup(activeUser, userinfo)
+      await this.updateUserPermissions(activeUser, userinfo)
 
       // We also have to save the id_token for later (used for logout) because we cannot set cookies here
-      user.openid_id_token = tokenset.id_token
+      const oidcUser: OidcUser = activeUser
+      oidcUser.openid_id_token = tokenset.id_token
 
-      return done(null, user)
+      return done(null, activeUser)
     } catch (error) {
-      Logger.error(`[OidcAuth] openid callback error: ${error?.message}\n${error?.stack}`)
+      Logger.error(`[OidcAuth] openid callback error: ${String((error as { message?: unknown })?.message)}\n${String(errorStack(error))}`)
       // Remove new user if an error occurs
       if (isNewUser && user) {
         await user.destroy()
@@ -168,17 +291,15 @@ class OidcAuthStrategy {
 
   /**
    * Validates the presence and content of the group claim in userinfo.
-   * @param {Object} userinfo
-   * @returns {boolean}
    */
-  validateGroupClaim(userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+  validateGroupClaim(userinfo: UserinfoResponse): boolean {
+    const groupClaimName = Database.serverSettings!.authOpenIDGroupClaim
     if (!groupClaimName)
       // Allow no group claim when configured like this
       return true
 
     // If configured it must exist in userinfo
-    if (!userinfo[groupClaimName]) {
+    if (!claimsOf(userinfo)[groupClaimName]) {
       return false
     }
     return true
@@ -186,21 +307,21 @@ class OidcAuthStrategy {
 
   /**
    * Sets the user group based on group claim in userinfo.
-   * @param {import('../models/User')} user
-   * @param {Object} userinfo
    */
-  async setUserGroup(user, userinfo) {
-    const groupClaimName = Database.serverSettings.authOpenIDGroupClaim
+  async setUserGroup(user: User, userinfo: UserinfoResponse) {
+    const groupClaimName = Database.serverSettings!.authOpenIDGroupClaim
     if (!groupClaimName)
       // No group claim configured, don't set anything
       return
 
-    if (!userinfo[groupClaimName]) throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
+    const groupClaim = claimsOf(userinfo)[groupClaimName]
+    if (!groupClaim) throw new Error(`Group claim ${groupClaimName} not found in userinfo`)
 
-    const groupsList = userinfo[groupClaimName].map((group) => group.toLowerCase())
+    const groups = groupClaim as { toLowerCase(): string }[]
+    const groupsList = groups.map((group) => group.toLowerCase())
     const rolesInOrderOfPriority = ['admin', 'user', 'guest']
 
-    let userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role))
+    const userType = rolesInOrderOfPriority.find((role) => groupsList.includes(role))
     if (userType) {
       if (user.type === 'root') {
         // Check OpenID Group
@@ -218,52 +339,49 @@ class OidcAuthStrategy {
         await user.save()
       }
     } else {
-      throw new Error(`No valid group found in userinfo: ${JSON.stringify(userinfo[groupClaimName], null, 2)}`)
+      throw new Error(`No valid group found in userinfo: ${JSON.stringify(groupClaim, null, 2)}`)
     }
   }
 
   /**
    * Updates user permissions based on the advanced permissions claim.
-   * @param {import('../models/User')} user
-   * @param {Object} userinfo
    */
-  async updateUserPermissions(user, userinfo) {
-    const absPermissionsClaim = Database.serverSettings.authOpenIDAdvancedPermsClaim
+  async updateUserPermissions(user: User, userinfo: UserinfoResponse) {
+    const absPermissionsClaim = Database.serverSettings!.authOpenIDAdvancedPermsClaim
     if (!absPermissionsClaim)
       // No advanced permissions claim configured, don't set anything
       return
 
     if (user.type === 'admin' || user.type === 'root') return
 
-    const absPermissions = userinfo[absPermissionsClaim]
+    const absPermissions = claimsOf(userinfo)[absPermissionsClaim]
     if (!absPermissions) throw new Error(`Advanced permissions claim ${absPermissionsClaim} not found in userinfo`)
 
-    if (await user.updatePermissionsFromExternalJSON(absPermissions)) {
+    if (await user.updatePermissionsFromExternalJSON(absPermissions as { [key: string]: unknown; allowedLibraries?: unknown[]; allowedTags?: unknown[] })) {
       Logger.info(`[OidcAuth] openid callback: Updating advanced perms for user "${user.username}" using "${JSON.stringify(absPermissions)}"`)
     }
   }
 
   /**
    * Generate PKCE parameters for the authorization request
-   * @param {Request} req
-   * @param {boolean} isMobileFlow
-   * @returns {Object|{error: string}}
    */
-  generatePkce(req, isMobileFlow) {
+  generatePkce(req: Request, isMobileFlow: boolean): PkceResult {
     if (isMobileFlow) {
-      if (!req.query.code_challenge) {
+      const codeChallenge = queryValue(req, 'code_challenge')
+      const challengeMethod = queryValue(req, 'code_challenge_method')
+      if (!codeChallenge) {
         return {
           error: 'code_challenge required for mobile flow (PKCE)'
         }
       }
-      if (req.query.code_challenge_method && req.query.code_challenge_method !== 'S256') {
+      if (challengeMethod && challengeMethod !== 'S256') {
         return {
           error: 'Only S256 code_challenge_method method supported'
         }
       }
       return {
-        code_challenge: req.query.code_challenge,
-        code_challenge_method: req.query.code_challenge_method || 'S256'
+        code_challenge: queryText(codeChallenge),
+        code_challenge_method: queryText(challengeMethod || 'S256')
       }
     } else {
       const code_verifier = OpenIDClient.generators.codeVerifier()
@@ -274,33 +392,35 @@ class OidcAuthStrategy {
 
   /**
    * Check if a redirect URI is valid
-   * @param {string} uri
-   * @returns {boolean}
    */
-  isValidRedirectUri(uri) {
+  isValidRedirectUri(uri: string): boolean {
+    const redirectUris = Database.serverSettings!.authOpenIDMobileRedirectURIs
     // Check if the redirect_uri is in the whitelist
-    return Database.serverSettings.authOpenIDMobileRedirectURIs.includes(uri) || (Database.serverSettings.authOpenIDMobileRedirectURIs.length === 1 && Database.serverSettings.authOpenIDMobileRedirectURIs[0] === '*')
+    return redirectUris.includes(uri) || (redirectUris.length === 1 && redirectUris[0] === '*')
   }
 
   /**
    * Get the authorization URL for OpenID Connect
    * Calls client manually because the strategy does not support forwarding the code challenge for the mobile flow
-   * @param {Request} req
-   * @returns {{ authorizationUrl: string }|{status: number, error: string}}
    */
-  getAuthorizationUrl(req) {
+  getAuthorizationUrl(req: Request): AuthorizationResult {
     const client = this.getClient()
     const strategy = this.getStrategy()
     const sessionKey = strategy._key
+    const sessionRequest = req as SessionRequest
 
     try {
       const { origin } = getRequestOrigin(req)
       const hostUrl = new URL(origin)
-      const isMobileFlow = req.query.response_type === 'code' || req.query.redirect_uri || req.query.code_challenge
+      const responseType = queryValue(req, 'response_type')
+      const redirectUriQuery = queryValue(req, 'redirect_uri')
+      const stateQuery = queryValue(req, 'state')
+      const isMobileFlow = Boolean(responseType === 'code' || redirectUriQuery || queryValue(req, 'code_challenge'))
+      const settings = settingsJson()
 
       // Only allow code flow (for mobile clients)
-      if (req.query.response_type && req.query.response_type !== 'code') {
-        Logger.debug(`[OidcAuth] OIDC Invalid response_type=${req.query.response_type}`)
+      if (responseType && responseType !== 'code') {
+        Logger.debug(`[OidcAuth] OIDC Invalid response_type=${stringValue(responseType)}`)
         return {
           status: 400,
           error: 'Invalid response_type, only code supported'
@@ -308,16 +428,16 @@ class OidcAuthStrategy {
       }
 
       // Generate a state on web flow or if no state supplied
-      const state = !isMobileFlow || !req.query.state ? OpenIDClient.generators.random() : req.query.state
+      const state = (!isMobileFlow || !stateQuery ? OpenIDClient.generators.random() : stateQuery) as string
 
       // Redirect URL for the SSO provider
-      let redirectUri
+      let redirectUri: string
       if (isMobileFlow) {
         // Mobile required redirect uri
         // If it is in the whitelist, we will save into this.openIdAuthSession and set the redirect uri to /auth/openid/mobile-redirect
         //    where we will handle the redirect to it
-        if (!req.query.redirect_uri || !this.isValidRedirectUri(req.query.redirect_uri)) {
-          Logger.debug(`[OidcAuth] Invalid redirect_uri=${req.query.redirect_uri}`)
+        if (!redirectUriQuery || !this.isValidRedirectUri(queryText(redirectUriQuery))) {
+          Logger.debug(`[OidcAuth] Invalid redirect_uri=${String(redirectUriQuery)}`)
           return {
             status: 400,
             error: 'Invalid redirect_uri'
@@ -325,13 +445,13 @@ class OidcAuthStrategy {
         }
         // We cannot save the supplied redirect_uri in the session, because it the mobile client uses browser instead of the API
         //   for the request to mobile-redirect and as such the session is not shared
-        this.openIdAuthSession.set(state, { mobile_redirect_uri: req.query.redirect_uri })
+        this.openIdAuthSession.set(state, { mobile_redirect_uri: queryText(redirectUriQuery) })
 
-        redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
+        redirectUri = new URL(`${settings.authOpenIDSubfolderForRedirectURLs}/auth/openid/mobile-redirect`, hostUrl).toString()
       } else {
-        redirectUri = new URL(`${global.ServerSettings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`, hostUrl).toString()
+        redirectUri = new URL(`${settings.authOpenIDSubfolderForRedirectURLs}/auth/openid/callback`, hostUrl).toString()
 
-        if (req.query.state) {
+        if (stateQuery) {
           Logger.debug(`[OidcAuth] Invalid state - not allowed on web openid flow`)
           return {
             status: 400,
@@ -345,20 +465,20 @@ class OidcAuthStrategy {
       Logger.debug(`[OidcAuth] OIDC redirect_uri=${redirectUri}`)
 
       const pkceData = this.generatePkce(req, isMobileFlow)
-      if (pkceData.error) {
+      if ('error' in pkceData) {
         return {
           status: 400,
           error: pkceData.error
         }
       }
 
-      req.session[sessionKey] = {
-        ...req.session[sessionKey],
+      sessionRequest.session[sessionKey] = {
+        ...sessionRequest.session[sessionKey],
         state: state,
         max_age: strategy._params.max_age,
         response_type: 'code',
         code_verifier: pkceData.code_verifier, // not null if web flow
-        mobile: req.query.redirect_uri, // Used in the abs callback later, set mobile if redirect_uri is filled out
+        mobile: redirectUriQuery, // Used in the abs callback later, set mobile if redirect_uri is filled out
         sso_redirect_uri: redirectUri // Save the redirect_uri (for the SSO Provider) for the callback
       }
 
@@ -377,26 +497,23 @@ class OidcAuthStrategy {
         isMobileFlow
       }
     } catch (error) {
-      Logger.error(`[OidcAuth] Error generating authorization URL: ${error}\n${error?.stack}`)
+      Logger.error(`[OidcAuth] Error generating authorization URL: ${String(error)}\n${String(errorStack(error))}`)
       return {
         status: 500,
-        error: error.message || 'Unknown error'
+        error: errorText(error) || 'Unknown error'
       }
     }
   }
 
   /**
    * Get the end session URL for logout
-   * @param {Request} req
-   * @param {string} idToken
-   * @param {string} authMethod
-   * @returns {string|null}
    */
-  getEndSessionUrl(req, idToken, authMethod) {
+  getEndSessionUrl(req: Request, idToken: string | undefined, authMethod: string): string | null {
     const client = this.getClient()
+    const endpoint = client.issuer.end_session_endpoint as { length: number } | string | null | undefined
 
-    if (client.issuer.end_session_endpoint && client.issuer.end_session_endpoint.length > 0) {
-      let postLogoutRedirectUri = null
+    if (endpoint && endpoint.length > 0) {
+      let postLogoutRedirectUri: string | null = null
 
       if (authMethod === 'openid') {
         const { origin } = getRequestOrigin(req)
@@ -416,39 +533,28 @@ class OidcAuthStrategy {
       return client.endSessionUrl({
         id_token_hint: idToken,
         post_logout_redirect_uri: postLogoutRedirectUri
-      })
+      } as OpenIDClient.EndSessionParameters)
     }
 
     return null
   }
 
   /**
-   * @typedef {Object} OpenIdIssuerConfig
-   * @property {string} issuer
-   * @property {string} authorization_endpoint
-   * @property {string} token_endpoint
-   * @property {string} userinfo_endpoint
-   * @property {string} end_session_endpoint
-   * @property {string} jwks_uri
-   * @property {string} id_token_signing_alg_values_supported
-   *
    * Get OpenID Connect configuration from an issuer URL
-   * @param {string} issuerUrl
-   * @returns {Promise<OpenIdIssuerConfig|{status: number, error: string}>}
    */
-  async getIssuerConfig(issuerUrl) {
+  async getIssuerConfig(issuerUrl: string): Promise<OpenIdIssuerResult> {
     // Strip trailing slash
     if (issuerUrl.endsWith('/')) issuerUrl = issuerUrl.slice(0, -1)
 
     // Append config pathname and validate URL
-    let configUrl = null
+    let configUrl: URL | null = null
     try {
       configUrl = new URL(`${issuerUrl}/.well-known/openid-configuration`)
       if (!configUrl.pathname.endsWith('/.well-known/openid-configuration')) {
         throw new Error('Invalid pathname')
       }
     } catch (error) {
-      Logger.error(`[OidcAuth] Failed to get openid configuration. Invalid URL "${configUrl}"`, error)
+      Logger.error(`[OidcAuth] Failed to get openid configuration. Invalid URL "${String(configUrl)}"`, error)
       return {
         status: 400,
         error: "Invalid request. Query param 'issuer' is invalid"
@@ -456,15 +562,18 @@ class OidcAuthStrategy {
     }
 
     try {
-      const { data } = await axios.get(configUrl.toString())
+      const { data } = await axios.get<unknown>(configUrl.toString())
+      const parsed = openIdIssuerConfigSchema.safeParse(data)
+      // Keep the axios payload. Zod only checks that a loose object was returned.
+      const config = (parsed.success ? data : data) as OpenIdIssuerConfig
       return {
-        issuer: data.issuer,
-        authorization_endpoint: data.authorization_endpoint,
-        token_endpoint: data.token_endpoint,
-        userinfo_endpoint: data.userinfo_endpoint,
-        end_session_endpoint: data.end_session_endpoint,
-        jwks_uri: data.jwks_uri,
-        id_token_signing_alg_values_supported: data.id_token_signing_alg_values_supported
+        issuer: config.issuer,
+        authorization_endpoint: config.authorization_endpoint,
+        token_endpoint: config.token_endpoint,
+        userinfo_endpoint: config.userinfo_endpoint,
+        end_session_endpoint: config.end_session_endpoint,
+        jwks_uri: config.jwks_uri,
+        id_token_signing_alg_values_supported: config.id_token_signing_alg_values_supported
       }
     } catch (error) {
       Logger.error(`[OidcAuth] Failed to get openid configuration at "${configUrl}"`, error)
@@ -477,80 +586,79 @@ class OidcAuthStrategy {
 
   /**
    * Handle mobile redirect for OAuth2 callback
-   * @param {Request} req
-   * @param {Response} res
    */
-  handleMobileRedirect(req, res) {
+  handleMobileRedirect(req: Request, res: Response) {
     try {
       // Extract the state parameter from the request
-      const { state, code } = req.query
+      const state = queryValue(req, 'state')
+      const code = queryValue(req, 'code')
 
       // Check if the state provided is in our list
-      if (!state || !this.openIdAuthSession.has(state)) {
+      if (!state || !this.openIdAuthSession.has(queryText(state))) {
         Logger.error('[OidcAuth] /auth/openid/mobile-redirect route: State parameter mismatch')
         return res.status(400).send('State parameter mismatch')
       }
 
-      let mobile_redirect_uri = this.openIdAuthSession.get(state).mobile_redirect_uri
+      const mobileLogin = this.openIdAuthSession.get(queryText(state))
+      const mobile_redirect_uri = mobileLogin!.mobile_redirect_uri
 
       if (!mobile_redirect_uri) {
         Logger.error('[OidcAuth] No redirect URI')
         return res.status(400).send('No redirect URI')
       }
 
-      this.openIdAuthSession.delete(state)
+      this.openIdAuthSession.delete(queryText(state))
 
-      const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
+      const redirectUri = `${mobile_redirect_uri}?code=${encodeURIComponent(stringValue(code))}&state=${encodeURIComponent(stringValue(state))}`
       // Redirect to the overwrite URI saved in the map
       res.redirect(redirectUri)
     } catch (error) {
-      Logger.error(`[OidcAuth] Error in /auth/openid/mobile-redirect route: ${error}\n${error?.stack}`)
+      Logger.error(`[OidcAuth] Error in /auth/openid/mobile-redirect route: ${String(error)}\n${String(errorStack(error))}`)
       res.status(500).send('Internal Server Error')
     }
   }
 
   /**
    * Validates if a callback URL is safe for redirect (same-origin only)
-   * @param {string} callbackUrl - The callback URL to validate
-   * @param {Request} req - Express request object to get current host
-   * @returns {boolean} - True if the URL is safe (same-origin), false otherwise
    */
-  isValidWebCallbackUrl(callbackUrl, req) {
+  isValidWebCallbackUrl(callbackUrl: unknown, req: Request): boolean {
     if (!callbackUrl) return false
+
+    const callback = callbackUrl as string
 
     try {
       // Reject protocol-relative (//host) and backslash-prefixed (/\host) values,
       // which browsers resolve to a cross-origin absolute URL.
-      if (callbackUrl.startsWith('//') || callbackUrl.startsWith('/\\')) {
-        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL: ${callbackUrl}`)
+      if (callback.startsWith('//') || callback.startsWith('/\\')) {
+        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL: ${callback}`)
         return false
       }
 
       const { origin: serverOrigin } = getRequestOrigin(req)
-      const resolvedUrl = callbackUrl.startsWith('/') ? new URL(callbackUrl, serverOrigin) : new URL(callbackUrl)
+      const resolvedUrl = callback.startsWith('/') ? new URL(callback, serverOrigin) : new URL(callback)
 
       if (resolvedUrl.origin !== serverOrigin) {
-        Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callbackUrl} (expected ${serverOrigin})`)
+        Logger.warn(`[OidcAuth] Rejected callback URL to different origin: ${callback} (expected ${serverOrigin})`)
         return false
       }
 
       const pathname = decodeURIComponent(resolvedUrl.pathname)
       if (pathname.startsWith('//') || pathname.startsWith('/\\')) {
-        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL path: ${callbackUrl}`)
+        Logger.warn(`[OidcAuth] Rejected protocol-relative callback URL path: ${callback}`)
         return false
       }
 
       if (!resolvedUrl.pathname.startsWith(global.RouterBasePath + '/')) {
-        Logger.warn(`[OidcAuth] Rejected callback URL outside router base path: ${callbackUrl}`)
+        Logger.warn(`[OidcAuth] Rejected callback URL outside router base path: ${callback}`)
         return false
       }
 
       return true
     } catch (error) {
-      Logger.error(`[OidcAuth] Invalid callback URL format: ${callbackUrl}`, error)
+      Logger.error(`[OidcAuth] Invalid callback URL format: ${stringValue(callbackUrl)}`, error)
       return false
     }
   }
 }
 
-module.exports = OidcAuthStrategy
+export = OidcAuthStrategy
