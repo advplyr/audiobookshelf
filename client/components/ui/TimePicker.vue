@@ -1,5 +1,5 @@
 <template>
-  <div tabindex="0" @focus="focusDigit('second0')" class="relative">
+  <div tabindex="0" data-hotkey-ignore @focus="focusDigit('second0')" class="relative">
     <div class="rounded-sm text-gray-200 border w-full px-3 py-2" :class="focusedDigit ? 'bg-primary/50 border-gray-300' : 'bg-primary border-gray-600'" @click="clickInput" v-click-outside="clickOutsideObj">
       <div class="flex items-center">
         <template v-for="(digit, index) in digitDisplay">
@@ -167,12 +167,16 @@ export default {
       if (!this.focusedDigit || !evt.key) return
 
       if (evt.key === 'ArrowLeft') {
+        evt.preventDefault()
         return this.shiftFocusLeft()
       } else if (evt.key === 'ArrowRight') {
+        evt.preventDefault()
         return this.shiftFocusRight()
       } else if (evt.key === 'ArrowUp') {
+        evt.preventDefault()
         return this.increaseFocused()
       } else if (evt.key === 'ArrowDown') {
+        evt.preventDefault()
         return this.decreaseFocused()
       } else if (evt.key === 'Enter' || evt.key === 'Escape' || evt.key === 'Tab') {
         return this.removeFocus()
