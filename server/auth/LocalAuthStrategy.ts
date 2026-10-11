@@ -1,15 +1,38 @@
-const passport = require('passport')
-const LocalStrategy = require('../libs/passportLocal')
-const Database = require('../Database')
-const Logger = require('../Logger')
+import type { Request } from 'express'
+import passport from 'passport'
+import LocalStrategyJs from '../libs/passportLocal'
+import Database from '../Database'
+import Logger from '../Logger'
+import bcryptJs from '../libs/bcryptjs'
+import requestIp from '../libs/requestIp'
+import type User from '../models/User'
 
-const bcrypt = require('../libs/bcryptjs')
-const requestIp = require('../libs/requestIp')
+// Vendored passport-local and bcrypt builds are untyped JavaScript.
+type VerifyDone = (err: unknown, user?: User | null) => void
+type LocalStrategyInstance = object
+type LocalStrategyCtor = new (
+  options: { passReqToCallback: boolean },
+  verify: (req: Request, username: string, password: string, done: VerifyDone) => void | Promise<void>
+) => LocalStrategyInstance
+
+type BcryptApi = {
+  compare(password: string, hash: string): Promise<boolean>
+  hash(password: string, rounds: number, callback: (err: Error | null, hash?: string) => void): void
+}
+
+const LocalStrategy = LocalStrategyJs as LocalStrategyCtor
+const bcrypt = bcryptJs as BcryptApi
+const clientIp = requestIp as { getClientIp(req: Request): string | null }
+
+type PasswordChangeResult = { error: string } | { success: true }
 
 /**
  * Local authentication strategy using username/password
  */
 class LocalAuthStrategy {
+  name: string
+  declare strategy: LocalStrategyInstance | null
+
   constructor() {
     this.name = 'local'
     this.strategy = null
@@ -17,9 +40,8 @@ class LocalAuthStrategy {
 
   /**
    * Get the passport strategy instance
-   * @returns {LocalStrategy}
    */
-  getStrategy() {
+  getStrategy(): LocalStrategyInstance {
     if (!this.strategy) {
       this.strategy = new LocalStrategy({ passReqToCallback: true }, this.verifyCredentials.bind(this))
     }
@@ -43,12 +65,8 @@ class LocalAuthStrategy {
 
   /**
    * Verify user credentials
-   * @param {import('express').Request} req
-   * @param {string} username
-   * @param {string} password
-   * @param {Function} done - Passport callback
    */
-  async verifyCredentials(req, username, password, done) {
+  async verifyCredentials(req: Request, username: string, password: string, done: VerifyDone) {
     // Load the user given it's username
     const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
@@ -71,7 +89,7 @@ class LocalAuthStrategy {
         return
       }
       // approve login
-      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
+      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${clientIp.getClientIp(req)}`)
 
       done(null, user)
       return
@@ -85,7 +103,7 @@ class LocalAuthStrategy {
     const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       // approve login
-      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
+      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${clientIp.getClientIp(req)}`)
 
       done(null, user)
       return
@@ -98,21 +116,16 @@ class LocalAuthStrategy {
 
   /**
    * Log failed login attempts
-   * @param {import('express').Request} req
-   * @param {string} username
-   * @param {string} message
    */
-  logFailedLoginAttempt(req, username, message) {
+  logFailedLoginAttempt(req: Request, username: string | null, message: string) {
     if (!req || !username || !message) return
-    Logger.error(`[LocalAuth] Failed login attempt for username "${username}" from ip ${requestIp.getClientIp(req)} (${message})`)
+    Logger.error(`[LocalAuth] Failed login attempt for username "${username}" from ip ${clientIp.getClientIp(req)} (${message})`)
   }
 
   /**
    * Hash a password with bcrypt
-   * @param {string} password
-   * @returns {Promise<string>} hash
    */
-  hashPassword(password) {
+  hashPassword(password: string): Promise<string | null | undefined> {
     return new Promise((resolve) => {
       bcrypt.hash(password, 8, (err, hash) => {
         if (err) {
@@ -126,11 +139,8 @@ class LocalAuthStrategy {
 
   /**
    * Compare password with user's hashed password
-   * @param {string} password
-   * @param {import('../models/User')} user
-   * @returns {Promise<boolean>}
    */
-  comparePassword(password, user) {
+  comparePassword(password: string, user: User): boolean | Promise<boolean> {
     if (user.type === 'root' && !password && !user.pash) return true
     if (!password || !user.pash) return false
     return bcrypt.compare(password, user.pash)
@@ -138,11 +148,8 @@ class LocalAuthStrategy {
 
   /**
    * Change user password
-   * @param {import('../models/User')} user
-   * @param {string} password
-   * @param {string} newPassword
    */
-  async changePassword(user, password, newPassword) {
+  async changePassword(user: User, password: string, newPassword: string): Promise<PasswordChangeResult> {
     // Only root can have an empty password
     if (user.type !== 'root' && !newPassword) {
       return {
@@ -158,7 +165,7 @@ class LocalAuthStrategy {
       }
     }
 
-    let pw = ''
+    let pw: string | null | undefined = ''
     if (newPassword) {
       pw = await this.hashPassword(newPassword)
       if (!pw) {
@@ -183,4 +190,4 @@ class LocalAuthStrategy {
   }
 }
 
-module.exports = LocalAuthStrategy
+export = LocalAuthStrategy
