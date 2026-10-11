@@ -4,8 +4,8 @@
     <div id="bookshelf" class="w-full h-full px-1 py-4 md:p-8 relative overflow-y-auto">
       <table class="tracksTable max-w-2xl mx-auto">
         <tr>
-          <th class="text-left">{{ $strings.LabelName }}</th>
-          <th class="text-center w-24">{{ $strings.LabelBooks }}</th>
+          <th class="text-left cursor-pointer hover:underline" @click="sortNarratorsBy('name')">{{ $strings.LabelName }}<span class="no-underline inline-block">&nbsp;{{ sortingArrow('name') }}</span></th>
+          <th class="text-center w-24 cursor-pointer hover:underline"  @click="sortNarratorsBy('numBooks')">{{ $strings.LabelBooks }}<span class="no-underline inline-block">&nbsp;{{ sortingArrow('numBooks') }}</span></th>
           <th v-if="userCanUpdate" class="w-40"></th>
         </tr>
         <tr v-for="narrator in narrators" :key="narrator.id">
@@ -63,7 +63,9 @@ export default {
       loading: true,
       narrators: [],
       selectedNarrator: null,
-      newNarratorName: null
+      newNarratorName: null,
+      sortBy: 'name',
+      sortOrder: 'asc'
     }
   },
   computed: {
@@ -143,14 +145,38 @@ export default {
         })
     },
     async init() {
+      await this.fetchNarrators()
+    },
+    async fetchNarrators() {
+      this.loading = true
       this.narrators = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/narrators`)
+        .$get(`/api/libraries/${this.currentLibraryId}/narrators`, {params: {sortOrder: this.sortOrder, sortBy: this.sortBy}})
         .then((response) => response.narrators)
         .catch((error) => {
           console.error('Failed to load narrators', error)
           return []
         })
       this.loading = false
+    },
+    async sortNarratorsBy(attribute) {
+      if (this.sortBy == attribute) {
+        if (this.sortOrder == 'asc') {
+          this.sortOrder = 'desc';
+        } else {
+          this.sortOrder = 'asc';
+        }
+      } else {
+        this.sortBy = attribute;
+        this.sortOrder = 'asc';
+      }
+      await this.fetchNarrators();
+    },
+    sortingArrow(attribute) {
+      if (this.sortBy == attribute) {
+        return this.sortOrder == 'asc'? '▲' : '▼';
+      } else {
+        return '';
+      }
     }
   },
   mounted() {
