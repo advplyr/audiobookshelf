@@ -1,36 +1,52 @@
-const { LRUCache } = require('lru-cache')
-const Logger = require('../Logger')
-const Database = require('../Database')
+import { LRUCache } from 'lru-cache'
+import type { Request, Response, NextFunction } from 'express'
+import type { OutgoingHttpHeaders } from 'http'
+import Logger from '../Logger'
+import Database from '../Database'
+
+type CachedResponse = { body: unknown; headers: OutgoingHttpHeaders; statusCode: number }
+// The original send wrapper returns undefined after invoking the saved Express send.
+type CacheResponse = Omit<Response, 'send'> & {
+  send: (body?: unknown) => unknown
+  originalSend?: (body?: unknown) => unknown
+}
+type AuthRequest = Request & { user?: { username: string } }
+type HookModel = { name?: unknown; model?: { name?: unknown }; constructor?: { name?: unknown } } | null | undefined
 
 class ApiCacheManager {
-  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: (item) => item.body.length + JSON.stringify(item.headers).length }
+  declare cache: LRUCache<string, CachedResponse>
+  declare ttlOptions: { ttl: number }
+  // Preserve the existing size assumption and its failure for bodies without length.
+  defaultCacheOptions = { max: 1000, maxSize: 10 * 1000 * 1000, sizeCalculation: (item: CachedResponse) => (item.body as { length: number }).length + JSON.stringify(item.headers).length }
   defaultTtlOptions = { ttl: 30 * 60 * 1000 }
   highChurnModels = new Set(['session', 'mediaProgress', 'playbackSession', 'device'])
   modelsInvalidatingPersonalized = new Set(['mediaProgress'])
   modelsInvalidatingMe = new Set(['session', 'mediaProgress', 'playbackSession', 'device'])
 
-  constructor(cache = new LRUCache(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
+  constructor(cache = new LRUCache<string, CachedResponse>(this.defaultCacheOptions), ttlOptions = this.defaultTtlOptions) {
     this.cache = cache
     this.ttlOptions = ttlOptions
   }
 
-  init(database = Database) {
-    let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy', 'afterUpsert']
-    hooks.forEach((hook) => database.sequelize.addHook(hook, (model) => this.clear(model, hook)))
+  init(database: Pick<typeof Database, 'sequelize'> = Database) {
+    let hooks = ['afterCreate', 'afterUpdate', 'afterDestroy', 'afterBulkCreate', 'afterBulkUpdate', 'afterBulkDestroy', 'afterUpsert'] as const
+    hooks.forEach((hook) => database.sequelize!.addHook(hook, (model: unknown) => this.clear(model, hook)))
   }
 
-  getModelName(model) {
+  getModelName(value: unknown) {
+    // Sequelize hook payloads vary; these are property views, with the existing string guards retained.
+    const model = value as HookModel
     if (typeof model?.name === 'string') return model.name
     if (typeof model?.model?.name === 'string') return model.model.name
     if (typeof model?.constructor?.name === 'string' && model.constructor.name !== 'Object') return model.constructor.name
     return 'unknown'
   }
 
-  clearByUrlPattern(urlPattern) {
+  clearByUrlPattern(urlPattern: RegExp) {
     let removed = 0
     for (const key of this.cache.keys()) {
       try {
-        const parsed = JSON.parse(key)
+        const parsed = JSON.parse(key) as { url?: unknown } | null | undefined
         if (typeof parsed?.url === 'string' && urlPattern.test(parsed.url)) {
           if (this.cache.delete(key)) removed++
         }
@@ -41,7 +57,7 @@ class ApiCacheManager {
     return removed
   }
 
-  clearUserProgressSlices(modelName, hook) {
+  clearUserProgressSlices(modelName: string, hook: string) {
     let removedPersonalized = 0
     let removedRecentEpisodes = 0
     if (this.modelsInvalidatingPersonalized.has(modelName)) {
@@ -52,7 +68,7 @@ class ApiCacheManager {
     Logger.debug(`[ApiCacheManager] ${modelName}.${hook}: cleared user-progress cache slices (personalized=${removedPersonalized}, recentEpisodes=${removedRecentEpisodes}, me=${removedMe})`)
   }
 
-  clear(model, hook) {
+  clear(model: unknown, hook: string) {
     const modelName = this.getModelName(model)
     if (this.highChurnModels.has(modelName)) {
       this.clearUserProgressSlices(modelName, hook)
@@ -79,13 +95,13 @@ class ApiCacheManager {
      * @param {import('express').Response} res
      * @param {import('express').NextFunction} next
      */
-    return (req, res, next) => {
+    return (req: AuthRequest, res: CacheResponse, next: NextFunction) => {
       if (req.query.sort === 'random') {
         Logger.debug(`[ApiCacheManager] Skipping cache for random sort`)
         return next()
       }
 
-      const key = { user: req.user.username, url: req.url }
+      const key = { user: req.user!.username, url: req.url }
       const stringifiedKey = JSON.stringify(key)
       Logger.debug(`[ApiCacheManager] count: ${this.cache.size} size: ${this.cache.calculatedSize}`)
       const cached = this.cache.get(stringifiedKey)
@@ -97,7 +113,7 @@ class ApiCacheManager {
         return
       }
       res.originalSend = res.send
-      res.send = (body) => {
+      res.send = (body: unknown) => {
         Logger.debug(`[ApiCacheManager] Cache miss: ${stringifiedKey}`)
         const cached = { body, headers: res.getHeaders(), statusCode: res.statusCode }
         if (key.url.search(/^\/libraries\/.*?\/personalized/) !== -1) {
@@ -106,10 +122,10 @@ class ApiCacheManager {
         } else {
           this.cache.set(stringifiedKey, cached)
         }
-        res.originalSend(body)
+        res.originalSend!(body)
       }
       next()
     }
   }
 }
-module.exports = ApiCacheManager
+export = ApiCacheManager

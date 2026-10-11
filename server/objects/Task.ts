@@ -83,7 +83,7 @@ class Task {
    * @param {boolean} showSuccess
    * @param {Object} [data]
    */
-  setData(action: string, titleString: TaskString, descriptionString: TaskString | null, showSuccess: boolean, data: Record<string, unknown> = {}) {
+  setData(action: string, titleString: TaskString, descriptionString: TaskString | null, showSuccess: boolean, data: Record<string, unknown> | null = {}) {
     this.id = uuidv4()
     this.action = action
     this.data = { ...data }

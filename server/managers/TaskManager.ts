@@ -1,14 +1,10 @@
-const SocketAuthority = require('../SocketAuthority')
-const Task = require('../objects/Task')
+import SocketAuthority from '../SocketAuthority'
+import Task from '../objects/Task'
 
-/**
- * @typedef TaskString
- * @property {string} text
- * @property {string} key
- * @property {string[]} [subs]
- */
+type TaskString = Parameters<Task['setData']>[1]
 
 class TaskManager {
+  declare tasks: Task[]
   constructor() {
     /** @type {Task[]} */
     this.tasks = []
@@ -19,7 +15,7 @@ class TaskManager {
    *
    * @param {Task} task
    */
-  addTask(task) {
+  addTask(task: Task) {
     this.tasks.push(task)
     SocketAuthority.emitter('task_started', task.toJSON())
   }
@@ -29,7 +25,7 @@ class TaskManager {
    *
    * @param {Task} task
    */
-  taskFinished(task) {
+  taskFinished(task: Task) {
     if (this.tasks.some((t) => t.id === task.id)) {
       this.tasks = this.tasks.filter((t) => t.id !== task.id)
       SocketAuthority.emitter('task_finished', task.toJSON())
@@ -45,7 +41,7 @@ class TaskManager {
    * @param {boolean} showSuccess
    * @param {Object} [data]
    */
-  createAndAddTask(action, titleString, descriptionString, showSuccess, data = {}) {
+  createAndAddTask(action: string, titleString: TaskString, descriptionString: TaskString | null, showSuccess: boolean, data: Record<string, unknown> | null = {}) {
     const task = new Task()
     task.setData(action, titleString, descriptionString, showSuccess, data)
     this.addTask(task)
@@ -60,7 +56,7 @@ class TaskManager {
    * @param {TaskString|null} descriptionString
    * @param {TaskString} errorMessageString
    */
-  createAndEmitFailedTask(action, titleString, descriptionString, errorMessageString) {
+  createAndEmitFailedTask(action: string, titleString: TaskString, descriptionString: TaskString | null, errorMessageString: TaskString) {
     const task = new Task()
     task.setData(action, titleString, descriptionString, false)
     task.setFailed(errorMessageString)
@@ -68,4 +64,4 @@ class TaskManager {
     return task
   }
 }
-module.exports = new TaskManager()
+export = new TaskManager()
