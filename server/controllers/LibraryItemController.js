@@ -178,11 +178,15 @@ class LibraryItemController {
     let selectedFiles = null
     if (req.query.inos && typeof req.query.inos === 'string') {
       selectedFiles = []
-      for (const ino of req.query.inos.split(',')) {
-        const libraryFile = req.libraryItem.libraryFiles.find((lf) => lf.ino === ino)
+      for (const ino of new Set(req.query.inos.split(','))) {
+        const libraryFile = req.libraryItem.getLibraryFileWithIno(ino)
         if (!libraryFile) {
           Logger.warn(`[LibraryItemController] User "${req.user.username}" requested download for file ino "${ino}" not in item "${itemTitle}"`)
           return res.status(404).send('Library file not found')
+        }
+        if (!(await fs.pathExists(libraryFile.metadata.path))) {
+          Logger.warn(`[LibraryItemController] User "${req.user.username}" requested download for file ino "${ino}" missing at "${libraryFile.metadata.path}"`)
+          return res.status(404).send('File not found')
         }
         selectedFiles.push({ path: libraryFile.metadata.path, name: libraryFile.metadata.relPath })
       }

@@ -354,7 +354,10 @@ describe('LibraryItemController', () => {
             { ino: '100', metadata: { path: Path.join(tmpDir, 'a.mp3'), relPath: 'a.mp3', filename: 'a.mp3' } },
             { ino: '200', metadata: { path: Path.join(tmpDir, 'sub', 'b.pdf'), relPath: 'sub/b.pdf', filename: 'b.pdf' } },
             { ino: '300', metadata: { path: Path.join(tmpDir, 'c.txt'), relPath: 'c.txt', filename: 'c.txt' } }
-          ]
+          ],
+          getLibraryFileWithIno(ino) {
+            return this.libraryFiles.find((lf) => lf.ino === ino) || null
+          }
         }
       }
     })
@@ -387,6 +390,36 @@ describe('LibraryItemController', () => {
 
     it('returns 404 when an ino does not match a library file', async () => {
       fakeReq.query.inos = '100,999'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.status.calledWith(404)).to.be.true
+      expect(fakeRes.attachment.called).to.be.false
+    })
+
+    it('deduplicates repeated inos', async () => {
+      fakeReq.query.inos = '100,100'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      const zipPath = Path.join(os.tmpdir(), `abs-download-test-dedup-${Date.now()}.zip`)
+      await fs.promises.writeFile(zipPath, fakeRes.buffer)
+      const zip = new StreamZip.async({ file: zipPath })
+      try {
+        // entries() is keyed by name so duplicates collapse - entriesCount catches them
+        expect(await zip.entriesCount).to.equal(1)
+        expect(await zip.entry('a.mp3')).to.exist
+      } finally {
+        await zip.close()
+        await fs.promises.rm(zipPath, { force: true })
+      }
+    })
+
+    it('returns 404 when a selected file is missing from the filesystem', async () => {
+      await fs.promises.rm(Path.join(tmpDir, 'a.mp3'))
+      fakeReq.query.inos = '100,200'
       const fakeRes = new FakeDownloadResponse()
 
       await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
