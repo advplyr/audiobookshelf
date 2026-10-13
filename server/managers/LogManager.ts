@@ -1,10 +1,13 @@
-const Path = require('path')
-const fs = require('../libs/fsExtra')
+import Path from 'path'
+import fsExtra from '../libs/fsExtra'
+import type { unlink } from 'fs/promises'
+// fsExtra re-exports the promise-based graceful-fs unlink method.
+const fs = fsExtra as typeof fsExtra & { unlink: typeof unlink }
 
-const Logger = require('../Logger')
-const DailyLog = require('../objects/DailyLog')
+import Logger from '../Logger'
+import DailyLog from '../objects/DailyLog'
 
-const { LogLevel } = require('../utils/constants')
+import { LogLevel } from '../utils/constants'
 
 const TAG = '[LogManager]'
 
@@ -17,10 +20,16 @@ const TAG = '[LogManager]'
  * @property {number} level
  */
 
+type LogObject = { timestamp: string; source: string; message: string; levelName: string; level: number }
 class LogManager {
+  declare DailyLogPath: string
+  declare ScanLogPath: string
+  declare currentDailyLog: DailyLog | null
+  declare dailyLogBuffer: LogObject[]
+  declare dailyLogFiles: string[]
   constructor() {
-    this.DailyLogPath = Path.posix.join(global.MetadataPath, 'logs', 'daily')
-    this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
+    this.DailyLogPath = Path.posix.join(global.MetadataPath!, 'logs', 'daily')
+    this.ScanLogPath = Path.posix.join(global.MetadataPath!, 'logs', 'scans')
 
     /** @type {DailyLog} */
     this.currentDailyLog = null
@@ -33,7 +42,7 @@ class LogManager {
   }
 
   get loggerDailyLogsToKeep() {
-    return global.ServerSettings.loggerDailyLogsToKeep || 7
+    return (global.ServerSettings as { loggerDailyLogsToKeep?: number }).loggerDailyLogsToKeep || 7
   }
 
   async ensureLogDirs() {
@@ -41,7 +50,7 @@ class LogManager {
       await fs.ensureDir(this.DailyLogPath)
       await fs.ensureDir(this.ScanLogPath)
     } catch (error) {
-      console.error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}": ${error.message}`)
+      console.error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}": ${(error as Error).message}`)
       throw new Error(`[LogManager] Failed to create log directories at "${this.DailyLogPath}"`, { cause: error })
     }
   }
@@ -82,7 +91,7 @@ class LogManager {
     // Log buffered daily logs
     if (this.dailyLogBuffer.length) {
       this.dailyLogBuffer.forEach((logObj) => {
-        this.currentDailyLog.appendLog(logObj)
+        void this.currentDailyLog!.appendLog(logObj)
       })
       this.dailyLogBuffer = []
     }
@@ -110,7 +119,7 @@ class LogManager {
    *
    * @param {string} filename
    */
-  async removeLogFile(filename) {
+  async removeLogFile(filename: string) {
     const fullPath = Path.join(this.DailyLogPath, filename)
     const exists = await fs.pathExists(fullPath)
     if (!exists) {
@@ -121,7 +130,7 @@ class LogManager {
         await fs.unlink(fullPath)
         Logger.info(TAG, 'Removed daily log: ' + filename)
         this.dailyLogFiles = this.dailyLogFiles.filter((dlf) => dlf !== filename)
-      } catch (error) {
+      } catch {
         Logger.error(TAG, 'Failed to unlink log file ' + fullPath)
       }
     }
@@ -131,7 +140,7 @@ class LogManager {
    *
    * @param {LogObject} logObj
    */
-  async logToFile(logObj) {
+  async logToFile(logObj: LogObject) {
     // Fatal crashes get logged to a separate file
     if (logObj.level === LogLevel.FATAL) {
       await this.logCrashToFile(logObj)
@@ -148,7 +157,7 @@ class LogManager {
       this.currentDailyLog = new DailyLog(this.DailyLogPath)
       if (this.dailyLogFiles.length > this.loggerDailyLogsToKeep) {
         // Remove oldest log
-        this.removeLogFile(this.dailyLogFiles[0])
+        void this.removeLogFile(this.dailyLogFiles[0])
       }
     }
 
@@ -160,13 +169,13 @@ class LogManager {
    *
    * @param {LogObject} logObj
    */
-  async logCrashToFile(logObj) {
+  async logCrashToFile(logObj: LogObject) {
     const line = JSON.stringify(logObj) + '\n'
 
-    const logsDir = Path.join(global.MetadataPath, 'logs')
+    const logsDir = Path.join(global.MetadataPath!, 'logs')
     await fs.ensureDir(logsDir)
     const crashLogPath = Path.join(logsDir, 'crash_logs.txt')
-    return fs.writeFile(crashLogPath, line, { flag: 'a+' }).catch((error) => {
+    return fs.writeFile(crashLogPath, line, { flag: 'a+' }).catch((error: unknown) => {
       console.log('[LogManager] Appended crash log', error)
     })
   }
@@ -180,4 +189,7 @@ class LogManager {
     return this.currentDailyLog?.logs.slice(-5000) || ''
   }
 }
-module.exports = LogManager
+declare namespace LogManager {
+  export type LogObject = { timestamp: string; source: string; message: string; levelName: string; level: number }
+}
+export = LogManager

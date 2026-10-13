@@ -1,12 +1,21 @@
-const { setMaxListeners } = require('events')
-const Logger = require('../Logger')
-const BookFinder = require('../finders/BookFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
+import { setMaxListeners } from 'events'
+import Logger from '../Logger'
+import BookFinder from '../finders/BookFinder'
+import PodcastFinder from '../finders/PodcastFinder'
 
 /**
  * Manager for handling streaming cover search across multiple providers
  */
+type SearchParams = { title: string; author?: string; provider: string; podcast: boolean }
+type ResultCallback = (result: { provider: string; covers: string[]; total: number }) => void
+// Top-level failures use one argument; provider failures use two, as before.
+type ErrorCallback = (providerOrMessage: string, message?: string) => void
+type CoverResult = string | { covers?: string[]; cover?: string }
+
 class CoverSearchManager {
+  declare activeSearches: Map<string, AbortController>
+  declare providerTimeout: number
+  declare maxListeners: number
   constructor() {
     /** @type {Map<string, AbortController>} Map of requestId to AbortController */
     this.activeSearches = new Map()
@@ -31,7 +40,7 @@ class CoverSearchManager {
    * @param {Function} onComplete - Callback when search completes
    * @param {Function} onError - Callback for errors
    */
-  async startSearch(requestId, searchParams, onResult, onComplete, onError) {
+  async startSearch(requestId: string, searchParams: SearchParams, onResult: ResultCallback, onComplete: () => void, onError: ErrorCallback) {
     if (this.activeSearches.has(requestId)) {
       Logger.warn(`[CoverSearchManager] Search with requestId ${requestId} already exists`)
       return
@@ -59,7 +68,8 @@ class CoverSearchManager {
       if (!abortController.signal.aborted) {
         onComplete()
       }
-    } catch (error) {
+    } catch (caught) {
+      const error = caught as Error
       if (error.name === 'AbortError') {
         Logger.info(`[CoverSearchManager] Search ${requestId} was cancelled`)
       } else {
@@ -75,7 +85,7 @@ class CoverSearchManager {
    * Cancel an active search
    * @param {string} requestId - Request ID to cancel
    */
-  cancelSearch(requestId) {
+  cancelSearch(requestId: string) {
     const abortController = this.activeSearches.get(requestId)
     if (abortController) {
       Logger.info(`[CoverSearchManager] Cancelling search ${requestId}`)
@@ -89,7 +99,7 @@ class CoverSearchManager {
   /**
    * Search for podcast covers
    */
-  async searchPodcastCovers(requestId, title, signal, onResult, onError) {
+  async searchPodcastCovers(requestId: string, title: string, signal: AbortSignal, onResult: ResultCallback, onError: ErrorCallback) {
     try {
       const results = await this.executeWithTimeout(() => PodcastFinder.findCovers(title), this.providerTimeout, signal)
 
@@ -103,7 +113,8 @@ class CoverSearchManager {
           total: covers.length
         })
       }
-    } catch (error) {
+    } catch (caught) {
+      const error = caught as Error
       if (error.name !== 'AbortError') {
         Logger.error(`[CoverSearchManager] Podcast search failed:`, error)
         onError('itunes', error.message)
@@ -114,7 +125,7 @@ class CoverSearchManager {
   /**
    * Search for book covers across providers
    */
-  async searchBookCovers(requestId, provider, title, author, signal, onResult, onError) {
+  async searchBookCovers(requestId: string, provider: string, title: string, author: string | undefined, signal: AbortSignal, onResult: ResultCallback, onError: ErrorCallback) {
     let providers = []
 
     if (provider === 'all') {
@@ -148,7 +159,8 @@ class CoverSearchManager {
             total: covers.length
           })
         }
-      } catch (error) {
+      } catch (caught) {
+      const error = caught as Error
         if (error.name !== 'AbortError') {
           Logger.warn(`[CoverSearchManager] Provider ${providerName} failed:`, error.message)
           onError(providerName, error.message)
@@ -162,10 +174,10 @@ class CoverSearchManager {
   /**
    * Execute a promise with timeout and abort signal
    */
-  async executeWithTimeout(fn, timeout, signal) {
-    return new Promise(async (resolve, reject) => {
-      let abortHandler = null
-      let timeoutId = null
+  async executeWithTimeout<T>(fn: () => Promise<T>, timeout: number, signal: AbortSignal): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      let abortHandler: (() => void) | null = null
+      let timeoutId: ReturnType<typeof setTimeout> | null = null
 
       // Cleanup function to ensure we always remove listeners
       const cleanup = () => {
@@ -205,33 +217,36 @@ class CoverSearchManager {
       }
       signal.addEventListener('abort', abortHandler)
 
+      void (async () => {
       try {
         const result = await fn()
         cleanup()
         resolve(result)
-      } catch (error) {
+      } catch (caught) {
+      const error = caught as Error
         cleanup()
         reject(error)
       }
+      })()
     })
   }
 
   /**
    * Extract cover URLs from search results
    */
-  extractCoversFromResults(results) {
-    const covers = []
+  extractCoversFromResults(results: unknown) {
+    const covers: string[] = []
     if (!Array.isArray(results)) return covers
 
-    results.forEach((result) => {
+    results.forEach((result: CoverResult) => {
       if (typeof result === 'string') {
         covers.push(result)
       }
-      if (result.covers && Array.isArray(result.covers)) {
-        covers.push(...result.covers)
+      if ((result as Exclude<CoverResult, string>).covers && Array.isArray((result as Exclude<CoverResult, string>).covers)) {
+        covers.push(...(result as Exclude<CoverResult, string>).covers!)
       }
-      if (result.cover) {
-        covers.push(result.cover)
+      if ((result as Exclude<CoverResult, string>).cover) {
+        covers.push((result as Exclude<CoverResult, string>).cover!)
       }
     })
 
@@ -244,11 +259,12 @@ class CoverSearchManager {
    */
   cancelAllSearches() {
     Logger.info(`[CoverSearchManager] Cancelling ${this.activeSearches.size} active searches`)
-    for (const [requestId, abortController] of this.activeSearches.entries()) {
+    for (const abortController of this.activeSearches.values()) {
       abortController.abort()
     }
     this.activeSearches.clear()
   }
 }
 
-module.exports = new CoverSearchManager()
+const coverSearchManager = new CoverSearchManager()
+export = coverSearchManager
