@@ -311,7 +311,7 @@ class CoverManager {
    * @param {boolean} [forceLibraryItemFolder=false] - force save cover with library item (used for adding new podcasts)
    * @returns {Promise<{error:string}|{cover:string}>}
    */
-  async downloadCoverFromUrlNew(url: string, libraryItemId: string, libraryItemPath?: string | null, forceLibraryItemFolder = false) {
+  async downloadCoverFromUrlNew(url: string, libraryItemId: string, libraryItemPath?: string | null, forceLibraryItemFolder = false): Promise<{ error: string; cover?: never } | { cover: string; error?: never }> {
     try {
       let coverDirPath = null
       if (((global.ServerSettings as { storeCoverWithItem?: boolean }).storeCoverWithItem || forceLibraryItemFolder) && libraryItemPath) {

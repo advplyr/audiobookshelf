@@ -283,7 +283,7 @@ class PlaybackSession {
   }
 
   addListeningTime(timeListened: number | string | null | undefined) {
-    if (!timeListened || isNaN(Number(timeListened))) return
+    if (!timeListened || isNaN(timeListened as number)) return
 
     if (!this.date) {
       // Set date info on first listening update
@@ -291,7 +291,8 @@ class PlaybackSession {
       this.dayOfWeek = date.format(new Date(), 'dddd')
     }
 
-    this.timeListening = Number(this.timeListening) + Number.parseFloat(String(timeListened))
+    // Keep the original JavaScript addition and coercion, including legacy stored values.
+    this.timeListening = (this.timeListening as number) + Number.parseFloat(timeListened as string)
     this.updatedAt = Date.now()
   }
 }

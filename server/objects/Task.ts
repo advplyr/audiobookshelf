@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'
 
+// Legacy task substitutions include counts and raw metadata, copied without coercion.
+type TaskSubstitution = string | number | null | undefined | Record<string, unknown>
 type TaskString = {
   text: string
   key?: string
-  subs?: string[]
+  subs?: TaskSubstitution[]
 }
 
 class Task {
@@ -12,13 +14,13 @@ class Task {
   declare data: Record<string, unknown> | null
   declare title: string | null
   declare titleKey: string | null
-  declare titleSubs: string[] | null
+  declare titleSubs: TaskSubstitution[] | null
   declare description: string | null
   declare descriptionKey: string | null
-  declare descriptionSubs: string[] | null
+  declare descriptionSubs: TaskSubstitution[] | null
   declare error: string | null
   declare errorKey: string | null
-  declare errorSubs: string[] | null
+  declare errorSubs: TaskSubstitution[] | null
   declare showSuccess: boolean
   declare isFailed: boolean
   declare isFinished: boolean

@@ -40,4 +40,10 @@ describe('PlaybackSession object compatibility', () => {
     expect(session.timeListening).to.equal(3.5)
     expect(session.updatedAt).to.equal(42)
   })
+  it('retains JavaScript addition for a legacy string listening total', () => {
+    const session = new Session({ timeListening: '5' })
+    session.addListeningTime(1)
+    expect(session.timeListening).to.equal('51')
+  })
+
 })

@@ -3,9 +3,10 @@ import { v4 as uuidv4 } from 'uuid'
 import { sanitizeFilename, filePathToPOSIX } from '../utils/fileUtils'
 import globals from '../utils/globals'
 import type { RssPodcastEpisode } from '../utils/podcastUtils'
-import type Podcast from '../models/Podcast'
+import type { PodcastExpanded } from '../models/Podcast'
+import type LibraryItem from '../models/LibraryItem'
 
-type PodcastItem = { id: string; path: string; media: Pick<Podcast, 'title' | 'explicit'> }
+type PodcastItem = Omit<LibraryItem, 'path' | 'media'> & { path: string; media: PodcastExpanded }
 
 class PodcastEpisodeDownload {
   declare id: string | null
