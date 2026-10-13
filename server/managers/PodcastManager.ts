@@ -22,7 +22,7 @@ import type { PodcastExpanded } from '../models/Podcast'
 import type PodcastEpisode from '../models/PodcastEpisode'
 type PodcastItem = NonNullable<PodcastEpisodeDownload['libraryItem']>
 // setData initializes this state before a download enters the manager.
-type Download = PodcastEpisodeDownload & { libraryItem: PodcastItem; url: string; rssPodcastEpisode: RssPodcastEpisode; targetRelPath: string }
+type Download = PodcastEpisodeDownload.Initialized
 type PodcastCron = { checkUpdatePodcastCron(item: PodcastItem): void }
 
 import * as prober from '../utils/prober'
@@ -77,9 +77,9 @@ class PodcastManager {
    */
   async downloadPodcastEpisodes(libraryItem: PodcastItem, episodesToDownload: RssPodcastEpisode[], isAutoDownload: boolean) {
     for (const ep of episodesToDownload) {
-      const newPeDl = new PodcastEpisodeDownload()
+      const newPeDl: PodcastEpisodeDownload = new PodcastEpisodeDownload()
       newPeDl.setData(ep, libraryItem, isAutoDownload, libraryItem.libraryId)
-      void this.startPodcastEpisodeDownload(newPeDl as Download)
+      void this.startPodcastEpisodeDownload(newPeDl)
     }
     return Promise.resolve()
   }
@@ -325,8 +325,8 @@ class PodcastManager {
    */
   async probeAudioFile(libraryFile: LibraryFile) {
     const path = libraryFile.metadata!.path!
-    const mediaProbeData = await prober.probe(path)
-    if ('error' in mediaProbeData && mediaProbeData.error) {
+    const mediaProbeData: Awaited<ReturnType<typeof prober.probe>> & { error?: unknown } = await prober.probe(path)
+    if (mediaProbeData.error) {
       Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return null
     }

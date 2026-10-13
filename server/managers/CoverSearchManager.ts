@@ -160,7 +160,7 @@ class CoverSearchManager {
           })
         }
       } catch (caught) {
-      const error = caught as Error
+        const error = caught as Error
         if (error.name !== 'AbortError') {
           Logger.warn(`[CoverSearchManager] Provider ${providerName} failed:`, error.message)
           onError(providerName, error.message)
@@ -218,15 +218,15 @@ class CoverSearchManager {
       signal.addEventListener('abort', abortHandler)
 
       void (async () => {
-      try {
-        const result = await fn()
-        cleanup()
-        resolve(result)
-      } catch (caught) {
-      const error = caught as Error
-        cleanup()
-        reject(error)
-      }
+        try {
+          const result = await fn()
+          cleanup()
+          resolve(result)
+        } catch (caught) {
+          const error = caught as Error
+          cleanup()
+          reject(error)
+        }
       })()
     })
   }

@@ -124,7 +124,7 @@ class PodcastEpisodeDownload {
    * @param {*} isAutoDownload
    * @param {*} libraryId
    */
-  setData(rssPodcastEpisode: RssPodcastEpisode, libraryItem: PodcastItem, isAutoDownload: boolean, libraryId: string | null | undefined) {
+  setData(rssPodcastEpisode: RssPodcastEpisode, libraryItem: PodcastItem, isAutoDownload: boolean, libraryId: string | null | undefined): asserts this is this & PodcastEpisodeDownload.Initialized {
     this.id = uuidv4()
     this.rssPodcastEpisode = rssPodcastEpisode
 
@@ -148,6 +148,13 @@ class PodcastEpisodeDownload {
     this.finishedAt = Date.now()
     this.isFinished = true
     this.failed = !success
+  }
+}
+declare namespace PodcastEpisodeDownload {
+  // setData initializes these fields before the object can be queued.
+  export type Initialized = PodcastEpisodeDownload & {
+    id: string; url: string; rssPodcastEpisode: RssPodcastEpisode
+    libraryItem: PodcastItem; targetFilename: string; readonly targetRelPath: string; createdAt: number
   }
 }
 export = PodcastEpisodeDownload

@@ -31,12 +31,14 @@ class ZippedAssetDownloader {
   }
 
   extractAssetUrl(assets: ReleaseAssets, assetName: string): string {
-    void assets; void assetName
+    void assets
+    void assetName
     throw new Error('Not implemented')
   }
 
   getAssetName(binaryName: string, releaseTag: string): string {
-    void binaryName; void releaseTag
+    void binaryName
+    void releaseTag
     throw new Error('Not implemented')
   }
 

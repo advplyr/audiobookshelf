@@ -428,24 +428,24 @@ class BackupManager {
     const dbFilePath = Path.join(global.ConfigPath!, `absdatabase.${backup.id}.sqlite`)
     return new Promise<string>((resolve, reject) => {
       void (async () => {
-      const backup = db.backup(dbFilePath)
-      backup.step(-1)
-      backup.finish()
+        const backup = db.backup(dbFilePath)
+        backup.step(-1)
+        backup.finish()
 
-      // Max time ~2 mins
-      for (let i = 0; i < 240; i++) {
-        if (backup.completed) {
-          return resolve(dbFilePath)
-        } else if (backup.failed) {
-          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical string rejection consumed by backup callers.
-          return reject(backup.message || 'Unknown failure reason')
+        // Max time ~2 mins
+        for (let i = 0; i < 240; i++) {
+          if (backup.completed) {
+            return resolve(dbFilePath)
+          } else if (backup.failed) {
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical string rejection consumed by backup callers.
+            return reject(backup.message || 'Unknown failure reason')
+          }
+          await new Promise<void>((r) => setTimeout(r, 500))
         }
-        await new Promise<void>((r) => setTimeout(r, 500))
-      }
 
-      Logger.error(`[BackupManager] Backup sqlite timed out`)
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical timeout rejection value.
-      reject('Backup timed out')
+        Logger.error(`[BackupManager] Backup sqlite timed out`)
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical timeout rejection value.
+        reject('Backup timed out')
       })()
     })
   }
