@@ -1,26 +1,42 @@
-const sqlite3 = require('sqlite3')
-const Path = require('path')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+import sqlite3 from 'sqlite3'
+import Path from 'path'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
 
-const cron = require('../libs/nodeCron')
-const fs = require('../libs/fsExtra')
-const archiver = require('../libs/archiver')
-const StreamZip = require('../libs/nodeStreamZip')
-const fileUtils = require('../utils/fileUtils')
+import cronModule from '../libs/nodeCron'
+type ScheduledTask = { stop?: () => void }
+const cron = cronModule as { schedule(expression: string, callback: () => Promise<boolean>): ScheduledTask }
+
+import fs from '../libs/fsExtra'
+import archiver from '../libs/archiver'
+type Archive = archiver.Archive & { append(data: string, options: { name: string }): archiver.Archive; abort(): archiver.Archive }
+import StreamZip from '../libs/nodeStreamZip'
+import type { Response } from 'express'
+import type ApiCacheManager from './ApiCacheManager'
+import type ServerSettings from '../objects/settings/ServerSettings'
+// ZIP entries contain size in the embedded implementation.
+type ZipReader = Omit<InstanceType<typeof StreamZip.async>, 'entries'> & { entries(): Promise<Record<string, { isDirectory: boolean; size: number }>> }
+type SqliteBackup = { step(pages: number): void; finish(): void; completed: boolean; failed: boolean; message?: string }
+type UploadRequest = { files: { file: { name: string; mv(path: string): Promise<void> } } }
+
+import fileUtils from '../utils/fileUtils'
 
 // Utils
-const { getFileSize } = require('../utils/fileUtils')
+const { getFileSize } = fileUtils
 
-const Backup = require('../objects/Backup')
-const CacheManager = require('./CacheManager')
-const NotificationManager = require('./NotificationManager')
+import Backup from '../objects/Backup'
+import CacheManager from './CacheManager'
+import NotificationManager from './NotificationManager'
 
 class BackupManager {
+  declare ItemsMetadataPath: string
+  declare AuthorsMetadataPath: string
+  declare scheduleTask: ScheduledTask | null
+  declare backups: Backup[]
   constructor() {
-    this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
-    this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
+    this.ItemsMetadataPath = Path.join(global.MetadataPath!, 'items')
+    this.AuthorsMetadataPath = Path.join(global.MetadataPath!, 'authors')
 
     this.scheduleTask = null
 
@@ -28,7 +44,7 @@ class BackupManager {
   }
 
   get backupPath() {
-    return global.ServerSettings.backupPath
+    return (global.ServerSettings as ServerSettings).backupPath
   }
 
   get backupPathEnvSet() {
@@ -36,15 +52,15 @@ class BackupManager {
   }
 
   get backupSchedule() {
-    return global.ServerSettings.backupSchedule
+    return (global.ServerSettings as ServerSettings).backupSchedule
   }
 
   get backupsToKeep() {
-    return global.ServerSettings.backupsToKeep || 2
+    return (global.ServerSettings as ServerSettings).backupsToKeep || 2
   }
 
   get maxBackupSize() {
-    return global.ServerSettings.maxBackupSize || Infinity
+    return (global.ServerSettings as ServerSettings).maxBackupSize || Infinity
   }
 
   async init() {
@@ -54,7 +70,7 @@ class BackupManager {
         await fs.ensureDir(this.backupPath)
       }
     } catch (error) {
-      Logger.error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}": ${error.message}`)
+      Logger.error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}": ${(error as Error).message}`)
       throw new Error(`[BackupManager] Failed to ensure backup directory at "${this.backupPath}"`, { cause: error })
     }
 
@@ -95,23 +111,23 @@ class BackupManager {
       this.scheduleCron()
     } else if (this.backupSchedule) {
       Logger.info(`[BackupManager] Restarting backup schedule ${this.backupSchedule}`)
-      if (this.scheduleTask.stop) this.scheduleTask.stop()
+      if (this.scheduleTask!.stop) this.scheduleTask!.stop()
       this.scheduleCron()
     }
   }
 
-  async uploadBackup(req, res) {
+  async uploadBackup(req: UploadRequest, res: Response) {
     const backupFile = req.files.file
     if (Path.extname(backupFile.name) !== '.audiobookshelf') {
       Logger.error(`[BackupManager] Invalid backup file uploaded "${backupFile.name}"`)
       return res.status(500).send('Invalid backup file')
     }
 
-    const tempPath = Path.join(this.backupPath, fileUtils.sanitizeFilename(backupFile.name))
+    const tempPath = Path.join(this.backupPath, fileUtils.sanitizeFilename(backupFile.name) as string)
     const success = await backupFile
       .mv(tempPath)
       .then(() => true)
-      .catch((error) => {
+      .catch((error: unknown) => {
         Logger.error('[BackupManager] Failed to move backup file', tempPath, error)
         return false
       })
@@ -119,7 +135,7 @@ class BackupManager {
       return res.status(500).send('Failed to move backup file into backups directory')
     }
 
-    const zip = new StreamZip.async({ file: tempPath })
+    const zip = new StreamZip.async({ file: tempPath }) as ZipReader
     let entries
     try {
       entries = await zip.entries()
@@ -127,13 +143,13 @@ class BackupManager {
       // Not a valid zip file
       Logger.error('[BackupManager] Failed to read backup file - backup might not be a valid .zip file', tempPath, error)
       await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      await fs.remove(tempPath).catch((err: unknown) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(400).send('Failed to read backup file - backup might not be a valid .zip file')
     }
     if (!entries['absdatabase.sqlite']) {
       Logger.error(`[BackupManager] Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.`)
       await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      await fs.remove(tempPath).catch((err: unknown) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(500).send('Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.')
     }
 
@@ -141,31 +157,31 @@ class BackupManager {
     if (!detailsEntry) {
       Logger.error('[BackupManager] Invalid backup - missing details entry')
       await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      await fs.remove(tempPath).catch((err: unknown) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(400).send('Invalid backup file - missing details entry')
     }
     if (detailsEntry.size > 1024 * 1024) {
       Logger.error(`[BackupManager] Backup details entry too large: ${detailsEntry.size} bytes`)
       await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      await fs.remove(tempPath).catch((err: unknown) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(400).send('Invalid backup file - details entry too large')
     }
 
     const data = await zip.entryData('details')
     const details = data.toString('utf8').split('\n')
 
-    const backup = new Backup({ details, fullPath: tempPath })
+    const backup = new Backup({ details: details as NonNullable<ConstructorParameters<typeof Backup>[0]>['details'], fullPath: tempPath })
 
     if (!backup.serverVersion) {
       Logger.error(`[BackupManager] Invalid backup with no server version - might be a backup created before version 2.0.0`)
       await zip.close().catch(() => {})
-      await fs.remove(tempPath).catch((err) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
+      await fs.remove(tempPath).catch((err: unknown) => Logger.error(`[BackupManager] Failed to remove rejected backup file "${tempPath}"`, err))
       return res.status(500).send('Invalid backup. Might be a backup created before version 2.0.0.')
     }
 
     await zip.close().catch(() => {})
 
-    backup.fileSize = await getFileSize(backup.fullPath)
+    backup.fileSize = await getFileSize(backup.fullPath!)
 
     const existingBackupIndex = this.backups.findIndex((b) => b.id === backup.id)
     if (existingBackupIndex >= 0) {
@@ -180,7 +196,7 @@ class BackupManager {
     })
   }
 
-  async requestCreateBackup(res) {
+  async requestCreateBackup(res: Response) {
     var backupSuccess = await this.runBackup()
     if (backupSuccess) {
       res.json({
@@ -197,10 +213,10 @@ class BackupManager {
    * @param {Backup} backup
    * @param {import('express').Response} res
    */
-  async requestApplyBackup(apiCacheManager, backup, res) {
+  async requestApplyBackup(apiCacheManager: ApiCacheManager, backup: Backup, res: Response) {
     Logger.info(`[BackupManager] Applying backup at "${backup.fullPath}"`)
 
-    const zip = new StreamZip.async({ file: backup.fullPath })
+    const zip = new StreamZip.async({ file: backup.fullPath! }) as ZipReader
 
     const entries = await zip.entries()
 
@@ -213,8 +229,8 @@ class BackupManager {
 
     await Database.disconnect()
 
-    const dbPath = Path.join(global.ConfigPath, 'absdatabase.sqlite')
-    const tempDbPath = Path.join(global.ConfigPath, 'absdatabase-temp.sqlite')
+    const dbPath = Path.join(global.ConfigPath!, 'absdatabase.sqlite')
+    const tempDbPath = Path.join(global.ConfigPath!, 'absdatabase-temp.sqlite')
 
     // Extract backup sqlite file to temporary path
     await zip.extract('absdatabase.sqlite', tempDbPath)
@@ -237,7 +253,7 @@ class BackupManager {
       await fs.remove(tempDbPath)
       await zip.close()
       await Database.reconnect()
-      return res.status(500).send(`Failed to overwrite sqlite db: ${error?.message || 'Unknown Error'}`)
+      return res.status(500).send(`Failed to overwrite sqlite db: ${(error as Error)?.message || 'Unknown Error'}`)
     }
 
     // Rename temp db
@@ -255,7 +271,7 @@ class BackupManager {
     await Database.reconnect()
 
     // Reset api cache, set hooks again
-    await apiCacheManager.reset()
+    await Promise.resolve(apiCacheManager.reset())
 
     // Clear metadata cache
     await CacheManager.purgeAll()
@@ -263,7 +279,9 @@ class BackupManager {
     res.sendStatus(200)
 
     // Triggers browser refresh for all clients
-    SocketAuthority.emitter('backup_applied')
+    // The legacy event intentionally carries no payload.
+    const socketAuthority = SocketAuthority as typeof SocketAuthority & { emitter(event: string): void }
+    socketAuthority.emitter('backup_applied')
   }
 
   async loadBackups() {
@@ -275,10 +293,10 @@ class BackupManager {
         if (filename.endsWith('.audiobookshelf')) {
           const fullFilePath = Path.join(this.backupPath, filename)
 
-          let zip = null
-          let data = null
+          let zip: ZipReader | null = null
+          let data: Buffer | null = null
           try {
-            zip = new StreamZip.async({ file: fullFilePath })
+            zip = new StreamZip.async({ file: fullFilePath }) as ZipReader
             const entries = await zip.entries()
 
             const detailsEntry = entries['details']
@@ -302,7 +320,7 @@ class BackupManager {
 
           const details = data.toString('utf8').split('\n')
 
-          const backup = new Backup({ details, fullPath: fullFilePath })
+          const backup = new Backup({ details: details as NonNullable<ConstructorParameters<typeof Backup>[0]>['details'], fullPath: fullFilePath })
 
           if (!backup.serverVersion) {
             // Backups before v2
@@ -312,7 +330,7 @@ class BackupManager {
             Logger.warn(`[BackupManager] Old unsupported backup was found "${backup.filename}" (pre sqlite migration)`)
           }
 
-          backup.fileSize = await getFileSize(backup.fullPath)
+          backup.fileSize = await getFileSize(backup.fullPath!)
           const existingBackupWithId = this.backups.find((b) => b.id === backup.id)
           if (existingBackupWithId) {
             Logger.warn(`[BackupManager] Backup already loaded with id ${backup.id} - ignoring`)
@@ -339,11 +357,11 @@ class BackupManager {
     await fs.ensureDir(this.AuthorsMetadataPath)
 
     // Create backup sqlite file
-    const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error) => {
+    const sqliteBackupPath = await this.backupSqliteDb(newBackup).catch((error: unknown) => {
       Logger.error(`[BackupManager] Failed to backup sqlite db`, error)
-      const errorMsg = error?.message || error || 'Unknown Error'
-      NotificationManager.onBackupFailed(errorMsg)
-      return false
+      const errorMsg = (error as Error)?.message || error || 'Unknown Error'
+      void NotificationManager.onBackupFailed(errorMsg)
+      return false as const
     })
 
     if (!sqliteBackupPath) {
@@ -351,11 +369,11 @@ class BackupManager {
     }
 
     // Zip sqlite file, /metadata/items, and /metadata/authors folders
-    const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error) => {
-      Logger.error(`[BackupManager] Backup Failed ${error}`)
-      const errorMsg = error?.message || error || 'Unknown Error'
-      NotificationManager.onBackupFailed(errorMsg)
-      return false
+    const zipResult = await this.zipBackup(sqliteBackupPath, newBackup).catch((error: unknown) => {
+      Logger.error(`[BackupManager] Backup Failed ${String(error)}`)
+      const errorMsg = (error as Error)?.message || error || 'Unknown Error'
+      void NotificationManager.onBackupFailed(errorMsg)
+      return false as const
     })
 
     // Remove sqlite backup
@@ -365,7 +383,7 @@ class BackupManager {
 
     Logger.info(`[BackupManager] Backup successful ${newBackup.id}`)
 
-    newBackup.fileSize = await getFileSize(newBackup.fullPath)
+    newBackup.fileSize = await getFileSize(newBackup.fullPath!)
 
     const existingIndex = this.backups.findIndex((b) => b.id === newBackup.id)
     if (existingIndex >= 0) {
@@ -377,23 +395,23 @@ class BackupManager {
     // Check remove oldest backup
     const removeOldest = this.backups.length > this.backupsToKeep
     if (removeOldest) {
-      this.backups.sort((a, b) => a.createdAt - b.createdAt)
+      this.backups.sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
 
-      const oldBackup = this.backups.shift()
+      const oldBackup = this.backups.shift()!
       Logger.debug(`[BackupManager] Removing old backup ${oldBackup.id}`)
-      this.removeBackup(oldBackup)
+      void this.removeBackup(oldBackup)
     }
 
     // Notification for backup successfully completed
-    NotificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
+    void NotificationManager.onBackupCompleted(newBackup, this.backups.length, removeOldest)
 
     return true
   }
 
-  async removeBackup(backup) {
+  async removeBackup(backup: Backup) {
     try {
       Logger.debug(`[BackupManager] Removing Backup "${backup.fullPath}"`)
-      await fs.remove(backup.fullPath)
+      await fs.remove(backup.fullPath!)
       this.backups = this.backups.filter((b) => b.id !== backup.id)
       Logger.info(`[BackupManager] Backup "${backup.id}" Removed`)
     } catch (error) {
@@ -405,10 +423,11 @@ class BackupManager {
    * @see https://github.com/TryGhost/node-sqlite3/pull/1116
    * @param {Backup} backup
    */
-  backupSqliteDb(backup) {
-    const db = new sqlite3.Database(Database.dbPath)
-    const dbFilePath = Path.join(global.ConfigPath, `absdatabase.${backup.id}.sqlite`)
-    return new Promise(async (resolve, reject) => {
+  backupSqliteDb(backup: Backup) {
+    const db = new sqlite3.Database(Database.dbPath!) as sqlite3.Database & { backup(path: string): SqliteBackup }
+    const dbFilePath = Path.join(global.ConfigPath!, `absdatabase.${backup.id}.sqlite`)
+    return new Promise<string>((resolve, reject) => {
+      void (async () => {
       const backup = db.backup(dbFilePath)
       backup.step(-1)
       backup.finish()
@@ -418,23 +437,26 @@ class BackupManager {
         if (backup.completed) {
           return resolve(dbFilePath)
         } else if (backup.failed) {
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical string rejection consumed by backup callers.
           return reject(backup.message || 'Unknown failure reason')
         }
-        await new Promise((r) => setTimeout(r, 500))
+        await new Promise<void>((r) => setTimeout(r, 500))
       }
 
       Logger.error(`[BackupManager] Backup sqlite timed out`)
+      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Preserve the historical timeout rejection value.
       reject('Backup timed out')
+      })()
     })
   }
 
-  zipBackup(sqliteBackupPath, backup) {
-    return new Promise((resolve, reject) => {
+  zipBackup(sqliteBackupPath: string, backup: Backup) {
+    return new Promise<boolean>((resolve, reject) => {
       // create a file to stream archive data to
-      const output = fs.createWriteStream(backup.fullPath)
+      const output = fs.createWriteStream(backup.fullPath!) as ReturnType<typeof fs.createWriteStream> & { destroy(error: string): void }
       const archive = archiver('zip', {
         zlib: { level: 9 } // Sets the compression level.
-      })
+      }) as Archive
 
       // listen for all archive data to be written
       // 'close' event is fired only when a file descriptor is involved
@@ -460,7 +482,7 @@ class BackupManager {
       })
 
       // good practice to catch warnings (ie stat failures and other non-blocking errors)
-      archive.on('warning', function (err) {
+      archive.on('warning', function (err: NodeJS.ErrnoException) {
         if (err.code === 'ENOENT') {
           // log warning
           Logger.warn(`[BackupManager] Archiver warning: ${err.message}`)
@@ -475,14 +497,14 @@ class BackupManager {
         Logger.error(`[BackupManager] Archiver error: ${err.message}`)
         reject(err)
       })
-      archive.on('progress', ({ fs: fsobj }) => {
+      archive.on('progress', ({ fs: fsobj }: { fs: { processedBytes: number } }) => {
         if (this.maxBackupSize !== Infinity) {
           const maxBackupSizeInBytes = this.maxBackupSize * 1000 * 1000 * 1000
           if (fsobj.processedBytes > maxBackupSizeInBytes) {
             Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
             archive.abort()
             setTimeout(() => {
-              this.removeBackup(backup)
+              void this.removeBackup(backup)
               output.destroy('Backup too large') // Promise is reject in write stream error evt
             }, 500)
           }
@@ -498,8 +520,8 @@ class BackupManager {
 
       archive.append(backup.detailsString, { name: 'details' })
 
-      archive.finalize()
+      void archive.finalize()
     })
   }
 }
-module.exports = BackupManager
+export = BackupManager

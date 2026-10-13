@@ -9,7 +9,8 @@ import type Backup from '../objects/Backup'
 import type Podcast from '../models/Podcast'
 import type PodcastEpisode from '../models/PodcastEpisode'
 
-type EventData = Record<string, string | number | boolean | null | undefined>
+// Failure events can carry the original thrown value; templates stringify it.
+type EventData = Record<string, unknown>
 type PodcastItem = { id: string; libraryId: string; media: Pick<Podcast, 'title' | 'explicit' | 'tags' | 'author' | 'description' | 'genres'> }
 
 // Settings are initialized before these event handlers are called.
@@ -137,7 +138,7 @@ class NotificationManager {
    *
    * @param {string} errorMsg
    */
-  async onBackupFailed(errorMsg: string) {
+  async onBackupFailed(errorMsg: unknown) {
     if (!Database.notificationSettings!.isUseable) return
 
     if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onBackupFailed')) {
@@ -145,7 +146,7 @@ class NotificationManager {
       return
     }
 
-    Logger.debug(`[NotificationManager] onBackupFailed: Backup failed (${errorMsg})`)
+    Logger.debug(`[NotificationManager] onBackupFailed: Backup failed (${String(errorMsg)})`)
     const eventData = {
       errorMsg: errorMsg || 'Backup failed'
     }
@@ -235,7 +236,7 @@ class NotificationManager {
   }
 
   sendNotification(notification: Notification, eventData: EventData | undefined) {
-    const payload = notification.getApprisePayload(eventData!)
+    const payload = notification.getApprisePayload(eventData as Parameters<Notification['getApprisePayload']>[0])
     return axios
       .post(Database.notificationSettings!.appriseApiUrl!, payload, { timeout: 6000 })
       .then((response) => {
