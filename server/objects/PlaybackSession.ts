@@ -1,10 +1,54 @@
-const date = require('../libs/dateAndTime')
-const uuidv4 = require('uuid').v4
-const serverVersion = require('../../package.json').version
-const DeviceInfo = require('./DeviceInfo')
+import date from '../libs/dateAndTime'
+import { v4 as uuidv4 } from 'uuid'
+import { version as serverVersion } from '../../package.json'
+import type LibraryItem from '../models/LibraryItem'
+import type Stream from './Stream'
+import type AudioTrack from './files/AudioTrack'
+
+type SessionData = Partial<{
+  id: string | null; userId: string | null; libraryId: string | null; libraryItemId: string | null; bookId: string | null; episodeId: string | null
+  mediaType: string | null; mediaMetadata: unknown; chapters: { id: number; start: number; end: number; title: string }[] | null
+  displayTitle: string | null; displayAuthor: string | null; coverPath: string | null; duration: number | null
+  playMethod: number | null; mediaPlayer: string | null; deviceInfo: DeviceInfo | ConstructorParameters<typeof DeviceInfo>[0]
+  serverVersion: string | null; date: string | null; dayOfWeek: string | null; timeListening: number | null; startTime: number | null; currentTime: number | null; startedAt: number | null; updatedAt: number | null
+}>
+type PlaybackItem = Omit<LibraryItem, 'media'> & { media: NonNullable<LibraryItem['media']> }
+
+import DeviceInfo from './DeviceInfo'
 
 class PlaybackSession {
-  constructor(session) {
+  declare id: string | null | undefined
+  declare userId: string | null | undefined
+  declare libraryId: string | null | undefined
+  declare libraryItemId: string | null | undefined
+  declare bookId: string | null | undefined
+  declare episodeId: string | null | undefined
+  declare mediaType: string | null | undefined
+  declare displayTitle: string | null | undefined
+  declare displayAuthor: string | null | undefined
+  declare coverPath: string | null | undefined
+  declare mediaPlayer: string | null | undefined
+  declare serverVersion: string | null | undefined
+  declare date: string | null | undefined
+  declare dayOfWeek: string | null | undefined
+  declare duration: number | null | undefined
+  declare playMethod: number | null | undefined
+  declare timeListening: number | null | undefined
+  declare startTime: number | null | undefined
+  declare startedAt: number | null | undefined
+  declare updatedAt: number | null | undefined
+  declare mediaMetadata: unknown
+  declare chapters: SessionData['chapters']
+  declare deviceInfo: DeviceInfo | null
+  declare currentTime: number
+  declare lastSave: number
+  declare audioTracks: (AudioTrack | (ReturnType<AudioTrack['toJSON']> & { toJSON?: () => unknown }))[]
+  declare stream: Stream | null
+  declare shareSessionId: string | null
+  declare mediaItemShareId: string | null
+  declare coverAspectRatio: number | null
+
+  constructor(session?: SessionData | null) {
     this.id = null
     this.userId = null
     this.libraryId = null
@@ -83,7 +127,7 @@ class PlaybackSession {
    * @param {import('../models/LibraryItem')} [libraryItem]
    * @returns
    */
-  toJSONForClient(libraryItem) {
+  toJSONForClient(libraryItem?: LibraryItem | null) {
     return {
       id: this.id,
       userId: this.userId,
@@ -115,7 +159,7 @@ class PlaybackSession {
     }
   }
 
-  construct(session) {
+  construct(session: SessionData) {
     this.id = session.id
     this.userId = session.userId
     this.libraryId = session.libraryId || null
@@ -206,7 +250,7 @@ class PlaybackSession {
    * @param {*} startTime
    * @param {*} episodeId
    */
-  setData(libraryItem, userId, mediaPlayer, deviceInfo, startTime, episodeId = null) {
+  setData(libraryItem: PlaybackItem, userId: string, mediaPlayer: string | null, deviceInfo: DeviceInfo | null, startTime: number, episodeId: string | null = null) {
     this.id = uuidv4()
     this.userId = userId
     this.libraryId = libraryItem.libraryId
@@ -215,11 +259,11 @@ class PlaybackSession {
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.oldMetadataToJSON()
-    this.chapters = libraryItem.media.getChapters(episodeId)
-    this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
+    this.chapters = libraryItem.media.getChapters(episodeId!)
+    this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId!)
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
-    this.duration = libraryItem.media.getPlaybackDuration(episodeId)
+    this.duration = libraryItem.media.getPlaybackDuration(episodeId!)
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
@@ -235,8 +279,8 @@ class PlaybackSession {
     this.updatedAt = Date.now()
   }
 
-  addListeningTime(timeListened) {
-    if (!timeListened || isNaN(timeListened)) return
+  addListeningTime(timeListened: number | string | null | undefined) {
+    if (!timeListened || isNaN(Number(timeListened))) return
 
     if (!this.date) {
       // Set date info on first listening update
@@ -244,8 +288,11 @@ class PlaybackSession {
       this.dayOfWeek = date.format(new Date(), 'dddd')
     }
 
-    this.timeListening += Number.parseFloat(timeListened)
+    this.timeListening = Number(this.timeListening) + Number.parseFloat(String(timeListened))
     this.updatedAt = Date.now()
   }
 }
-module.exports = PlaybackSession
+declare namespace PlaybackSession {
+  export type Data = SessionData
+}
+export = PlaybackSession
