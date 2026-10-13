@@ -27,7 +27,7 @@ describe('CoverManager compatibility', () => {
     expect(purge.called).to.equal(false)
   })
   it('keeps already-selected covers without checking filesystem or purging', async () => {
-    const path = Path.join(temporary, 'cover.png'), item = { id: 'item', media: { coverPath: path }, libraryFiles: [{ metadata: { path } }] }
+    const path = require('../../../server/utils/fileUtils').filePathToPOSIX(Path.join(temporary, 'cover.png')), item = { id: 'item', media: { coverPath: path }, libraryFiles: [{ metadata: { path } }] }
     const purge = sinon.stub(cache, 'purgeCoverCache').resolves([])
     expect(await manager.validateCoverPath(path, item)).to.deep.equal({ cover: path, updated: false })
     expect(purge.called).to.equal(false)
