@@ -296,7 +296,7 @@ describe('LazyBookCard', () => {
       cy.get('&titleImageNotReady').should('be.hidden')
       cy.get('&progressBar')
         .should('be.visible')
-        .and('have.class', 'bg-yellow-400')
+        .and('have.class', 'bg-accent')
         .and(($el) => {
           const width = $el.width()
           const defaultHeight = 192

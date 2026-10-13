@@ -1,8 +1,8 @@
 <template>
-  <div ref="wrapper" role="dialog" aria-modal="true" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary items-center justify-center opacity-0 hidden" :class="`z-${zIndex} bg-primary/${bgOpacity}`">
+  <div ref="wrapper" role="dialog" aria-modal="true" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary backdrop-blur-sm items-center justify-center opacity-0 hidden" :class="`z-${zIndex} bg-primary/${bgOpacity}`">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-linear-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
 
-    <button class="absolute top-4 right-4 landscape:top-4 landscape:right-4 md:portrait:top-5 md:portrait:right-5 lg:top-5 lg:right-5 inline-flex text-gray-200 hover:text-white" aria-label="Close modal" @click="clickClose">
+    <button class="absolute top-4 right-4 landscape:top-4 landscape:right-4 md:portrait:top-5 md:portrait:right-5 lg:top-5 lg:right-5 inline-flex items-center justify-center rounded-full p-1 text-gray-300 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close modal" @click="clickClose">
       <span class="material-symbols text-2xl landscape:text-2xl md:portrait:text-4xl lg:text-4xl">close</span>
     </button>
     <slot name="outer" />

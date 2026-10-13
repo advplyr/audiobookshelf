@@ -36,8 +36,8 @@
     </div>
     <div class="relative">
       <div class="relative text-center categoryPlacard transform z-30 top-0 left-4e md:left-8e w-44e rounded-md">
-        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-xs border" :style="{ padding: `0em 0.5em` }">
-          <h2 :style="{ fontSize: 0.9 + 'em' }">{{ $strings[shelf.labelStringKey] }}</h2>
+        <div class="w-full h-full shinyBlack flex items-center justify-center rounded-full border" :style="{ padding: `0em 0.5em` }">
+          <h2 class="font-display tracking-wide" :style="{ fontSize: 0.95 + 'em' }">{{ $strings[shelf.labelStringKey] }}</h2>
         </div>
       </div>
 
@@ -192,19 +192,16 @@ export default {
 }
 
 .bookshelfDividerCategorized {
-  background: rgb(149, 119, 90);
-  background: linear-gradient(180deg, rgb(122, 94, 68) 0%, rgb(92, 62, 31) 17%, rgb(82, 54, 26) 88%, rgba(71, 48, 25, 1) 100%);
-  box-shadow: 2px 14px 8px #111111aa;
+  background: var(--bookshelf-divider-bg);
+  box-shadow: 0 18px 24px -14px rgba(0, 0, 0, 0.8);
 }
 
 .book-shelf-arrow-right {
   height: calc(100% - 1.5em);
-  background: rgb(48, 48, 48);
-  background: linear-gradient(90deg, rgba(48, 48, 48, 0) 0%, rgba(25, 25, 25, 0.25) 8%, rgba(17, 17, 17, 0.4) 28%, rgba(17, 17, 17, 0.6) 71%, rgba(10, 10, 10, 0.6) 86%, rgba(0, 0, 0, 0.7) 100%);
+  background: linear-gradient(90deg, rgb(var(--bg-rgb) / 0) 0%, rgb(var(--bg-rgb) / 0.75) 45%, rgb(var(--deep-rgb) / 0.95) 100%);
 }
 .book-shelf-arrow-left {
   height: calc(100% - 1.5em);
-  background: rgb(48, 48, 48);
-  background: linear-gradient(-90deg, rgba(48, 48, 48, 0) 0%, rgba(25, 25, 25, 0.25) 8%, rgba(17, 17, 17, 0.4) 28%, rgba(17, 17, 17, 0.6) 71%, rgba(10, 10, 10, 0.6) 86%, rgba(0, 0, 0, 0.7) 100%);
+  background: linear-gradient(-90deg, rgb(var(--bg-rgb) / 0) 0%, rgb(var(--bg-rgb) / 0.75) 45%, rgb(var(--deep-rgb) / 0.95) 100%);
 }
 </style>

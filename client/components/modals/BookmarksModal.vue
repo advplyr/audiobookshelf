@@ -2,10 +2,10 @@
   <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
       </div>
     </template>
-    <div v-if="show" class="w-full rounded-lg bg-bg box-shadow-md relative" style="max-height: 80vh">
+    <div v-if="show" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 relative" style="max-height: 80vh">
       <div v-if="bookmarks.length" class="h-full max-h-[calc(80vh-60px)] w-full relative overflow-y-auto overflow-x-hidden">
         <template v-for="bookmark in bookmarks">
           <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" :playback-rate="playbackRate" @click="clickBookmark" @delete="deleteBookmark" />

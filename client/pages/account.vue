@@ -1,7 +1,7 @@
 <template>
   <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-2xl mx-auto">
-      <h1 class="text-2xl">{{ $strings.HeaderAccount }}</h1>
+      <h1 class="font-display text-3xl">{{ $strings.HeaderAccount }}</h1>
 
       <div class="my-4">
         <div class="flex -mx-2">
@@ -15,6 +15,14 @@
         <div class="py-4">
           <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguage }}</p>
           <ui-dropdown v-model="selectedLanguage" :items="$languageCodeOptions" small class="max-w-48" @input="updateLocalLanguage" />
+        </div>
+
+        <div id="theme" class="py-4">
+          <div class="flex items-baseline justify-between px-1 mb-3">
+            <p class="text-sm font-semibold">{{ $strings.HeaderTheme }}</p>
+            <p class="text-xs text-gray-500">{{ $strings.MessageThemeSavedOnDevice }}</p>
+          </div>
+          <widgets-theme-picker />
         </div>
 
         <div class="w-full h-px bg-white/10 my-4" />

@@ -2,11 +2,11 @@
   <modals-modal v-model="show" name="batchQuickMatch" :processing="processing" :width="500" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
 
-    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full py-4">
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <div class="flex px-8 items-center py-2">

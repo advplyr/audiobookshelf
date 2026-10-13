@@ -2,10 +2,10 @@
   <modals-modal v-model="show" name="edit-author" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div v-if="author" class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
+    <div v-if="author" class="p-4 w-full text-sm py-6 rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
       <div class="flex">
         <div class="w-40 p-2">
           <div class="w-full h-45 relative">

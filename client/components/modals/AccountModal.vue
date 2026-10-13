@@ -2,11 +2,11 @@
   <modals-modal ref="modal" v-model="show" name="account" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="min-height: 400px; max-height: 80vh">
+      <div class="px-4 w-full text-sm py-6 rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden" style="min-height: 400px; max-height: 80vh">
         <div class="w-full p-8">
           <div class="flex py-2">
             <div class="w-1/2 px-2">

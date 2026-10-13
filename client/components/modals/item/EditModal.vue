@@ -11,7 +11,7 @@
       </template>
     </div>
 
-    <div role="tabpanel" class="w-full h-full max-h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative">
+    <div role="tabpanel" class="w-full h-full max-h-full text-sm rounded-b-2xl rounded-tr-2xl bg-primary box-shadow-xl border border-white/10 relative">
       <component v-if="libraryItem && show" :is="tabName" :library-item="libraryItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
 

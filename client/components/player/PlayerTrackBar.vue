@@ -1,10 +1,10 @@
 <template>
   <div class="relative">
     <!-- Track -->
-    <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
-      <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
-      <div ref="bufferTrack" class="h-full bg-gray-500 absolute top-0 left-0 pointer-events-none" />
-      <div ref="playedTrack" class="h-full bg-gray-200 absolute top-0 left-0 pointer-events-none" />
+    <div ref="track" class="w-full h-1.5 bg-white/10 rounded-full relative cursor-pointer transform duration-150 hover:scale-y-150 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
+      <div ref="readyTrack" class="h-full bg-white/10 absolute top-0 left-0 pointer-events-none" />
+      <div ref="bufferTrack" class="h-full bg-white/20 absolute top-0 left-0 pointer-events-none" />
+      <div ref="playedTrack" class="h-full bg-linear-to-r from-(--accent-deep) to-accent rounded-r-full absolute top-0 left-0 pointer-events-none" />
       <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
       <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white/25" />
     </div>
@@ -15,12 +15,12 @@
     </div>
 
     <!-- Hover timestamp -->
-    <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none z-10">
+    <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-accent text-black-700 rounded-full opacity-0 pointer-events-none z-10">
       <p ref="hoverTimestampText" class="text-xs font-mono text-center px-2 py-0.5 truncate whitespace-nowrap">00:00</p>
     </div>
-    <div ref="hoverTimestampArrow" class="absolute -top-3 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
+    <div ref="hoverTimestampArrow" class="absolute -top-3 left-0 bg-accent text-black-700 rounded-full opacity-0 pointer-events-none">
       <div class="absolute -bottom-1.5 left-0 right-0 w-full flex justify-center">
-        <div class="arrow-down" />
+        <div class="arrow-down" style="border-top-color: var(--color-accent)" />
       </div>
     </div>
   </div>

@@ -2,10 +2,10 @@
   <modals-modal ref="modal" v-model="show" name="share" :width="600" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ $strings.LabelShare }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ $strings.LabelShare }}</p>
       </div>
     </template>
-    <div class="px-6 py-8 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div class="px-6 py-8 w-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div class="absolute top-0 right-0 p-4">
         <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex ml-2">
           <a href="https://audiobookshelf.org/docs/documentation/libraries/common-content/public-shares#media-item-shares" target="_blank" class="inline-flex">

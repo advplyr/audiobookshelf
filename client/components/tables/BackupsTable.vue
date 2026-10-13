@@ -42,7 +42,7 @@
     </div>
 
     <prompt-dialog v-model="showConfirmApply" :width="675">
-      <div v-if="selectedBackup" class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+      <div v-if="selectedBackup" class="px-4 w-full text-sm py-6 rounded-2xl bg-primary box-shadow-xl border border-white/10">
         <p class="text-error text-lg font-semibold">{{ $strings.MessageImportantNotice }}</p>
         <p class="text-base py-1" v-html="$strings.MessageRestoreBackupWarning" />
 

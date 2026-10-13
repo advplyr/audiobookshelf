@@ -22,7 +22,7 @@
       <p v-else class="pl-2 pr-2 truncate">{{ bookmark.title }}</p>
     </div>
     <div v-if="!isEditing" class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
-      <span class="material-symbols text-xl mr-2 text-gray-200 hover:text-yellow-400" @click.stop="editClick">edit</span>
+      <span class="material-symbols text-xl mr-2 text-gray-200 hover:text-accent" @click.stop="editClick">edit</span>
       <span class="material-symbols text-xl text-gray-200 hover:text-error cursor-pointer" @click.stop="deleteClick">delete</span>
     </div>
   </div>

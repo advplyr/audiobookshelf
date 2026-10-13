@@ -36,7 +36,7 @@
           <p v-else class="text-success text-base md:text-lg text-center">{{ $strings.MessageValidCronExpression }}</p>
         </div>
       </template>
-      <div v-if="cronExpression && isValid" class="flex items-center justify-center text-yellow-400 mt-2">
+      <div v-if="cronExpression && isValid" class="flex items-center justify-center text-accent mt-2">
         <span class="material-symbols mr-2 text-xl">event</span>
         <p>{{ $strings.LabelNextScheduledRun }}: {{ nextRun }}</p>
       </div>

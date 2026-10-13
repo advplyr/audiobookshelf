@@ -14,7 +14,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
+    border-color: var(--color-gray-700, currentColor);
   }
 
   [role='button'],
@@ -58,24 +58,40 @@
   --spacing-80e: 20em;
   --spacing-96e: 24em;
 
-  --color-bg: #373838;
-  --color-primary: #232323;
-  --color-accent: #1ad691;
-  --color-error: #ff5252;
-  --color-info: #2196f3;
-  --color-success: #4caf50;
-  --color-warning: #fb8c00;
-  --color-darkgreen: rgb(34, 127, 35);
-  --color-black-50: #bbbbbb;
-  --color-black-100: #666666;
-  --color-black-200: #555555;
-  --color-black-300: #444444;
-  --color-black-400: #333333;
-  --color-black-500: #222222;
-  --color-black-600: #111111;
-  --color-black-700: #101010;
+  /* Midnight listening-room palette */
+  --color-bg: #171a21;
+  --color-primary: #1f232c;
+  --color-fg: #262b36;
+  --color-accent: #e8a75a;
+  --color-accent-soft: #f3c993;
+  --color-error: #f0645a;
+  --color-info: #5b9cf0;
+  --color-success: #3bb38a;
+  --color-warning: #e9a23b;
+  --color-darkgreen: #2a8a69;
+  --color-black-50: #b6bccb;
+  --color-black-100: #6a7183;
+  --color-black-200: #4f5566;
+  --color-black-300: #3a3f4d;
+  --color-black-400: #2a2f3a;
+  --color-black-500: #1d2129;
+  --color-black-600: #12151b;
+  --color-black-700: #0d0f14;
 
-  --font-sans: 'Source Sans Pro';
+  /* Cooler, slightly blue-tinted neutrals to sit on the ink background */
+  --color-gray-50: #f6f7f9;
+  --color-gray-100: #eceef2;
+  --color-gray-200: #d9dce4;
+  --color-gray-300: #b9becb;
+  --color-gray-400: #9298a8;
+  --color-gray-500: #6c7284;
+  --color-gray-600: #4e5465;
+  --color-gray-700: #393e4c;
+  --color-gray-800: #262a34;
+  --color-gray-900: #181b22;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Source Sans Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', Georgia, serif;
   --font-mono: 'Ubuntu Mono';
 
   --text-xxs: 0.625rem;

@@ -1,6 +1,6 @@
 <template>
   <modals-modal v-model="show" name="rss-feed-view-modal" :processing="processing" :width="700" :height="'unset'">
-    <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+    <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-hidden">
       <div v-if="feed" class="w-full">
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedGeneral }}</p>
 

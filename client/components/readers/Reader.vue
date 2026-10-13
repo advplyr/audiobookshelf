@@ -78,7 +78,7 @@
           <p class="text-xl md:text-3xl text-white truncate">{{ $strings.HeaderEreaderSettings }}</p>
         </div>
       </template>
-      <div class="px-2 py-4 md:p-8 w-full text-base rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
+      <div class="px-2 py-4 md:p-8 w-full text-base rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
         <div class="flex items-center mb-4">
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelTheme }}:</p>

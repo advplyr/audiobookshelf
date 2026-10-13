@@ -28,7 +28,15 @@ module.exports = {
       lang: 'en'
     },
     meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { hid: 'description', name: 'description', content: '' }, { hid: 'robots', name: 'robots', content: 'noindex' }],
-    script: [],
+    // Apply the saved color theme before first paint to avoid a flash of the default theme.
+    // vue-meta may re-run this after mount, so it must resolve themes exactly like plugins/theme.client.js
+    script: [
+      {
+        hid: 'abs-theme',
+        innerHTML: "try{var t=localStorage.getItem('abs-theme');if(['midnight','classic','forest','ocean','dusk','oled'].indexOf(t)<0)t='classic';if(t==='midnight')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t)}catch(e){}"
+      }
+    ],
+    __dangerouslyDisableSanitizersByTagID: { 'abs-theme': ['innerHTML'] },
     link: [
       { rel: 'icon', type: 'image/x-icon', href: routerBasePath + '/favicon.ico' },
       { rel: 'apple-touch-icon', href: routerBasePath + '/ios_icon.png' }
@@ -43,7 +51,7 @@ module.exports = {
   css: ['@/assets/tailwind.css', '@/assets/app.css'],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ['@/plugins/constants.js', '@/plugins/init.client.js', '@/plugins/axios.js', '@/plugins/toast.js', '@/plugins/utils.js', '@/plugins/i18n.js'],
+  plugins: ['@/plugins/constants.js', '@/plugins/init.client.js', '@/plugins/theme.client.js', '@/plugins/axios.js', '@/plugins/toast.js', '@/plugins/utils.js', '@/plugins/i18n.js'],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,

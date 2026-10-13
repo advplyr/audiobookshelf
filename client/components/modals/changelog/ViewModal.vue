@@ -5,7 +5,7 @@
         <h1 class="text-3xl text-white truncate">Changelog</h1>
       </div>
     </template>
-    <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">
+    <div class="px-8 py-6 w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-y-scroll" style="max-height: 80vh">
       <template v-for="release in releasesToShow">
         <div :key="release.name">
           <p class="text-xl font-bold pb-4">

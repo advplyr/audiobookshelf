@@ -2,11 +2,11 @@
   <modals-modal ref="modal" v-model="show" name="ereader-device-edit" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
+      <div class="w-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10">
         <div class="w-full px-3 py-5 md:p-12">
           <div class="flex items-center -mx-1 mb-4">
             <div class="w-full md:w-1/2 px-1">

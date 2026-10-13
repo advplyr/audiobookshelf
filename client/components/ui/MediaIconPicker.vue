@@ -2,12 +2,12 @@
   <div class="relative w-full h-9" v-click-outside="clickOutsideObj">
     <p class="text-sm font-semibold">{{ label }}</p>
 
-    <button type="button" :disabled="disabled" class="relative h-full w-full border border-gray-600 rounded-sm shadow-xs pl-3 pr-3 text-left focus:outline-hidden cursor-pointer bg-primary text-gray-100 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="relative h-full w-full border border-white/10 rounded-lg pl-3 pr-3 text-left focus:outline-hidden cursor-pointer bg-primary text-gray-100 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <ui-library-icon :icon="selectedItem" />
     </button>
 
     <transition name="menu">
-      <div v-show="showMenu" class="absolute -left-[4.5rem] z-10 -mt-px bg-primary border border-black-200 shadow-lg max-h-56 w-48 rounded-md py-1 overflow-auto focus:outline-hidden sm:text-sm">
+      <div v-show="showMenu" class="absolute -left-[4.5rem] z-10 -mt-px bg-primary border border-white/10 box-shadow-xl max-h-56 w-48 rounded-md py-1 overflow-auto focus:outline-hidden sm:text-sm">
         <div class="flex justify-center items-center flex-wrap">
           <template v-for="icon in icons">
             <div :key="icon" class="p-2">

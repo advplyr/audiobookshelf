@@ -2,7 +2,7 @@
   <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary/75 flex items-center justify-center z-60 opacity-0">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-linear-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
     <div ref="content" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }" v-click-outside="clickedOutside">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+      <div class="px-4 w-full text-sm py-6 rounded-2xl bg-primary box-shadow-xl border border-white/10">
         <p v-if="allowHtmlMessage" id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1" v-html="sanitizedMessage" />
         <p v-else id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1">{{ message }}</p>
 

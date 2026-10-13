@@ -5,7 +5,7 @@
         <p class="text-xl md:text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div ref="wrapper" id="podcast-wrapper" class="p-2 md:p-8 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
+    <div ref="wrapper" id="podcast-wrapper" class="p-2 md:p-8 w-full text-sm py-2 rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
       <div class="w-full">
         <p class="text-lg font-semibold mb-2 px-2">{{ $strings.HeaderDetails }}</p>
 

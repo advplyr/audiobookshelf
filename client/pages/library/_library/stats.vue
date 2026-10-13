@@ -19,7 +19,7 @@
                   </nuxt-link>
                 </div>
                 <div class="w-full rounded-full h-3 bg-primary/50 overflow-hidden">
-                  <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalItems) + '%' }" />
+                  <div class="bg-accent h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalItems) + '%' }" />
                 </div>
               </div>
             </template>
@@ -34,7 +34,7 @@
                     {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}</nuxt-link>
                   </p>
                   <div class="grow rounded-full h-2.5 bg-primary/0 overflow-hidden">
-                    <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
+                    <div class="bg-accent h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
                   </div>
                   <div class="w-4 ml-3">
                     <p class="text-sm font-bold">{{ author.count }}</p>
@@ -53,7 +53,7 @@
                     {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
                   </p>
                   <div class="grow rounded-full h-2.5 bg-primary/0 overflow-hidden">
-                    <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestItemDuration) + '%' }" />
+                    <div class="bg-accent h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestItemDuration) + '%' }" />
                   </div>
                   <div class="w-4 ml-3">
                     <p class="text-sm font-bold">{{ (ab.duration / 3600).toFixed(1) }}</p>
@@ -72,7 +72,7 @@
                     {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
                   </p>
                   <div class="grow rounded-full h-2.5 bg-primary/0 overflow-hidden">
-                    <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.size) / largestItemSize) + '%' }" />
+                    <div class="bg-accent h-full rounded-full" :style="{ width: Math.round((100 * ab.size) / largestItemSize) + '%' }" />
                   </div>
                   <div class="w-4 ml-3">
                     <p class="text-sm font-bold whitespace-nowrap">{{ $bytesPretty(ab.size) }}</p>

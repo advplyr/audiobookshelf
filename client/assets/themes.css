@@ -1,0 +1,144 @@
+/*
+  Color themes.
+
+  Tailwind's @theme tokens (--color-*) are plain CSS variables, so a theme only
+  needs to override them on <html data-theme="...">. The RGB triplets are used
+  for translucent surfaces/glows written as rgb(var(--x-rgb) / alpha).
+  The base (no data-theme / "midnight") values live in :root; other themes
+  only override what differs. The default selected theme is "classic".
+*/
+
+:root {
+  --accent-rgb: 232 167 90;
+  --accent-deep: #b8733a;
+  --bg-rgb: 23 26 33;
+  --deep-rgb: 18 21 27;
+  --deepest-rgb: 13 15 20;
+  --glow2-rgb: 91 156 240;
+  --shelf-top: #1b1f27;
+  --page-top: #191c23;
+  --page-bottom: #14171d;
+  color-scheme: dark;
+}
+
+/* Classic — the original audiobookshelf palette (default) */
+html[data-theme='classic'] {
+  --color-bg: #373838;
+  --color-primary: #232323;
+  --color-fg: #2c2c2c;
+  --color-accent: #1ad691;
+  --color-accent-soft: #6ee6b8;
+  --color-error: #ff5252;
+  --color-info: #2196f3;
+  --color-success: #4caf50;
+  --color-warning: #fb8c00;
+  --color-darkgreen: rgb(34, 127, 35);
+  --color-black-50: #bbbbbb;
+  --color-black-100: #666666;
+  --color-black-200: #555555;
+  --color-black-300: #444444;
+  --color-black-400: #333333;
+  --color-black-500: #222222;
+  --color-black-600: #111111;
+  --color-black-700: #101010;
+  --color-gray-50: oklch(0.985 0.002 247.839);
+  --color-gray-100: oklch(0.967 0.003 264.542);
+  --color-gray-200: oklch(0.928 0.006 264.531);
+  --color-gray-300: oklch(0.872 0.01 258.338);
+  --color-gray-400: oklch(0.707 0.022 261.325);
+  --color-gray-500: oklch(0.551 0.027 264.364);
+  --color-gray-600: oklch(0.446 0.03 256.802);
+  --color-gray-700: oklch(0.373 0.034 259.733);
+  --color-gray-800: oklch(0.278 0.033 256.848);
+  --color-gray-900: oklch(0.21 0.034 264.665);
+  --font-sans: 'Source Sans Pro';
+  --accent-rgb: 26 214 145;
+  --accent-deep: #12a06c;
+  --bg-rgb: 55 56 56;
+  --deep-rgb: 35 35 35;
+  --deepest-rgb: 20 20 20;
+  --glow2-rgb: 120 120 120;
+  --shelf-top: #3a3b3b;
+  --page-top: #373838;
+  --page-bottom: #373838;
+}
+
+/* Forest — deep pine with a sage-gold accent */
+html[data-theme='forest'] {
+  --color-bg: #141b17;
+  --color-primary: #1a231e;
+  --color-fg: #222d27;
+  --color-accent: #a9cf7c;
+  --color-accent-soft: #c8e2a6;
+  --color-gray-700: #34413a;
+  --color-gray-800: #232d28;
+  --color-gray-900: #161d19;
+  --accent-rgb: 169 207 124;
+  --accent-deep: #6f9a4c;
+  --bg-rgb: 20 27 23;
+  --deep-rgb: 16 22 19;
+  --deepest-rgb: 10 14 12;
+  --glow2-rgb: 214 186 120;
+  --shelf-top: #18201c;
+  --page-top: #161e1a;
+  --page-bottom: #111713;
+}
+
+/* Ocean — navy depths with a clear sky-blue accent */
+html[data-theme='ocean'] {
+  --color-bg: #0f1620;
+  --color-primary: #141d2a;
+  --color-fg: #1b2636;
+  --color-accent: #5fb4f2;
+  --color-accent-soft: #9dd2f8;
+  --color-gray-700: #2f3b4d;
+  --color-gray-800: #1f2938;
+  --color-gray-900: #131a25;
+  --accent-rgb: 95 180 242;
+  --accent-deep: #2f7fc0;
+  --bg-rgb: 15 22 32;
+  --deep-rgb: 12 18 27;
+  --deepest-rgb: 8 12 19;
+  --glow2-rgb: 120 220 200;
+  --shelf-top: #132030;
+  --page-top: #111a26;
+  --page-bottom: #0c121b;
+}
+
+/* Dusk — plum dusk with a rose accent */
+html[data-theme='dusk'] {
+  --color-bg: #1a1519;
+  --color-primary: #221b21;
+  --color-fg: #2b222a;
+  --color-accent: #ee93a8;
+  --color-accent-soft: #f6bccb;
+  --color-gray-700: #42363f;
+  --color-gray-800: #2c242b;
+  --color-gray-900: #1c171b;
+  --accent-rgb: 238 147 168;
+  --accent-deep: #b9566f;
+  --bg-rgb: 26 21 25;
+  --deep-rgb: 21 17 20;
+  --deepest-rgb: 14 11 13;
+  --glow2-rgb: 160 130 230;
+  --shelf-top: #211a20;
+  --page-top: #1d171c;
+  --page-bottom: #151115;
+}
+
+/* OLED — true black, saves power on OLED screens */
+html[data-theme='oled'] {
+  --color-bg: #000000;
+  --color-primary: #0b0b0c;
+  --color-fg: #141416;
+  --color-gray-700: #2a2a2e;
+  --color-gray-800: #18181b;
+  --color-gray-900: #0b0b0c;
+  --bg-rgb: 0 0 0;
+  --deep-rgb: 0 0 0;
+  --deepest-rgb: 0 0 0;
+  --glow2-rgb: 0 0 0;
+  --shelf-top: #050505;
+  --page-top: #000000;
+  --page-bottom: #000000;
+}

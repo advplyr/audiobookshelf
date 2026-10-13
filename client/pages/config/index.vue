@@ -165,7 +165,7 @@
 
     <div class="flex items-center py-4">
       <div class="grow" />
-      <p class="pr-2 text-sm text-yellow-400">
+      <p class="pr-2 text-sm text-accent">
         {{ $strings.MessageReportBugsAndContribute }}
         <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>
       </p>
@@ -176,7 +176,7 @@
           />
         </svg>
       </a>
-      <p class="pl-4 pr-2 text-sm text-yellow-400">
+      <p class="pl-4 pr-2 text-sm text-accent">
         {{ $strings.MessageJoinUsOn }}
         <a class="underline" href="https://discord.gg/HQgCbd6E75" target="_blank">discord</a>
       </p>
@@ -201,7 +201,7 @@
 
     <!-- confirm cache purge dialog -->
     <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+      <div class="px-4 w-full text-sm py-6 rounded-2xl bg-primary box-shadow-xl border border-white/10">
         <p class="text-error font-semibold">{{ $strings.MessageImportantNotice }}</p>
         <p class="my-8 text-center" v-html="$strings.MessageConfirmPurgeCache" />
         <div class="flex px-1 items-center">

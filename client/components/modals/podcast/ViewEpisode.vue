@@ -2,10 +2,10 @@
   <modals-modal v-model="show" name="podcast-episode-view-modal" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ $strings.LabelEpisode }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ $strings.LabelEpisode }}</p>
       </div>
     </template>
-    <div ref="wrapper" class="p-4 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
+    <div ref="wrapper" class="p-4 w-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-y-auto" style="max-height: 80vh">
       <div class="flex mb-4">
         <div class="w-12 h-12">
           <covers-book-cover :library-item="libraryItem" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" />

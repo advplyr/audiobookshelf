@@ -48,6 +48,7 @@ const Constants = {
 
 const KeyNames = {
   27: 'Escape',
+  191: 'Slash',
   32: 'Space',
   37: 'ArrowLeft',
   38: 'ArrowUp',

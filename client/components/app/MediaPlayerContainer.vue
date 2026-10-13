@@ -1,12 +1,12 @@
 <template>
-  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary px-2 lg:px-4 pb-1 lg:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="mediaPlayerContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 lg:h-40 z-50 bg-primary/95 backdrop-blur-xl border-t border-white/5 px-2 lg:px-4 pb-1 lg:pb-4 pt-2 media-player-surface">
     <div class="absolute left-2 top-2 lg:left-4 cursor-pointer">
       <covers-book-cover expand-on-click :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </div>
     <div class="flex items-start mb-6 lg:mb-0" :class="isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
       <div class="min-w-0 w-full">
         <div class="flex items-center">
-          <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
+          <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="font-display hover:text-accent transition-colors cursor-pointer text-sm sm:text-xl block truncate">
             {{ title }}
           </nuxt-link>
           <widgets-explicit-indicator v-if="isExplicit" />
@@ -27,7 +27,7 @@
       </div>
       <div class="grow" />
       <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
-        <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
+        <button :aria-label="$strings.LabelClosePlayer" class="material-symbols sm:px-2 py-1 lg:p-2 lg:m-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</button>
       </ui-tooltip>
     </div>
     <player-ui
@@ -565,6 +565,11 @@ export default {
 </script>
 
 <style>
+.media-player-surface {
+  box-shadow: 0 -24px 48px -24px rgba(0, 0, 0, 0.7);
+  background-image: radial-gradient(600px 160px at 50% 0%, rgb(var(--accent-rgb) / 0.08), transparent 70%);
+}
+
 #mediaPlayerContainer {
   box-shadow: 0px -6px 8px #1111113f;
 }

@@ -1,5 +1,5 @@
 <template>
-  <button :aria-label="ariaLabel" class="icon-btn rounded-md flex items-center justify-center relative" @mousedown.prevent :disabled="disabled || loading" :class="className" @click="clickBtn">
+  <button :aria-label="ariaLabel" class="icon-btn rounded-lg flex items-center justify-center relative" @mousedown.prevent :disabled="disabled || loading" :class="className" @click="clickBtn">
     <div v-if="loading" class="text-white/100 absolute top-0 left-0 w-full h-full flex items-center justify-center">
       <svg class="animate-spin" style="width: 24px; height: 24px" viewBox="0 0 24 24">
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />

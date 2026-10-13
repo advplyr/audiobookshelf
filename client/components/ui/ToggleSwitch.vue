@@ -12,7 +12,7 @@ export default {
     value: Boolean,
     onColor: {
       type: String,
-      default: 'success'
+      default: 'accent'
     },
     offColor: {
       type: String,

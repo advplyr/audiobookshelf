@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="podcast-episode-edit-modal" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
     <div class="absolute -top-10 left-0 z-10 w-full flex">
@@ -18,7 +18,7 @@
       <div class="material-symbols text-5xl text-white/50 hover:text-white/90 cursor-pointer pointer-events-auto" @click.stop.prevent="goNextEpisode" @mousedown.prevent>arrow_forward_ios</div>
     </div>
 
-    <div ref="wrapper" class="p-4 w-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
+    <div ref="wrapper" class="p-4 w-full text-sm rounded-b-2xl rounded-tr-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-y-auto" style="max-height: 80vh">
       <component v-if="libraryItem && show" :is="tabComponentName" :library-item="libraryItem" :episode="episodeItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>

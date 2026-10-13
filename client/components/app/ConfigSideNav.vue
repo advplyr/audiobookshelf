@@ -1,23 +1,23 @@
 <template>
   <div role="toolbar" aria-orientation="vertical" aria-label="Config Sidebar">
-    <div role="navigation" aria-label="Config Navigation" class="w-44 fixed left-0 top-16 bg-bg/100 md:bg-bg/70 shadow-lg border-r border-white/5 py-3 transform transition-transform mb-12 overflow-y-auto" :class="wrapperClass + ' ' + (streamLibraryItem ? 'h-[calc(100%-270px)]' : 'h-[calc(100%-110px)]')" v-click-outside="clickOutside">
+    <div role="navigation" aria-label="Config Navigation" class="w-44 fixed left-0 top-16 bg-bg/100 md:bg-bg/80 backdrop-blur-md border-r border-white/5 py-3 transform transition-transform mb-12 overflow-y-auto" :class="wrapperClass + ' ' + (streamLibraryItem ? 'h-[calc(100%-270px)]' : 'h-[calc(100%-110px)]')" v-click-outside="clickOutside">
       <div v-show="isMobilePortrait" class="flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
         <span class="material-symbols text-2xl">arrow_back</span>
       </div>
 
-      <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-3 h-12 border-b border-primary/30 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary/70' : 'hover:bg-primary/30'">
+      <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" :aria-current="routeName === route.id ? 'page' : null" class="nav-pill mx-2 px-3 h-10 mb-0.5 rounded-lg flex items-center cursor-pointer text-sm" :class="routeName === route.id ? 'is-active' : 'text-gray-400'">
         <p class="leading-4">{{ route.title }}</p>
-        <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+        <div v-show="routeName === route.id" class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-accent" />
       </nuxt-link>
 
       <modals-changelog-view-modal v-model="showChangelogModal" :versionData="versionData" />
     </div>
 
-    <div class="w-44 h-12 px-4 border-t bg-bg border-black/20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
+    <div class="w-44 h-12 px-4 border-t bg-bg border-white/5 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
       <div class="flex items-center justify-between">
-        <button type="button" class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</button>
+        <button type="button" class="font-mono text-xs text-gray-500 hover:text-accent transition-colors" @click="clickChangelog">v{{ $config.version }}</button>
 
-        <p class="text-xs text-gray-300 italic">{{ Source }}</p>
+        <p class="text-xs text-gray-600 italic">{{ Source }}</p>
       </div>
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ versionData.latestVersion }}</a>
     </div>

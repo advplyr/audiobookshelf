@@ -531,6 +531,13 @@ export default {
         return
       }
 
+      // "/" jumps to the global search
+      if (name === 'Slash' && !this.$store.state.openModal && !this.$store.state.showEReader) {
+        this.$eventBus.$emit('focus-global-search')
+        e.preventDefault()
+        return
+      }
+
       // Modal is open
       if (this.$store.state.openModal && Object.values(this.$hotkeys.Modal).includes(name)) {
         this.$eventBus.$emit('modal-hotkey', name)

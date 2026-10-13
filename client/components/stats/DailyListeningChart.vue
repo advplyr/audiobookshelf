@@ -15,13 +15,13 @@
 
         <div :key="`dot-${n}`" class="absolute z-10" :style="{ left: points[n - 1].x + 'px', bottom: points[n - 1].y + 'px' }">
           <ui-tooltip :text="last7DaysOfListening[n - 1].minutesListening" plaintext direction="top">
-            <div class="h-2 w-2 bg-yellow-400 hover:bg-yellow-300 rounded-full transform duration-150 transition-transform hover:scale-125" />
+            <div class="h-2 w-2 bg-accent hover:bg-yellow-300 rounded-full transform duration-150 transition-transform hover:scale-125" />
           </ui-tooltip>
         </div>
       </template>
 
       <template v-for="(line, index) in pointLines">
-        <div :key="`line-${index}`" class="absolute h-0.5 bg-yellow-400 origin-bottom-left pointer-events-none" :style="{ width: line.width + 'px', left: line.x + 'px', bottom: line.y + 'px', transform: `rotate(${line.angle}deg)` }" />
+        <div :key="`line-${index}`" class="absolute h-0.5 bg-accent origin-bottom-left pointer-events-none" :style="{ width: line.width + 'px', left: line.x + 'px', bottom: line.y + 'px', transform: `rotate(${line.angle}deg)` }" />
       </template>
 
       <div class="absolute -bottom-2 left-0 flex ml-6">

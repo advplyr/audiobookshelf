@@ -910,8 +910,7 @@ export default {
 }
 
 .bookshelfDivider {
-  background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);
-  box-shadow: 0.125em 0.875em 0.5em #111111aa;
+  box-shadow: 0 1.1em 1.5em -0.9em rgba(0, 0, 0, 0.8);
 }
 </style>

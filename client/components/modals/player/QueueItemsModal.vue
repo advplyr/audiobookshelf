@@ -2,10 +2,10 @@
   <modals-modal v-model="show" name="queue-items" :width="800" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ $strings.HeaderPlayerQueue }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ $strings.HeaderPlayerQueue }}</p>
       </div>
     </template>
-    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden py-4" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden py-4" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="pb-4 px-4 flex items-center">
           <p class="text-base text-gray-200">{{ $strings.HeaderPlayerQueue }}</p>

@@ -12,12 +12,12 @@
       </div>
 
       <transition name="menu">
-        <ul ref="menu" v-show="showMenu" class="absolute z-60 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black/5 overflow-auto focus:outline-hidden sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+        <ul ref="menu" v-show="showMenu" class="absolute z-60 -mt-px w-full bg-primary border border-white/10 box-shadow-xl max-h-56 rounded-md py-1 text-base  overflow-auto focus:outline-hidden sm:text-sm" role="listbox" aria-labelledby="listbox-label">
           <template v-for="item in items">
             <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
               <p class="font-normal ml-3 block truncate">{{ item.text }}</p>
 
-              <div v-if="selected.includes(item.value)" class="text-yellow-400 absolute inset-y-0 right-0 my-auto w-5 h-5 mr-3 overflow-hidden">
+              <div v-if="selected.includes(item.value)" class="text-accent absolute inset-y-0 right-0 my-auto w-5 h-5 mr-3 overflow-hidden">
                 <span class="material-symbols text-xl">check</span>
               </div>
             </li>

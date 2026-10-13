@@ -2,17 +2,17 @@
   <modals-modal v-model="show" name="podcast-episodes-modal" :width="1200" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ title }}</p>
+        <p class="font-display text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+    <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-2xl bg-primary box-shadow-xl border border-white/10 relative overflow-hidden">
       <div v-if="episodesCleaned.length" class="w-full py-3 mx-auto flex">
         <form @submit.prevent="submit" class="flex grow">
           <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="grow mr-2 text-sm md:text-base" />
         </form>
         <ui-btn :padding-x="4" @click="toggleSort">
           <span class="pr-4">{{ $strings.LabelSortPubDate }}</span>
-          <span class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-2">
+          <span class="text-accent absolute inset-y-0 right-0 flex items-center pr-2">
             <span class="material-symbols text-xl" :aria-label="sortDescending ? $strings.LabelSortDescending : $strings.LabelSortAscending">{{ sortDescending ? 'expand_more' : 'expand_less' }}</span>
           </span>
         </ui-btn>

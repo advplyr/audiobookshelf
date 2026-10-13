@@ -2,11 +2,11 @@
   <modals-modal v-model="show" name="sleep-timer" :width="350" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-        <p class="text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderSleepTimer }}</p>
+        <p class="font-display text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderSleepTimer }}</p>
       </div>
     </template>
 
-    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div class="w-full">
         <template v-for="time in sleepTimes">
           <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-primary/25 relative" @click="setTime(time)">

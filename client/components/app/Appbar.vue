@@ -1,16 +1,16 @@
 <template>
-  <div class="w-full h-16 bg-primary relative">
+  <div class="w-full h-16 bg-primary/90 backdrop-blur-md border-b border-white/5 relative z-60">
     <div id="appbar" role="toolbar" aria-label="Appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
+          <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-9 sm:min-w-9 sm:h-9 sm:mr-3 transition-transform duration-300 hover:-rotate-6" />
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-xl mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
+          <h1 class="font-display text-[1.35rem] mr-6 hidden lg:block text-gray-100 hover:text-accent transition-colors">audiobook<span class="text-accent">shelf</span></h1>
         </nuxt-link>
 
-        <ui-libraries-dropdown class="mr-2" />
+        <ui-libraries-dropdown class="mr-2 sm:mr-3" />
 
         <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
         <div class="grow" />
@@ -24,35 +24,38 @@
 
         <widgets-notification-widget class="hidden md:block" />
 
-        <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
+        <nuxt-link v-if="currentLibrary" to="/config/stats" class="text-gray-400 hover:text-white hover:bg-white/5 rounded-full cursor-pointer w-9 h-9 hidden sm:flex items-center justify-center mx-0.5 transition-colors">
           <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom" class="flex items-center">
-            <span class="material-symbols text-2xl" aria-label="User Stats" role="button">&#xe01d;</span>
+            <span class="material-symbols text-[1.4rem]" aria-label="User Stats" role="button">&#xe01d;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="text-gray-400 hover:text-white hover:bg-white/5 rounded-full cursor-pointer w-9 h-9 flex items-center justify-center mx-0.5 transition-colors" exact-active-class="text-accent!">
           <ui-tooltip :text="$strings.ButtonUpload" direction="bottom" class="flex items-center">
-            <span class="material-symbols text-2xl" aria-label="Upload Media" role="button">&#xf09b;</span>
+            <span class="material-symbols text-[1.4rem]" aria-label="Upload Media" role="button">&#xf09b;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link v-if="userIsAdminOrUp" to="/config" class="hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link to="/account#theme" class="text-gray-400 hover:text-white hover:bg-white/5 rounded-full cursor-pointer w-9 h-9 hidden sm:flex items-center justify-center mx-0.5 transition-colors">
+          <ui-tooltip :text="$strings.HeaderTheme" direction="bottom" class="flex items-center">
+            <span class="material-symbols text-[1.4rem]" :aria-label="$strings.HeaderTheme" role="button">palette</span>
+          </ui-tooltip>
+        </nuxt-link>
+
+        <nuxt-link v-if="userIsAdminOrUp" to="/config" class="text-gray-400 hover:text-white hover:bg-white/5 rounded-full cursor-pointer w-9 h-9 flex items-center justify-center mx-0.5 transition-colors" exact-active-class="text-accent!">
           <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
-            <span class="material-symbols text-2xl" aria-label="System Settings" role="button">&#xe8b8;</span>
+            <span class="material-symbols text-[1.4rem]" aria-label="System Settings" role="button">&#xe8b8;</span>
           </ui-tooltip>
         </nuxt-link>
 
-        <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded-sm shadow-xs ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left sm:text-sm cursor-pointer hover:bg-bg/40" aria-haspopup="listbox" aria-expanded="true">
-          <span class="items-center hidden md:flex">
-            <span class="block truncate">{{ username }}</span>
-          </span>
-          <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
-            <span class="material-symbols text-xl text-gray-100">&#xe7fd;</span>
-          </span>
+        <nuxt-link to="/account" class="flex items-center gap-2 h-9 ml-1.5 sm:ml-3 md:ml-4 pl-0.5 md:pr-3 rounded-full border border-white/10 hover:border-accent/50 hover:bg-white/5 transition-colors" :title="username">
+          <span class="w-8 h-8 rounded-full bg-linear-to-br from-accent to-(--accent-deep) text-black-700 font-semibold flex items-center justify-center text-sm uppercase">{{ userInitial }}</span>
+          <span class="hidden md:block max-w-28 truncate text-sm text-gray-200">{{ username }}</span>
         </nuxt-link>
       </div>
-      <div v-show="numMediaItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
-        <h1 class="text-lg md:text-2xl px-4">{{ $getString('MessageItemsSelected', [numMediaItemsSelected]) }}</h1>
+      <div v-show="numMediaItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-[color-mix(in_srgb,var(--color-accent)_14%,var(--color-primary))] border-b border-accent/40 flex items-center">
+        <span class="w-2 h-2 rounded-full bg-accent animate-pulse ml-2" />
+        <h1 class="text-lg md:text-xl px-3 font-medium">{{ $getString('MessageItemsSelected', [numMediaItemsSelected]) }}</h1>
         <div class="grow" />
         <ui-btn v-if="!isPodcastLibrary && selectedMediaItemsArePlayable" color="bg-success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playSelectedItems">
           <span class="material-symbols fill text-2xl -ml-2 pr-1 text-white">play_arrow</span>
@@ -117,6 +120,9 @@ export default {
     },
     username() {
       return this.user ? this.user.username : 'err'
+    },
+    userInitial() {
+      return (this.username || '?').trim().charAt(0) || '?'
     },
     numMediaItemsSelected() {
       return this.selectedMediaItems.length

@@ -1,6 +1,6 @@
 <template>
   <modals-modal v-model="show" name="upload-image" :width="500" :height="'unset'">
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div class="flex items-center">
         <div class="w-40 pr-2 pt-4" style="min-width: 160px">
           <ui-file-input ref="fileInput" @change="fileUploadSelected">Upload Cover</ui-file-input>

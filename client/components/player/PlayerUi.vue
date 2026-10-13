@@ -9,7 +9,7 @@
         </ui-tooltip>
 
         <ui-tooltip v-if="!hideSleepTimer" direction="top" :text="$strings.LabelSleepTimer">
-          <button :aria-label="$strings.LabelSleepTimer" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
+          <button :aria-label="$strings.LabelSleepTimer" class="text-gray-400 hover:text-white mx-1 lg:mx-1.5 p-1 rounded-full hover:bg-white/5 transition-colors" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
             <span v-if="!sleepTimerSet" class="material-symbols text-2xl">snooze</span>
             <div v-else class="flex items-center">
               <span class="material-symbols text-lg text-warning">snooze</span>
@@ -19,25 +19,25 @@
         </ui-tooltip>
 
         <ui-tooltip v-if="!isPodcast && !hideBookmarks" direction="top" :text="$strings.LabelViewBookmarks">
-          <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+          <button :aria-label="$strings.LabelViewBookmarks" class="text-gray-400 hover:text-white mx-1 lg:mx-1.5 p-1 rounded-full hover:bg-white/5 transition-colors" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
             <span class="material-symbols text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip v-if="chapters.length" direction="top" :text="$strings.LabelViewChapters">
-          <button :aria-label="$strings.LabelViewChapters" class="text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+          <button :aria-label="$strings.LabelViewChapters" class="text-gray-400 hover:text-white mx-1 lg:mx-1.5 p-1 rounded-full hover:bg-white/5 transition-colors" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
             <span class="material-symbols text-2xl">format_list_bulleted</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings.LabelViewQueue">
-          <button :aria-label="$strings.LabelViewQueue" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
+          <button :aria-label="$strings.LabelViewQueue" class="outline-hidden text-gray-400 mx-1 lg:mx-1.5 p-1 rounded-full hover:bg-white/5 hover:text-white transition-colors" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
             <span class="material-symbols text-2.5xl sm:text-3xl">playlist_play</span>
           </button>
         </ui-tooltip>
 
         <ui-tooltip direction="top" :text="$strings.LabelViewPlayerSettings">
-          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-hidden text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
+          <button :aria-label="$strings.LabelViewPlayerSettings" class="outline-hidden text-gray-400 mx-1 lg:mx-1.5 p-1 rounded-full hover:bg-white/5 hover:text-white transition-colors" @mousedown.prevent @mouseup.prevent @click.stop="showPlayerSettings">
             <span class="material-symbols text-2xl sm:text-2.5xl">settings_slow_motion</span>
           </button>
         </ui-tooltip>

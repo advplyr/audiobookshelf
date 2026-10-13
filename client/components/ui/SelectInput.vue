@@ -13,7 +13,7 @@
     </button>
 
     <transition name="menu">
-      <ul ref="menu" v-show="showMenu" class="absolute z-60 -mt-px w-full bg-primary border border-black-200 shadow-lg rounded-md py-1 ring-1 ring-black/5 overflow-auto sm:text-sm" tabindex="-1" role="listbox" :style="{ maxHeight: menuMaxHeight }" v-click-outside="clickOutsideObj">
+      <ul ref="menu" v-show="showMenu" class="absolute z-60 -mt-px w-full bg-primary border border-white/10 box-shadow-xl rounded-xl py-1  overflow-auto sm:text-sm" tabindex="-1" role="listbox" :style="{ maxHeight: menuMaxHeight }" v-click-outside="clickOutsideObj">
         <template v-for="item in itemsToShow">
           <li :key="item.value" class="text-gray-100 relative py-2 cursor-pointer hover:bg-black-400" :id="'listbox-option-' + item.value" role="option" tabindex="0" @keyup.enter="clickedOption(item.value)" @click.stop.prevent="clickedOption(item.value)">
             <div class="flex items-center">

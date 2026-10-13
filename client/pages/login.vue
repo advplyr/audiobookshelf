@@ -1,13 +1,21 @@
 <template>
   <div id="page-wrapper" class="w-full h-screen overflow-y-auto">
-    <div class="absolute z-0 top-0 left-0 px-6 py-3">
+    <div class="login-glow pointer-events-none" aria-hidden="true" />
+    <div class="absolute z-0 top-0 left-0 px-6 py-5">
       <div class="flex items-center">
-        <img src="~static/icon.svg" alt="Audiobookshelf Logo" class="w-10 min-w-10 h-10" />
-        <h1 class="text-xl ml-4 hidden lg:block hover:underline">audiobookshelf</h1>
+        <img src="~static/icon.svg" alt="Audiobookshelf Logo" class="w-9 min-w-9 h-9" />
+        <h1 class="font-display text-xl ml-3 hidden sm:block">audiobook<span class="text-accent">shelf</span></h1>
       </div>
     </div>
 
-    <div class="relative z-10 w-full flex h-full items-center justify-center">
+    <div class="relative z-10 w-full flex h-full items-center justify-center lg:justify-between lg:px-[8vw] gap-16">
+      <div v-if="isInit && !criticalError && !showInitScreen" class="hidden lg:block max-w-xl login-hero">
+        <p class="text-xs uppercase tracking-[0.35em] text-accent/80 mb-6">Self-hosted · Audiobooks · Podcasts</p>
+        <p class="font-display text-6xl xl:text-7xl leading-[1.05] text-gray-50">audiobook<span class="italic text-accent">shelf</span></p>
+        <div class="mt-8 flex items-end gap-1 h-10" aria-hidden="true">
+          <span v-for="n in 28" :key="n" class="login-wave w-1 rounded-full bg-accent/60" :style="{ animationDelay: (n % 7) * 0.12 + 's', height: 20 + ((n * 37) % 80) + '%' }" />
+        </div>
+      </div>
       <div v-if="criticalError" class="w-full max-w-md rounded-sm border border-error/25 bg-error/10 p-4">
         <p class="text-center text-lg font-semibold">{{ $strings.MessageServerCouldNotBeReached }}</p>
       </div>
@@ -30,11 +38,10 @@
           </div>
         </form>
       </div>
-      <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 lg:-mt-40">
-        <div class="bg-bg rounded-md shadow-lg border border-white/5 p-4">
-          <p class="text-2xl font-semibold text-center text-white mb-4">{{ $strings.HeaderLogin }}</p>
-
-          <div class="w-full h-px bg-white/10 my-4" />
+      <div v-else-if="isInit" class="w-full max-w-md px-6 pb-8 pt-4">
+        <div class="bg-primary/80 backdrop-blur-xl rounded-2xl box-shadow-xl border border-white/10 px-6 py-8 sm:px-8">
+          <p class="font-display text-3xl text-white mb-1">{{ $strings.HeaderLogin }}</p>
+          <div class="w-10 h-0.5 bg-accent rounded-full mt-3 mb-6" />
 
           <p v-if="loginCustomMessage" class="py-2 default-style mb-2" v-html="loginCustomMessage"></p>
 
@@ -50,20 +57,20 @@
           </div>
 
           <form v-show="login_local" @submit.prevent="submitForm">
-            <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
-            <ui-text-input v-model.trim="username" autocomplete="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
+            <label class="block text-xs text-gray-400 tracking-wider uppercase mb-1.5">{{ $strings.LabelUsername }}</label>
+            <ui-text-input v-model.trim="username" autocomplete="username" :disabled="processing" class="mb-4 w-full h-11" inputName="username" />
 
-            <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
-            <ui-text-input v-model.trim="password" type="password" autocomplete="current-password" :disabled="processing" class="w-full mb-3" inputName="password" />
-            <div class="w-full flex justify-end py-3">
-              <ui-btn type="submit" :disabled="processing" color="bg-primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
+            <label class="block text-xs text-gray-400 tracking-wider uppercase mb-1.5">{{ $strings.LabelPassword }}</label>
+            <ui-text-input v-model.trim="password" type="password" autocomplete="current-password" :disabled="processing" class="w-full mb-4 h-11" inputName="password" />
+            <div class="w-full pt-2">
+              <ui-btn type="submit" :disabled="processing" color="bg-accent" class="w-full h-11 leading-none text-black-700! font-semibold">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
             </div>
           </form>
 
           <div v-if="login_local && login_openid" class="w-full h-px bg-white/10 my-4" />
 
           <div class="w-full flex py-3">
-            <a v-if="login_openid" :href="openidAuthUri" class="w-full abs-btn outline-hidden rounded-md shadow-md relative border border-gray-600 text-center bg-primary text-white px-8 py-2 leading-none">
+            <a v-if="login_openid" :href="openidAuthUri" class="w-full abs-btn outline-hidden rounded-lg relative border border-white/15 text-center bg-white/5 text-white px-8 py-3 leading-none">
               {{ openIDButtonText }}
             </a>
           </div>
@@ -323,3 +330,42 @@ export default {
   }
 }
 </script>
+
+<style>
+.login-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(700px 500px at 20% 40%, rgb(var(--accent-rgb) / 0.12), transparent 65%), radial-gradient(600px 500px at 90% 90%, rgb(var(--glow2-rgb) / 0.08), transparent 60%);
+}
+
+.login-hero {
+  animation: login-rise 900ms var(--ease-out-expo) both;
+}
+
+.login-wave {
+  animation: login-wave 1.6s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+@keyframes login-wave {
+  from {
+    transform: scaleY(0.35);
+    opacity: 0.5;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

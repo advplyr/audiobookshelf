@@ -6,7 +6,7 @@
     </div>
     <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
     <div v-else>
-      <p class="text-yellow-400 text-base">{{ $strings.MessageScheduleLibraryScanNote }}</p>
+      <p class="text-accent text-base">{{ $strings.MessageScheduleLibraryScanNote }}</p>
     </div>
   </div>
 </template>

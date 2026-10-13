@@ -10,7 +10,7 @@
     </slot>
 
     <transition name="menu">
-      <div v-show="showMenu" ref="menuWrapper" role="menu" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg rounded-md py-1 focus:outline-hidden sm:text-sm" :style="{ width: menuWidth + 'px' }">
+      <div v-show="showMenu" ref="menuWrapper" role="menu" class="absolute right-0 mt-1 z-10 bg-primary border border-white/10 box-shadow-xl rounded-xl py-1 focus:outline-hidden sm:text-sm" :style="{ width: menuWidth + 'px' }">
         <template v-for="(item, index) in items">
           <template v-if="item.subitems">
             <button :key="index" role="menuitem" aria-haspopup="menu" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-default w-full" :class="{ 'bg-white/5': mouseoverItemIndex == index }" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>
@@ -21,7 +21,7 @@
               :key="`subitems-${index}`"
               @mouseover="mouseoverSubItemMenu(index)"
               @mouseleave="mouseleaveSubItemMenu(index)"
-              class="absolute bg-bg border rounded-b-md border-black-200 shadow-lg z-50 -ml-px py-1"
+              class="absolute bg-bg border rounded-b-md border-white/10 box-shadow-xl z-50 -ml-px py-1"
               :class="openSubMenuLeft ? 'rounded-l-md' : 'rounded-r-md'"
               :style="{ left: submenuLeftPos + 'px', top: index * 28 + 'px', width: submenuWidth + 'px' }"
             >

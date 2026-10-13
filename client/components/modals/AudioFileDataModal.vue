@@ -1,6 +1,6 @@
 <template>
   <modals-modal v-model="show" name="audiofile-data-modal" :width="700" :height="'unset'">
-    <div v-if="audioFile" ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
+    <div v-if="audioFile" ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center justify-between">
         <p class="text-base text-gray-200 truncate">{{ metadata.filename }}</p>
         <ui-btn v-if="ffprobeData" small class="ml-2" @click="ffprobeData = null">{{ $strings.ButtonReset }}</ui-btn>

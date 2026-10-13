@@ -5,7 +5,7 @@
         <p class="text-lg md:text-2xl text-white truncate">{{ $strings.HeaderSession }} {{ _session.id }}</p>
       </div>
     </template>
-    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-2xl bg-primary box-shadow-xl border border-white/10 overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center">
         <p class="text-base text-gray-200">{{ _session.displayTitle }}</p>
         <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">{{ $getString('LabelByAuthor', [_session.displayAuthor]) }}</p>

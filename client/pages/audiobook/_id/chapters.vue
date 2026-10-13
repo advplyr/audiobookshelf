@@ -184,10 +184,10 @@
     <modals-modal v-model="showFindChaptersModal" name="edit-book" :width="500" :processing="findingChapters">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-          <p class="text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderFindChapters }}</p>
+          <p class="font-display text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderFindChapters }}</p>
         </div>
       </template>
-      <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
+      <div class="w-full h-full max-h-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10 relative">
         <div v-if="!chapterData" class="flex flex-col items-center justify-center p-20">
           <div class="relative">
             <div class="flex items-end space-x-2">
@@ -266,10 +266,10 @@
     <modals-modal v-model="showBulkChapterModal" name="bulk-chapters" :width="400">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-          <p class="text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderBulkChapterModal }}</p>
+          <p class="font-display text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderBulkChapterModal }}</p>
         </div>
       </template>
-      <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative p-6">
+      <div class="w-full h-full max-h-full text-sm rounded-2xl bg-primary box-shadow-xl border border-white/10 relative p-6">
         <div class="flex flex-col space-y-8">
           <p class="text-base">{{ $strings.MessageBulkChapterPattern }}</p>
 
