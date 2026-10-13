@@ -1,19 +1,21 @@
-const nodemailer = require('nodemailer')
-const Database = require('../Database')
-const Logger = require("../Logger")
+import type { Response } from 'express'
+import nodemailer from 'nodemailer'
+import Database from '../Database'
+import Logger from '../Logger'
 
 class EmailManager {
   constructor() { }
 
+  // Called after Database initialization; keep the existing failure before init.
   getTransporter() {
-    return nodemailer.createTransport(Database.emailSettings.getTransportObject())
+    return nodemailer.createTransport(Database.emailSettings!.getTransportObject())
   }
 
-  async sendTest(res) {
+  async sendTest(res: Response) {
     Logger.info(`[EmailManager] Sending test email`)
     const transporter = this.getTransporter()
 
-    const success = await transporter.verify().catch((error) => {
+    const success = await transporter.verify().catch((error: Error) => {
       Logger.error(`[EmailManager] Failed to verify SMTP connection config`, error)
       return false
     })
@@ -23,24 +25,24 @@ class EmailManager {
     }
 
     transporter.sendMail({
-      from: Database.emailSettings.fromAddress,
-      to: Database.emailSettings.testAddress || Database.emailSettings.fromAddress,
+      from: Database.emailSettings!.fromAddress,
+      to: Database.emailSettings!.testAddress || Database.emailSettings!.fromAddress,
       subject: 'Test email from Audiobookshelf',
       text: 'Success!'
     }).then((result) => {
       Logger.info(`[EmailManager] Test email sent successfully`, result)
       res.sendStatus(200)
-    }).catch((error) => {
+    }).catch((error: Error) => {
       Logger.error(`[EmailManager] Failed to send test email`, error)
       res.status(400).send(error.message || 'Failed to send test email')
     })
   }
 
-  async sendEBookToDevice(ebookFile, device, res) {
+  async sendEBookToDevice(ebookFile: { metadata: { filename: string; path: string } }, device: { name?: string | null; email?: string | null }, res: Response) {
     Logger.info(`[EmailManager] Sending ebook "${ebookFile.metadata.filename}" to device "${device.name}"/"${device.email}"`)
     const transporter = this.getTransporter()
 
-    const success = await transporter.verify().catch((error) => {
+    const success = await transporter.verify().catch((error: Error) => {
       Logger.error(`[EmailManager] Failed to verify SMTP connection config`, error)
       return false
     })
@@ -50,7 +52,7 @@ class EmailManager {
     }
 
     transporter.sendMail({
-      from: Database.emailSettings.fromAddress,
+      from: Database.emailSettings!.fromAddress,
       to: device.email,
       subject: "Here is your Ebook!",
       html: '<div dir="auto"></div>',
@@ -63,10 +65,10 @@ class EmailManager {
     }).then((result) => {
       Logger.info(`[EmailManager] Ebook sent to device successfully`, result)
       res.sendStatus(200)
-    }).catch((error) => {
+    }).catch((error: Error) => {
       Logger.error(`[EmailManager] Failed to send ebook to device`, error)
       res.status(400).send(error.message || 'Failed to send ebook to device')
     })
   }
 }
-module.exports = EmailManager
+export = EmailManager

@@ -1,10 +1,21 @@
-const axios = require('axios')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const { notificationData } = require('../utils/notifications')
+import axios from 'axios'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
+import notifications from '../utils/notifications'
+const { notificationData } = notifications
+import type Notification from '../objects/Notification'
+import type Backup from '../objects/Backup'
+import type Podcast from '../models/Podcast'
+import type PodcastEpisode from '../models/PodcastEpisode'
 
+type EventData = Record<string, string | number | boolean | null | undefined>
+type PodcastItem = { id: string; libraryId: string; media: Pick<Podcast, 'title' | 'explicit' | 'tags' | 'author' | 'description' | 'genres'> }
+
+// Settings are initialized before these event handlers are called.
 class NotificationManager {
+  declare sendingNotification: boolean
+  declare notificationQueue: { eventName: string; eventData: EventData | undefined }[]
   constructor() {
     this.sendingNotification = false
     this.notificationQueue = []
@@ -19,10 +30,10 @@ class NotificationManager {
    * @param {import('../models/LibraryItem')} libraryItem
    * @param {import('../models/PodcastEpisode')} episode
    */
-  async onPodcastEpisodeDownloaded(libraryItem, episode) {
-    if (!Database.notificationSettings.isUseable) return
+  async onPodcastEpisodeDownloaded(libraryItem: PodcastItem, episode: PodcastEpisode) {
+    if (!Database.notificationSettings!.isUseable) return
 
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onPodcastEpisodeDownloaded')) {
+    if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onPodcastEpisodeDownloaded')) {
       Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: No active notifications`)
       return
     }
@@ -43,7 +54,7 @@ class NotificationManager {
       episodeSubtitle: episode.subtitle || '',
       episodeDescription: episode.description || ''
     }
-    this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
+    void this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
   }
 
   /**
@@ -52,10 +63,10 @@ class NotificationManager {
    * @param {number} totalBackupCount
    * @param {boolean} removedOldest - If oldest backup was removed
    */
-  async onBackupCompleted(backup, totalBackupCount, removedOldest) {
-    if (!Database.notificationSettings.isUseable) return
+  async onBackupCompleted(backup: Backup, totalBackupCount: number, removedOldest: boolean) {
+    if (!Database.notificationSettings!.isUseable) return
 
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onBackupCompleted')) {
+    if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onBackupCompleted')) {
       Logger.debug(`[NotificationManager] onBackupCompleted: No active notifications`)
       return
     }
@@ -68,7 +79,8 @@ class NotificationManager {
       backupCount: totalBackupCount || 'Invalid',
       removedOldest: removedOldest || 'false'
     }
-    this.triggerNotification('onBackupCompleted', eventData)
+    void this.triggerNotification('onBackupCompleted', eventData)
+    return Promise.resolve()
   }
 
   /**
@@ -78,10 +90,10 @@ class NotificationManager {
    * @param {number} numFailed
    * @param {string} title
    */
-  async onRSSFeedFailed(feedUrl, numFailed, title) {
-    if (!Database.notificationSettings.isUseable) return
+  async onRSSFeedFailed(feedUrl: string, numFailed: number, title: string) {
+    if (!Database.notificationSettings!.isUseable) return
 
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedFailed')) {
+    if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onRSSFeedFailed')) {
       Logger.debug(`[NotificationManager] onRSSFeedFailed: No active notifications`)
       return
     }
@@ -92,7 +104,8 @@ class NotificationManager {
       numFailed: numFailed || 0,
       title: title || 'Unknown Title'
     }
-    this.triggerNotification('onRSSFeedFailed', eventData)
+    void this.triggerNotification('onRSSFeedFailed', eventData)
+    return Promise.resolve()
   }
 
   /**
@@ -102,10 +115,10 @@ class NotificationManager {
    * @param {number} numFailed
    * @param {string} title
    */
-  async onRSSFeedDisabled(feedUrl, numFailed, title) {
-    if (!Database.notificationSettings.isUseable) return
+  async onRSSFeedDisabled(feedUrl: string, numFailed: number, title: string) {
+    if (!Database.notificationSettings!.isUseable) return
 
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onRSSFeedDisabled')) {
+    if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onRSSFeedDisabled')) {
       Logger.debug(`[NotificationManager] onRSSFeedDisabled: No active notifications`)
       return
     }
@@ -116,17 +129,18 @@ class NotificationManager {
       numFailed: numFailed || 0,
       title: title || 'Unknown Title'
     }
-    this.triggerNotification('onRSSFeedDisabled', eventData)
+    void this.triggerNotification('onRSSFeedDisabled', eventData)
+    return Promise.resolve()
   }
 
   /**
    *
    * @param {string} errorMsg
    */
-  async onBackupFailed(errorMsg) {
-    if (!Database.notificationSettings.isUseable) return
+  async onBackupFailed(errorMsg: string) {
+    if (!Database.notificationSettings!.isUseable) return
 
-    if (!Database.notificationSettings.getHasActiveNotificationsForEvent('onBackupFailed')) {
+    if (!Database.notificationSettings!.getHasActiveNotificationsForEvent('onBackupFailed')) {
       Logger.debug(`[NotificationManager] onBackupFailed: No active notifications`)
       return
     }
@@ -135,11 +149,12 @@ class NotificationManager {
     const eventData = {
       errorMsg: errorMsg || 'Backup failed'
     }
-    this.triggerNotification('onBackupFailed', eventData)
+    void this.triggerNotification('onBackupFailed', eventData)
+    return Promise.resolve()
   }
 
   onTest() {
-    this.triggerNotification('onTest')
+    void this.triggerNotification('onTest')
   }
 
   /**
@@ -148,13 +163,13 @@ class NotificationManager {
    * @param {any} eventData
    * @param {boolean} [intentionallyFail=false] - If true, will intentionally fail the notification
    */
-  async triggerNotification(eventName, eventData, intentionallyFail = false) {
-    if (!Database.notificationSettings.isUseable) return
+  async triggerNotification(eventName: string, eventData?: EventData, intentionallyFail = false) {
+    if (!Database.notificationSettings!.isUseable) return
 
     // Will queue the notification if sendingNotification and queue is not full
     if (!this.checkTriggerNotification(eventName, eventData)) return
 
-    const notifications = Database.notificationSettings.getActiveNotificationsForEvent(eventName)
+    const notifications = Database.notificationSettings!.getActiveNotificationsForEvent(eventName)
     for (const notification of notifications) {
       Logger.debug(`[NotificationManager] triggerNotification: Sending ${eventName} notification ${notification.id}`)
       const success = intentionallyFail ? false : await this.sendNotification(notification, eventData)
@@ -162,7 +177,7 @@ class NotificationManager {
       notification.updateNotificationFired(success)
       if (!success) {
         // Failed notification
-        if (notification.numConsecutiveFailedAttempts >= Database.notificationSettings.maxFailedAttempts) {
+        if (notification.numConsecutiveFailedAttempts >= Database.notificationSettings!.maxFailedAttempts) {
           Logger.error(`[NotificationManager] triggerNotification: ${notification.eventName}/${notification.id} reached max failed attempts`)
           notification.enabled = false
         } else {
@@ -171,8 +186,8 @@ class NotificationManager {
       }
     }
 
-    await Database.updateSetting(Database.notificationSettings)
-    SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
+    await Database.updateSetting(Database.notificationSettings!)
+    SocketAuthority.emitter('notifications_updated', Database.notificationSettings!.toJSON())
 
     this.notificationFinished()
   }
@@ -183,9 +198,9 @@ class NotificationManager {
    * @param {any} eventData
    * @returns {boolean} - TRUE if notification should be triggered now
    */
-  checkTriggerNotification(eventName, eventData) {
+  checkTriggerNotification(eventName: string, eventData: EventData | undefined) {
     if (this.sendingNotification) {
-      if (this.notificationQueue.length >= Database.notificationSettings.maxNotificationQueue) {
+      if (this.notificationQueue.length >= Database.notificationSettings!.maxNotificationQueue) {
         Logger.warn(`[NotificationManager] Notification queue is full - ignoring event ${eventName}`)
       } else {
         Logger.debug(`[NotificationManager] Queueing notification ${eventName} (Queue size: ${this.notificationQueue.length})`)
@@ -203,13 +218,13 @@ class NotificationManager {
       this.sendingNotification = false
       if (this.notificationQueue.length) {
         // Send next notification in queue
-        const nextNotificationEvent = this.notificationQueue.shift()
-        this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
+        const nextNotificationEvent = this.notificationQueue.shift()!
+        void this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
       }
-    }, Database.notificationSettings.notificationDelay)
+    }, Database.notificationSettings!.notificationDelay)
   }
 
-  sendTestNotification(notification) {
+  sendTestNotification(notification: Notification) {
     const eventData = notificationData.events.find((e) => e.name === notification.eventName)
     if (!eventData) {
       Logger.error(`[NotificationManager] sendTestNotification: Event not found ${notification.eventName}`)
@@ -219,18 +234,19 @@ class NotificationManager {
     return this.sendNotification(notification, eventData.testData)
   }
 
-  sendNotification(notification, eventData) {
-    const payload = notification.getApprisePayload(eventData)
+  sendNotification(notification: Notification, eventData: EventData | undefined) {
+    const payload = notification.getApprisePayload(eventData!)
     return axios
-      .post(Database.notificationSettings.appriseApiUrl, payload, { timeout: 6000 })
+      .post(Database.notificationSettings!.appriseApiUrl!, payload, { timeout: 6000 })
       .then((response) => {
         Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=`, response.data)
         return true
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)
         return false
       })
   }
 }
-module.exports = new NotificationManager()
+const notificationManager = new NotificationManager()
+export = notificationManager

@@ -1,9 +1,26 @@
-const Path = require('path')
-const uuidv4 = require('uuid').v4
-const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
-const globals = require('../utils/globals')
+import Path from 'path'
+import { v4 as uuidv4 } from 'uuid'
+import { sanitizeFilename, filePathToPOSIX } from '../utils/fileUtils'
+import globals from '../utils/globals'
+import type { RssPodcastEpisode } from '../utils/podcastUtils'
+import type Podcast from '../models/Podcast'
+
+type PodcastItem = { id: string; path: string; media: Pick<Podcast, 'title' | 'explicit'> }
 
 class PodcastEpisodeDownload {
+  declare id: string | null
+  declare rssPodcastEpisode: RssPodcastEpisode | null
+  declare url: string | null
+  declare libraryItem: PodcastItem | null
+  declare libraryId: string | null | undefined
+  declare isAutoDownload: boolean
+  declare isFinished: boolean
+  declare failed: boolean
+  declare appendRandomId: boolean
+  declare targetFilename: string | false | null
+  declare startedAt: number | null
+  declare createdAt: number | null
+  declare finishedAt: number | null
   constructor() {
     this.id = null
     /** @type {import('../utils/podcastUtils').RssPodcastEpisode} */
@@ -50,8 +67,10 @@ class PodcastEpisodeDownload {
     }
   }
 
+  // Getters requiring episode/path data are called after setData.
+  // Non-null assertions retain the original pre-initialization failures.
   get urlFileExtension() {
-    const cleanUrl = this.url.split('?')[0] // Remove query string
+    const cleanUrl = this.url!.split('?')[0] // Remove query string
     return Path.extname(cleanUrl).substring(1).toLowerCase()
   }
   get fileExtension() {
@@ -60,14 +79,14 @@ class PodcastEpisodeDownload {
     return 'mp3'
   }
   get enclosureType() {
-    const enclosureType = this.rssPodcastEpisode.enclosure.type
+    const enclosureType = this.rssPodcastEpisode!.enclosure.type
     return typeof enclosureType === 'string' ? enclosureType : null
   }
   get episodeTitle() {
-    return this.rssPodcastEpisode.title
+    return this.rssPodcastEpisode!.title
   }
   get targetPath() {
-    return filePathToPOSIX(Path.join(this.libraryItem.path, this.targetFilename))
+    return filePathToPOSIX(Path.join(this.libraryItem!.path, this.targetFilename as string))
   }
   get targetRelPath() {
     return this.targetFilename
@@ -76,14 +95,14 @@ class PodcastEpisodeDownload {
     return this.libraryItem?.id || null
   }
   get pubYear() {
-    if (!this.rssPodcastEpisode.publishedAt) return null
-    return new Date(this.rssPodcastEpisode.publishedAt).getFullYear()
+    if (!this.rssPodcastEpisode!.publishedAt) return null
+    return new Date(this.rssPodcastEpisode!.publishedAt).getFullYear()
   }
 
   /**
    * @param {string} title
    */
-  getSanitizedFilename(title) {
+  getSanitizedFilename(title: string) {
     const appendage = this.appendRandomId ? ` (${this.id})` : ''
     const filename = `${title.trim()}${appendage}.${this.fileExtension}`
     return sanitizeFilename(filename)
@@ -92,9 +111,9 @@ class PodcastEpisodeDownload {
   /**
    * @param {boolean} appendRandomId
    */
-  setAppendRandomId(appendRandomId) {
+  setAppendRandomId(appendRandomId: boolean) {
     this.appendRandomId = appendRandomId
-    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode.title || '')
+    this.targetFilename = this.getSanitizedFilename(this.rssPodcastEpisode!.title || '')
   }
 
   /**
@@ -104,7 +123,7 @@ class PodcastEpisodeDownload {
    * @param {*} isAutoDownload
    * @param {*} libraryId
    */
-  setData(rssPodcastEpisode, libraryItem, isAutoDownload, libraryId) {
+  setData(rssPodcastEpisode: RssPodcastEpisode, libraryItem: PodcastItem, isAutoDownload: boolean, libraryId: string | null | undefined) {
     this.id = uuidv4()
     this.rssPodcastEpisode = rssPodcastEpisode
 
@@ -124,10 +143,10 @@ class PodcastEpisodeDownload {
     this.libraryId = libraryId
   }
 
-  setFinished(success) {
+  setFinished(success: boolean) {
     this.finishedAt = Date.now()
     this.isFinished = true
     this.failed = !success
   }
 }
-module.exports = PodcastEpisodeDownload
+export = PodcastEpisodeDownload
