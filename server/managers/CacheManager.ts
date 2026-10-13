@@ -1,17 +1,30 @@
-const Path = require('path')
-const fs = require('../libs/fsExtra')
-const stream = require('stream')
-const Logger = require('../Logger')
-const { resizeImage } = require('../utils/ffmpegHelpers')
-const { encodeUriPath } = require('../utils/fileUtils')
-const { isUUID } = require('../utils/index')
-const Database = require('../Database')
+import Path from 'path'
+import fsExtra from '../libs/fsExtra'
+import type { createReadStream } from 'fs'
+import type { unlink } from 'fs/promises'
+import type { Response } from 'express'
+// fsExtra exposes both the original streams and promise-based filesystem methods.
+const fs = fsExtra as typeof fsExtra & { createReadStream: typeof createReadStream; unlink: typeof unlink }
+type CacheOptions = { format?: string; width?: number; height?: number | null }
 
-function isValidCacheDimension(dimension) {
+import stream from 'stream'
+import Logger from '../Logger'
+import ffmpegHelpers from '../utils/ffmpegHelpers'
+const { resizeImage } = ffmpegHelpers
+import fileUtils from '../utils/fileUtils'
+const { encodeUriPath } = fileUtils
+import { isUUID } from '../utils/index'
+import Database from '../Database'
+
+function isValidCacheDimension(dimension: number) {
   return Number.isSafeInteger(dimension) && dimension > 0
 }
 
 class CacheManager {
+  declare CachePath: string | null
+  declare CoverCachePath: string | null
+  declare ImageCachePath: string | null
+  declare ItemCachePath: string | null
   constructor() {
     this.CachePath = null
     this.CoverCachePath = null
@@ -24,7 +37,7 @@ class CacheManager {
    */
   async ensureCachePaths() {
     // Creates cache paths if necessary and sets owner and permissions
-    this.CachePath = Path.join(global.MetadataPath, 'cache')
+    this.CachePath = Path.join(global.MetadataPath!, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
     this.ItemCachePath = Path.join(this.CachePath, 'items')
@@ -35,12 +48,12 @@ class CacheManager {
       await fs.ensureDir(this.ImageCachePath)
       await fs.ensureDir(this.ItemCachePath)
     } catch (error) {
-      Logger.error(`[CacheManager] Failed to create cache directories at "${this.CachePath}": ${error.message}`)
+      Logger.error(`[CacheManager] Failed to create cache directories at "${this.CachePath}": ${(error as Error).message}`)
       throw new Error(`[CacheManager] Failed to create cache directories at "${this.CachePath}"`, { cause: error })
     }
   }
 
-  async handleCoverCache(res, libraryItemId, options = {}) {
+  async handleCoverCache(res: Response, libraryItemId: string, options: CacheOptions = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
@@ -50,12 +63,12 @@ class CacheManager {
     }
     res.type(`image/${format}`)
 
-    const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const cachePath = Path.join(this.CoverCachePath!, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(cachePath)) {
-      if (global.XAccel) {
-        const encodedURI = encodeUriPath(global.XAccel + cachePath)
+      if ((global as typeof global & { XAccel?: string }).XAccel) {
+        const encodedURI = encodeUriPath((global as typeof global & { XAccel?: string }).XAccel + cachePath)
         Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
         return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
       }
@@ -80,8 +93,8 @@ class CacheManager {
     const writtenFile = await resizeImage(coverPath, cachePath, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
-    if (global.XAccel) {
-      const encodedURI = encodeUriPath(global.XAccel + writtenFile)
+    if ((global as typeof global & { XAccel?: string }).XAccel) {
+      const encodedURI = encodeUriPath((global as typeof global & { XAccel?: string }).XAccel + writtenFile)
       Logger.debug(`Use X-Accel to serve static file ${encodedURI}`)
       return res.status(204).header({ 'X-Accel-Redirect': encodedURI }).send()
     }
@@ -90,35 +103,35 @@ class CacheManager {
     readStream.pipe(res)
   }
 
-  purgeCoverCache(libraryItemId) {
+  purgeCoverCache(libraryItemId: string) {
     return this.purgeEntityCache(libraryItemId, this.CoverCachePath)
   }
 
-  purgeImageCache(entityId) {
+  purgeImageCache(entityId: string) {
     return this.purgeEntityCache(entityId, this.ImageCachePath)
   }
 
-  async purgeEntityCache(entityId, cachePath) {
+  async purgeEntityCache(entityId: string | null | undefined, cachePath: string | null | undefined) {
     if (!entityId || !cachePath) return []
     return Promise.all(
       (await fs.readdir(cachePath)).reduce((promises, file) => {
         if (file.startsWith(entityId)) {
           Logger.debug(`[CacheManager] Going to purge ${file}`)
-          promises.push(this.removeCache(Path.join(cachePath, file)))
+          promises.push(Promise.resolve(this.removeCache(Path.join(cachePath, file))))
         }
         return promises
-      }, [])
+      }, [] as Promise<boolean>[])
     )
   }
 
-  removeCache(path) {
+  removeCache(path: string | null | undefined) {
     if (!path) return false
-    return fs.pathExists(path).then((exists) => {
+    return fs.pathExists(path).then((exists: boolean) => {
       if (!exists) return false
       return fs
         .unlink(path)
         .then(() => true)
-        .catch((err) => {
+        .catch((err: unknown) => {
           Logger.error(`[CacheManager] Failed to remove cache "${path}"`, err)
           return false
         })
@@ -127,8 +140,8 @@ class CacheManager {
 
   async purgeAll() {
     Logger.info(`[CacheManager] Purging all cache at "${this.CachePath}"`)
-    if (await fs.pathExists(this.CachePath)) {
-      await fs.remove(this.CachePath).catch((error) => {
+    if (await fs.pathExists(this.CachePath!)) {
+      await fs.remove(this.CachePath!).catch((error: unknown) => {
         Logger.error(`[CacheManager] Failed to remove cache dir "${this.CachePath}"`, error)
       })
     }
@@ -137,8 +150,8 @@ class CacheManager {
 
   async purgeItems() {
     Logger.info(`[CacheManager] Purging items cache at "${this.ItemCachePath}"`)
-    if (await fs.pathExists(this.ItemCachePath)) {
-      await fs.remove(this.ItemCachePath).catch((error) => {
+    if (await fs.pathExists(this.ItemCachePath!)) {
+      await fs.remove(this.ItemCachePath!).catch((error: unknown) => {
         Logger.error(`[CacheManager] Failed to remove items cache dir "${this.ItemCachePath}"`, error)
       })
     }
@@ -152,7 +165,7 @@ class CacheManager {
    * @param {{ format?: string, width?: number, height?: number }} options
    * @returns
    */
-  async handleAuthorCache(res, authorId, options = {}) {
+  async handleAuthorCache(res: Response, authorId: string, options: CacheOptions = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
@@ -162,7 +175,7 @@ class CacheManager {
     }
     res.type(`image/${format}`)
 
-    var cachePath = Path.join(this.ImageCachePath, `${authorId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    var cachePath = Path.join(this.ImageCachePath!, `${authorId}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(cachePath)) {
@@ -189,4 +202,5 @@ class CacheManager {
     readStream.pipe(res)
   }
 }
-module.exports = new CacheManager()
+const cacheManager = new CacheManager()
+export = cacheManager
