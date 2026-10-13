@@ -4,6 +4,9 @@ import { version as serverVersion } from '../../package.json'
 import type LibraryItem from '../models/LibraryItem'
 import type Stream from './Stream'
 import type AudioTrack from './files/AudioTrack'
+import type { AudioTrack as BookTrack } from '../models/Book'
+import type PodcastEpisode from '../models/PodcastEpisode'
+type EpisodeTrack = ReturnType<PodcastEpisode['getAudioTrack']>
 
 type SessionData = Partial<{
   id: string | null; userId: string | null; libraryId: string | null; libraryItemId: string | null; bookId: string | null; episodeId: string | null
@@ -42,7 +45,7 @@ class PlaybackSession {
   declare deviceInfo: DeviceInfo | null
   declare currentTime: number
   declare lastSave: number
-  declare audioTracks: (AudioTrack | (ReturnType<AudioTrack['toJSON']> & { toJSON?: () => unknown }))[]
+  declare audioTracks: (AudioTrack | ((BookTrack | EpisodeTrack | Partial<ReturnType<AudioTrack['toJSON']>>) & { toJSON?: () => unknown }))[]
   declare stream: Stream | null
   declare shareSessionId: string | null
   declare mediaItemShareId: string | null
