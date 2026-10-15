@@ -93,9 +93,15 @@ class PlaybackSessionManager {
    * @param {import('express').Response} res
    */
   async syncSessionRequest(user, session, payload, res) {
-    if (await this.syncSession(user, session, payload)) {
-      res.sendStatus(200)
-    } else {
+    try {
+      if (await this.syncSession(user, session, payload)) {
+        res.sendStatus(200)
+      } else {
+        res.sendStatus(500)
+      }
+    } catch (error) {
+      // e.g. SQLITE_BUSY when the db is locked. The client syncs again so don't crash the server
+      Logger.error(`[PlaybackSessionManager] syncSessionRequest: Failed to sync session "${session.id}"`, error)
       res.sendStatus(500)
     }
   }
@@ -108,8 +114,17 @@ class PlaybackSessionManager {
     const syncResults = []
     for (const sessionJson of sessions) {
       Logger.info(`[PlaybackSessionManager] Syncing local session "${sessionJson.displayTitle}" (${sessionJson.id}) (updatedAt: ${sessionJson.updatedAt})`)
-      const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
-      syncResults.push(result)
+      try {
+        const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
+        syncResults.push(result)
+      } catch (error) {
+        Logger.error(`[PlaybackSessionManager] syncLocalSessionsRequest: Failed to sync local session "${sessionJson.displayTitle}" (${sessionJson.id})`, error)
+        syncResults.push({
+          id: sessionJson.id,
+          success: false,
+          error: 'Failed to sync session'
+        })
+      }
     }
 
     res.json({
@@ -281,7 +296,13 @@ class PlaybackSessionManager {
   async syncLocalSessionRequest(req, res) {
     const deviceInfo = await this.getDeviceInfo(req, req.body?.deviceInfo)
     const sessionJson = req.body
-    const result = await this.syncLocalSession(req.user, sessionJson, deviceInfo)
+    let result
+    try {
+      result = await this.syncLocalSession(req.user, sessionJson, deviceInfo)
+    } catch (error) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Failed to sync local session "${sessionJson?.displayTitle}" (${sessionJson?.id})`, error)
+      return res.status(500).send('Failed to sync session')
+    }
     if (result.error) {
       res.status(500).send(result.error)
     } else {
@@ -297,8 +318,13 @@ class PlaybackSessionManager {
    * @param {import('express').Response} res
    */
   async closeSessionRequest(user, session, syncData, res) {
-    await this.closeSession(user, session, syncData)
-    res.sendStatus(200)
+    try {
+      await this.closeSession(user, session, syncData)
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.error(`[PlaybackSessionManager] closeSessionRequest: Failed to close session "${session.id}"`, error)
+      res.sendStatus(500)
+    }
   }
 
   /**
