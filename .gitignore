@@ -11,6 +11,7 @@
 /client/.nuxt/
 /client/dist/
 /dist/
+/dist-server/
 /deploy/
 /coverage/
 /.nyc_output/

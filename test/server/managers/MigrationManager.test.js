@@ -17,6 +17,7 @@ describe('MigrationManager', () => {
   let fsMoveStub
   let fsRemoveStub
   let fsEnsureDirStub
+  let fsPathExistsStub
   let processExitStub
   let configPath = '/path/to/config'
 

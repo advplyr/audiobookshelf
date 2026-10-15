@@ -1113,7 +1113,7 @@
   "ToastProgressIsNotBeingSynced": "O progresso não está sendo sincronizado, reinicie a reprodução",
   "ToastProviderCreatedFailed": "Falha ao adicionar o provedor",
   "ToastProviderCreatedSuccess": "Novo provedor adicionado",
-  "ToastProviderNameAndUrlRequired": "Nome e URL obrigatórios",
+  "ToastProviderNameAndUrlRequired": "Nome e Url obrigatórios",
   "ToastProviderRemoveSuccess": "Fornecedor removido",
   "ToastRSSFeedCloseFailed": "Falha ao fechar feed RSS",
   "ToastRSSFeedCloseSuccess": "Feed RSS fechado",

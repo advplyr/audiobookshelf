@@ -75,3 +75,26 @@ describe('OidcAuthStrategy - isValidWebCallbackUrl', () => {
     expect(strategy.isValidWebCallbackUrl('http://books.example.com/login', req)).to.equal(false)
   })
 })
+
+describe('OidcAuthStrategy - openIdAuthSession', () => {
+  /** @type {OidcAuthStrategy} */
+  let strategy
+
+  beforeEach(() => {
+    global.RouterBasePath = ''
+    strategy = new OidcAuthStrategy()
+  })
+
+  it('configures a 10 minute TTL with autopurge so abandoned mobile logins are cleaned up', () => {
+    expect(strategy.openIdAuthSession.ttl).to.equal(10 * 60 * 1000)
+    expect(strategy.openIdAuthSession.ttlAutopurge).to.equal(true)
+  })
+
+  it('still supports the same set/has/get/delete usage as a plain Map', () => {
+    strategy.openIdAuthSession.set('some-state', { mobile_redirect_uri: 'myapp://callback' })
+    expect(strategy.openIdAuthSession.has('some-state')).to.equal(true)
+    expect(strategy.openIdAuthSession.get('some-state')).to.deep.equal({ mobile_redirect_uri: 'myapp://callback' })
+    strategy.openIdAuthSession.delete('some-state')
+    expect(strategy.openIdAuthSession.has('some-state')).to.equal(false)
+  })
+})

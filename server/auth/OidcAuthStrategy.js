@@ -1,3 +1,4 @@
+const { LRUCache } = require('lru-cache')
 const { Request, Response } = require('express')
 const passport = require('passport')
 const OpenIDClient = require('openid-client')
@@ -15,7 +16,10 @@ class OidcAuthStrategy {
     this.strategy = null
     this.client = null
     // Map of openId sessions indexed by oauth2 state-variable
-    this.openIdAuthSession = new Map()
+    this.openIdAuthSession = new LRUCache({
+      ttl: 10 * 60 * 1000,
+      ttlAutopurge: true
+    })
   }
 
   /**

@@ -112,7 +112,7 @@ class BackupManager {
       .mv(tempPath)
       .then(() => true)
       .catch((error) => {
-        Logger.error('[BackupManager] Failed to move backup file', path, error)
+        Logger.error('[BackupManager] Failed to move backup file', tempPath, error)
         return false
       })
     if (!success) {

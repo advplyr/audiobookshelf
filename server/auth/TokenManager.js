@@ -87,16 +87,14 @@ class TokenManager {
   /**
    * Function to validate a jwt token for a given user
    * Used to authenticate socket connections
-   * TODO: Support API keys for web socket connections
    *
    * @param {string} token
    * @returns {Object} tokens data
    */
   static validateAccessToken(token) {
     try {
-      const decoded = jwt.verify(token, TokenManager.TokenSecret)
-      if (!TokenManager.isBearerAccessTokenPayload(decoded)) return null
-      return decoded
+      // Expiration is handled by the caller so expired API keys can be deactivated
+      return jwt.verify(token, TokenManager.TokenSecret, { ignoreExpiration: true })
     } catch (err) {
       return null
     }
