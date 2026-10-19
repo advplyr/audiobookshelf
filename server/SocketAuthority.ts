@@ -112,7 +112,7 @@ class SocketAuthority {
     return Object.values(onlineUsersMap)
   }
 
-  getClientsForUser(userId: string | null) {
+  getClientsForUser(userId: string | null | undefined) {
     return Object.values(this.clients).filter((client) => client.user?.id === userId)
   }
 
@@ -131,7 +131,7 @@ class SocketAuthority {
   }
 
   // Emits event to all clients for a specific user
-  clientEmitter(userId: string | null, evt: string, data: unknown) {
+  clientEmitter(userId: string | null | undefined, evt: string, data: unknown) {
     const clients = this.getClientsForUser(userId)
     if (!clients.length) {
       return Logger.debug(`[SocketAuthority] clientEmitter - no clients found for user ${userId}`)

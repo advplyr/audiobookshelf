@@ -53,9 +53,13 @@ describe('User', () => {
   })
 
   it('preserves permission mappings, allow and deny lists and browser serialization', async () => {
+    expect(user.checkCanAccessLibrary(null)).to.equal(true)
     expect(await user.updatePermissionsFromExternalJSON({ canAccessAllLibraries: false, allowedLibraries: ['library'], canAccessAllTags: false, allowedTags: ['Favorite'], canDownload: false })).to.equal(true)
     expect(user.checkCanAccessLibrary('library')).to.equal(true)
     expect(user.checkCanAccessLibrary('other')).to.equal(false)
+    expect(user.checkCanAccessLibrary(null)).to.equal(false)
+    expect(user.checkCanAccessLibraryItem({ libraryId: null, media: null })).to.equal(false)
+    expect(() => user.checkCanAccessLibraryItem({ libraryId: 'library', media: null })).to.throw(TypeError)
     expect(user.checkCanAccessLibraryItemWithTags(['Favorite'])).to.equal(true)
     expect(user.checkCanAccessLibraryItemWithTags([])).to.equal(false)
     await user.updatePermissionsFromExternalJSON({ tagsAreDenylist: true })

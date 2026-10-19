@@ -83,9 +83,9 @@ type UserCreation = Optional<UserAttributes, keyof UserAttributes>
 type UserUpdate = { [Key in keyof UserAttributes]?: UserAttributes[Key] | Col | Fn | Literal }
 type OpenIdUserInfo = { sub: string; email?: string; email_verified?: boolean; preferred_username?: string; username?: string; name?: string }
 type TokenGenerator = { generateAccessToken(user: { id: string; username: string }): string }
-type PublicSession = { userId: string | null; toJSONForClient(): unknown }
+type PublicSession = { userId: string | null | undefined; toJSONForClient(): unknown }
 // Both expanded database items and legacy item JSON pass through access checks.
-type AccessibleItem = { libraryId: string; media: { explicit?: boolean | null; metadata?: { explicit?: boolean | null }; tags: string[] | null } }
+type AccessibleItem = { libraryId: LibraryItem['libraryId']; media?: { explicit?: boolean | null; metadata?: { explicit?: boolean | null }; tags: string[] | null } | null }
 type BrowserJSON = {
   id: string; username: string | null; email: string | null; type: string | null; token: string | null; isOldToken?: boolean
   mediaProgress?: ReturnType<MediaProgress['getOldMediaProgress']>[]; seriesHideFromContinueListening: string[]; bookmarks?: AudioBookmarkObject[]
@@ -646,13 +646,14 @@ class User extends Model<UserAttributes, UserCreation> {
   /**
    * Check user has access to library
    *
-   * @param {string} libraryId
+   * @param {string|null} libraryId
    * @returns {boolean}
    */
-  checkCanAccessLibrary(libraryId: string) {
+  checkCanAccessLibrary(libraryId: LibraryItem['libraryId']) {
     if (this.permissions?.accessAllLibraries) return true
     if (!this.permissions?.librariesAccessible) return false
-    return this.permissions.librariesAccessible.includes(libraryId)
+    const librariesAccessible: readonly (string | null)[] = this.permissions.librariesAccessible
+    return librariesAccessible.includes(libraryId)
   }
 
   /**
@@ -682,11 +683,13 @@ class User extends Model<UserAttributes, UserCreation> {
   checkCanAccessLibraryItem(libraryItem: AccessibleItem) {
     if (!this.checkCanAccessLibrary(libraryItem.libraryId)) return false
 
-    const libraryItemExplicit = !!libraryItem.media.explicit || !!libraryItem.media.metadata?.explicit
+    // Accessible items require loaded media; retain the existing failure when it is missing.
+    const media = libraryItem.media!
+    const libraryItemExplicit = !!media.explicit || !!media.metadata?.explicit
 
     if (libraryItemExplicit && !this.canAccessExplicitContent) return false
 
-    return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
+    return this.checkCanAccessLibraryItemWithTags(media.tags)
   }
 
   /**
