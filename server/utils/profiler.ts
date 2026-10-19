@@ -1,20 +1,31 @@
-const { performance, createHistogram } = require('perf_hooks')
-const util = require('util')
-const Logger = require('../Logger')
+import { performance, createHistogram } from 'perf_hooks'
+import type { RecordableHistogram } from 'perf_hooks'
+import util from 'util'
+import Logger from '../Logger'
 
-const histograms = new Map()
+type ProfileHistogram = RecordableHistogram & { values: number[] }
+type FindOptions = {
+  logging?: boolean | ((query: string, time?: number) => void)
+  benchmark?: boolean
+}
 
-function profile(asyncFunc, isFindQuery = true, funcName = asyncFunc.name) {
+const histograms = new Map<string, ProfileHistogram>()
+
+function profile<Args extends [object, ...unknown[]], Result>(asyncFunc: (...args: Args) => Result, isFindQuery?: true, funcName?: string): (...args: Args) => Promise<Awaited<Result>>
+function profile<Args extends unknown[], Result>(asyncFunc: (...args: Args) => Result, isFindQuery: false, funcName?: string): (...args: Args) => Promise<Awaited<Result>>
+function profile<Args extends [object, ...unknown[]], Result>(asyncFunc: (...args: Args) => Result, isFindQuery: boolean, funcName?: string): (...args: Args) => Promise<Awaited<Result>>
+function profile<Args extends unknown[], Result>(asyncFunc: (...args: Args) => Result, isFindQuery = true, funcName = asyncFunc.name): (...args: Args) => Promise<Awaited<Result>> {
   if (!histograms.has(funcName)) {
-    const histogram = createHistogram()
-    histogram.values = []
+    const histogram: ProfileHistogram = Object.assign(createHistogram(), { values: [] })
     histograms.set(funcName, histogram)
   }
-  const histogram = histograms.get(funcName)
+  // Every function name has a histogram after initialization above.
+  const histogram = histograms.get(funcName)!
 
-  return async (...args) => {
+  return async (...args: Args): Promise<Awaited<Result>> => {
     if (isFindQuery) {
-      const findOptions = args[0]
+      // Query-mode overloads require a mutable options object as the first argument.
+      const findOptions = args[0] as FindOptions
       Logger.info(`[${funcName}] findOptions:`, util.inspect(findOptions, { depth: null }))
       findOptions.logging = (query, time) => Logger.info(`[${funcName}] ${query} Elapsed time: ${time}ms`)
       findOptions.benchmark = true
@@ -38,4 +49,4 @@ function profile(asyncFunc, isFindQuery = true, funcName = asyncFunc.name) {
   }
 }
 
-module.exports = { profile }
+export = { profile }
