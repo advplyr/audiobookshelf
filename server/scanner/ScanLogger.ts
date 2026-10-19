@@ -1,26 +1,28 @@
-const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
+import { v4 as uuidv4 } from 'uuid'
+import Logger from '../Logger'
+
+interface ScanLogEntry {
+  timestamp: string
+  message: string
+  levelName: string
+  level: number
+}
 
 class ScanLogger {
-  constructor() {
-    this.id = null
-    this.type = null
-    this.name = null
-    this.verbose = false
+  id: string | null = null
+  type: string | null = null
+  name: string | null = null
+  verbose = false
 
-    this.startedAt = null
-    this.finishedAt = null
-    this.elapsed = null
+  startedAt: number | null = null
+  finishedAt: number | null = null
+  elapsed: number | null = null
 
-    /** @type {string[]} */
-    this.authorsRemovedFromBooks = []
-    /** @type {Set<string>} */
-    this.authorsNumBooksChangedIds = new Set()
-    /** @type {string[]} */
-    this.seriesRemovedFromBooks = []
+  authorsRemovedFromBooks: string[] = []
+  authorsNumBooksChangedIds: Set<string> = new Set()
+  seriesRemovedFromBooks: string[] = []
 
-    this.logs = []
-  }
+  logs: ScanLogEntry[] = []
 
   toJSON() {
     return {
@@ -33,7 +35,7 @@ class ScanLogger {
     }
   }
 
-  setData(type, name) {
+  setData(type: string, name: string) {
     this.id = uuidv4()
     this.type = type
     this.name = name
@@ -42,10 +44,10 @@ class ScanLogger {
 
   setComplete() {
     this.finishedAt = Date.now()
-    this.elapsed = this.finishedAt - this.startedAt
+    this.elapsed = this.finishedAt - (this.startedAt ?? 0)
   }
 
-  addLog(level, ...args) {
+  addLog(level: number, ...args: unknown[]) {
     const logObj = {
       timestamp: new Date().toISOString(),
       message: args.join(' '),
@@ -59,4 +61,5 @@ class ScanLogger {
     this.logs.push(logObj)
   }
 }
-module.exports = ScanLogger
+
+export = ScanLogger

@@ -313,7 +313,7 @@ export function probe(filepath: string, verbose = false): Promise<ProbedMedia | 
       } else {
         const probeData = new MediaProbeData(undefined)
         probeData.setData(rawProbeData)
-        // JS inference only sees constructor nulls; setData populates the successful result.
+        // A fresh instance keeps null legacy counters; successful setData initializes the required probe fields.
         return probeData as ProbedMedia
       }
     })

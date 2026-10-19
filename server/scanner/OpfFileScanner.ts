@@ -1,47 +1,48 @@
-const { parseOpfMetadataXML } = require('../utils/parsers/parseOpfMetadata')
-const { readTextFile } = require('../utils/fileUtils')
+import { parseOpfMetadataXML } from '../utils/parsers/parseOpfMetadata'
+import type { OpfMetadataResult } from '../utils/parsers/parseOpfMetadata'
+import { readTextFile } from '../utils/fileUtils'
+import type LibraryItem from '../models/LibraryItem'
 
 class OpfFileScanner {
   constructor() {}
 
   /**
    * Parse metadata from .opf file found in library scan and update bookMetadata
-   *
-   * @param {import('../models/LibraryItem').LibraryFileObject} opfLibraryFileObj
-   * @param {Object} bookMetadata
    */
-  async scanBookOpfFile(opfLibraryFileObj, bookMetadata) {
+  async scanBookOpfFile(opfLibraryFileObj: Pick<LibraryItem.LibraryFileObject, 'metadata'>, bookMetadata: Record<string, unknown>) {
     const xmlText = await readTextFile(opfLibraryFileObj.metadata.path)
     const opfMetadata = xmlText ? await parseOpfMetadataXML(xmlText) : null
     if (opfMetadata) {
       for (const key in opfMetadata) {
-        if (key === 'tags') {
+        const field = key as keyof OpfMetadataResult
+        if (field === 'tags') {
           // Add tags only if tags are empty
           if (opfMetadata.tags.length) {
             bookMetadata.tags = opfMetadata.tags
           }
-        } else if (key === 'genres') {
+        } else if (field === 'genres') {
           // Add genres only if genres are empty
           if (opfMetadata.genres.length) {
             bookMetadata.genres = opfMetadata.genres
           }
-        } else if (key === 'authors') {
+        } else if (field === 'authors') {
           if (opfMetadata.authors?.length) {
             bookMetadata.authors = opfMetadata.authors
           }
-        } else if (key === 'narrators') {
+        } else if (field === 'narrators') {
           if (opfMetadata.narrators?.length) {
             bookMetadata.narrators = opfMetadata.narrators
           }
-        } else if (key === 'series') {
+        } else if (field === 'series') {
           if (opfMetadata.series?.length) {
             bookMetadata.series = opfMetadata.series
           }
-        } else if (opfMetadata[key] && key !== 'sequence') {
-          bookMetadata[key] = opfMetadata[key]
+        } else if (opfMetadata[field] && key !== 'sequence') {
+          bookMetadata[field] = opfMetadata[field]
         }
       }
     }
   }
 }
-module.exports = new OpfFileScanner()
+
+export = new OpfFileScanner()

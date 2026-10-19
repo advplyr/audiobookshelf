@@ -7,6 +7,7 @@ export const lstat: typeof import('fs/promises').lstat
 export const readFile: typeof import('fs/promises').readFile
 export const writeFile: typeof import('fs/promises').writeFile
 export const readdir: typeof import('fs/promises').readdir
+export const mkdir: typeof import('fs/promises').mkdir
 export function pathExists(path: PathLike): Promise<boolean>
 export function remove(path: PathLike): Promise<void>
 
