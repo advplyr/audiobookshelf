@@ -563,9 +563,7 @@ class OidcAuthStrategy {
 
     try {
       const { data } = await axios.get<unknown>(configUrl.toString())
-      const parsed = openIdIssuerConfigSchema.safeParse(data)
-      // Keep the axios payload. Zod only checks that a loose object was returned.
-      const config = (parsed.success ? data : data) as OpenIdIssuerConfig
+      const config = openIdIssuerConfigSchema.parse(data)
       return {
         issuer: config.issuer,
         authorization_endpoint: config.authorization_endpoint,
