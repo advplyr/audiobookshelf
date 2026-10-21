@@ -188,8 +188,9 @@ function parseTags(format, verbose) {
     file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
-    file_tag_series: tryGrabTags(format, 'series', 'show', 'mvnm'),
-    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin', 'part'),
+    // [169]mvn / [169]mvi: the MP4 movement atoms ©mvn / ©mvi, as ffprobe names them with -export_all
+    file_tag_series: tryGrabTags(format, 'series', 'show', 'mvnm', '[169]mvn'),
+    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin', '[169]mvi', 'part'),
     file_tag_grouping: tryGrabTags(format, 'grouping', 'grp1'),
     file_tag_isbn: tryGrabTags(format, 'isbn'), // custom
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
@@ -212,8 +213,8 @@ function parseTags(format, verbose) {
     file_tag_wwwaudiofile: tryGrabTags(format, 'wwwaudiofile', 'woaf', 'waf'),
     file_tag_contentgroup: tryGrabTags(format, 'contentgroup', 'tit1', 'tt1'),
     file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
-    file_tag_movementname: tryGrabTags(format, 'movementname', 'mvnm'),
-    file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
+    file_tag_movementname: tryGrabTags(format, 'movementname', 'mvnm', '[169]mvn'),
+    file_tag_movement: tryGrabTags(format, 'movement', 'mvin', '[169]mvi'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
     file_tag_overdrive_media_marker: tryGrabTags(format, 'OverDrive MediaMarkers')
