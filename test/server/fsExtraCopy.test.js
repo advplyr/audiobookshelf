@@ -66,6 +66,49 @@ describe('fsExtra copy fallback', () => {
     expect(fs.readFileSync(dest).equals(contents)).to.be.true
   })
 
+  it('moves over an existing file when asynchronous rename and copyFile are denied', async () => {
+    fs.writeFileSync(dest, 'old database')
+    sinon.stub(fs, 'rename').callsFake((src, target, callback) => {
+      callback(Object.assign(new Error('rename denied'), { code: 'EPERM' }))
+    })
+    sinon.stub(fs, 'copyFile').callsFake((src, target, callback) => {
+      callback(Object.assign(new Error('copyfile denied'), { code: 'EPERM' }))
+    })
+
+    await fsExtra.move(source, dest, { overwrite: true })
+
+    expect(fs.existsSync(source)).to.be.false
+    expect(fs.readFileSync(dest).equals(contents)).to.be.true
+  })
+
+  it('moves over an existing file when synchronous rename and copyFile are denied', () => {
+    fs.writeFileSync(dest, 'old database')
+    sinon.stub(fs, 'renameSync').throws(Object.assign(new Error('rename denied'), { code: 'EPERM' }))
+    sinon.stub(fs, 'copyFileSync').throws(Object.assign(new Error('copyfile denied'), { code: 'EPERM' }))
+
+    fsExtra.moveSync(source, dest, { overwrite: true })
+
+    expect(fs.existsSync(source)).to.be.false
+    expect(fs.readFileSync(dest).equals(contents)).to.be.true
+  })
+
+  it('keeps the source when a move cannot copy it', async () => {
+    sinon.stub(fs, 'rename').callsFake((src, target, callback) => {
+      callback(Object.assign(new Error('rename denied'), { code: 'EPERM' }))
+    })
+    sinon.stub(fs, 'copyFile').callsFake((src, target, callback) => {
+      callback(Object.assign(new Error('read failed'), { code: 'EIO' }))
+    })
+
+    try {
+      await fsExtra.move(source, dest)
+      expect.fail('Expected move to fail')
+    } catch (error) {
+      expect(error.code).to.equal('EIO')
+    }
+    expect(fs.readFileSync(source).equals(contents)).to.be.true
+  })
+
   it('propagates unrelated copy errors', async () => {
     sinon.stub(fs, 'copyFile').callsFake((src, target, callback) => {
       callback(Object.assign(new Error('file missing'), { code: 'ENOENT' }))

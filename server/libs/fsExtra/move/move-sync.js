@@ -37,7 +37,7 @@ function rename (src, dest, overwrite) {
   try {
     fs.renameSync(src, dest)
   } catch (err) {
-    if (err.code !== 'EXDEV') throw err
+    if (err.code !== 'EXDEV' && err.code !== 'EPERM') throw err
     return moveAcrossDevice(src, dest, overwrite)
   }
 }
