@@ -56,7 +56,7 @@ function doRename (src, dest, overwrite, isChangingCase, cb) {
 function rename (src, dest, overwrite, cb) {
   fs.rename(src, dest, err => {
     if (!err) return cb()
-    if (err.code !== 'EXDEV') return cb(err)
+    if (err.code !== 'EXDEV' && err.code !== 'EPERM') return cb(err)
     return moveAcrossDevice(src, dest, overwrite, cb)
   })
 }
