@@ -139,6 +139,9 @@ export default {
     userCanUpload() {
       return this.$store.getters['user/getUserCanUpload']
     },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
       return !this.selectedMediaItems.find((item) => {
@@ -159,30 +162,30 @@ export default {
       return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
     },
     contextMenuItems() {
-      if (!this.userIsAdminOrUp) return []
+      const options = []
 
-      const options = [
-        {
+      if (this.userIsAdminOrUp) {
+        options.push({
           text: this.$strings.ButtonQuickMatch,
           action: 'quick-match'
-        }
-      ]
+        })
 
-      if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
+        if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
+          options.push({
+            text: this.$strings.ButtonQuickEmbedMetadata,
+            action: 'quick-embed'
+          })
+        }
+
         options.push({
-          text: this.$strings.ButtonQuickEmbedMetadata,
-          action: 'quick-embed'
+          text: this.$strings.ButtonReScan,
+          action: 'rescan'
         })
       }
 
-      options.push({
-        text: this.$strings.ButtonReScan,
-        action: 'rescan'
-      })
-
       // The limit of 50 is introduced because of the URL length. Each id has 36 chars, so 36 * 40 = 1440
       // + 40 , separators = 1480 chars + base path 280 chars = 1760 chars. This keeps the URL under 2000 chars even with longer domains
-      if (this.selectedMediaItems.length <= 40) {
+      if (this.userCanDownload && this.selectedMediaItems.length <= 40) {
         options.push({
           text: this.$strings.LabelDownload,
           action: 'download'
