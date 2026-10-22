@@ -34,14 +34,6 @@ describe('fsExtra copy fallback', () => {
     expect(fs.readFileSync(dest).equals(contents)).to.be.true
   })
 
-  it('copies in chunks when synchronous copyFile is denied', () => {
-    sinon.stub(fs, 'copyFileSync').throws(Object.assign(new Error('copyfile denied'), { code: 'EPERM' }))
-
-    fsExtra.copySync(source, dest)
-
-    expect(fs.readFileSync(dest).equals(contents)).to.be.true
-  })
-
   it('moves across devices when asynchronous copyFile is denied', async () => {
     sinon.stub(fs, 'rename').callsFake((src, target, callback) => {
       callback(Object.assign(new Error('cross-device link'), { code: 'EXDEV' }))
@@ -51,16 +43,6 @@ describe('fsExtra copy fallback', () => {
     })
 
     await fsExtra.move(source, dest)
-
-    expect(fs.existsSync(source)).to.be.false
-    expect(fs.readFileSync(dest).equals(contents)).to.be.true
-  })
-
-  it('moves across devices when synchronous copyFile is denied', () => {
-    sinon.stub(fs, 'renameSync').throws(Object.assign(new Error('cross-device link'), { code: 'EXDEV' }))
-    sinon.stub(fs, 'copyFileSync').throws(Object.assign(new Error('copyfile denied'), { code: 'EPERM' }))
-
-    fsExtra.moveSync(source, dest)
 
     expect(fs.existsSync(source)).to.be.false
     expect(fs.readFileSync(dest).equals(contents)).to.be.true
@@ -76,17 +58,6 @@ describe('fsExtra copy fallback', () => {
     })
 
     await fsExtra.move(source, dest, { overwrite: true })
-
-    expect(fs.existsSync(source)).to.be.false
-    expect(fs.readFileSync(dest).equals(contents)).to.be.true
-  })
-
-  it('moves over an existing file when synchronous rename and copyFile are denied', () => {
-    fs.writeFileSync(dest, 'old database')
-    sinon.stub(fs, 'renameSync').throws(Object.assign(new Error('rename denied'), { code: 'EPERM' }))
-    sinon.stub(fs, 'copyFileSync').throws(Object.assign(new Error('copyfile denied'), { code: 'EPERM' }))
-
-    fsExtra.moveSync(source, dest, { overwrite: true })
 
     expect(fs.existsSync(source)).to.be.false
     expect(fs.readFileSync(dest).equals(contents)).to.be.true

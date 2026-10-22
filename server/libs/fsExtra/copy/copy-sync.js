@@ -70,52 +70,9 @@ function mayCopyFile (srcStat, src, dest, opts) {
 }
 
 function copyFile (srcStat, src, dest, opts) {
-  try {
-    fs.copyFileSync(src, dest)
-  } catch (err) {
-    if (err.code !== 'EPERM' || !srcStat.isFile()) throw err
-    copyFileWithReadWrite(src, dest)
-  }
+  fs.copyFileSync(src, dest)
   if (opts.preserveTimestamps) handleTimestamps(srcStat.mode, src, dest)
   return setDestMode(dest, srcStat.mode)
-}
-
-function copyFileWithReadWrite (src, dest) {
-  const buffer = Buffer.allocUnsafe(1024 * 1024)
-  const sourceFd = fs.openSync(src, 'r')
-  let destFd
-  let copyError
-  try {
-    destFd = fs.openSync(dest, 'w')
-    let bytesRead
-    while ((bytesRead = fs.readSync(sourceFd, buffer, 0, buffer.length, null)) > 0) {
-      let offset = 0
-      while (offset < bytesRead) {
-        const written = fs.writeSync(destFd, buffer, offset, bytesRead - offset)
-        if (written === 0) throw new Error('Failed to write file while copying')
-        offset += written
-      }
-    }
-  } catch (err) {
-    copyError = err
-  } finally {
-    try {
-      if (destFd !== undefined) fs.closeSync(destFd)
-    } catch (err) {
-      copyError ||= err
-    }
-    try {
-      fs.closeSync(sourceFd)
-    } catch (err) {
-      copyError ||= err
-    }
-  }
-  if (copyError) {
-    if (destFd !== undefined) {
-      try { fs.unlinkSync(dest) } catch (_) {}
-    }
-    throw copyError
-  }
 }
 
 function handleTimestamps (srcMode, src, dest) {
