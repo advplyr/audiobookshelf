@@ -19,8 +19,6 @@ on:
       - server/**
       - index.js
       - package.json
-      - tsconfig.server.json
-      - Dockerfile
 
 jobs:
   build:
@@ -36,6 +34,17 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: advplyr/audiobookshelf,ghcr.io/${{ github.repository_owner }}/audiobookshelf
+          tags: |
+            type=edge,branch=master
+            type=semver,pattern={{version}}
+
+      - name: Docker meta for server only
+        id: server_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: advplyr/audiobookshelf,ghcr.io/${{ github.repository_owner }}/audiobookshelf
+          flavor: |
+            suffix=-server-only,onlatest=true
           tags: |
             type=edge,branch=master
             type=semver,pattern={{version}}
@@ -77,6 +86,15 @@ jobs:
           push: true
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Build and push server-only image
+        uses: docker/build-push-action@v6
+        with:
+          target: server-only
+          tags: ${{ steps.server_meta.outputs.tags }}
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
 
       - name: Move cache
         run: |
