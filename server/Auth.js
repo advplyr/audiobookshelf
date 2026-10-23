@@ -387,6 +387,14 @@ class Auth {
         const sessionKey = this.oidcAuthStrategy.getStrategy()._key
 
         if (!req.session[sessionKey]) {
+          // Native clients cannot share the session cookie with the browser that opened the login
+          this.oidcAuthStrategy.restoreMobileSession(req)
+        } else if (typeof req.query.state === 'string' && req.query.state === req.session[sessionKey].state) {
+          // The session cookie is present, so the stored mobile entry (if any) is no longer needed
+          this.oidcAuthStrategy.openIdAuthSession.delete(req.query.state)
+        }
+
+        if (!req.session[sessionKey]) {
           // Mobile clients send code_verifier and expect a status, not the web login page
           const isMobile = req.cookies.auth_method === 'openid-mobile' || !!req.query.code_verifier
           Logger.error('[Auth] /auth/openid/callback route: No session')
