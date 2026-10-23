@@ -25,6 +25,9 @@ class BackupManager {
     this.scheduleTask = null
 
     this.backups = []
+
+    this.sqliteBackupMaxAttempts = 5
+    this.sqliteBackupRetryDelayMs = 2000
   }
 
   get backupPath() {
@@ -402,30 +405,67 @@ class BackupManager {
   }
 
   /**
+   * Every sqlite3 call is given a callback so errors reject instead of being emitted as unhandled 'error' events (#4572)
    * @see https://github.com/TryGhost/node-sqlite3/pull/1116
+   *
    * @param {Backup} backup
+   * @returns {Promise<string>} path of the sqlite backup file
    */
-  backupSqliteDb(backup) {
-    const db = new sqlite3.Database(Database.dbPath)
+  async backupSqliteDb(backup) {
     const dbFilePath = Path.join(global.ConfigPath, `absdatabase.${backup.id}.sqlite`)
-    return new Promise(async (resolve, reject) => {
-      const backup = db.backup(dbFilePath)
-      backup.step(-1)
-      backup.finish()
 
-      // Max time ~2 mins
-      for (let i = 0; i < 240; i++) {
-        if (backup.completed) {
-          return resolve(dbFilePath)
-        } else if (backup.failed) {
-          return reject(backup.message || 'Unknown failure reason')
-        }
-        await new Promise((r) => setTimeout(r, 500))
-      }
-
-      Logger.error(`[BackupManager] Backup sqlite timed out`)
-      reject('Backup timed out')
+    const db = await new Promise((resolve, reject) => {
+      const db = new sqlite3.Database(Database.dbPath, (error) => (error ? reject(error) : resolve(db)))
     })
+
+    try {
+      const sqliteBackup = await new Promise((resolve, reject) => {
+        const sqliteBackup = db.backup(dbFilePath, (error) => (error ? reject(error) : resolve(sqliteBackup)))
+      })
+      try {
+        await this.stepSqliteBackup(sqliteBackup)
+      } finally {
+        await new Promise((resolve) => sqliteBackup.finish(resolve))
+      }
+      return dbFilePath
+    } catch (error) {
+      // Remove the partial backup file, without hiding the original error if that fails
+      await fs.remove(dbFilePath).catch((removeError) => Logger.error(`[BackupManager] Failed to remove partial sqlite backup "${dbFilePath}"`, removeError))
+      throw error
+    } finally {
+      await new Promise((resolve) => {
+        db.close((error) => {
+          if (error) Logger.error(`[BackupManager] Failed to close sqlite db after backup`, error)
+          resolve()
+        })
+      })
+    }
+  }
+
+  /**
+   * Copy all pages of the db, retrying when another connection has the db locked
+   * Only the first attempt waits for the sqlite3 busy timeout (1s) because sqlite does not reset
+   * its busy counter between backup steps, so the retry delay is what gives the lock time to clear
+   *
+   * @param {import('sqlite3').Backup} sqliteBackup
+   */
+  async stepSqliteBackup(sqliteBackup) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const completed = await new Promise((resolve, reject) => {
+          sqliteBackup.step(-1, (error, completed) => (error ? reject(error) : resolve(completed)))
+        })
+        // Copying all pages (-1) should always complete, so don't loop if sqlite says otherwise
+        if (!completed) throw new Error('Sqlite backup step finished without completing')
+        return
+      } catch (error) {
+        const isLockError = error.code === 'SQLITE_BUSY' || error.code === 'SQLITE_LOCKED'
+        if (!isLockError || attempt >= this.sqliteBackupMaxAttempts) throw error
+
+        Logger.warn(`[BackupManager] Sqlite db is locked, retrying backup in ${this.sqliteBackupRetryDelayMs}ms (attempt ${attempt}/${this.sqliteBackupMaxAttempts})`)
+        await new Promise((resolve) => setTimeout(resolve, this.sqliteBackupRetryDelayMs))
+      }
+    }
   }
 
   zipBackup(sqliteBackupPath, backup) {
