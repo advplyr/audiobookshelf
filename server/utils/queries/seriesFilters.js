@@ -205,13 +205,17 @@ module.exports = {
           sensitivity: 'base'
         })
       })
-      oldSeries.books = s.bookSeries.map((bs) => {
-        const libraryItem = bs.book.libraryItem
-        delete bs.book.libraryItem
-        libraryItem.media = bs.book
-        const oldLibraryItem = libraryItem.toOldJSONMinified()
-        return oldLibraryItem
-      })
+      // A book's library item may not exist (yet) while a scan is still
+      // adding books, so skip those rows instead of crashing (#5643)
+      oldSeries.books = s.bookSeries
+        .filter((bs) => bs.book?.libraryItem)
+        .map((bs) => {
+          const libraryItem = bs.book.libraryItem
+          delete bs.book.libraryItem
+          libraryItem.media = bs.book
+          const oldLibraryItem = libraryItem.toOldJSONMinified()
+          return oldLibraryItem
+        })
       allOldSeries.push(oldSeries)
     }
 
