@@ -1,6 +1,12 @@
 const { expect } = require('chai')
 const { Sequelize } = require('sequelize')
 const sinon = require('sinon')
+const fs = require('fs')
+const os = require('os')
+const Path = require('path')
+const { Writable } = require('stream')
+
+const StreamZip = require('../../../server/libs/nodeStreamZip')
 
 const Database = require('../../../server/Database')
 const ApiRouter = require('../../../server/routers/ApiRouter')
@@ -297,6 +303,129 @@ describe('LibraryItemController', () => {
       }
       await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
       expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+  })
+
+  describe('download with selected files', () => {
+    /**
+     * Writable stream standing in for the express response, collecting the zip bytes
+     */
+    class FakeDownloadResponse extends Writable {
+      constructor() {
+        super()
+        this.chunks = []
+        this.attachment = sinon.spy()
+        this.sendStatus = sinon.spy()
+        this.send = sinon.spy()
+        this.status = sinon.stub().returnsThis()
+        this.setHeader = sinon.spy()
+        this.headersSent = false
+      }
+
+      _write(chunk, encoding, callback) {
+        this.chunks.push(chunk)
+        callback()
+      }
+
+      get buffer() {
+        return Buffer.concat(this.chunks)
+      }
+    }
+
+    let tmpDir
+    let fakeReq
+
+    beforeEach(async () => {
+      tmpDir = await fs.promises.mkdtemp(Path.join(os.tmpdir(), 'abs-download-test-'))
+      await fs.promises.mkdir(Path.join(tmpDir, 'sub'))
+      await fs.promises.writeFile(Path.join(tmpDir, 'a.mp3'), 'audio-a-content')
+      await fs.promises.writeFile(Path.join(tmpDir, 'sub', 'b.pdf'), 'pdf-b-content')
+      await fs.promises.writeFile(Path.join(tmpDir, 'c.txt'), 'text-c-content')
+
+      fakeReq = {
+        user: { username: 'test-user', canDownload: true },
+        query: {},
+        libraryItem: {
+          id: 'li_1',
+          isFile: false,
+          path: tmpDir,
+          media: { title: 'Test Book' },
+          libraryFiles: [
+            { ino: '100', metadata: { path: Path.join(tmpDir, 'a.mp3'), relPath: 'a.mp3', filename: 'a.mp3' } },
+            { ino: '200', metadata: { path: Path.join(tmpDir, 'sub', 'b.pdf'), relPath: 'sub/b.pdf', filename: 'b.pdf' } },
+            { ino: '300', metadata: { path: Path.join(tmpDir, 'c.txt'), relPath: 'c.txt', filename: 'c.txt' } }
+          ],
+          getLibraryFileWithIno(ino) {
+            return this.libraryFiles.find((lf) => lf.ino === ino) || null
+          }
+        }
+      }
+    })
+
+    afterEach(async () => {
+      await fs.promises.rm(tmpDir, { recursive: true, force: true })
+    })
+
+    it('zips only the requested files preserving relative paths when inos is provided', async () => {
+      fakeReq.query.inos = '100,200'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.attachment.calledOnceWith('Test Book.zip')).to.be.true
+
+      const zipPath = Path.join(os.tmpdir(), `abs-download-test-out-${Date.now()}.zip`)
+      await fs.promises.writeFile(zipPath, fakeRes.buffer)
+      const zip = new StreamZip.async({ file: zipPath })
+      try {
+        const entries = await zip.entries()
+        expect(Object.keys(entries).sort()).to.deep.equal(['a.mp3', 'sub/b.pdf'])
+        const entryData = await zip.entryData('a.mp3')
+        expect(entryData.toString()).to.equal('audio-a-content')
+      } finally {
+        await zip.close()
+        await fs.promises.rm(zipPath, { force: true })
+      }
+    })
+
+    it('returns 404 when an ino does not match a library file', async () => {
+      fakeReq.query.inos = '100,999'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.status.calledWith(404)).to.be.true
+      expect(fakeRes.attachment.called).to.be.false
+    })
+
+    it('deduplicates repeated inos', async () => {
+      fakeReq.query.inos = '100,100'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      const zipPath = Path.join(os.tmpdir(), `abs-download-test-dedup-${Date.now()}.zip`)
+      await fs.promises.writeFile(zipPath, fakeRes.buffer)
+      const zip = new StreamZip.async({ file: zipPath })
+      try {
+        // entries() is keyed by name so duplicates collapse - entriesCount catches them
+        expect(await zip.entriesCount).to.equal(1)
+        expect(await zip.entry('a.mp3')).to.exist
+      } finally {
+        await zip.close()
+        await fs.promises.rm(zipPath, { force: true })
+      }
+    })
+
+    it('returns 404 when a selected file is missing from the filesystem', async () => {
+      await fs.promises.rm(Path.join(tmpDir, 'a.mp3'))
+      fakeReq.query.inos = '100,200'
+      const fakeRes = new FakeDownloadResponse()
+
+      await LibraryItemController.download.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.status.calledWith(404)).to.be.true
+      expect(fakeRes.attachment.called).to.be.false
     })
   })
 })

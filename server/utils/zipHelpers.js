@@ -120,6 +120,55 @@ module.exports.zipDirectoriesPipe = (pathObjects, filename, res) => {
 }
 
 /**
+ * Creates a zip archive containing the given files and streams it to the response.
+ *
+ * @param {{ path: string, name: string }[]} files - Files to include, where name is the path of the entry inside the zip.
+ * @param {string} filename - Name of the zip file to be sent as attachment.
+ * @param {Response} res - Response object to pipe the archive data to.
+ * @returns {Promise<void>} - Promise that resolves when the zip operation completes.
+ */
+module.exports.zipFilesPipe = (files, filename, res) => {
+  return new Promise((resolve, reject) => {
+    res.attachment(filename)
+
+    const archive = archiver('zip', {
+      zlib: { level: 0 } // Sets the compression level.
+    })
+
+    res.on('close', () => {
+      Logger.info(archive.pointer() + ' total bytes')
+      Logger.debug('archiver has been finalized and the output file descriptor has closed.')
+      resolve()
+    })
+
+    res.on('end', () => {
+      Logger.debug('Data has been drained')
+    })
+
+    archive.on('warning', function (err) {
+      if (err.code === 'ENOENT') {
+        Logger.warn(`[DownloadManager] Archiver warning: ${err.message}`)
+      } else {
+        Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
+        reject(err)
+      }
+    })
+    archive.on('error', function (err) {
+      Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
+      reject(err)
+    })
+
+    archive.pipe(res)
+
+    files.forEach((file) => {
+      archive.file(file.path, { name: file.name })
+    })
+
+    archive.finalize()
+  })
+}
+
+/**
  * Handles errors that occur during the download process.
  *
  * @param {*} error
