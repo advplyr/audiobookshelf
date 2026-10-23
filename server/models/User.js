@@ -53,6 +53,14 @@ class UserCache {
 
 const userCache = new UserCache()
 
+/**
+ * Pending media progress updates keyed by user id and media item
+ * Used to run updates for the same media item one at a time so concurrent requests
+ * (e.g. /api/session/local and /api/me/progress/batch/update) cannot each create a mediaProgress
+ * @type {Map<string, Promise<any>>}
+ */
+const mediaProgressUpdateQueues = new Map()
+
 const { DataTypes, Model } = sequelize
 
 /**
@@ -722,12 +730,36 @@ class User extends Model {
   }
 
   /**
-   * TODO: Uses old model and should account for the different between ebook/audiobook progress
+   * Updates for the same media item are queued so that concurrent requests do not create duplicate mediaProgress rows
    *
    * @param {ProgressUpdatePayload} progressPayload
    * @returns {Promise<{ mediaProgress: import('./MediaProgress'), error: [string], statusCode: [number] }>}
    */
-  async createUpdateMediaProgressFromPayload(progressPayload) {
+  createUpdateMediaProgressFromPayload(progressPayload) {
+    const queueKey = `${this.id}:${progressPayload.episodeId || progressPayload.libraryItemId}`
+    const previousUpdate = mediaProgressUpdateQueues.get(queueKey) || Promise.resolve()
+    const update = previousUpdate.then(() => this.applyMediaProgressPayload(progressPayload))
+
+    // Keep the queue going if this update fails and remove the key once nothing else is queued
+    const queueTail = update.catch(() => {})
+    mediaProgressUpdateQueues.set(queueKey, queueTail)
+    queueTail.then(() => {
+      if (mediaProgressUpdateQueues.get(queueKey) === queueTail) {
+        mediaProgressUpdateQueues.delete(queueKey)
+      }
+    })
+
+    return update
+  }
+
+  /**
+   * TODO: Uses old model and should account for the different between ebook/audiobook progress
+   * Should only be called from createUpdateMediaProgressFromPayload
+   *
+   * @param {ProgressUpdatePayload} progressPayload
+   * @returns {Promise<{ mediaProgress: import('./MediaProgress'), error: [string], statusCode: [number] }>}
+   */
+  async applyMediaProgressPayload(progressPayload) {
     /** @type {import('./MediaProgress')|null} */
     let mediaProgress = null
     let mediaItemId = null
