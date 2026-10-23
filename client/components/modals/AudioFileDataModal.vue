@@ -42,6 +42,12 @@
               </p>
               <p>{{ audioFile.embeddedCoverArt || '' }}</p>
             </div>
+            <div v-if="audioFile.language" class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelLanguage }}
+              </p>
+              <p>{{ audioFile.language }}</p>
+            </div>
           </div>
           <div class="w-full sm:w-1/2">
             <div class="flex mb-1">
@@ -63,14 +69,20 @@
               <p>{{ $bytesPretty(audioFile.bitRate || 0, 0) }}</p>
             </div>
             <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelSampleRate }}
+              </p>
+              <p>{{ audioFile.sampleRate ? `${audioFile.sampleRate} Hz` : '' }}</p>
+            </div>
+            <div v-if="audioFile.profile" class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelProfile }}
+              </p>
+              <p>{{ audioFile.profile }}</p>
+            </div>
+            <div class="flex mb-1">
               <p class="w-32 text-black-50">{{ $strings.LabelTimeBase }}</p>
               <p>{{ audioFile.timeBase }}</p>
-            </div>
-            <div v-if="audioFile.language" class="flex mb-1">
-              <p class="w-32 text-black-50">
-                {{ $strings.LabelLanguage }}
-              </p>
-              <p>{{ audioFile.language || '' }}</p>
             </div>
           </div>
         </div>
