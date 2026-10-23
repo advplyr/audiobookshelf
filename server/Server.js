@@ -535,7 +535,7 @@ class Server {
 
     // Remove series from hide from continue listening that no longer exist
     try {
-      const users = await Database.sequelize.query(`SELECT u.id, u.username, u.extraData, json_group_array(value) AS seriesIdsToRemove FROM users u, json_each(u.extraData->"seriesHideFromContinueListening") LEFT JOIN series se ON se.id = value WHERE se.id IS NULL GROUP BY u.id;`, {
+      const users = await Database.sequelize.query(`SELECT u.id, u.username, u.extraData, json_group_array(value) AS seriesIdsToRemove FROM users u, json_each(u.extraData->'seriesHideFromContinueListening') LEFT JOIN series se ON se.id = value WHERE se.id IS NULL GROUP BY u.id;`, {
         model: Database.userModel,
         type: Sequelize.QueryTypes.SELECT
       })

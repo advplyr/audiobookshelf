@@ -1607,7 +1607,7 @@ async function migrationPatch2BookAuthors(ctx, offset = 0) {
   for (const bookAuthor of bookAuthors) {
     if (bookAuthor.author?.createdAt) {
       const dateString = bookAuthor.author.createdAt.toISOString().replace('T', ' ').replace('Z', '')
-      bulkUpdateItems.push(`("${bookAuthor.id}","${dateString}")`)
+      bulkUpdateItems.push(`('${bookAuthor.id}','${dateString}')`)
     }
   }
 
@@ -1642,7 +1642,7 @@ async function migrationPatch2BookSeries(ctx, offset = 0) {
   for (const bookSeries of allBookSeries) {
     if (bookSeries.series?.createdAt) {
       const dateString = bookSeries.series.createdAt.toISOString().replace('T', ' ').replace('Z', '')
-      bulkUpdateItems.push(`("${bookSeries.id}","${dateString}")`)
+      bulkUpdateItems.push(`('${bookSeries.id}','${dateString}')`)
     }
   }
 
