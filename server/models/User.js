@@ -499,6 +499,21 @@ class User extends Model {
   }
 
   /**
+   * Evict cached users whose media progress rows were updated outside of the user instance,
+   * e.g. re-linked to a different media item by the scanner, so they reload fresh on next request
+   *
+   * @param {string[]} userIds
+   */
+  static mediaProgressesRelinked(userIds) {
+    for (const userId of userIds) {
+      if (userCache.getById(userId)) {
+        Logger.debug(`[User] mediaProgressesRelinked: invalidating cached user ${userId}`)
+        userCache.delete(userId)
+      }
+    }
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
