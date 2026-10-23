@@ -1,0 +1,189 @@
+import axios from 'axios'
+import Logger from '../Logger'
+import { isValidASIN } from '../utils/index'
+
+type AudibleItem = {
+  title?: string; subtitle?: string; asin?: string; authors?: { name: string }[]; narrators?: { name: string }[]
+  publisherName?: string; summary?: string; releaseDate?: string; image?: string
+  genres?: { type: string; name: string }[]
+  seriesPrimary?: { name: string; position?: string }; seriesSecondary?: { name: string; position?: string }
+  language?: string; runtimeLengthMin?: number | string; formatType?: string; isbn?: string
+  region?: string; rating?: unknown; isAdult?: boolean
+}
+
+class Audible {
+  declare regionMap: Record<string, string>
+  #responseTimeout = 10000
+
+  constructor() {
+    this.regionMap = {
+      us: '.com',
+      ca: '.ca',
+      uk: '.co.uk',
+      au: '.com.au',
+      fr: '.fr',
+      de: '.de',
+      jp: '.co.jp',
+      it: '.it',
+      in: '.in',
+      es: '.es'
+    }
+  }
+
+  /**
+   * Audible will sometimes send sequences with "Book 1" or "2, Dramatized Adaptation"
+   * @see https://github.com/advplyr/audiobookshelf/issues/2380
+   * @see https://github.com/advplyr/audiobookshelf/issues/1339
+   *
+   * @param {string} seriesName
+   * @param {string} sequence
+   * @returns {string}
+   */
+  cleanSeriesSequence(seriesName: string, sequence: string | null | undefined) {
+    if (!sequence) return ''
+    // match any number with optional decimal (e.g, 1 or 1.5 or .5)
+    let numberFound = sequence.match(/\.\d+|\d+(?:\.\d+)?/)
+    let updatedSequence = numberFound ? numberFound[0] : sequence
+    if (sequence !== updatedSequence) {
+      Logger.debug(`[Audible] Series "${seriesName}" sequence was cleaned from "${sequence}" to "${updatedSequence}"`)
+    }
+    return updatedSequence
+  }
+
+  cleanResult(item: AudibleItem) {
+    const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin, formatType, isbn } = item
+
+    const series = []
+    if (seriesPrimary) {
+      series.push({
+        series: seriesPrimary.name,
+        sequence: this.cleanSeriesSequence(seriesPrimary.name, seriesPrimary.position || '')
+      })
+    }
+    if (seriesSecondary) {
+      series.push({
+        series: seriesSecondary.name,
+        sequence: this.cleanSeriesSequence(seriesSecondary.name, seriesSecondary.position || '')
+      })
+    }
+
+    let genresCleaned: string[] = []
+    let tagsCleaned: string[] = []
+
+    if (genres && Array.isArray(genres)) {
+      genresCleaned = [...new Set(genres.filter((g) => g.type == 'genre').map((g) => g.name))]
+      tagsCleaned = [...new Set(genres.filter((g) => g.type == 'tag').map((g) => g.name))]
+    }
+
+    return {
+      title,
+      subtitle: subtitle || null,
+      author: authors ? authors.map(({ name }) => name).join(', ') : null,
+      narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
+      publisher: publisherName,
+      publishedYear: releaseDate ? releaseDate.split('-')[0] : null,
+      description: summary || null,
+      cover: image,
+      asin,
+      isbn,
+      genres: genresCleaned.length ? genresCleaned : null,
+      tags: tagsCleaned.length ? tagsCleaned : null,
+      series: series.length ? series : null,
+      language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
+      duration: runtimeLengthMin && !isNaN(runtimeLengthMin as number) ? Number(runtimeLengthMin) : 0,
+      region: item.region || null,
+      rating: item.rating || null,
+      abridged: formatType === 'abridged',
+      explicit: !!item.isAdult
+    }
+  }
+
+  /**
+   *
+   * @param {string} asin
+   * @param {string} region
+   * @param {number} [timeout] response timeout in ms
+   * @returns {Promise<Object>}
+   */
+  asinSearch(asin: string | null | undefined, region: string | null | undefined, timeout = this.#responseTimeout) {
+    if (!asin) return null
+    if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
+
+    asin = encodeURIComponent(asin.toUpperCase())
+    var regionQuery = region ? `?region=${region}` : ''
+    var url = `https://api.audnex.us/books/${asin}${regionQuery}`
+    Logger.debug(`[Audible] ASIN url: ${url}`)
+    return axios
+      .get<AudibleItem>(url, {
+        timeout
+      })
+      .then((res) => {
+        if (!res?.data?.asin) return null
+        return res.data
+      })
+      .catch((error: Error) => {
+        Logger.error('[Audible] ASIN search error', error.message)
+        return null
+      })
+  }
+
+  /**
+   *
+   * @param {string} title
+   * @param {string} author
+   * @param {string} asin
+   * @param {string} region
+   * @param {number} [timeout] response timeout in ms
+   * @returns {Promise<Object[]>}
+   */
+  async search(title: string, author: string | null | undefined, asin: string | null | undefined, region: string | null | undefined, timeout = this.#responseTimeout) {
+    if (region && !this.regionMap[region]) {
+      Logger.error(`[Audible] search: Invalid region ${region}`)
+      region = ''
+    }
+    if (!timeout || isNaN(timeout)) timeout = this.#responseTimeout
+
+    let items: (AudibleItem | null)[] = []
+    if (asin && isValidASIN(asin.toUpperCase())) {
+      const item = await this.asinSearch(asin, region, timeout)
+      if (item) items.push(item)
+    }
+
+    if (!items.length && isValidASIN(title.toUpperCase())) {
+      const item = await this.asinSearch(title, region, timeout)
+      if (item) items.push(item)
+    }
+
+    if (!items.length) {
+      const queryObj: Record<string, string> = {
+        num_results: '10',
+        products_sort_by: 'Relevance',
+        title: title
+      }
+      if (author) queryObj.author = author
+      const queryString = new URLSearchParams(queryObj).toString()
+      const tld = region ? this.regionMap[region] : '.com'
+      const url = `https://api.audible${tld}/1.0/catalog/products?${queryString}`
+      Logger.debug(`[Audible] Search url: ${url}`)
+      items = await axios
+        .get<{ products?: { asin: string }[] }>(url, {
+          timeout
+        })
+        .then((res) => {
+          if (!res?.data?.products) return []
+          // Promise.all already assimilates nulls; Promise.resolve keeps that behavior explicit.
+          return Promise.all(res.data.products.map((result) => Promise.resolve(this.asinSearch(result.asin, region, timeout))))
+        })
+        .catch((error: Error) => {
+          Logger.error('[Audible] query search error', error.message)
+          return []
+        })
+    }
+    return items.filter((item): item is AudibleItem => Boolean(item)).map((item) => this.cleanResult(item)) || []
+  }
+}
+
+declare namespace Audible {
+  type SearchItem = AudibleItem
+}
+export = Audible

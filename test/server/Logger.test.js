@@ -282,4 +282,46 @@ describe('Logger', function () {
       expect(debugSpy.calledWithExactly('Set Log Level to WARN')).to.be.true
     })
   })
+
+  describe('return and initialization compatibility', function () {
+    it('should keep ordinary logging methods synchronous', function () {
+      Logger.logLevel = LogLevel.TRACE
+
+      for (const method of ['trace', 'debug', 'info', 'warn', 'error', 'note']) {
+        expect(Logger[method]('Test message')).to.equal(undefined)
+      }
+    })
+
+    it('should wait for file logging when awaiting fatal', async function () {
+      let finishLogging
+      const pendingLog = new Promise((resolve) => {
+        finishLogging = resolve
+      })
+      Logger.logManager.logToFile.returns(pendingLog)
+
+      const result = Logger.fatal('Fatal error')
+      expect(result).to.be.instanceOf(Promise)
+      let completed = false
+      const completion = result.then(() => {
+        completed = true
+      })
+      await Promise.resolve()
+      expect(completed).to.be.false
+
+      finishLogging()
+      await completion
+      expect(completed).to.be.true
+    })
+
+    it('should log before the log manager is initialized', async function () {
+      Logger.logManager = null
+      Logger.logLevel = LogLevel.TRACE
+
+      expect(Logger.info('Early log')).to.equal(undefined)
+      await Logger.fatal('Early fatal log')
+
+      expect(consoleInfoStub.calledOnce).to.be.true
+      expect(consoleErrorStub.calledOnce).to.be.true
+    })
+  })
 })
