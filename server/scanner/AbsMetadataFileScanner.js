@@ -3,6 +3,7 @@ const fsExtra = require('../libs/fsExtra')
 const { readTextFile } = require('../utils/fileUtils')
 const { LogLevel } = require('../utils/constants')
 const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
+const areEquivalent = require('../utils/areEquivalent')
 
 class AbsMetadataFileScanner {
   constructor() {}
@@ -14,11 +15,13 @@ class AbsMetadataFileScanner {
    * @param {import('./LibraryItemScanData')} libraryItemData
    * @param {Object} bookMetadata
    * @param {string} [existingLibraryItemId]
+   * @param {import('../models/Book').ChapterObject[]} [previousGeneratedChapters]
    */
-  async scanBookMetadataFile(libraryScan, libraryItemData, bookMetadata, existingLibraryItemId = null) {
+  async scanBookMetadataFile(libraryScan, libraryItemData, bookMetadata, existingLibraryItemId = null, previousGeneratedChapters = null) {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
     let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     let metadataFilePath = metadataLibraryFile?.metadata.path
+    let isInternalMetadata = false
 
     // When metadata file is not stored with library item then check in the /metadata/items folder for it
     if (!metadataText && existingLibraryItemId) {
@@ -27,6 +30,7 @@ class AbsMetadataFileScanner {
       metadataFilePath = Path.join(metadataPath, 'metadata.json')
       if (await fsExtra.pathExists(metadataFilePath)) {
         metadataText = await readTextFile(metadataFilePath)
+        isInternalMetadata = true
       }
     }
 
@@ -41,6 +45,10 @@ class AbsMetadataFileScanner {
         if (key === 'genres' && !abMetadata.genres?.length) continue
         if (key === 'tags' && !abMetadata.tags?.length) continue
         if (key === 'chapters' && !abMetadata.chapters?.length) continue
+        // Internal metadata also stores generated chapters. Do not let an unchanged copy
+        // replace chapters regenerated after audio files change. Explicit sidecars and
+        // custom chapter lists remain subject to the configured metadata precedence.
+        if (key === 'chapters' && isInternalMetadata && previousGeneratedChapters?.length && bookMetadata.chapters?.length && areEquivalent(abMetadata.chapters, previousGeneratedChapters)) continue
 
         bookMetadata[key] = abMetadata[key]
       }

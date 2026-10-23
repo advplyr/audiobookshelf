@@ -83,6 +83,14 @@ class BookScanner {
     })
 
     let hasMediaChanges = libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== media.audioFiles.length
+    let previousGeneratedChapters = null
+    if (hasMediaChanges && media.chapters?.length && media.audioFiles.length) {
+      // Compare before replacing audio files so custom chapters are not mistaken for generated chapters.
+      const generatedChapters = AudioFileScanner.getBookChaptersFromAudioFiles(media.title, media.audioFiles, libraryScan)
+      if (areEquivalent(media.chapters, generatedChapters)) {
+        previousGeneratedChapters = generatedChapters
+      }
+    }
     if (hasMediaChanges) {
       // Filter out audio files that were removed
       media.audioFiles = media.audioFiles.filter((af) => !libraryItemData.checkAudioFileRemoved(af))
@@ -208,7 +216,7 @@ class BookScanner {
 
     const ebookFileScanData = await parseEbookMetadata.parse(media.ebookFile)
 
-    const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, ebookFileScanData, libraryItemData, libraryScan, librarySettings, existingLibraryItem.id)
+    const bookMetadata = await this.getBookMetadataFromScanData(media.audioFiles, ebookFileScanData, libraryItemData, libraryScan, librarySettings, existingLibraryItem.id, previousGeneratedChapters)
     let authorsUpdated = false
     const bookAuthorsRemoved = []
     let seriesUpdated = false
@@ -655,9 +663,10 @@ class BookScanner {
    * @param {LibraryScan} libraryScan
    * @param {import('../models/Library').LibrarySettingsObject} librarySettings
    * @param {string} [existingLibraryItemId]
+   * @param {import('../models/Book').ChapterObject[]} [previousGeneratedChapters]
    * @returns {Promise<BookMetadataObject>}
    */
-  async getBookMetadataFromScanData(audioFiles, ebookFileScanData, libraryItemData, libraryScan, librarySettings, existingLibraryItemId = null) {
+  async getBookMetadataFromScanData(audioFiles, ebookFileScanData, libraryItemData, libraryScan, librarySettings, existingLibraryItemId = null, previousGeneratedChapters = null) {
     // First set book metadata from folder/file names
     const bookMetadata = {
       title: libraryItemData.mediaMetadata.title, // required
@@ -680,7 +689,7 @@ class BookScanner {
       coverPath: undefined
     }
 
-    const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, ebookFileScanData, libraryItemData, libraryScan, existingLibraryItemId)
+    const bookMetadataSourceHandler = new BookScanner.BookMetadataSourceHandler(bookMetadata, audioFiles, ebookFileScanData, libraryItemData, libraryScan, existingLibraryItemId, previousGeneratedChapters)
     const metadataPrecedence = librarySettings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
     libraryScan.addLog(LogLevel.DEBUG, `"${bookMetadata.title}" Getting metadata with precedence [${metadataPrecedence.join(', ')}]`)
     for (const metadataSource of metadataPrecedence) {
@@ -715,14 +724,16 @@ class BookScanner {
      * @param {import('./LibraryItemScanData')} libraryItemData
      * @param {LibraryScan} libraryScan
      * @param {string} existingLibraryItemId
+     * @param {import('../models/Book').ChapterObject[]} previousGeneratedChapters
      */
-    constructor(bookMetadata, audioFiles, ebookFileScanData, libraryItemData, libraryScan, existingLibraryItemId) {
+    constructor(bookMetadata, audioFiles, ebookFileScanData, libraryItemData, libraryScan, existingLibraryItemId, previousGeneratedChapters) {
       this.bookMetadata = bookMetadata
       this.audioFiles = audioFiles
       this.ebookFileScanData = ebookFileScanData
       this.libraryItemData = libraryItemData
       this.libraryScan = libraryScan
       this.existingLibraryItemId = existingLibraryItemId
+      this.previousGeneratedChapters = previousGeneratedChapters
     }
 
     /**
@@ -812,7 +823,7 @@ class BookScanner {
      */
     async absMetadata() {
       // If metadata.json use this for metadata
-      await AbsMetadataFileScanner.scanBookMetadataFile(this.libraryScan, this.libraryItemData, this.bookMetadata, this.existingLibraryItemId)
+      await AbsMetadataFileScanner.scanBookMetadataFile(this.libraryScan, this.libraryItemData, this.bookMetadata, this.existingLibraryItemId, this.previousGeneratedChapters)
     }
   }
 
