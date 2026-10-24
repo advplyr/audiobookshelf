@@ -49,6 +49,11 @@ class LocalAuthStrategy {
    * @param {Function} done - Passport callback
    */
   async verifyCredentials(req, username, password, done) {
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      done(null, null)
+      return
+    }
+
     // Load the user given it's username
     const user = await Database.userModel.getUserByUsername(username.toLowerCase())
 
