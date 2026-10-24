@@ -26,6 +26,10 @@
       "description": "Library endpoints"
     },
     {
+      "name": "Collections",
+      "description": "Collection endpoints"
+    },
+    {
       "name": "Series",
       "description": "Series endpoints"
     },
@@ -1160,6 +1164,172 @@
           },
           "404": {
             "$ref": "#/components/responses/library404"
+          }
+        }
+      }
+    },
+    "/api/v2/libraries/{id}/collections": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "The ID of the library.",
+          "schema": {
+            "$ref": "#/components/schemas/libraryId"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getLibraryCollectionSummaries",
+        "summary": "Get collection summaries in a library",
+        "description": "Returns paginated compact summaries for persisted collections with no book memberships and for collections containing at least one book visible to the requesting user. Persisted empty collections have a book count of zero and no preview items. Non-empty collections whose books are all inaccessible remain hidden, and book counts and preview items respect the user's explicit-content and tag permissions.",
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-indexed page number. The product of `page` and `limit` must be a safe integer.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of collection summaries to return.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Field used to sort collections. Name sorting is case-insensitive. The collection ID is used as a stable secondary sort key.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "name"
+            }
+          },
+          {
+            "name": "desc",
+            "in": "query",
+            "description": "Sort in descending order when set to `1`; set to `0` for ascending order.",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ],
+              "default": 0
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Case-insensitive substring to match against collection names. Percent signs and underscores are treated literally.",
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection summaries retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "results",
+                    "total",
+                    "limit",
+                    "page",
+                    "sortBy",
+                    "sortDesc",
+                    "filterBy"
+                  ],
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/collectionSummary"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Total number of matching collections before pagination, including persisted empty collections and excluding non-empty collections with no visible books."
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 100
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "sortBy": {
+                      "type": "string",
+                      "enum": [
+                        "name",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    },
+                    "sortDesc": {
+                      "type": "boolean"
+                    },
+                    "filterBy": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A pagination, sorting, direction, or filter query parameter is invalid.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "example": "Invalid request. Limit must be an integer between 1 and 100"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required."
+          },
+          "403": {
+            "description": "The authenticated user cannot access the requested library."
+          },
+          "404": {
+            "description": "The requested library was not found.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "example": "Library not found"
+                }
+              }
+            }
           }
         }
       }
@@ -3150,6 +3320,99 @@
                 "description": "The RSS feed for the series.",
                 "type": "string",
                 "example": "TBD"
+              }
+            }
+          }
+        ]
+      },
+      "collectionId": {
+        "type": "string",
+        "description": "The ID of the collection.",
+        "format": "uuid"
+      },
+      "collection": {
+        "type": "object",
+        "description": "Base collection schema.",
+        "required": [
+          "id",
+          "libraryId",
+          "name",
+          "description",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/collectionId"
+          },
+          "libraryId": {
+            "$ref": "#/components/schemas/libraryId"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the collection."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "The description of the collection."
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/createdAt"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/updatedAt"
+          }
+        }
+      },
+      "collectionPreviewItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "media"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/libraryItemId"
+          },
+          "media": {
+            "type": "object",
+            "required": [
+              "coverPath"
+            ],
+            "properties": {
+              "coverPath": {
+                "$ref": "#/components/schemas/bookCoverPath"
+              }
+            }
+          }
+        }
+      },
+      "collectionSummary": {
+        "description": "A compact collection representation with a visible book count and cover previews.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/collection"
+          },
+          {
+            "type": "object",
+            "required": [
+              "numBooks",
+              "previewItems"
+            ],
+            "properties": {
+              "numBooks": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The number of books in the collection that are visible to the requesting user. This is zero for a persisted collection with no book memberships."
+              },
+              "previewItems": {
+                "type": "array",
+                "maxItems": 2,
+                "description": "Up to two visible library items, in collection order, for displaying cover previews. This is empty for a persisted collection with no book memberships.",
+                "items": {
+                  "$ref": "#/components/schemas/collectionPreviewItem"
+                }
               }
             }
           }
