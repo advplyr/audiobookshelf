@@ -160,7 +160,8 @@ export default {
           subtitle: this.mediaMetadata.title,
           caption: '',
           duration: this.media.duration || null,
-          coverPath: this.media.coverPath || null
+          coverPath: this.media.coverPath || null,
+          updatedAt: this.libraryItem.updatedAt
         }
       } else {
         queueItem = {
@@ -171,7 +172,8 @@ export default {
           subtitle: this.bookAuthors.map((au) => au.name).join(', '),
           caption: '',
           duration: this.media.duration || null,
-          coverPath: this.media.coverPath || null
+          coverPath: this.media.coverPath || null,
+          updatedAt: this.libraryItem.updatedAt
         }
       }
 
