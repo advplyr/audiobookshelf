@@ -63,6 +63,11 @@ module.exports = {
           }
         },
         {
+          '$books.mediaProgresses.ebookProgress$': {
+            [Sequelize.Op.or]: [null, 0]
+          }
+        },
+        {
           '$books.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, false]
           }
@@ -115,6 +120,11 @@ module.exports = {
         mediaWhere[Sequelize.Op.and] = [
           {
             '$mediaProgresses.currentTime$': {
+              [Sequelize.Op.or]: [null, 0]
+            }
+          },
+          {
+            '$mediaProgresses.ebookProgress$': {
               [Sequelize.Op.or]: [null, 0]
             }
           },
