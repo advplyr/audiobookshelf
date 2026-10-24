@@ -779,7 +779,10 @@ class LibraryItemController {
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }
-
+    // Ensure user has permission to access these library items
+    if (!ensureUserCanAccessLibraryItemsForBatch(req, res, libraryItems)) {
+      return
+    }
     res.sendStatus(200)
 
     const reqBodyOptions = req.body.options || {}
@@ -836,7 +839,10 @@ class LibraryItemController {
     if (!libraryItems?.length) {
       return res.sendStatus(400)
     }
-
+    // Ensure user has permission to access these library items
+    if (!ensureUserCanAccessLibraryItemsForBatch(req, res, libraryItems)) {
+      return
+    }
     res.sendStatus(200)
 
     const libraryId = libraryItems[0].libraryId
