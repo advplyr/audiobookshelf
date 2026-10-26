@@ -412,13 +412,18 @@ class Scanner {
       }
     }
 
+    if (episodeToMatch.guid && episodeToMatch.guid !== episode.extraData?.guid && (!episode.extraData?.guid || options.overrideDetails)) {
+      episode.extraData = { ...(episode.extraData || {}), guid: episodeToMatch.guid }
+      episode.changed('extraData', true)
+    }
+
     if (Object.keys(updatePayload).length) {
       episode.set(updatePayload)
-      if (episode.changed()) {
-        Logger.debug(`[Scanner] quickMatchPodcastEpisodes: Updating episode "${episode.title}" keys`, episode.changed())
-        await episode.save()
-        return true
-      }
+    }
+    if (episode.changed()) {
+      Logger.debug(`[Scanner] quickMatchPodcastEpisodes: Updating episode "${episode.title}" keys`, episode.changed())
+      await episode.save()
+      return true
     }
     return false
   }
