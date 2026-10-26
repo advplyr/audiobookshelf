@@ -145,7 +145,7 @@ class AbMergeManager {
         (trackIndex) => SocketAuthority.adminEmitter('track_started', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] }),
         (trackIndex, progressInTrack, taskProgress) => {
           SocketAuthority.adminEmitter('track_progress', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex], progress: progressInTrack })
-          SocketAuthority.adminEmitter('task_progress', { libraryItemId: libraryItem.id, progress: taskProgress * encodeFraction })
+          TaskManager.updateTaskProgress(task, taskProgress * encodeFraction)
         },
         (trackIndex) => SocketAuthority.adminEmitter('track_finished', { libraryItemId: libraryItem.id, ino: task.data.inos[trackIndex] })
       )
@@ -179,7 +179,7 @@ class AbMergeManager {
         'audio/mp4',
         (progress) => {
           Logger.debug(`[AbMergeManager] Embedding metadata progress: ${100 * encodeFraction + progress * embedFraction}`)
-          SocketAuthority.adminEmitter('task_progress', { libraryItemId: libraryItem.id, progress: 100 * encodeFraction + progress * embedFraction })
+          TaskManager.updateTaskProgress(task, 100 * encodeFraction + progress * embedFraction)
         },
         task.data.ffmpeg
       )

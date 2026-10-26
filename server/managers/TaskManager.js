@@ -37,6 +37,17 @@ class TaskManager {
   }
 
   /**
+   * Update task progress and emit task_progress event to admins
+   *
+   * @param {Task} task
+   * @param {number} progress percent complete (0-100)
+   */
+  updateTaskProgress(task, progress) {
+    task.setProgress(progress)
+    SocketAuthority.adminEmitter('task_progress', { libraryItemId: task.data.libraryItemId, progress })
+  }
+
+  /**
    * Create new task and add
    *
    * @param {string} action
