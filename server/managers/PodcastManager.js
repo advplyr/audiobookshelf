@@ -60,7 +60,13 @@ class PodcastManager {
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
     for (const ep of episodesToDownload) {
       const newPeDl = new PodcastEpisodeDownload()
-      newPeDl.setData(ep, libraryItem, isAutoDownload, libraryItem.libraryId)
+      try {
+        newPeDl.setData(ep, libraryItem, isAutoDownload, libraryItem.libraryId)
+      } catch (error) {
+        if (!(error instanceof URIError)) throw error
+        Logger.error(`[PodcastManager] Failed to prepare podcast episode download for "${ep.title}"`, error)
+        continue
+      }
       this.startPodcastEpisodeDownload(newPeDl)
     }
   }
