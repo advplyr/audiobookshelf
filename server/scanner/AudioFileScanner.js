@@ -506,7 +506,7 @@ class AudioFileScanner {
     // If first audio file has embedded chapters then use embedded chapters
     if (audioFiles[0].chapters?.length) {
       // If all files chapters are the same, then only make chapters for the first file
-      if (audioFiles.length === 1 || (audioFiles.length > 1 && audioFiles[0].chapters.length === audioFiles[1].chapters?.length && audioFiles[0].chapters.every((c, i) => c.title === audioFiles[1].chapters[i].title && c.start === audioFiles[1].chapters[i].start))) {
+      if (audioFiles.every((file) => file.chapters?.length === audioFiles[0].chapters.length && audioFiles[0].chapters.every((c, i) => c.title === file.chapters[i].title && c.start === file.chapters[i].start))) {
         libraryScan.addLog(LogLevel.DEBUG, `setChapters: Using embedded chapters in first audio file ${audioFiles[0].metadata?.path}`)
         chapters = audioFiles[0].chapters.map((c) => ({ ...c }))
       } else {
