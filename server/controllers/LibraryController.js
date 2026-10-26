@@ -1108,11 +1108,17 @@ class LibraryController {
    * @param {Response} res
    */
   async getNarrators(req, res) {
-    // Get all books with narrators
+    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
+
+    // Get all books with narrators the user has access to
     const booksWithNarrators = await Database.bookModel.findAll({
-      where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('narrators')), {
-        [Sequelize.Op.gt]: 0
-      }),
+      where: [
+        Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('narrators')), {
+          [Sequelize.Op.gt]: 0
+        }),
+        ...bookWhere
+      ],
+      replacements,
       include: {
         model: Database.libraryItemModel,
         attributes: ['id', 'libraryId'],
