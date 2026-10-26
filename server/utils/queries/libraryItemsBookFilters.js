@@ -2,6 +2,7 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
+const seriesSequenceOrder = require('./seriesSequenceOrder')
 
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
@@ -286,8 +287,7 @@ module.exports = {
       }
       return [getTitleOrder()]
     } else if (sortBy === 'sequence') {
-      const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
+      return [[seriesSequenceOrder('series.bookSeries.sequence', sortDesc)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal(`mediaProgresses.updatedAt ${dir} NULLS LAST`)]]
     } else if (sortBy === 'progress.createdAt') {
@@ -327,7 +327,7 @@ module.exports = {
           required: true
         }
       ],
-      order: [Sequelize.literal('CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')]
+      order: [seriesSequenceOrder('books.bookSeries.sequence')]
     })
     const bookSeriesToInclude = []
     const booksToInclude = []
@@ -503,7 +503,7 @@ module.exports = {
       })
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
-        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')])
+        sortOrder.push([seriesSequenceOrder('series.bookSeries.sequence')])
       }
     } else if (filterGroup === 'issues') {
       libraryItemWhere[Sequelize.Op.or] = [
@@ -758,7 +758,7 @@ module.exports = {
         attributes: ['bookId', 'sequence'],
         separate: true,
         subQuery: false,
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        order: [[seriesSequenceOrder('sequence')]],
         where: {
           '$book.mediaProgresses.isFinished$': {
             [Sequelize.Op.or]: [null, 0]
@@ -871,7 +871,7 @@ module.exports = {
           model: Database.bookModel,
           where: userPermissionBookWhere.bookWhere
         },
-        order: [[Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]],
+        order: [[seriesSequenceOrder('sequence')]],
         limit: 1
       },
       subQuery: false,
