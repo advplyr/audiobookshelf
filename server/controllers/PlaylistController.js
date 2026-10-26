@@ -186,7 +186,10 @@ class PlaylistController {
     if (nameCleaned) {
       playlistUpdatePayload.name = nameCleaned
     }
-    if (reqBody.description) playlistUpdatePayload.description = reqBody.description
+    // A provided description (including null or "") sets it, so it can be
+    // cleared; only an absent description leaves it unchanged. Matches create(),
+    // which normalizes with `reqBody.description || null` (#4824).
+    if (reqBody.description !== undefined) playlistUpdatePayload.description = reqBody.description || null
 
     // Update name and description
     let wasUpdated = false
