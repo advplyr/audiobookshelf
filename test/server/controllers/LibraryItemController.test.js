@@ -200,6 +200,28 @@ describe('LibraryItemController', () => {
       const series2Exists = await Database.seriesModel.checkExistsById(series2Id)
       expect(series2Exists).to.be.true
     })
+
+    it('should normalize numeric series sequences on library item update media', async () => {
+      const libraryItem = await Database.libraryItemModel.getExpandedById(libraryItem1Id)
+      libraryItem.saveMetadataFile = sinon.stub()
+      const fakeReq = {
+        query: {},
+        body: {
+          metadata: {
+            series: [{ name: 'Test Series', sequence: '05.5' }]
+          }
+        },
+        libraryItem
+      }
+      const fakeRes = {
+        json: sinon.spy()
+      }
+
+      await LibraryItemController.updateMedia.bind(apiRouter)(fakeReq, fakeRes)
+
+      const bookSeries = await Database.bookSeriesModel.findOne({ where: { bookId: libraryItem.mediaId, seriesId: series1Id } })
+      expect(bookSeries.sequence).to.equal('5.5')
+    })
   })
 
   describe('batch item access control', () => {

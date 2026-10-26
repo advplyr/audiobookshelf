@@ -3,6 +3,7 @@ const Path = require('path')
 const sequelize = require('sequelize')
 const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix, areEquivalent } = require('../utils/index')
+const { normalizeSeriesSequences } = require('../utils/seriesSequence')
 const parseNameString = require('../utils/parsers/parseNameString')
 const parseEbookMetadata = require('../utils/parsers/parseEbookMetadata')
 const globals = require('../utils/globals')
@@ -702,6 +703,8 @@ class BookScanner {
     if (typeof bookMetadata.description === 'string' && bookMetadata.description) {
       bookMetadata.description = htmlSanitizer.sanitize(bookMetadata.description)
     }
+
+    bookMetadata.series = normalizeSeriesSequences(bookMetadata.series)
 
     return bookMetadata
   }
