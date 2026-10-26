@@ -3,6 +3,7 @@ const Path = require('path')
 const sequelize = require('sequelize')
 
 const Logger = require('../Logger')
+const { withRetry } = require('../utils/dbUtils')
 const Database = require('../Database')
 const SocketAuthority = require('../SocketAuthority')
 
@@ -417,30 +418,38 @@ class ApiRouter {
     const transaction = await Database.sequelize.transaction()
     try {
       const seriesToRemove = (
-        await Database.seriesModel.findAll({
-          where: [
-            {
-              id: seriesIds
-            },
-            sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
-          ],
-          attributes: ['id', 'name', 'libraryId'],
-          include: {
-            model: Database.bookModel,
-            attributes: ['id'],
-            required: false // Ensure it includes series even if no books exist
-          },
-          transaction
-        })
+        await withRetry(
+          () =>
+            Database.seriesModel.findAll({
+              where: [
+                {
+                  id: seriesIds
+                },
+                sequelize.where(sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 0)
+              ],
+              attributes: ['id', 'name', 'libraryId'],
+              include: {
+                model: Database.bookModel,
+                attributes: ['id'],
+                required: false // Ensure it includes series even if no books exist
+              },
+              transaction
+            }),
+          { context: 'checkRemoveEmptySeries.findAll' }
+        )
       ).map((s) => ({ id: s.id, name: s.name, libraryId: s.libraryId }))
 
       if (seriesToRemove.length) {
-        await Database.seriesModel.destroy({
-          where: {
-            id: seriesToRemove.map((s) => s.id)
-          },
-          transaction
-        })
+        await withRetry(
+          () =>
+            Database.seriesModel.destroy({
+              where: {
+                id: seriesToRemove.map((s) => s.id)
+              },
+              transaction
+            }),
+          { context: 'checkRemoveEmptySeries.destroy' }
+        )
       }
 
       await transaction.commit()
@@ -457,7 +466,11 @@ class ApiRouter {
         await RssFeedManager.closeFeedsForEntityIds(seriesToRemove.map((s) => s.id))
       }
     } catch (error) {
-      await transaction.rollback()
+      try {
+        await transaction.rollback()
+      } catch (rollbackError) {
+        Logger.error(`[ApiRouter] Failed to rollback series transaction: ${rollbackError.message}`)
+      }
       Logger.error(`[ApiRouter] Error removing empty series: ${error.message}`)
     }
   }

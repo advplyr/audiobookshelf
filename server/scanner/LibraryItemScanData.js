@@ -2,6 +2,8 @@ const packageJson = require('../../package.json')
 const { LogLevel } = require('../utils/constants')
 const LibraryItem = require('../models/LibraryItem')
 const globals = require('../utils/globals')
+const Logger = require('../Logger')
+const { withRetry } = require('../utils/dbUtils')
 
 class LibraryItemScanData {
   /**
@@ -273,7 +275,12 @@ class LibraryItemScanData {
       if (this.hasLibraryFileChanges) {
         existingLibraryItem.changed('libraryFiles', true)
       }
-      await existingLibraryItem.save()
+      try {
+        await withRetry(() => existingLibraryItem.save(), { context: 'LibraryItemScanData.checkLibraryItemData' })
+      } catch (error) {
+        Logger.error(`[LibraryItemScanData] Failed to save library item after retries: ${error.message}`)
+        return false
+      }
       return true
     }
 
