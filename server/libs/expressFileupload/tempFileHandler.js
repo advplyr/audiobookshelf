@@ -28,6 +28,18 @@ module.exports = (options, fieldname, filename) => {
       reject(err);
     });
   });
+  // cleanup() can run from an error path and again on response close.
+  let cleanedUp = false;
+
+  // Windows cannot unlink while the write stream still holds the file.
+  const closeWriteStream = () => new Promise((resolve) => {
+    if (writeStream.destroyed || writeStream.closed) {
+      return resolve();
+    }
+    writeStream.once('close', resolve);
+    writeStream.once('error', resolve);
+    writeStream.end();
+  });
 
   return {
     dataHandler: (data) => {
@@ -51,13 +63,21 @@ module.exports = (options, fieldname, filename) => {
       return Buffer.concat([]);
     },
     cleanup: () => {
+      if (cleanedUp) return Promise.resolve();
+      cleanedUp = true;
       completed = true;
       debugLog(options, `Cleaning up temporary file ${tempFilePath}...`);
-      writeStream.end();
-      deleteFile(tempFilePath, err => (err 
-        ? debugLog(options, `Cleaning up temporary file ${tempFilePath} failed: ${err}`)
-        : debugLog(options, `Cleaning up temporary file ${tempFilePath} done.`)
-      ));
+      return closeWriteStream().then(() => new Promise((resolve) => {
+        // ENOENT: handler already mv()'d the file; that is success.
+        deleteFile(tempFilePath, err => {
+          if (err && err.code !== 'ENOENT') {
+            debugLog(options, `Cleaning up temporary file ${tempFilePath} failed: ${err}`);
+          } else {
+            debugLog(options, `Cleaning up temporary file ${tempFilePath} done.`);
+          }
+          resolve();
+        });
+      }));
     },
     getWritePromise: () => writePromise
   };
