@@ -336,32 +336,6 @@ class Book extends Model {
     return total
   }
 
-  getAbsMetadataJson() {
-    return {
-      tags: this.tags || [],
-      chapters: this.chapters?.map((c) => ({ ...c })) || [],
-      title: this.title,
-      subtitle: this.subtitle,
-      authors: this.authors.map((a) => a.name),
-      narrators: this.narrators,
-      series: this.series.map((se) => {
-        const sequence = se.bookSeries?.sequence || ''
-        if (!sequence) return se.name
-        return `${se.name} #${sequence}`
-      }),
-      genres: this.genres || [],
-      publishedYear: this.publishedYear,
-      publishedDate: this.publishedDate,
-      publisher: this.publisher,
-      description: this.description,
-      isbn: this.isbn,
-      asin: this.asin,
-      language: this.language,
-      explicit: !!this.explicit,
-      abridged: !!this.abridged
-    }
-  }
-
   /**
    *
    * @param {Object} payload - old book object

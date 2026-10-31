@@ -384,11 +384,6 @@ class Database {
         await dbMigration.migrationPatch2(this)
       }
     }
-    // Build migrations
-    if (this.serverSettings.buildNumber <= 0) {
-      await require('./utils/migrations/absMetadataMigration').migrate(this)
-    }
-
     await this.cleanDatabase()
 
     // Set if root user has been created
