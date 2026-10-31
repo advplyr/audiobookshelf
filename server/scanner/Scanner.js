@@ -1,17 +1,17 @@
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const { getTitleIgnorePrefix } = require('../utils/index')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const { getTitleIgnorePrefix } = require('../utils/index.js')
 
 // Utils
-const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
+const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils.js')
 
-const BookFinder = require('../finders/BookFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
-const LibraryScan = require('./LibraryScan')
-const LibraryScanner = require('./LibraryScanner')
-const CoverManager = require('../managers/CoverManager')
-const TaskManager = require('../managers/TaskManager')
+const BookFinder = require('../finders/BookFinder.js')
+const PodcastFinder = require('../finders/PodcastFinder.js')
+const LibraryScan = require('./LibraryScan.js')
+const LibraryScanner = require('./LibraryScanner.js')
+const CoverManager = require('../managers/CoverManager.js')
+const TaskManager = require('../managers/TaskManager.js')
 
 /**
  * @typedef QuickMatchOptions

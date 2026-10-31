@@ -1,7 +1,7 @@
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
-const adminStats = require('../utils/queries/adminStats')
+const adminStats = require('../utils/queries/adminStats.js')
 
 /**
  * @typedef RequestUserObject

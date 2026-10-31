@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
-const oldDevice = require('../objects/DeviceInfo')
+const oldDevice = require('../objects/DeviceInfo.js')
 
 class Device extends Model {
   constructor(values, options) {

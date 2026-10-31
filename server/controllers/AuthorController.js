@@ -1,16 +1,16 @@
 const { Request, Response, NextFunction } = require('express')
 const sequelize = require('sequelize')
-const fs = require('../libs/fsExtra')
-const { createNewSortInstance } = require('../libs/fastSort')
+const fs = require('../libs/fsExtra/index.js')
+const { createNewSortInstance } = require('../libs/fastSort/index.js')
 
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const CacheManager = require('../managers/CacheManager')
-const CoverManager = require('../managers/CoverManager')
-const AuthorFinder = require('../finders/AuthorFinder')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const CacheManager = require('../managers/CacheManager.js')
+const CoverManager = require('../managers/CoverManager.js')
+const AuthorFinder = require('../finders/AuthorFinder.js')
 
-const { reqSupportsWebp, isValidASIN, clampPositiveInt } = require('../utils/index')
+const { reqSupportsWebp, isValidASIN, clampPositiveInt } = require('../utils/index.js')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare

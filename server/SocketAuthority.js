@@ -1,9 +1,9 @@
 const SocketIO = require('socket.io')
-const Logger = require('./Logger')
-const Database = require('./Database')
-const TokenManager = require('./auth/TokenManager')
-const CoverSearchManager = require('./managers/CoverSearchManager')
-const { LogLevel } = require('./utils/constants')
+const Logger = require('./Logger.js')
+const Database = require('./Database.js')
+const TokenManager = require('./auth/TokenManager.js')
+const CoverSearchManager = require('./managers/CoverSearchManager.js')
+const { LogLevel } = require('./utils/constants.js')
 
 /**
  * @typedef SocketClient

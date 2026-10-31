@@ -1,7 +1,7 @@
 const axios = require('axios')
 const packageJson = require('../../package.json')
-const Logger = require('../Logger')
-const { isNullOrNaN } = require('../utils/index')
+const Logger = require('../Logger.js')
+const { isNullOrNaN } = require('../utils/index.js')
 
 class MusicBrainz {
   constructor() { }

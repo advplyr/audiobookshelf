@@ -1,5 +1,5 @@
-const SocketAuthority = require('../SocketAuthority')
-const Task = require('../objects/Task')
+const SocketAuthority = require('../SocketAuthority.js')
+const Task = require('../objects/Task.js')
 
 /**
  * @typedef TaskString

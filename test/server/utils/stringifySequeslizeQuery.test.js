@@ -1,5 +1,5 @@
 const { expect } = require('chai')
-const stringifySequelizeQuery = require('../../../server/utils/stringifySequelizeQuery')
+const stringifySequelizeQuery = require('../../../server/utils/stringifySequelizeQuery.js')
 const Sequelize = require('sequelize')
 
 class DummyClass {}

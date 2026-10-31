@@ -1,5 +1,5 @@
-const { parseNfoMetadata } = require('../utils/parsers/parseNfoMetadata')
-const { readTextFile } = require('../utils/fileUtils')
+const { parseNfoMetadata } = require('../utils/parsers/parseNfoMetadata.js')
+const { readTextFile } = require('../utils/fileUtils.js')
 
 class NfoFileScanner {
   constructor() {}

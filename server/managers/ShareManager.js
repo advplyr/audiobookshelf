@@ -1,8 +1,8 @@
-const Database = require('../Database')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const LongTimeout = require('../utils/longTimeout')
-const { elapsedPretty } = require('../utils/index')
+const Database = require('../Database.js')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const LongTimeout = require('../utils/longTimeout.js')
+const { elapsedPretty } = require('../utils/index.js')
 
 /**
  * @typedef OpenMediaItemShareObject

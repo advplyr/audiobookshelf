@@ -1,10 +1,10 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const fileUtils = require('../../../server/utils/fileUtils')
-const fs = require('../../../server/libs/fsExtra')
+const fileUtils = require('../../../server/utils/fileUtils.js')
+const fs = require('../../../server/libs/fsExtra/index.js')
 const EventEmitter = require('events')
 
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers.js')
 
 global.isWin = process.platform === 'win32'
 

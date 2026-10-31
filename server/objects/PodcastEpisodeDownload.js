@@ -1,7 +1,7 @@
 const Path = require('path')
 const uuidv4 = require('uuid').v4
-const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils')
-const globals = require('../utils/globals')
+const { sanitizeFilename, filePathToPOSIX } = require('../utils/fileUtils.js')
+const globals = require('../utils/globals.js')
 
 class PodcastEpisodeDownload {
   constructor() {

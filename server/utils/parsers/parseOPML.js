@@ -1,5 +1,5 @@
 const h = require('htmlparser2')
-const Logger = require('../../Logger')
+const Logger = require('../../Logger.js')
 
 /**
  *

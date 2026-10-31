@@ -1,8 +1,8 @@
 const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
 
-const RssFeedManager = require('../managers/RssFeedManager')
+const RssFeedManager = require('../managers/RssFeedManager.js')
 
 /**
  * @typedef RequestUserObject

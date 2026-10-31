@@ -1,9 +1,9 @@
 const { Request, Response, NextFunction } = require('express')
 const Path = require('path')
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const Database = require('../Database')
-const fileUtils = require('../utils/fileUtils')
+const fs = require('../libs/fsExtra/index.js')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
+const fileUtils = require('../utils/fileUtils.js')
 
 /**
  * @typedef RequestUserObject

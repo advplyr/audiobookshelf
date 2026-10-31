@@ -1,4 +1,4 @@
-const FileMetadata = require('../metadata/FileMetadata')
+const FileMetadata = require('../metadata/FileMetadata.js')
 
 class EBookFile {
   constructor(file) {

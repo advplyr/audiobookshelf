@@ -1,11 +1,11 @@
 const Path = require('path')
-const SocketAuthority = require('../SocketAuthority')
-const Logger = require('../Logger')
-const fs = require('../libs/fsExtra')
-const ffmpegHelpers = require('../utils/ffmpegHelpers')
-const TaskManager = require('./TaskManager')
-const Task = require('../objects/Task')
-const fileUtils = require('../utils/fileUtils')
+const SocketAuthority = require('../SocketAuthority.js')
+const Logger = require('../Logger.js')
+const fs = require('../libs/fsExtra/index.js')
+const ffmpegHelpers = require('../utils/ffmpegHelpers.js')
+const TaskManager = require('./TaskManager.js')
+const Task = require('../objects/Task.js')
+const fileUtils = require('../utils/fileUtils.js')
 
 /**
  * @typedef UpdateMetadataOptions

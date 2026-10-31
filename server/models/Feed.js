@@ -1,8 +1,8 @@
 const Path = require('path')
 const { DataTypes, Model } = require('sequelize')
-const Logger = require('../Logger')
+const Logger = require('../Logger.js')
 
-const RSS = require('../libs/rss')
+const RSS = require('../libs/rss/index.js')
 
 /**
  * @typedef FeedOptions

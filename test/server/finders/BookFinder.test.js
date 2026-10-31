@@ -1,16 +1,16 @@
 const sinon = require('sinon')
 const chai = require('chai')
 const expect = chai.expect
-const bookFinder = require('../../../server/finders/BookFinder')
-const { LogLevel } = require('../../../server/utils/constants')
-const Logger = require('../../../server/Logger')
+const bookFinder = require('../../../server/finders/BookFinder.js')
+const { LogLevel } = require('../../../server/utils/constants.js')
+const Logger = require('../../../server/Logger.js')
 Logger.setLogLevel(LogLevel.INFO)
-const { levenshteinDistance } = require('../../../server/utils/index')
+const { levenshteinDistance } = require('../../../server/utils/index.js')
 
 // levenshteinDistance is needed for manual calculation of expected scores in tests.
 // Assuming it's accessible for testing purposes or we mock/replicate its basic behavior if needed.
 // For now, we'll assume bookFinder.search uses it internally correctly.
-// const { levenshteinDistance } = require('../../../server/utils/index') // Not used directly in test logic, but for reasoning.
+    // const { levenshteinDistance } = require('../../../server/utils/index.js') // Not used directly in test logic, but for reasoning.
 
 describe('TitleCandidates', () => {
   describe('cleanAuthor non-empty', () => {

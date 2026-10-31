@@ -3,14 +3,14 @@ const passport = require('passport')
 const JwtStrategy = require('passport-jwt').Strategy
 const ExtractJwt = require('passport-jwt').ExtractJwt
 
-const Database = require('./Database')
-const Logger = require('./Logger')
-const TokenManager = require('./auth/TokenManager')
-const LocalAuthStrategy = require('./auth/LocalAuthStrategy')
-const OidcAuthStrategy = require('./auth/OidcAuthStrategy')
+const Database = require('./Database.js')
+const Logger = require('./Logger.js')
+const TokenManager = require('./auth/TokenManager.js')
+const LocalAuthStrategy = require('./auth/LocalAuthStrategy.js')
+const OidcAuthStrategy = require('./auth/OidcAuthStrategy.js')
 
-const RateLimiterFactory = require('./utils/rateLimiterFactory')
-const { escapeRegExp } = require('./utils')
+const RateLimiterFactory = require('./utils/rateLimiterFactory.js')
+const { escapeRegExp } = require('./utils/index.js')
 
 /**
  * @class Class for handling all the authentication related functionality.

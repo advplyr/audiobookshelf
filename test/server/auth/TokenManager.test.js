@@ -2,13 +2,13 @@ const { expect } = require('chai')
 const sinon = require('sinon')
 const { Op } = require('sequelize')
 
-const Database = require('../../../server/Database')
-const jwt = require('../../../server/libs/jsonwebtoken')
+const Database = require('../../../server/Database.js')
+const jwt = require('../../../server/libs/jsonwebtoken/index.js')
 
 // Database → Auth → TokenManager circular require can leave TokenManager with a partial Database reference; reload before each test
 function loadTokenManager() {
-  delete require.cache[require.resolve('../../../server/auth/TokenManager')]
-  return require('../../../server/auth/TokenManager')
+  delete require.cache[require.resolve('../../../server/auth/TokenManager.js')]
+  return require('../../../server/auth/TokenManager.js')
 }
 
 describe('TokenManager', () => {

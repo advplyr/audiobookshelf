@@ -1,5 +1,5 @@
-const Logger = require('../../Logger')
-const parseSeriesString = require('../parsers/parseSeriesString')
+const Logger = require('../../Logger.js')
+const parseSeriesString = require('../parsers/parseSeriesString.js')
 
 const mediaTypeKeys = {
   book: {

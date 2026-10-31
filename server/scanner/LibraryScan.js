@@ -1,10 +1,10 @@
 const Path = require('path')
 const uuidv4 = require('uuid').v4
-const fs = require('../libs/fsExtra')
-const date = require('../libs/dateAndTime')
+const fs = require('../libs/fsExtra/index.js')
+const date = require('../libs/dateAndTime/index.js')
 
-const Logger = require('../Logger')
-const { secondsToTimestamp, elapsedPretty } = require('../utils/index')
+const Logger = require('../Logger.js')
+const { secondsToTimestamp, elapsedPretty } = require('../utils/index.js')
 
 class LibraryScan {
   constructor() {

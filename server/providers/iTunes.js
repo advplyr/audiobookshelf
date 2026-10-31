@@ -1,6 +1,6 @@
 const axios = require('axios')
-const Logger = require('../Logger')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const Logger = require('../Logger.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
 
 /**
  * @typedef iTunesSearchParams

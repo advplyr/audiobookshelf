@@ -1,5 +1,5 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
-const parseNameString = require('../utils/parsers/parseNameString')
+const parseNameString = require('../utils/parsers/parseNameString.js')
 
 class Author extends Model {
   constructor(values, options) {

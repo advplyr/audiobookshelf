@@ -4,7 +4,7 @@ const { expect } = chai
 
 const { DataTypes } = require('sequelize')
 
-const { up, down } = require('../../../server/migrations/v2.17.6-share-add-isdownloadable')
+const { up, down } = require('../../../server/migrations/v2.17.6-share-add-isdownloadable.js')
 
 describe('Migration v2.17.6-share-add-isDownloadable', () => {
   let queryInterface, logger

@@ -1,4 +1,4 @@
-const uaParserJs = require('../../libs/uaParser')
+const uaParserJs = require('../../libs/uaParser/index.js')
 
 /**
  * @param {string|null|undefined} userAgent

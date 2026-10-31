@@ -1,7 +1,7 @@
 const { Request, Response, NextFunction } = require('express')
 const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
-const Database = require('../Database')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
 
 /**
  * @typedef RequestUserObject

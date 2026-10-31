@@ -1,7 +1,7 @@
 const axios = require('axios').default
-const Database = require('../Database')
-const Logger = require('../Logger')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+const Database = require('../Database.js')
+const Logger = require('../Logger.js')
+const htmlSanitizer = require('../utils/htmlSanitizer.js')
 
 class CustomProviderAdapter {
   #responseTimeout = 10000

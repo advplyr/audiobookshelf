@@ -1,6 +1,6 @@
 const axios = require('axios').default
-const Logger = require('../Logger')
-const { isValidASIN } = require('../utils/index')
+const Logger = require('../Logger.js')
+const { isValidASIN } = require('../utils/index.js')
 
 class Audible {
   #responseTimeout = 10000

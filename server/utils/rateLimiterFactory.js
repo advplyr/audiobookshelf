@@ -1,6 +1,6 @@
 const { rateLimit, RateLimitRequestHandler } = require('express-rate-limit')
-const Logger = require('../Logger')
-const requestIp = require('../libs/requestIp')
+const Logger = require('../Logger.js')
+const requestIp = require('../libs/requestIp/index.js')
 
 /**
  * Factory for creating authentication rate limiters

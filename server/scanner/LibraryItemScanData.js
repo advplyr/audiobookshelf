@@ -1,7 +1,7 @@
 const packageJson = require('../../package.json')
-const { LogLevel } = require('../utils/constants')
-const LibraryItem = require('../models/LibraryItem')
-const globals = require('../utils/globals')
+const { LogLevel } = require('../utils/constants.js')
+const LibraryItem = require('../models/LibraryItem.js')
+const globals = require('../utils/globals.js')
 
 class LibraryItemScanData {
   /**

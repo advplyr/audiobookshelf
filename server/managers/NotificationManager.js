@@ -1,8 +1,8 @@
 const axios = require('axios')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const { notificationData } = require('../utils/notifications')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const Database = require('../Database.js')
+const { notificationData } = require('../utils/notifications.js')
 
 class NotificationManager {
   constructor() {

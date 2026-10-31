@@ -1,8 +1,8 @@
 const { DataTypes, Model } = require('sequelize')
 
-const oldEmailSettings = require('../objects/settings/EmailSettings')
-const oldServerSettings = require('../objects/settings/ServerSettings')
-const oldNotificationSettings = require('../objects/settings/NotificationSettings')
+const oldEmailSettings = require('../objects/settings/EmailSettings.js')
+const oldServerSettings = require('../objects/settings/ServerSettings.js')
+const oldNotificationSettings = require('../objects/settings/NotificationSettings.js')
 
 class Setting extends Model {
   constructor(values, options) {

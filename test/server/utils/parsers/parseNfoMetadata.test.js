@@ -1,6 +1,6 @@
 const chai = require('chai')
 const expect = chai.expect
-const { parseNfoMetadata } = require('../../../../server/utils/parsers/parseNfoMetadata')
+const { parseNfoMetadata } = require('../../../../server/utils/parsers/parseNfoMetadata.js')
 
 describe('parseNfoMetadata', () => {
   it('returns null if nfoText is empty', () => {

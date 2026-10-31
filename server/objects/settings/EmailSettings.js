@@ -1,5 +1,5 @@
-const Logger = require('../../Logger')
-const { areEquivalent, copyValue, isNullOrNaN } = require('../../utils')
+const Logger = require('../../Logger.js')
+const { areEquivalent, copyValue, isNullOrNaN } = require('../../utils/index.js')
 
 /**
  * @typedef EreaderDeviceObject

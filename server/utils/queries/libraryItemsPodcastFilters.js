@@ -1,8 +1,8 @@
 const Sequelize = require('sequelize')
-const Database = require('../../Database')
-const Logger = require('../../Logger')
-const { profile } = require('../../utils/profiler')
-const stringifySequelizeQuery = require('../stringifySequelizeQuery')
+const Database = require('../../Database.js')
+const Logger = require('../../Logger.js')
+const { profile } = require('../../utils/profiler.js')
+const stringifySequelizeQuery = require('../stringifySequelizeQuery.js')
 
 const countCache = new Map()
 

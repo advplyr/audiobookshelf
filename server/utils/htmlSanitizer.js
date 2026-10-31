@@ -1,5 +1,5 @@
-const sanitizeHtml = require('../libs/sanitizeHtml')
-const { entities } = require('./htmlEntities')
+const sanitizeHtml = require('../libs/sanitizeHtml/index.js')
+const { entities } = require('./htmlEntities.js')
 
 /**
  *

@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize')
-const Logger = require('../../Logger')
-const Database = require('../../Database')
-const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+const Logger = require('../../Logger.js')
+const Database = require('../../Database.js')
+const libraryItemsBookFilters = require('./libraryItemsBookFilters.js')
 
 module.exports = {
   decode(text) {

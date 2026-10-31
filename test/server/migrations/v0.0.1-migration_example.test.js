@@ -1,8 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const { up, down } = require('./v0.0.1-migration_example')
+const { up, down } = require('./v0.0.1-migration_example.js')
 const { Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
 describe('migration_example', () => {
   let sequelize

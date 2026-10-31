@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 
-const oldPlaybackSession = require('../objects/PlaybackSession')
+const oldPlaybackSession = require('../objects/PlaybackSession.js')
 
 class PlaybackSession extends Model {
   constructor(values, options) {

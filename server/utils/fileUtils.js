@@ -2,10 +2,10 @@ const axios = require('axios')
 const Path = require('path')
 const ssrfFilter = require('ssrf-req-filter')
 const exec = require('child_process').exec
-const fs = require('../libs/fsExtra')
-const rra = require('../libs/recursiveReaddirAsync')
-const Logger = require('../Logger')
-const { AudioMimeType } = require('./constants')
+const fs = require('../libs/fsExtra/index.js')
+const rra = require('../libs/recursiveReaddirAsync/index.js')
+const Logger = require('../Logger.js')
+const { AudioMimeType } = require('./constants.js')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"

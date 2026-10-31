@@ -1,5 +1,5 @@
-const parseEpubMetadata = require('./parseEpubMetadata')
-const parseComicMetadata = require('./parseComicMetadata')
+const parseEpubMetadata = require('./parseEpubMetadata.js')
+const parseComicMetadata = require('./parseComicMetadata.js')
 
 /**
  * @typedef EBookFileScanData

@@ -1,10 +1,10 @@
 const Sequelize = require('sequelize')
-const cron = require('../libs/nodeCron')
-const Logger = require('../Logger')
-const Database = require('../Database')
-const LibraryScanner = require('../scanner/LibraryScanner')
+const cron = require('../libs/nodeCron/index.js')
+const Logger = require('../Logger.js')
+const Database = require('../Database.js')
+const LibraryScanner = require('../scanner/LibraryScanner.js')
 
-const ShareManager = require('./ShareManager')
+const ShareManager = require('./ShareManager.js')
 
 class CronManager {
   constructor(podcastManager, playbackSessionManager) {

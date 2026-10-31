@@ -1,10 +1,10 @@
 const { Request, Response } = require('express')
-const Logger = require('../Logger')
-const BookFinder = require('../finders/BookFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
-const AuthorFinder = require('../finders/AuthorFinder')
-const Database = require('../Database')
-const { isValidASIN, getQueryParamAsString, ValidationError, NotFoundError } = require('../utils')
+const Logger = require('../Logger.js')
+const BookFinder = require('../finders/BookFinder.js')
+const PodcastFinder = require('../finders/PodcastFinder.js')
+const AuthorFinder = require('../finders/AuthorFinder.js')
+const Database = require('../Database.js')
+const { isValidASIN, getQueryParamAsString, ValidationError, NotFoundError } = require('../utils/index.js')
 
 // Provider name mappings for display purposes
 const providerMap = {

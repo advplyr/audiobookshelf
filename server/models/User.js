@@ -2,10 +2,10 @@ const uuidv4 = require('uuid').v4
 const sequelize = require('sequelize')
 const { LRUCache } = require('lru-cache')
 
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const { isNullOrNaN } = require('../utils')
-const TokenManager = require('../auth/TokenManager')
+const Logger = require('../Logger.js')
+const SocketAuthority = require('../SocketAuthority.js')
+const { isNullOrNaN } = require('../utils/index.js')
+const TokenManager = require('../auth/TokenManager.js')
 
 class UserCache {
   constructor() {

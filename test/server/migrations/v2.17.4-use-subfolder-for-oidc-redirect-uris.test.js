@@ -1,8 +1,8 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
-const { up, down } = require('../../../server/migrations/v2.17.4-use-subfolder-for-oidc-redirect-uris')
+const { up, down } = require('../../../server/migrations/v2.17.4-use-subfolder-for-oidc-redirect-uris.js')
 const { Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+const Logger = require('../../../server/Logger.js')
 
 describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
   let queryInterface, logger, context
