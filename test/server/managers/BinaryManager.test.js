@@ -561,3 +561,28 @@ describe('Binary', () => {
     })
   })
 })
+
+
+describe('Binary downloader compatibility', () => {
+  let cache
+  beforeEach(() => { cache = ffbinaries.assetCache; ffbinaries.assetCache = {} })
+  afterEach(() => { sinon.restore(); ffbinaries.assetCache = cache })
+  it('keeps constructor properties and caches release data without another HTTP request', async () => {
+    const axios = require('axios'), platform = ffbinaries.platformSuffix
+    const get = sinon.stub(axios, 'get').resolves({ data: { bin: { [platform]: { ffmpeg: 'asset' } } } })
+    expect(BinaryManager.Binary).to.equal(Binary)
+    expect(await ffbinaries.getAssetUrl('tag', 'ffmpeg')).to.equal('asset')
+    expect(await ffbinaries.getAssetUrl('tag', 'ffmpeg')).to.equal('asset')
+    expect(get.calledOnce).to.equal(true)
+    expect(() => ffbinaries.extractAssetUrl({}, 'missing')).to.throw('not found')
+  })
+  it('swallows download/extraction failure but still removes a downloaded temporary ZIP', async () => {
+    sinon.stub(fs, 'ensureDir').resolves()
+    sinon.stub(ffbinaries, 'getAssetUrl').resolves('asset')
+    sinon.stub(ffbinaries, 'downloadAsset').resolves('/temporary/temp.zip')
+    sinon.stub(ffbinaries, 'extractFiles').rejects(new Error('failed'))
+    const remove = sinon.stub(fs, 'remove').resolves()
+    await ffbinaries.downloadAndExtractFiles('tag', 'asset', [], '/temporary')
+    expect(remove.calledOnceWithExactly('/temporary/temp.zip')).to.equal(true)
+  })
+})

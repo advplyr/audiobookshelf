@@ -1,10 +1,70 @@
 const { expect } = require('chai')
 const sinon = require('sinon')
+const axios = require('axios')
 
 // Load Database first so Auth resolves OidcAuthStrategy before the circular require completes.
 require('../../../server/Database')
 const OidcAuthStrategy = require('../../../server/auth/OidcAuthStrategy')
 const Logger = require('../../../server/Logger')
+
+describe('OidcAuthStrategy - getIssuerConfig', () => {
+  let strategy
+  let getConfig
+
+  beforeEach(() => {
+    strategy = new OidcAuthStrategy()
+    getConfig = sinon.stub(axios, 'get')
+    sinon.stub(Logger, 'error')
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('returns discovery fields without forwarding unrelated claims', async () => {
+    const config = {
+      issuer: 'https://issuer.example',
+      authorization_endpoint: 'https://issuer.example/authorize',
+      token_endpoint: 'https://issuer.example/token',
+      userinfo_endpoint: 'https://issuer.example/userinfo',
+      end_session_endpoint: 'https://issuer.example/logout',
+      jwks_uri: 'https://issuer.example/jwks',
+      id_token_signing_alg_values_supported: ['RS256']
+    }
+    getConfig.resolves({ data: { ...config, scopes_supported: ['openid'] } })
+
+    const result = await strategy.getIssuerConfig('https://issuer.example/')
+
+    expect(getConfig.calledOnceWithExactly('https://issuer.example/.well-known/openid-configuration')).to.be.true
+    expect(result).to.deep.equal(config)
+  })
+
+  it('preserves missing optional discovery fields', async () => {
+    getConfig.resolves({ data: { issuer: 'https://issuer.example' } })
+
+    const result = await strategy.getIssuerConfig('https://issuer.example')
+
+    expect(result).to.deep.equal({
+      issuer: 'https://issuer.example',
+      authorization_endpoint: undefined,
+      token_endpoint: undefined,
+      userinfo_endpoint: undefined,
+      end_session_endpoint: undefined,
+      jwks_uri: undefined,
+      id_token_signing_alg_values_supported: undefined
+    })
+  })
+
+  for (const [label, data] of [['array', []], ['null', null], ['string', 'invalid'], ['number', 42], ['boolean', true]]) {
+    it(`rejects a ${label} discovery response through the existing error path`, async () => {
+      getConfig.resolves({ data })
+
+      const result = await strategy.getIssuerConfig('https://issuer.example')
+
+      expect(result).to.deep.equal({ status: 400, error: 'Failed to get openid configuration' })
+    })
+  }
+})
 
 describe('OidcAuthStrategy - isValidWebCallbackUrl', () => {
   /** @type {OidcAuthStrategy} */

@@ -37,5 +37,9 @@ jobs:
       - name: Run lint
         run: npm run lint
 
+      - name: Check server types
+        # Check TS imports and compile-only type contracts before emitting JS.
+        run: npm run typecheck:server
+
       - name: Run tests
         run: npm test

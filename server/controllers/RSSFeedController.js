@@ -1,6 +1,7 @@
 const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const Database = require('../Database')
+const { openRSSFeedSchema } = require('../utils/rssFeedValidation')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 
@@ -51,7 +52,7 @@ class RSSFeedController {
     }
 
     // Check request body options exist
-    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
+    if (!openRSSFeedSchema.safeParse(reqBody).success) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
@@ -91,7 +92,7 @@ class RSSFeedController {
     const reqBody = req.body || {}
 
     // Check request body options exist
-    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
+    if (!openRSSFeedSchema.safeParse(reqBody).success) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
@@ -134,7 +135,7 @@ class RSSFeedController {
     const reqBody = req.body || {}
 
     // Check request body options exist
-    if (!reqBody.serverAddress || !reqBody.slug || typeof reqBody.serverAddress !== 'string' || typeof reqBody.slug !== 'string') {
+    if (!openRSSFeedSchema.safeParse(reqBody).success) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
