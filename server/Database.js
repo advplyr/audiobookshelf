@@ -5,7 +5,6 @@ const packageJson = require('../package.json')
 const fs = require('./libs/fsExtra')
 const Logger = require('./Logger')
 
-const dbMigration = require('./utils/migrations/dbMigration')
 const Auth = require('./Auth')
 
 const MigrationManager = require('./managers/MigrationManager')
@@ -345,29 +344,9 @@ class Database {
   }
 
   /**
-   * Compare two server versions
-   * @param {string} v1
-   * @param {string} v2
-   * @returns {-1|0|1} 1 if v1 > v2
-   */
-  compareVersions(v1, v2) {
-    if (!v1 || !v2) return 0
-    return v1.localeCompare(v2, undefined, { numeric: true, sensitivity: 'case', caseFirst: 'upper' })
-  }
-
-  /**
-   * Checks if migration to sqlite db is necessary & runs migration.
-   *
-   * Check if version was upgraded and run any version specific migrations.
-   *
-   * Loads most of the data from the database. This is a temporary solution.
+   * Load settings and complete database initialization.
    */
   async loadData() {
-    if (this.isNew && (await dbMigration.checkShouldMigrate())) {
-      Logger.info(`[Database] New database was created and old database was detected - migrating old to new`)
-      await dbMigration.migrate(this.models)
-    }
-
     const settingsData = await this.models.setting.getOldSettings()
     this.settings = settingsData.settings
     this.emailSettings = settingsData.emailSettings
@@ -375,15 +354,6 @@ class Database {
     this.notificationSettings = settingsData.notificationSettings
     global.ServerSettings = this.serverSettings.toJSON()
 
-    // Version specific migrations
-    if (packageJson.version !== this.serverSettings.version) {
-      if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') == 1) {
-        await dbMigration.migrationPatch(this)
-      }
-      if (['2.3.0', '2.3.1', '2.3.2', '2.3.3'].includes(this.serverSettings.version) && this.compareVersions(packageJson.version, '2.3.3') >= 0) {
-        await dbMigration.migrationPatch2(this)
-      }
-    }
     await this.cleanDatabase()
 
     // Set if root user has been created
