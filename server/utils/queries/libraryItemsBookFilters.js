@@ -95,12 +95,23 @@ module.exports = {
   },
 
   /**
+   * Book columns that can be matched by the duplicates filter
+   * Values are interpolated into SQL so this must stay a fixed whitelist
+   */
+  duplicatesFilterColumns: {
+    title: 'titleIgnorePrefix',
+    asin: 'asin',
+    isbn: 'isbn'
+  },
+
+  /**
    * Get where options for Book model
    * @param {string} group
    * @param {[string]} value
+   * @param {string} [libraryId] required for duplicates group
    * @returns {object} { Sequelize.WhereOptions, string[] }
    */
-  getMediaGroupQuery(group, value) {
+  getMediaGroupQuery(group, value, libraryId) {
     if (!group) return { mediaWhere: {}, replacements: {} }
 
     let mediaWhere = {}
@@ -232,6 +243,18 @@ module.exports = {
         mediaWhere['$authors.id$'] = null
       } else if (value === 'series') {
         mediaWhere['$series.id$'] = null
+      }
+    } else if (group === 'duplicates') {
+      const column = this.duplicatesFilterColumns[value]
+      if (column && libraryId) {
+        // Books in this library sharing a non-empty value with at least one other book in this library
+        // Filtering on id keeps this independent of table aliases (also used nested in collapse series query)
+        mediaWhere['id'] = {
+          [Sequelize.Op.in]: Sequelize.literal(
+            `(SELECT b.id FROM books b INNER JOIN libraryItems li ON li.mediaId = b.id WHERE li.libraryId = :duplicatesLibraryId AND li.mediaType = 'book' AND b.${column} COLLATE NOCASE IN (SELECT b2.${column} COLLATE NOCASE FROM books b2 INNER JOIN libraryItems li2 ON li2.mediaId = b2.id WHERE li2.libraryId = :duplicatesLibraryId AND li2.mediaType = 'book' AND b2.${column} IS NOT NULL AND b2.${column} != '' GROUP BY b2.${column} COLLATE NOCASE HAVING COUNT(*) > 1))`
+          )
+        }
+        replacements.duplicatesLibraryId = libraryId
       }
     } else if (group === 'publishedDecades') {
       const startYear = parseInt(value)
@@ -546,8 +569,14 @@ module.exports = {
       })
     }
 
-    let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
+    let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue, libraryId)
     let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
+
+    // Group duplicates together, then apply the requested sort within each group
+    const duplicatesColumn = filterGroup === 'duplicates' ? this.duplicatesFilterColumns[filterValue] : null
+    if (duplicatesColumn && !collapseseries) {
+      sortOrder.unshift([Sequelize.literal(`\`book\`.\`${duplicatesColumn}\` COLLATE NOCASE`), sortDesc && sortBy === 'media.metadata.title' ? 'DESC' : 'ASC'])
+    }
 
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
