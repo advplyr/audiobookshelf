@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
+const Author = require('../../models/Author')
 
 module.exports = {
   /**
@@ -60,10 +61,19 @@ module.exports = {
    * @returns {Promise<Object[]>} oldAuthor with numBooks
    */
   async search(libraryId, query, limit, offset) {
-    const matchAuthor = query.matchExpression('name')
+    const normalizedQuery = Author.normalizeSearchName(query.query)
+    if (!normalizedQuery) {
+      return []
+    }
+
     const authors = await Database.authorModel.findAll({
       where: {
-        [Sequelize.Op.and]: [Sequelize.literal(matchAuthor), { libraryId }]
+        [Sequelize.Op.and]: [
+          Sequelize.where(Sequelize.col('searchName'), {
+            [Sequelize.Op.substring]: normalizedQuery
+          }),
+          { libraryId }
+        ]
       },
       attributes: {
         include: [[Sequelize.literal('(SELECT count(*) FROM bookAuthors ba WHERE ba.authorId = author.id)'), 'numBooks']]

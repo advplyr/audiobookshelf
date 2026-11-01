@@ -1,4 +1,4 @@
-const { DataTypes, Model, where, fn, col } = require('sequelize')
+const { DataTypes, Model, Op } = require('sequelize')
 const parseNameString = require('../utils/parsers/parseNameString')
 
 class Author extends Model {
@@ -11,6 +11,8 @@ class Author extends Model {
     this.name
     /** @type {string} */
     this.lastFirst
+    /** @type {string} */
+    this.searchName
     /** @type {string} */
     this.asin
     /** @type {string} */
@@ -36,6 +38,75 @@ class Author extends Model {
   }
 
   /**
+   * Remove all punctionation, diacritics, and whitespace and convert to lowercase for searching and matching
+   * @param {string} name
+   * @returns {string}
+   */
+  static normalizeSearchName(name) {
+    if (!name?.trim()) return null
+    return name
+      .normalize('NFKC') // Standardize compatibility characters
+      .normalize('NFD') // Split accents into combining marks
+      .toLocaleLowerCase('und')
+      .replace(/[\p{P}\p{Z}\p{M}\s]+/gu, '') // Remove punctuation, whitespace, and diacritics
+      .trim()
+  }
+
+  /**
+   * Calculate derived fields. Returns null if name is empty after normalization
+   * @param {string} name
+   * @returns { lastFirst: string?, searchName: string? }
+   */
+  static buildAuthorDerivedFields(name) {
+    const searchName = this.normalizeSearchName(name)
+    if (!searchName) {
+      return {
+        lastFirst: null,
+        searchName: null
+      }
+    }
+
+    return {
+      lastFirst: parseNameString.nameToLastFirst(name),
+      searchName
+    }
+  }
+
+  /**
+   * Check if two author names match after normalization
+   * @param {string} leftName
+   * @param {string} rightName
+   * @returns {boolean}
+   */
+  static isAuthorNameMatch(leftName, rightName) {
+    return this.normalizeSearchName(leftName) === this.normalizeSearchName(rightName)
+  }
+
+  /**
+   * Check if any derived fields would change to reduce unnecessary database writes
+   * @param {Author} author
+   * @returns
+   */
+  static hasDerivedFieldChange(author) {
+    const derivedFields = this.buildAuthorDerivedFields(author.name)
+    let changed = false
+
+    if (author.lastFirst !== derivedFields.lastFirst) {
+      author.setDataValue('lastFirst', derivedFields.lastFirst)
+      author.changed('lastFirst', true)
+      changed = true
+    }
+
+    if (author.searchName !== derivedFields.searchName) {
+      author.setDataValue('searchName', derivedFields.searchName)
+      author.changed('searchName', true)
+      changed = true
+    }
+
+    return changed
+  }
+
+  /**
    * Check if author exists
    * @param {string} authorId
    * @returns {Promise<boolean>}
@@ -46,21 +117,26 @@ class Author extends Model {
 
   /**
    * Get author by name and libraryId. name case insensitive
-   * TODO: Look for authors ignoring punctuation
-   *
    * @param {string} authorName
    * @param {string} libraryId
+   * @param {string} [excludeAuthorId]
    * @returns {Promise<Author>}
    */
-  static async getByNameAndLibrary(authorName, libraryId) {
-    return this.findOne({
-      where: [
-        where(fn('lower', col('name')), authorName.toLowerCase()),
-        {
-          libraryId
-        }
-      ]
-    })
+  static async getByNameAndLibrary(authorName, libraryId, excludeAuthorId = null) {
+    const searchName = this.normalizeSearchName(authorName)
+    if (!searchName) return null
+
+    const where = {
+      searchName,
+      libraryId
+    }
+    if (excludeAuthorId) {
+      where.id = {
+        [Op.not]: excludeAuthorId
+      }
+    }
+
+    return this.findOne({ where })
   }
 
   /**
@@ -108,20 +184,29 @@ class Author extends Model {
   }
 
   /**
-   *
+   * Ensure duplicate authors are not created for the same library using the normalized name
    * @param {string} name
    * @param {string} libraryId
    * @returns {Promise<{ author: Author, created: boolean }>}
    */
   static async findOrCreateByNameAndLibrary(name, libraryId) {
-    const author = await this.getByNameAndLibrary(name, libraryId)
-    if (author) return { author, created: false }
-    const newAuthor = await this.create({
-      name,
-      lastFirst: this.getLastFirst(name),
-      libraryId
+    const searchName = this.normalizeSearchName(name)
+    if (!searchName) {
+      return { author: null, created: false }
+    }
+
+    const [author, created] = await this.findCreateFind({
+      where: {
+        searchName,
+        libraryId
+      },
+      defaults: {
+        name,
+        libraryId,
+        ...this.buildAuthorDerivedFields(name)
+      }
     })
-    return { author: newAuthor, created: true }
+    return { author, created }
   }
 
   /**
@@ -138,6 +223,7 @@ class Author extends Model {
         },
         name: DataTypes.STRING,
         lastFirst: DataTypes.STRING,
+        searchName: DataTypes.STRING,
         asin: DataTypes.STRING,
         description: DataTypes.TEXT,
         imagePath: DataTypes.STRING
@@ -161,11 +247,28 @@ class Author extends Model {
           //   }]
           // },
           {
+            fields: [
+              {
+                name: 'searchName',
+                collate: 'NOCASE'
+              }
+            ]
+          },
+          {
+            fields: ['searchName', 'libraryId'],
+            unique: true,
+            name: 'unique_author_search_name_per_library'
+          },
+          {
             fields: ['libraryId']
           }
         ]
       }
     )
+
+    Author.beforeSave((author) => {
+      Object.assign(author, Author.buildAuthorDerivedFields(author.name))
+    })
 
     const { library } = sequelize.models
     library.hasMany(Author, {
