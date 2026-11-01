@@ -1140,8 +1140,14 @@ class LibraryController {
       })
     }
 
+    // sorting
+    const key = req.query.sortBy === 'numBooks' ? 'numBooks' : 'name';
+    const order = req.query.sortOrder === 'desc' ? 'desc' : 'asc';
+    const narratorArr = Object.values(narrators);
+    const sorted = naturalSort(narratorArr)[order]((n) => n[key])
+
     res.json({
-      narrators: naturalSort(Object.values(narrators)).asc((n) => n.name)
+      narrators: sorted
     })
   }
 
