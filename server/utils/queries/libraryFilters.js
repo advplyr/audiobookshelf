@@ -416,7 +416,7 @@ module.exports = {
   },
 
   /**
-   * serialize the next episode for podcasts with finished and unfinished episodes
+   * serialize the next episode for started unfinished podcasts
    * @param {import('../../models/Library')} library
    * @param {import('../../models/User')} user
    * @param {number} limit

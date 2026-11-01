@@ -632,21 +632,16 @@ module.exports = {
   },
 
   /**
-   * build the unfinished episode condition
+   * build the visible unfinished episode condition
    * @param {string} episodeAlias - table alias for podcastEpisodes (default: 'pe')
-   * @param {boolean} excludeHidden - exclude episodes hidden from continue listening
    * @returns {string}
    */
-  getUnfinishedEpisodeCondition(episodeAlias = 'pe', excludeHidden = false) {
-    // exclude hidden progress when requested
-    if (excludeHidden) {
-      return `((SELECT count(*) FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 OR ((SELECT isFinished FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 AND (SELECT hideFromContinueListening FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) != 1))`
-    }
-    return `(SELECT isFinished FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 OR (SELECT count(*) FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0`
+  getUnfinishedEpisodeCondition(episodeAlias = 'pe') {
+    return `((SELECT count(*) FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 OR ((SELECT isFinished FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) = 0 AND (SELECT hideFromContinueListening FROM mediaProgresses WHERE mediaItemId = ${episodeAlias}.id AND userId = :userId) != 1))`
   },
 
   /**
-   * select the oldest unfinished serial or newest unfinished episodic episode
+   * select unfinished episodes by publication date or import date
    * @param {import('../../models/User')} user
    * @param {import('../../models/Library')} library
    * @param {number} limit
@@ -660,11 +655,13 @@ module.exports = {
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
     const userId = user.id
 
-    // require finished and visible unfinished episodes
-    const unfinishedCondition = this.getUnfinishedEpisodeCondition('pe', true)
+    // finished or partially played episodes start a podcast
+    const startedProgressCondition = '(mp.isFinished = 1 OR mp.currentTime > 0)'
+    // require started podcasts with visible unfinished episodes
+    const unfinishedCondition = this.getUnfinishedEpisodeCondition('pe')
     const { rows: podcasts, count } = await Database.podcastModel.findAndCountAll({
       where: [
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND mp.isFinished = 1)`), {
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND ${startedProgressCondition})`), {
           [Sequelize.Op.gte]: 1
         }),
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe WHERE pe.podcastId = podcast.id AND (${unfinishedCondition}))`), {
@@ -673,7 +670,7 @@ module.exports = {
         ...userPermissionPodcastWhere.podcastWhere
       ],
       attributes: {
-        include: [[Sequelize.literal(`(SELECT max(mp.updatedAt) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND mp.isFinished = 1)`), 'recent_progress']]
+        include: [[Sequelize.literal(`(SELECT max(mp.updatedAt) FROM podcastEpisodes pe INNER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND ${startedProgressCondition})`), 'recent_progress']]
       },
       replacements: { userId, ...userPermissionPodcastWhere.replacements },
       include: [
@@ -697,9 +694,9 @@ module.exports = {
     const serialPodcasts = podcasts.filter((p) => p.podcastType === 'serial')
     const episodicPodcasts = podcasts.filter((p) => p.podcastType !== 'serial')
 
-    const unfinishedConditionSubquery = this.getUnfinishedEpisodeCondition('pe2', true)
-    // break publication-date ties using eligible episodes only
-    const unfinishedConditionTiebreaker = this.getUnfinishedEpisodeCondition('pe3', true)
+    const unfinishedConditionSubquery = this.getUnfinishedEpisodeCondition('pe2')
+    // break effective-date ties using eligible episodes only
+    const unfinishedConditionTiebreaker = this.getUnfinishedEpisodeCondition('pe3')
     const episodeMap = new Map()
 
     // select the oldest unfinished serial episodes
@@ -710,13 +707,13 @@ module.exports = {
         `SELECT pe.id, pe.podcastId
          FROM podcastEpisodes pe
          INNER JOIN (
-           SELECT pe2.podcastId, MIN(pe2.publishedAt) as targetPublishedAt
+           SELECT pe2.podcastId, MIN(COALESCE(pe2.publishedAt, pe2.createdAt)) as targetPublishedAt
            FROM podcastEpisodes pe2
            WHERE pe2.podcastId IN (:podcastIds) AND (${unfinishedConditionSubquery})
            GROUP BY pe2.podcastId
-         ) AS target ON pe.podcastId = target.podcastId AND pe.publishedAt = target.targetPublishedAt
+         ) AS target ON pe.podcastId = target.podcastId AND COALESCE(pe.publishedAt, pe.createdAt) = target.targetPublishedAt
          WHERE pe.podcastId IN (:podcastIds)
-         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND pe3.publishedAt = target.targetPublishedAt AND (${unfinishedConditionTiebreaker}) ORDER BY pe3.id ASC LIMIT 1)`,
+         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND COALESCE(pe3.publishedAt, pe3.createdAt) = target.targetPublishedAt AND (${unfinishedConditionTiebreaker}) ORDER BY pe3.id ASC LIMIT 1)`,
         {
           replacements: { podcastIds: serialPodcastIds, userId },
           type: Sequelize.QueryTypes.SELECT
@@ -737,13 +734,13 @@ module.exports = {
         `SELECT pe.id, pe.podcastId
          FROM podcastEpisodes pe
          INNER JOIN (
-           SELECT pe2.podcastId, MAX(pe2.publishedAt) as targetPublishedAt
+           SELECT pe2.podcastId, MAX(COALESCE(pe2.publishedAt, pe2.createdAt)) as targetPublishedAt
            FROM podcastEpisodes pe2
            WHERE pe2.podcastId IN (:podcastIds) AND (${unfinishedConditionSubquery})
            GROUP BY pe2.podcastId
-         ) AS target ON pe.podcastId = target.podcastId AND pe.publishedAt = target.targetPublishedAt
+         ) AS target ON pe.podcastId = target.podcastId AND COALESCE(pe.publishedAt, pe.createdAt) = target.targetPublishedAt
          WHERE pe.podcastId IN (:podcastIds)
-         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND pe3.publishedAt = target.targetPublishedAt AND (${unfinishedConditionTiebreaker}) ORDER BY pe3.id ASC LIMIT 1)`,
+         AND pe.id = (SELECT pe3.id FROM podcastEpisodes pe3 WHERE pe3.podcastId = pe.podcastId AND COALESCE(pe3.publishedAt, pe3.createdAt) = target.targetPublishedAt AND (${unfinishedConditionTiebreaker}) ORDER BY pe3.id ASC LIMIT 1)`,
         {
           replacements: { podcastIds: episodicPodcastIds, userId },
           type: Sequelize.QueryTypes.SELECT
@@ -794,7 +791,7 @@ module.exports = {
 
         libraryItem.media = podcastData
         libraryItem.recentEpisode = episode.toOldJSON(libraryItem.id)
-        return { libraryItem, sortKey: episode.publishedAt || 0 }
+        return { libraryItem, sortKey: episode.publishedAt || episode.createdAt }
       })
       // discard unavailable selections
       .filter(Boolean)
@@ -819,7 +816,7 @@ module.exports = {
 
         libraryItem.media = podcastData
         libraryItem.recentEpisode = episode.toOldJSON(libraryItem.id)
-        return { libraryItem, sortKey: episode.publishedAt || 0 }
+        return { libraryItem, sortKey: episode.publishedAt || episode.createdAt }
       })
       // discard unavailable selections
       .filter(Boolean)

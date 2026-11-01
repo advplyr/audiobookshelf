@@ -10,11 +10,8 @@ const libraryItemsPodcastFilters = require('../../../server/utils/queries/librar
 describe('podcast continue series', () => {
   let sequence
   let user
-  let otherUser
   let library
   let libraryFolder
-  let otherLibrary
-  let otherLibraryFolder
 
   // create a user with explicit permissions
   async function createUser(permissionOverrides = {}) {
@@ -65,13 +62,14 @@ describe('podcast continue series', () => {
     return { podcast, libraryItem }
   }
 
-  // create a dated podcast episode
-  async function createEpisode(podcast, title, publishedAt, id) {
+  // create an episode with controllable publication and import dates
+  async function createEpisode(podcast, title, publishedAt, options = {}) {
     return Database.podcastEpisodeModel.create({
-      id,
+      id: options.id,
       podcastId: podcast.id,
       title,
       publishedAt,
+      createdAt: options.createdAt,
       audioFile: {
         ino: title,
         duration: 60,
@@ -90,9 +88,10 @@ describe('podcast continue series', () => {
       mediaItemType: 'podcastEpisode',
       podcastId: episode.podcastId,
       duration: 60,
-      currentTime: options.isFinished ? 60 : 10,
+      currentTime: options.currentTime ?? (options.isFinished ? 60 : 10),
       isFinished: options.isFinished || false,
       hideFromContinueListening: options.hideFromContinueListening || false,
+      updatedAt: options.updatedAt,
       extraData: {}
     })
   }
@@ -107,9 +106,7 @@ describe('podcast continue series', () => {
     await Database.buildModels()
 
     user = await createUser()
-    otherUser = await createUser()
     ;({ library, folder: libraryFolder } = await createLibrary('podcasts'))
-    ;({ library: otherLibrary, folder: otherLibraryFolder } = await createLibrary('other-podcasts'))
   })
 
   // restore stubs and release sqlite
@@ -140,6 +137,83 @@ describe('podcast continue series', () => {
     expect(result.libraryItems[1].recentEpisode.id).to.equal(episodicNext.id)
   })
 
+  // distinguish partial playback from empty progress records
+  it('includes partially played podcasts but excludes zero-progress podcasts', async () => {
+    const expectedEpisodeIds = []
+
+    // exercise partial-only progress in both ordering modes
+    for (const podcastType of ['serial', 'episodic']) {
+      const partial = await createPodcast(library, libraryFolder, { title: `partial-${podcastType}`, podcastType })
+      const first = await createEpisode(partial.podcast, 'partial-first', new Date('2025-01-01'))
+      const last = await createEpisode(partial.podcast, 'partial-last', new Date('2025-01-02'))
+      await createProgress(user, first, { currentTime: 10 })
+      expectedEpisodeIds.push(podcastType === 'serial' ? first.id : last.id)
+
+      const unstarted = await createPodcast(library, libraryFolder, { title: `zero-${podcastType}`, podcastType })
+      const untouched = await createEpisode(unstarted.podcast, 'untouched', new Date('2025-01-01'))
+      await createProgress(user, untouched, { currentTime: 0 })
+    }
+
+    const result = await libraryFilters.getPodcastEpisodesContinueSeries(library, user, 10)
+
+    expect(result.count).to.equal(2)
+    // verify both serialized episode selections
+    expect(result.libraryItems.map((item) => item.recentEpisode.id)).to.deep.equal(expectedEpisodeIds)
+  })
+
+  // include partial playback when ranking limited shelves
+  it('paginates podcasts by recent finished or partial playback', async () => {
+    const finished = await createPodcast(library, libraryFolder, { title: 'older-finished', podcastType: 'serial' })
+    const completed = await createEpisode(finished.podcast, 'completed', new Date('2025-01-01'))
+    await createEpisode(finished.podcast, 'next', new Date('2025-01-02'))
+    await createProgress(user, completed, { isFinished: true, updatedAt: new Date('2025-02-01') })
+
+    const partial = await createPodcast(library, libraryFolder, { title: 'recent-partial', podcastType: 'serial' })
+    const started = await createEpisode(partial.podcast, 'started', new Date('2025-01-01'))
+    await createProgress(user, started, { updatedAt: new Date('2025-03-01') })
+
+    const firstPage = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, 1, 0)
+    const secondPage = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, 1, 1)
+
+    expect(firstPage.count).to.equal(2)
+    expect(firstPage.libraryItems).to.have.length(1)
+    expect(firstPage.libraryItems[0].id).to.equal(partial.libraryItem.id)
+    expect(secondPage.count).to.equal(2)
+    expect(secondPage.libraryItems).to.have.length(1)
+    expect(secondPage.libraryItems[0].id).to.equal(finished.libraryItem.id)
+  })
+
+  // use import dates consistently for undated episodes
+  it('selects and orders all-undated and mixed-date podcasts without dropping counted items', async () => {
+    const expectedByType = { serial: [], episodic: [] }
+
+    // cover both episode ordering modes
+    for (const podcastType of ['serial', 'episodic']) {
+      // cover exclusively undated and mixed publication dates
+      for (const scenario of ['undated', 'mixed']) {
+        const month = scenario === 'undated' ? '01' : '02'
+        const podcast = await createPodcast(library, libraryFolder, { title: `${podcastType}-${scenario}`, podcastType })
+        const finished = await createEpisode(podcast.podcast, 'finished', null, { createdAt: new Date(`2025-${month}-01`) })
+        const oldest = await createEpisode(podcast.podcast, 'oldest', null, { createdAt: new Date(`2025-${month}-02`) })
+        // publication dates take precedence over later import dates
+        const middle = await createEpisode(podcast.podcast, 'middle', scenario === 'mixed' ? new Date(`2025-${month}-03`) : null, { createdAt: new Date(`2025-${month}-10`) })
+        const newest = await createEpisode(podcast.podcast, 'newest', null, { createdAt: new Date(`2025-${month}-04`) })
+        await createProgress(user, finished, { isFinished: true, updatedAt: new Date(`2025-${month}-20`) })
+        // all-undated ordering follows import dates rather than fixture names
+        const latest = scenario === 'mixed' ? newest : middle
+        const selected = podcastType === 'serial' ? oldest : latest
+        expectedByType[podcastType].push(selected.id)
+      }
+    }
+
+    const result = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, 10, 0)
+
+    expect(result.count).to.equal(4)
+    expect(result.libraryItems).to.have.length(4)
+    // verify fallback dates also control ordering across podcasts
+    expect(result.libraryItems.map((item) => item.recentEpisode.id)).to.deep.equal([...expectedByType.serial, ...expectedByType.episodic.reverse()])
+  })
+
   // verify eligibility and isolation boundaries
   it('omits unstarted, finished, hidden-only, other-user, and other-library podcasts', async () => {
     const eligible = await createPodcast(library, libraryFolder, { title: 'eligible', podcastType: 'serial' })
@@ -163,11 +237,13 @@ describe('podcast continue series', () => {
     await createProgress(user, hiddenFinished, { isFinished: true })
     await createProgress(user, hiddenNext, { hideFromContinueListening: true })
 
+    const otherUser = await createUser()
     const otherUserOnly = await createPodcast(library, libraryFolder, { title: 'other-user', podcastType: 'serial' })
     const otherUserFinished = await createEpisode(otherUserOnly.podcast, 'other-user-1', new Date('2025-05-01'))
     await createEpisode(otherUserOnly.podcast, 'other-user-2', new Date('2025-05-02'))
     await createProgress(otherUser, otherUserFinished, { isFinished: true })
 
+    const { library: otherLibrary, folder: otherLibraryFolder } = await createLibrary('other-podcasts')
     const outsideLibrary = await createPodcast(otherLibrary, otherLibraryFolder, { title: 'outside-library', podcastType: 'serial' })
     const outsideFinished = await createEpisode(outsideLibrary.podcast, 'outside-1', new Date('2025-06-01'))
     await createEpisode(outsideLibrary.podcast, 'outside-2', new Date('2025-06-02'))
@@ -221,15 +297,15 @@ describe('podcast continue series', () => {
       // keep deterministic ids unique by type
       const typeId = podcastType === 'serial' ? '1' : '2'
       const finishedTie = await createPodcast(library, libraryFolder, { title: `${podcastType}-finished-tie`, podcastType })
-      const finishedCandidate = await createEpisode(finishedTie.podcast, `${podcastType}-finished-candidate`, new Date('2025-01-01'), `00000000-0000-4000-8000-00000000${typeId}101`)
-      const unfinishedCandidate = await createEpisode(finishedTie.podcast, `${podcastType}-unfinished-candidate`, new Date('2025-01-01'), `00000000-0000-4000-8000-00000000${typeId}102`)
+      const finishedCandidate = await createEpisode(finishedTie.podcast, `${podcastType}-finished-candidate`, new Date('2025-01-01'), { id: `00000000-0000-4000-8000-00000000${typeId}101` })
+      const unfinishedCandidate = await createEpisode(finishedTie.podcast, `${podcastType}-unfinished-candidate`, new Date('2025-01-01'), { id: `00000000-0000-4000-8000-00000000${typeId}102` })
       await createProgress(user, finishedCandidate, { isFinished: true })
       expectedEpisodeIds.set(finishedTie.libraryItem.id, unfinishedCandidate.id)
 
       const hiddenTie = await createPodcast(library, libraryFolder, { title: `${podcastType}-hidden-tie`, podcastType })
-      const earlierFinished = await createEpisode(hiddenTie.podcast, `${podcastType}-earlier-finished`, new Date('2024-12-31'), `00000000-0000-4000-8000-00000000${typeId}200`)
-      const hiddenCandidate = await createEpisode(hiddenTie.podcast, `${podcastType}-hidden-candidate`, new Date('2025-01-01'), `00000000-0000-4000-8000-00000000${typeId}201`)
-      const visibleCandidate = await createEpisode(hiddenTie.podcast, `${podcastType}-visible-candidate`, new Date('2025-01-01'), `00000000-0000-4000-8000-00000000${typeId}202`)
+      const earlierFinished = await createEpisode(hiddenTie.podcast, `${podcastType}-earlier-finished`, new Date('2024-12-31'), { id: `00000000-0000-4000-8000-00000000${typeId}200` })
+      const hiddenCandidate = await createEpisode(hiddenTie.podcast, `${podcastType}-hidden-candidate`, new Date('2025-01-01'), { id: `00000000-0000-4000-8000-00000000${typeId}201` })
+      const visibleCandidate = await createEpisode(hiddenTie.podcast, `${podcastType}-visible-candidate`, new Date('2025-01-01'), { id: `00000000-0000-4000-8000-00000000${typeId}202` })
       await createProgress(user, earlierFinished, { isFinished: true })
       await createProgress(user, hiddenCandidate, { hideFromContinueListening: true })
       expectedEpisodeIds.set(hiddenTie.libraryItem.id, visibleCandidate.id)
