@@ -44,6 +44,14 @@
         <div class="w-6 h-6 rounded-full bg-black/30 flex items-center justify-center ml-3">
           <span class="font-mono">{{ $formatNumber(numShowing) }}</span>
         </div>
+        <div v-if="selectedSeries.totalDuration" class="flex items-center ml-4 text-sm opacity-70 pt-0.5 hidden sm:flex">
+          <template v-if="selectedSeries.progress && selectedSeries.progress.totalDurationListened">
+            <span>{{ $elapsedPretty(selectedSeries.progress.totalDurationListened).replace(' hr', 'h').replace(' min', 'm') }}</span>
+            <span class="mx-1.5">/</span>
+          </template>
+
+          <span>{{ $elapsedPretty(selectedSeries.totalDuration).replace(' hr', 'h').replace(' min', 'm') }}</span>
+        </div>
         <div class="grow" />
 
         <!-- RSS feed -->
