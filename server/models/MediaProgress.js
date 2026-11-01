@@ -80,6 +80,10 @@ class MediaProgress extends Model {
         indexes: [
           {
             fields: ['updatedAt']
+          },
+          {
+            name: 'media_progresses_user_item_finished_time',
+            fields: ['userId', 'mediaItemId', 'isFinished', 'currentTime']
           }
         ]
       }

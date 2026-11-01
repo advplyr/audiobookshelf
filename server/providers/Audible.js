@@ -83,7 +83,8 @@ class Audible {
       duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
       region: item.region || null,
       rating: item.rating || null,
-      abridged: formatType === 'abridged'
+      abridged: formatType === 'abridged',
+      explicit: !!item.isAdult
     }
   }
 
@@ -159,7 +160,7 @@ class Audible {
           timeout
         })
         .then((res) => {
-          if (!res?.data?.products) return null
+          if (!res?.data?.products) return []
           return Promise.all(res.data.products.map((result) => this.asinSearch(result.asin, region, timeout)))
         })
         .catch((error) => {

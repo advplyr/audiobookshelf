@@ -57,7 +57,7 @@ class RSSFeedController {
     }
 
     // Check item has audio tracks
-    if (!itemExpanded.hasAudioTracks()) {
+    if (!itemExpanded.hasAudioTracks) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed for item "${itemExpanded.media.title}" because it has no audio tracks`)
       return res.status(400).send('Item has no audio tracks')
     }

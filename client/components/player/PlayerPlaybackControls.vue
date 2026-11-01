@@ -8,7 +8,7 @@
           </button>
         </ui-tooltip>
         <ui-tooltip direction="top" :text="jumpBackwardText">
-          <button :aria-label="jumpForwardText" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
+          <button :aria-label="jumpBackwardText" class="text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
             <span class="material-symbols text-2xl sm:text-3xl">replay</span>
           </button>
         </ui-tooltip>

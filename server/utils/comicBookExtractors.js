@@ -6,6 +6,21 @@ const fs = require('../libs/fsExtra')
 const StreamZip = require('../libs/nodeStreamZip')
 const Archive = require('../libs/libarchive/archive')
 const { isWritable } = require('./fileUtils')
+const { sanitizePath } = require('../libs/archiver/archiverUtils')
+
+/**
+ * Sanitize a path from an archive
+ *
+ * @param {string} filename
+ * @returns {string}
+ */
+function sanitizeArchivePath(filename) {
+  const sanitizedPath = Path.normalize(sanitizePath(filename))
+  if (!sanitizedPath || sanitizedPath === '.' || sanitizedPath === '..' || sanitizedPath.startsWith(`..${Path.sep}`) || Path.isAbsolute(sanitizedPath)) {
+    throw new Error(`[CbrComicBookExtractor] Unsafe archive path "${filename}"`)
+  }
+  return sanitizedPath
+}
 
 class AbstractComicBookExtractor {
   constructor(comicPath) {
@@ -57,7 +72,11 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     this.tmpDir = global.MetadataPath ? Path.join(global.MetadataPath, 'tmp') : os.tmpdir()
     await fs.ensureDir(this.tmpDir)
     if (!(await isWritable(this.tmpDir))) throw new Error(`[CbrComicBookExtractor] Temp directory "${this.tmpDir}" is not writable`)
-    this.archive = await unrar.createExtractorFromFile({ filepath: this.comicPath, targetPath: this.tmpDir })
+    this.archive = await unrar.createExtractorFromFile({
+      filepath: this.comicPath,
+      targetPath: this.tmpDir,
+      filenameTransform: sanitizeArchivePath
+    })
     Logger.debug(`[CbrComicBookExtractor] Opened comic book "${this.comicPath}". Using temp directory "${this.tmpDir}" for extraction.`)
   }
 
@@ -81,14 +100,22 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     }
   }
 
+  getExtractedFilePath(file) {
+    const sanitizedFile = sanitizeArchivePath(file)
+    return {
+      filePath: Path.join(this.tmpDir, sanitizedFile),
+      relativePath: sanitizedFile
+    }
+  }
+
   async extractToBuffer(file) {
     if (!this.archive) return null
     const extracted = this.archive.extract({ files: [file] })
     const files = [...extracted.files]
-    const filePath = Path.join(this.tmpDir, files[0].fileHeader.name)
+    const { filePath, relativePath } = this.getExtractedFilePath(files[0].fileHeader.name)
     const fileData = await fs.readFile(filePath)
     await fs.remove(filePath)
-    await this.removeEmptyParentDirs(files[0].fileHeader.name)
+    await this.removeEmptyParentDirs(relativePath)
     Logger.debug(`[CbrComicBookExtractor] Extracted file "${file}" from comic book "${this.comicPath}" to buffer, size: ${fileData.length}`)
     return fileData
   }
@@ -97,9 +124,9 @@ class CbrComicBookExtractor extends AbstractComicBookExtractor {
     if (!this.archive) return false
     const extracted = this.archive.extract({ files: [file] })
     const files = [...extracted.files]
-    const extractedFilePath = Path.join(this.tmpDir, files[0].fileHeader.name)
+    const { filePath: extractedFilePath, relativePath } = this.getExtractedFilePath(files[0].fileHeader.name)
     await fs.move(extractedFilePath, outputFilePath, { overwrite: true })
-    await this.removeEmptyParentDirs(files[0].fileHeader.name)
+    await this.removeEmptyParentDirs(relativePath)
     Logger.debug(`[CbrComicBookExtractor] Extracted file "${file}" from comic book "${this.comicPath}" to "${outputFilePath}"`)
     return true
   }

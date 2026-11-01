@@ -227,7 +227,7 @@ class BookFinder {
       title = this.#removeAuthorFromTitle(title)
 
       const titleTransformers = [
-        [/([,:;_]| by ).*/g, ''], // Remove subtitle
+        [/(: |[,;_]| by ).*/g, ''], // Remove subtitle
         [/(^| )\d+k(bps)?( |$)/, ' '], // Remove bitrate
         [/ (2nd|3rd|\d+th)\s+ed(\.|ition)?/g, ''], // Remove edition
         [/(^| |\.)(m4b|m4a|mp3)( |$)/g, ''], // Remove file-type
@@ -646,11 +646,11 @@ class BookFinder {
 module.exports = new BookFinder()
 
 function hasSubtitle(title) {
-  return title.includes(':') || title.includes(' - ')
+  return title.includes(': ') || title.includes(' - ')
 }
 function stripSubtitle(title) {
-  if (title.includes(':')) {
-    return title.split(':')[0].trim()
+  if (title.includes(': ')) {
+    return title.split(': ')[0].trim()
   } else if (title.includes(' - ')) {
     return title.split(' - ')[0].trim()
   }

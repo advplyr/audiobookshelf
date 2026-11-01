@@ -3,7 +3,8 @@
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-linear-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
     <div ref="content" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }" v-click-outside="clickedOutside">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1" v-html="message" />
+        <p v-if="allowHtmlMessage" id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1" v-html="sanitizedMessage" />
+        <p v-else id="confirm-prompt-message" class="text-lg mb-6 mt-2 px-1">{{ message }}</p>
 
         <ui-checkbox v-if="checkboxLabel" v-model="checkboxValue" checkbox-bg="bg" :label="checkboxLabel" label-class="pl-2 text-base" class="mb-6 px-1" />
 
@@ -51,6 +52,17 @@ export default {
     },
     message() {
       return this.confirmPromptOptions.message || ''
+    },
+    allowHtmlMessage() {
+      return !!this.confirmPromptOptions.allowHtml
+    },
+    sanitizedMessage() {
+      if (!this.allowHtmlMessage) return this.message
+
+      return this.escapeHtml(this.message)
+        .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+        .replace(/&lt;code&gt;/gi, '<code>')
+        .replace(/&lt;\/code&gt;/gi, '</code>')
     },
     callback() {
       return this.confirmPromptOptions.callback
@@ -102,6 +114,14 @@ export default {
     confirm() {
       if (this.callback) this.callback(true, this.checkboxValue)
       this.show = false
+    },
+    escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
     },
     setShow() {
       this.checkboxValue = this.checkboxDefaultValue

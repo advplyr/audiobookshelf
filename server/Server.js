@@ -14,6 +14,7 @@ const { version } = require('../package.json')
 const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
+const { getRequestOrigin } = require('./utils/requestUtils')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -45,6 +46,34 @@ const passport = require('passport')
 const expressSession = require('express-session')
 const MemoryStore = require('./libs/memorystore')
 
+/**
+ * Normalize to '' (root) or '/segment' with no trailing slash.
+ * Matches audiobookshelf-client-react `src/lib/basePath.ts`.
+ * @param {string|null|undefined} basePath
+ * @returns {string}
+ */
+function normalizeBasePath(basePath) {
+  if (!basePath) return ''
+
+  const trimmed = basePath.trim()
+  if (!trimmed || trimmed === '/') return ''
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash
+}
+
+/**
+ * `next()` for a custom server is a NextCustomServer wrapper. After prepare(),
+ * `.server` is another NextServer wrapper; the Node server with `nextConfig` is
+ * one more `.server` down. Older react clients have no basePath and must keep
+ * Express-stripped URLs.
+ */
+function getPreparedNextBasePath(nextApp) {
+  const nodeServer = nextApp.server?.server
+  const basePath = nodeServer?.nextConfig?.basePath
+  return typeof basePath === 'string' ? basePath : ''
+}
+
 class Server {
   constructor(SOURCE, PORT, HOST, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
@@ -53,7 +82,7 @@ class Server {
     global.isWin = process.platform === 'win32'
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
-    global.RouterBasePath = ROUTER_BASE_PATH
+    global.RouterBasePath = normalizeBasePath(ROUTER_BASE_PATH)
     global.XAccel = process.env.USE_X_ACCEL
     global.AllowCors = process.env.ALLOW_CORS === '1'
 
@@ -157,6 +186,12 @@ class Server {
     }
 
     await Database.init(false)
+
+    if (typeof global.RouterBasePath !== 'string') {
+      throw new Error('[Server] RouterBasePath must be a string before serving requests')
+    }
+    Logger.info(`[Server] Serving from base path "${global.RouterBasePath || '/'}"`)
+
     // Create or set JWT secret in token manager
     await this.auth.tokenManager.initTokenSecret()
 
@@ -288,10 +323,9 @@ class Server {
     // if RouterBasePath is set, modify all requests to include the base path
     app.use((req, res, next) => {
       const urlStartsWithRouterBasePath = req.url.startsWith(global.RouterBasePath)
-      const host = req.get('host')
-      const protocol = req.secure || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      const { origin } = getRequestOrigin(req)
       const prefix = urlStartsWithRouterBasePath ? global.RouterBasePath : ''
-      req.originalHostPrefix = `${protocol}://${host}${prefix}`
+      req.originalHostPrefix = `${origin}${prefix}`
       if (!urlStartsWithRouterBasePath) {
         req.url = `${global.RouterBasePath}${req.url}`
       }
@@ -302,7 +336,9 @@ class Server {
 
     this.server = http.createServer(app)
 
+    // Skip file upload parsing for internal-api routes (Next.js proxies read multipart bodies).
     router.use(
+      /^(?!\/internal-api).*/,
       fileUpload({
         defCharset: 'utf8',
         defParamCharset: 'utf8',
@@ -407,7 +443,25 @@ class Server {
       const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
-      router.all('*', (req, res) => handle(req, res))
+      const nextBasePath = getPreparedNextBasePath(nextApp)
+      if (nextBasePath) {
+        Logger.info(`[Server] Next client basePath is "${nextBasePath}"`)
+      } else {
+        Logger.info(`[Server] Next client has no basePath; leaving Express-stripped URLs as-is`)
+      }
+      router.all('*', (req, res) => {
+        // Next is configured with the same base path as this router, but Express strips the mount
+        // prefix from req.url, so put it back. The bare mount path is passed through without a
+        // trailing slash, which Next would otherwise redirect away from on every request.
+        // Skip when Next has no basePath (older client on master).
+        if (nextBasePath && req.baseUrl) {
+          const queryIndex = req.url.indexOf('?')
+          const pathname = queryIndex === -1 ? req.url : req.url.slice(0, queryIndex)
+          const search = queryIndex === -1 ? '' : req.url.slice(queryIndex)
+          req.url = `${req.baseUrl}${pathname === '/' ? '' : pathname}${search}`
+        }
+        handle(req, res)
+      })
     }
 
     const unixSocketPrefix = 'unix/'
@@ -434,7 +488,11 @@ class Server {
     const rootUsername = newRoot.username || 'root'
     const rootPash = newRoot.password ? await this.auth.localAuthStrategy.hashPassword(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    await Database.createRootUser(rootUsername, rootPash, this.auth)
+    const created = await Database.createRootUser(rootUsername, rootPash, this.auth)
+    if (!created) {
+      Logger.error(`[Server] attempt to init server when server already has a root user`)
+      return res.sendStatus(500)
+    }
 
     res.sendStatus(200)
   }

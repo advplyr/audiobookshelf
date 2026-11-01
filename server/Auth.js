@@ -81,7 +81,7 @@ class Auth {
    * @param {import('./models/User')} user
    * @param {Request} req
    * @param {Response} res
-   * @returns {Promise<string>} accessToken only if user is current user and refresh token is valid
+   * @returns {Promise<{ accessToken:string, refreshToken:string }|null>} new tokens for the current session if kept alive
    */
   async invalidateJwtSessionsForUser(user, req, res) {
     return this.tokenManager.invalidateJwtSessionsForUser(user, req, res)
@@ -216,14 +216,15 @@ class Auth {
    * @returns {Object|null} - Returns error object if validation fails, null if successful
    */
   paramsToCookies(req, res, authMethod = 'local') {
-    const TWO_MINUTES = 120000 // 2 minutes in milliseconds
+    // Cookie max age in milliseconds
+    const TEN_MINUTES = 10 * 60 * 1000
     const callback = req.query.redirect_uri || req.query.callback
 
     // Additional handling for non-API based authMethod
     if (!this.isAuthMethodAPIBased(authMethod)) {
       // Store 'auth_state' if present in the request
       if (req.query.state) {
-        res.cookie('auth_state', req.query.state, { maxAge: TWO_MINUTES, httpOnly: true })
+        res.cookie('auth_state', req.query.state, { maxAge: TEN_MINUTES, httpOnly: true })
       }
 
       // Validate and store the callback URL
@@ -239,7 +240,7 @@ class Auth {
         return { error: 'Invalid callback URL - must be same-origin' }
       }
 
-      res.cookie('auth_cb', callback, { maxAge: TWO_MINUTES, httpOnly: true })
+      res.cookie('auth_cb', callback, { maxAge: TEN_MINUTES, httpOnly: true })
     }
 
     // Store the authentication method for long
@@ -273,7 +274,8 @@ class Auth {
         // TODO: Temporarily continue sending the old token as setToken
         res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.token}&accessToken=${userResponse.user.accessToken}${stateQuery}`)
       } else {
-        res.status(400).send('No callback or already expired')
+        Logger.error('[Auth] No callback or already expired')
+        res.redirect(`/login?error=${encodeURIComponent('No callback or already expired')}&autoLaunch=0`)
       }
     }
   }
@@ -385,7 +387,13 @@ class Auth {
         const sessionKey = this.oidcAuthStrategy.getStrategy()._key
 
         if (!req.session[sessionKey]) {
-          return res.status(400).send('No session')
+          // Mobile clients send code_verifier and expect a status, not the web login page
+          const isMobile = req.cookies.auth_method === 'openid-mobile' || !!req.query.code_verifier
+          Logger.error('[Auth] /auth/openid/callback route: No session')
+          if (isMobile) {
+            return res.status(400).send('No session')
+          }
+          return res.redirect(`/login?error=${encodeURIComponent('No sign-in session')}&autoLaunch=0`)
         }
 
         // If the client sends us a code_verifier, we will tell passport to use this to send this in the token request
@@ -471,18 +479,23 @@ class Auth {
       res.json(openIdIssuerConfig)
     })
 
-    // Logout route
+    /**
+     * Logout route
+     * Use ?allDevices=1 to destroy every session for this user instead of just the current one
+     */
     router.post('/logout', async (req, res) => {
       // Refresh token be alternatively be sent in the header
       const refreshToken = req.cookies.refresh_token || req.headers['x-refresh-token']
+      const allDevices = req.query.allDevices === '1'
 
       // Clear refresh token cookie
       res.clearCookie('refresh_token', {
         path: '/'
       })
 
-      // Invalidate the session in database using refresh token
-      if (refreshToken) {
+      if (allDevices) {
+        await this.tokenManager.invalidateAllSessionsForRefreshToken(refreshToken)
+      } else if (refreshToken) {
         await this.tokenManager.invalidateRefreshToken(refreshToken)
       } else {
         Logger.info(`[Auth] logout: No refresh token on request`)

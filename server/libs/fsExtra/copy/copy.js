@@ -2,6 +2,7 @@
 
 const fs = require('graceful-fs')
 const path = require('path')
+const { pipeline } = require('stream')
 const mkdirs = require('../mkdirs').mkdirs
 const pathExists = require('../path-exists').pathExists
 const utimesMillis = require('../util/utimes').utimesMillis
@@ -98,10 +99,20 @@ function mayCopyFile (srcStat, src, dest, opts, cb) {
 }
 
 function copyFile (srcStat, src, dest, opts, cb) {
-  fs.copyFile(src, dest, err => {
+  const finish = err => {
     if (err) return cb(err)
     if (opts.preserveTimestamps) return handleTimestampsAndMode(srcStat.mode, src, dest, cb)
     return setDestMode(dest, srcStat.mode, cb)
+  }
+
+  fs.copyFile(src, dest, err => {
+    if (err?.code !== 'EPERM' || !srcStat.isFile()) return finish(err)
+
+    // Stream the fallback so database copies do not require a full-file buffer.
+    pipeline(fs.createReadStream(src, { highWaterMark: 1024 * 1024 }), fs.createWriteStream(dest, { highWaterMark: 1024 * 1024 }), streamError => {
+      if (streamError) return fs.unlink(dest, () => cb(streamError))
+      finish()
+    })
   })
 }
 

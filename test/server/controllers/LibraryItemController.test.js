@@ -123,7 +123,9 @@ describe('LibraryItemController', () => {
       const fakeReq = {
         query: {},
         user: {
-          canDelete: true
+          username: 'test',
+          canDelete: true,
+          checkCanAccessLibraryItem: () => true
         },
         body: {
           libraryItemIds: [libraryItem1Id]
@@ -197,6 +199,104 @@ describe('LibraryItemController', () => {
       // Series 2 should not be removed because it still has Book 2
       const series2Exists = await Database.seriesModel.checkExistsById(series2Id)
       expect(series2Exists).to.be.true
+    })
+  })
+
+  describe('batch item access control', () => {
+    let lib1Id
+    let itemLib1Id
+    let itemLib2Id
+
+    beforeEach(async () => {
+      const lib1 = await Database.libraryModel.create({ name: 'Lib 1', mediaType: 'book' })
+      const folder1 = await Database.libraryFolderModel.create({ path: '/l1', libraryId: lib1.id })
+      const book1 = await Database.bookModel.create({ title: 'B1', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      const li1 = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book1.id,
+        mediaType: 'book',
+        libraryId: lib1.id,
+        libraryFolderId: folder1.id
+      })
+      lib1Id = lib1.id
+      itemLib1Id = li1.id
+
+      const lib2 = await Database.libraryModel.create({ name: 'Lib 2', mediaType: 'book' })
+      const folder2 = await Database.libraryFolderModel.create({ path: '/l2', libraryId: lib2.id })
+      const book2 = await Database.bookModel.create({ title: 'B2', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      const li2 = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book2.id,
+        mediaType: 'book',
+        libraryId: lib2.id,
+        libraryFolderId: folder2.id
+      })
+      itemLib2Id = li2.id
+    })
+
+    const userLimitedToLib1 = () => ({
+      username: 'limited',
+      canDelete: true,
+      canUpdate: true,
+      checkCanAccessLibraryItem(li) {
+        return li.libraryId === lib1Id
+      }
+    })
+
+    it('batchGet returns 403 for a library item the user cannot access', async () => {
+      const fakeRes = { sendStatus: sinon.spy(), json: sinon.spy() }
+      const fakeReq = {
+        body: { libraryItemIds: [itemLib2Id] },
+        user: userLimitedToLib1()
+      }
+      await LibraryItemController.batchGet.bind(apiRouter)(fakeReq, fakeRes)
+      expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+
+    it('batchGet returns items when the user can access them', async () => {
+      const fakeRes = { sendStatus: sinon.spy(), json: sinon.spy() }
+      const fakeReq = {
+        body: { libraryItemIds: [itemLib1Id] },
+        user: userLimitedToLib1()
+      }
+      await LibraryItemController.batchGet.bind(apiRouter)(fakeReq, fakeRes)
+      expect(fakeRes.json.calledOnce).to.be.true
+      const payload = fakeRes.json.firstCall.args[0]
+      expect(payload.libraryItems).to.have.length(1)
+      expect(payload.libraryItems[0].id).to.equal(itemLib1Id)
+    })
+
+    it('batchUpdate returns 403 for a library item the user cannot access', async () => {
+      const fakeRes = { sendStatus: sinon.spy(), json: sinon.spy() }
+      const fakeReq = {
+        user: userLimitedToLib1(),
+        body: [{ id: itemLib2Id, mediaPayload: {} }]
+      }
+      await LibraryItemController.batchUpdate.bind(apiRouter)(fakeReq, fakeRes)
+      expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+
+    it('batchUpdate returns 403 when the user lacks canUpdate', async () => {
+      const u = userLimitedToLib1()
+      u.canUpdate = false
+      const fakeRes = { sendStatus: sinon.spy(), json: sinon.spy() }
+      const fakeReq = {
+        user: u,
+        body: [{ id: itemLib1Id, mediaPayload: {} }]
+      }
+      await LibraryItemController.batchUpdate.bind(apiRouter)(fakeReq, fakeRes)
+      expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+
+    it('batchDelete returns 403 for a library item the user cannot access', async () => {
+      const fakeRes = { sendStatus: sinon.spy() }
+      const fakeReq = {
+        query: {},
+        user: userLimitedToLib1(),
+        body: { libraryItemIds: [itemLib2Id] }
+      }
+      await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
+      expect(fakeRes.sendStatus.calledWith(403)).to.be.true
     })
   })
 })

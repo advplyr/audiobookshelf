@@ -78,6 +78,7 @@ class Podcast extends Model {
    */
   static async createFromRequest(payload, transaction) {
     const title = typeof payload.metadata.title === 'string' ? payload.metadata.title : null
+    // cron expression validated in controller
     const autoDownloadSchedule = typeof payload.autoDownloadSchedule === 'string' ? payload.autoDownloadSchedule : null
     const genres = Array.isArray(payload.metadata.genres) && payload.metadata.genres.every((g) => typeof g === 'string' && g.length) ? payload.metadata.genres : []
     const tags = Array.isArray(payload.tags) && payload.tags.every((t) => typeof t === 'string' && t.length) ? payload.tags : []
@@ -89,6 +90,9 @@ class Podcast extends Model {
       }
     })
 
+    const rawDescription = typeof payload.metadata.description === 'string' ? payload.metadata.description : null
+    const description = rawDescription ? htmlSanitizer.sanitize(rawDescription) : null
+
     return this.create(
       {
         title,
@@ -97,7 +101,7 @@ class Podcast extends Model {
         releaseDate: typeof payload.metadata.releaseDate === 'string' ? payload.metadata.releaseDate : null,
         feedURL: typeof payload.metadata.feedUrl === 'string' ? payload.metadata.feedUrl : null,
         imageURL: typeof payload.metadata.imageUrl === 'string' ? payload.metadata.imageUrl : null,
-        description: typeof payload.metadata.description === 'string' ? payload.metadata.description : null,
+        description,
         itunesPageURL: typeof payload.metadata.itunesPageUrl === 'string' ? payload.metadata.itunesPageUrl : null,
         itunesId: typeof payload.metadata.itunesId === 'string' ? payload.metadata.itunesId : null,
         itunesArtistId: typeof payload.metadata.itunesArtistId === 'string' ? payload.metadata.itunesArtistId : null,
@@ -270,6 +274,7 @@ class Podcast extends Model {
       hasUpdates = true
     }
     if (typeof payload.autoDownloadSchedule === 'string' && payload.autoDownloadSchedule !== this.autoDownloadSchedule) {
+      // cron expression validated in controller
       this.autoDownloadSchedule = payload.autoDownloadSchedule
       hasUpdates = true
     }
@@ -446,6 +451,11 @@ class Podcast extends Model {
     }
   }
 
+  /**
+   * Minified podcast JSON for list/shelf endpoints.
+   * `toOldJSONExpanded()` must be a strict superset: every key here must exist in expanded
+   * with the same value semantics. Only additive changes to expanded; never remove or rename keys.
+   */
   toOldJSONMinified() {
     return {
       id: this.id,
@@ -463,6 +473,12 @@ class Podcast extends Model {
     }
   }
 
+  /**
+   * Expanded podcast JSON for item detail and socket events.
+   * Must be a strict superset of `toOldJSONMinified()` — built by spreading minified, then adding expanded-only fields.
+   *
+   * @param {string} libraryItemId
+   */
   toOldJSONExpanded(libraryItemId) {
     if (!libraryItemId) {
       throw new Error(`[Podcast] Cannot convert to old JSON because libraryItemId is not provided`)
@@ -472,18 +488,9 @@ class Podcast extends Model {
     }
 
     return {
-      id: this.id,
-      libraryItemId: libraryItemId,
-      metadata: this.oldMetadataToJSONExpanded(),
-      coverPath: this.coverPath,
-      tags: [...(this.tags || [])],
-      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId)),
-      autoDownloadEpisodes: this.autoDownloadEpisodes,
-      autoDownloadSchedule: this.autoDownloadSchedule,
-      lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
-      maxEpisodesToKeep: this.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
-      size: this.size
+      ...this.toOldJSONMinified(),
+      libraryItemId,
+      episodes: this.podcastEpisodes.map((e) => e.toOldJSONExpanded(libraryItemId))
     }
   }
 }

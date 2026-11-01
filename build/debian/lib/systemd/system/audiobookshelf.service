@@ -11,6 +11,8 @@ ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 User=audiobookshelf
 Group=audiobookshelf
+Environment=HOME=/var/cache/audiobookshelf
+CacheDirectory=audiobookshelf
 
 [Install]
 WantedBy=multi-user.target

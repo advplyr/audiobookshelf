@@ -133,9 +133,10 @@ module.exports = {
   /**
    * Get all library items that have narrators
    * @param {string[]} narrators
+   * @param {string} libraryId
    * @returns {Promise<import('../../models/LibraryItem')[]>}
    */
-  async getAllLibraryItemsWithNarrators(narrators) {
+  async getAllLibraryItemsWithNarrators(narrators, libraryId) {
     const libraryItems = []
     const booksWithGenre = await Database.bookModel.findAll({
       where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(narrators) WHERE json_valid(narrators) AND json_each.value IN (:narrators))`), {
@@ -146,7 +147,8 @@ module.exports = {
       },
       include: [
         {
-          model: Database.libraryItemModel
+          model: Database.libraryItemModel,
+          where: { libraryId }
         },
         {
           model: Database.authorModel,

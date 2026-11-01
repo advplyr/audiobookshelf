@@ -11,7 +11,12 @@ const naturalSort = createNewSortInstance({
 
 module.exports = {
   decode(text) {
-    return Buffer.from(decodeURIComponent(text), 'base64').toString()
+    try {
+      return Buffer.from(decodeURIComponent(text), 'base64').toString()
+    } catch (error) {
+      Logger.warn(`[libraryFilters] Failed to decode filter value "${text}": ${error.message}`)
+      return null
+    }
   },
 
   /**
@@ -411,22 +416,20 @@ module.exports = {
   },
 
   /**
-   * Get podcast episodes for continue series shelf
-   * Returns the next episode for podcasts that have at least 1 finished episode and at least 1 unfinished episode
-   * - Serial podcasts: oldest unfinished episode (oldest to newest)
-   * - Episodic podcasts: newest unfinished episode (latest to oldest)
-   * An episode is unfinished if: has progress with isFinished = false OR no progress entry
+   * serialize the next episode for podcasts with finished and unfinished episodes
    * @param {import('../../models/Library')} library
    * @param {import('../../models/User')} user
    * @param {number} limit
    * @returns {Promise<{libraryItems:oldLibraryItem[], count:number}>}
    */
   async getPodcastEpisodesContinueSeries(library, user, limit) {
+    // skip non-podcast libraries
     if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
 
     const { libraryItems, count } = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, limit, 0)
     return {
       count,
+      // preserve episode details in shelf payloads
       libraryItems: libraryItems.map((li) => {
         const oldLibraryItem = li.toOldJSONMinified()
         oldLibraryItem.recentEpisode = li.recentEpisode

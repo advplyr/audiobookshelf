@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between md:justify-start mb-4">
       <p class="text-sm text-gray-300 pr-2">{{ $strings.LabelMetadataOrderOfPrecedenceDescription }}</p>
       <ui-tooltip :text="$strings.LabelClickForMoreInfo" class="inline-flex">
-        <a href="https://www.audiobookshelf.org/guides/book-scanner" target="_blank" class="inline-flex">
+        <a href="https://audiobookshelf.org/docs/documentation/libraries/book-library/book-metadata" target="_blank" class="inline-flex">
           <span class="material-symbols text-xl w-5">help_outline</span>
         </a>
       </ui-tooltip>

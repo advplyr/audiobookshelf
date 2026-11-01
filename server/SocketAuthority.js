@@ -3,6 +3,7 @@ const Logger = require('./Logger')
 const Database = require('./Database')
 const TokenManager = require('./auth/TokenManager')
 const CoverSearchManager = require('./managers/CoverSearchManager')
+const { LogLevel } = require('./utils/constants')
 
 /**
  * @typedef SocketClient
@@ -83,6 +84,14 @@ class SocketAuthority {
         this.clients[socketId].socket.emit(evt, data)
       }
     }
+  }
+
+  requireAdminSocket(socket, eventName) {
+    const client = this.clients[socket.id]
+    if (client?.user?.isAdminOrUp) return true
+
+    Logger.warn(`[SocketAuthority] Unauthorized ${eventName} socket event from socket ${socket.id}`)
+    return false
   }
 
   /**
@@ -179,14 +188,25 @@ class SocketAuthority {
         socket.on('auth', (token) => this.authenticateSocket(socket, token))
 
         // Scanning
-        socket.on('cancel_scan', (libraryId) => this.cancelScan(libraryId))
+        socket.on('cancel_scan', (libraryId) => {
+          if (!this.requireAdminSocket(socket, 'cancel_scan')) return
+          this.cancelScan(libraryId)
+        })
 
         // Cover search streaming
         socket.on('search_covers', (payload) => this.handleCoverSearch(socket, payload))
         socket.on('cancel_cover_search', (requestId) => this.handleCancelCoverSearch(socket, requestId))
 
         // Logs
-        socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+        socket.on('set_log_listener', (level) => {
+          if (!this.requireAdminSocket(socket, 'set_log_listener')) return
+
+          if (!Number.isInteger(level) || !Object.values(LogLevel).includes(level)) {
+            Logger.warn(`[SocketAuthority] Invalid set_log_listener level from socket ${socket.id}`)
+            return
+          }
+          Logger.addSocketListener(socket, level)
+        })
         socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
 
         // Sent automatically from socket.io clients
@@ -249,22 +269,58 @@ class SocketAuthority {
   async authenticateSocket(socket, token) {
     // we don't use passport to authenticate the jwt we get over the socket connection.
     // it's easier to directly verify/decode it.
-    // TODO: Support API keys for web socket connections
     const token_data = TokenManager.validateAccessToken(token)
 
-    if (!token_data?.userId) {
+    if (!token_data) {
       // Token invalid
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('auth_failed', { message: 'Invalid token' })
     }
 
-    // get the user via the id from the decoded jwt.
-    const user = await Database.userModel.getUserByIdOrOldId(token_data.userId)
-    if (!user) {
-      // user not found
-      Logger.error('Cannot validate socket - invalid token')
-      return socket.emit('auth_failed', { message: 'Invalid token' })
+    let user = null
+
+    if (token_data.type === 'api') {
+      // Api key based authentication
+      const apiKey = await Database.apiKeyModel.getById(token_data.keyId)
+
+      if (!apiKey?.isActive) {
+        Logger.error('Cannot validate socket - API key not found or inactive')
+        return socket.emit('auth_failed', { message: 'Invalid API key' })
+      }
+
+      if (token_data.exp && token_data.exp < Date.now() / 1000) {
+        apiKey.isActive = false
+        await apiKey.save()
+        Logger.info(`[SocketAuthority] API key ${apiKey.id} is expired - deactivated`)
+        return socket.emit('auth_failed', { message: 'API key expired' })
+      }
+
+      user = await Database.userModel.getUserById(apiKey.userId)
+      if (!user) {
+        Logger.error('Cannot validate socket - user not found for API key')
+        return socket.emit('auth_failed', { message: 'Invalid API key' })
+      }
+    } else {
+      // JWT based authentication
+      if (!TokenManager.isBearerAccessTokenPayload(token_data)) {
+        Logger.error('Cannot validate socket - invalid token')
+        return socket.emit('auth_failed', { message: 'Invalid token' })
+      }
+
+      if (token_data.exp && token_data.exp < Date.now() / 1000) {
+        Logger.error('Cannot validate socket - token expired')
+        return socket.emit('auth_failed', { message: 'Token expired' })
+      }
+
+      // get the user via the id from the decoded jwt.
+      user = await Database.userModel.getUserByIdOrOldId(token_data.userId)
+      if (!user) {
+        // user not found
+        Logger.error('Cannot validate socket - invalid token')
+        return socket.emit('auth_failed', { message: 'Invalid token' })
+      }
     }
+
     if (!user.isActive) {
       Logger.error('Cannot validate socket - user is not active')
       return socket.emit('auth_failed', { message: 'Invalid user' })
