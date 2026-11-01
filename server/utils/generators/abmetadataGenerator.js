@@ -1,5 +1,6 @@
 const Logger = require('../../Logger')
 const parseSeriesString = require('../parsers/parseSeriesString')
+const { dedupeNames } = require('../parsers/parseNameString')
 
 const mediaTypeKeys = {
   book: {
@@ -140,8 +141,7 @@ function validateMetadataValue(key, value, expectedType) {
       return undefined
     }
 
-    const cleanedArray = value.filter((t) => typeof t === 'string')
-    return [...new Set(cleanedArray.map((t) => t.trim()).filter((t) => t))]
+    return dedupeNames(value)
   }
 
   Logger.warn(`[abmetadataGenerator] Unknown expected type "${expectedType}" for key "${key}"`)

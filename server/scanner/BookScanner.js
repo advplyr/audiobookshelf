@@ -703,6 +703,9 @@ class BookScanner {
       bookMetadata.description = htmlSanitizer.sanitize(bookMetadata.description)
     }
 
+    // One dedupe after every metadata source. A repeated name inserts the same bookAuthor twice and aborts the scan.
+    bookMetadata.authors = parseNameString.dedupeNames(bookMetadata.authors)
+
     return bookMetadata
   }
 
