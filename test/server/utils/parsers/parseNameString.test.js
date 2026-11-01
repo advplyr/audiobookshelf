@@ -1,6 +1,6 @@
 const chai = require('chai')
 const expect = chai.expect
-const { parse, nameToLastFirst } = require('../../../../server/utils/parsers/parseNameString')
+const { parse, nameToLastFirst, dedupeNames } = require('../../../../server/utils/parsers/parseNameString')
 
 describe('parseNameString', () => {
   describe('parse', () => {
@@ -77,6 +77,20 @@ describe('parseNameString', () => {
     it('filters out empty names', () => {
       const result = parse('John Smith,')
       expect(result.names).to.deep.equal(['John Smith'])
+    })
+  })
+
+  describe('dedupeNames', () => {
+    it('trims, drops blanks, and keeps the first spelling of an exact repeat', () => {
+      expect(dedupeNames(['  Stephen King ', 'Stephen King', '', '   ', 'stephen king'])).to.deep.equal(['Stephen King', 'stephen king'])
+    })
+
+    it('preserves order and ignores non-strings', () => {
+      expect(dedupeNames(['Amy Yao', null, 'Amy Yao', 3, 'Raymond Chandler'])).to.deep.equal(['Amy Yao', 'Raymond Chandler'])
+    })
+
+    it('returns an empty array for non-arrays', () => {
+      expect(dedupeNames(null)).to.deep.equal([])
     })
   })
 

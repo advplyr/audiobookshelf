@@ -439,6 +439,7 @@ class Book extends Model {
    */
   async updateAuthorsFromRequest(authors, libraryId) {
     if (!Array.isArray(authors)) return null
+    authors = parseNameString.dedupeNames(authors)
 
     if (!this.authors) {
       throw new Error(`[Book] Cannot update authors because authors are not loaded for book ${this.id}`)
@@ -466,6 +467,8 @@ class Book extends Model {
     const authorsAdded = []
     for (const authorName of newAuthorNames) {
       const { author, created } = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
+      // findOrCreate matches case-insensitively, so a second spelling can resolve to an author just linked
+      if (this.authors.some((au) => au.id === author.id)) continue
       await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
       if (created) {
         SocketAuthority.emitter('author_added', author.toOldJSON())
