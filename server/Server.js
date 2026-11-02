@@ -15,6 +15,7 @@ const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
 const { getRequestOrigin } = require('./utils/requestUtils')
+const { DEFAULT_REQUEST_TIMEOUT_SECONDS, applyServerTimeouts, parseServerRequestTimeout } = require('./utils/serverTimeouts')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -117,6 +118,18 @@ class Server {
     }
     global.PodcastDownloadTimeout = toNumber(process.env.PODCAST_DOWNLOAD_TIMEOUT, 30000)
     global.MaxFailedEpisodeChecks = toNumber(process.env.MAX_FAILED_EPISODE_CHECKS, 24)
+    const rawServerRequestTimeout = process.env.SERVER_REQUEST_TIMEOUT
+    global.ServerRequestTimeout = parseServerRequestTimeout(rawServerRequestTimeout)
+    if (global.ServerRequestTimeout === null) {
+      Logger.warn(`[Server] Invalid SERVER_REQUEST_TIMEOUT "${rawServerRequestTimeout}", using Node default of ${DEFAULT_REQUEST_TIMEOUT_SECONDS}s`)
+      global.ServerRequestTimeout = DEFAULT_REQUEST_TIMEOUT_SECONDS
+    } else if (global.ServerRequestTimeout === 0) {
+      Logger.info(`[Server] Request timeout disabled (SERVER_REQUEST_TIMEOUT=0)`)
+    } else if (rawServerRequestTimeout === undefined || rawServerRequestTimeout.trim() === '') {
+      Logger.info(`[Server] Request timeout is the Node default of ${DEFAULT_REQUEST_TIMEOUT_SECONDS}s`)
+    } else {
+      Logger.info(`[Server] Request timeout set to ${global.ServerRequestTimeout}s`)
+    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -335,6 +348,7 @@ class Server {
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
+    applyServerTimeouts(this.server, global.ServerRequestTimeout)
 
     // Skip file upload parsing for internal-api routes (Next.js proxies read multipart bodies).
     router.use(
