@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+
+/*
+ * Theme tokens. Every theme sets the same variables on [data-theme=...];
+ * Tailwind utilities (bg-surface, text-muted, ...) read them through @theme inline,
+ * so components never hard-code colors. Custom themes are applied at runtime by
+ * writing these same variables onto <html> (see src/theme/ThemeProvider.tsx).
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --radius-card: var(--radius);
+  --font-sans: var(--font);
+}
+
+:root,
+[data-theme='light'] {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #eeece7;
+  --border: #dcd8cf;
+  --fg: #1c1b19;
+  --muted: #6b675e;
+  --accent: #b5651d;
+  --accent-fg: #ffffff;
+  --danger: #c0392b;
+  --radius: 10px;
+  --font: 'Inter', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #121212;
+  --surface: #1c1c1e;
+  --surface-2: #26262a;
+  --border: #34343a;
+  --fg: #ececec;
+  --muted: #9a9aa2;
+  --accent: #e0a458;
+  --accent-fg: #121212;
+  --danger: #ef6b5b;
+  color-scheme: dark;
+}
+
+[data-theme='midnight'] {
+  --bg: #0b1020;
+  --surface: #121a30;
+  --surface-2: #1a2440;
+  --border: #26324f;
+  --fg: #e3e8f5;
+  --muted: #8a96b8;
+  --accent: #7aa2ff;
+  --accent-fg: #0b1020;
+  --danger: #ff7a85;
+  color-scheme: dark;
+}
+
+[data-theme='sepia'] {
+  --bg: #f1e7d0;
+  --surface: #f8f0dc;
+  --surface-2: #e8dcc0;
+  --border: #d4c39c;
+  --fg: #3b2f1e;
+  --muted: #7a6a4f;
+  --accent: #8b4513;
+  --accent-fg: #f8f0dc;
+  --danger: #a93226;
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  margin: 0;
+}
