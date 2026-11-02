@@ -11,6 +11,9 @@ It talks only to the existing server API and socket.io, so the official mobile a
 Vite proxies `/audiobookshelf/*` (including the socket) to `ABS_SERVER` (default `http://localhost:3333`), so the app is
 same-origin in dev and the httpOnly refresh-token cookie just works.
 
+`npm run dev:test` runs on http://localhost:5174 against the Docker test server (`ABS_SERVER` from `.env.test`,
+`http://localhost:13379`). A shell `ABS_SERVER` overrides either.
+
 ## Layout
 
 - `src/api/` — fetch wrapper (Bearer token + automatic `/auth/refresh` on 401), socket.io client, response types
