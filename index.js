@@ -31,6 +31,7 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
+  if (devEnv.WebClientPath) process.env.WEB_CLIENT_PATH = devEnv.WebClientPath // fork addition
   if (devEnv.AllowedDevOrigins) {
     process.env.ALLOWED_DEV_ORIGINS = Array.isArray(devEnv.AllowedDevOrigins) ? devEnv.AllowedDevOrigins.join(',') : String(devEnv.AllowedDevOrigins)
   }
