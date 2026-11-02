@@ -27,6 +27,55 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
  * @property {boolean} explicit
  */
 
+/**
+ * Split a list of authors on commas. A piece with no space is a credential and is glued onto the previous name.
+ *
+ * @param {string} text
+ * @returns {string[]}
+ */
+function parseAuthorPieces(text) {
+  const authors = []
+  for (const piece of (text || '').split(',')) {
+    const name = piece.trim()
+    if (!name) continue
+    if (!name.includes(' ') && authors.length) {
+      authors[authors.length - 1] = `${authors[authors.length - 1]} ${name}`
+    } else {
+      authors.push(name)
+    }
+  }
+  return authors
+}
+
+function stripCommasFromName(name) {
+  return (name || '').replace(/,/g, '').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Apple lists authors as "Name1, Name2 & Name3", but a comma can also sit inside one name ("Rick Hanson, PhD").
+ * A comma-separated piece with no space is treated as a credential and glued onto the previous name.
+ * The text after the last " & " is a single author, so commas there are removed.
+ * @see https://github.com/advplyr/audiobookshelf/issues/1022
+ * @see https://github.com/advplyr/audiobookshelf/issues/2661
+ *
+ * @param {string} artistName
+ * @returns {string}
+ */
+function cleanAuthor(artistName) {
+  const raw = (artistName || '').trim()
+  if (!raw) return ''
+
+  const lastAmpIndex = raw.lastIndexOf(' & ')
+  if (lastAmpIndex === -1) {
+    return stripCommasFromName(raw)
+  }
+
+  const authors = parseAuthorPieces(raw.slice(0, lastAmpIndex))
+  const lastAuthor = stripCommasFromName(raw.slice(lastAmpIndex + 3))
+  if (lastAuthor) authors.push(lastAuthor)
+  return authors.join(', ')
+}
+
 class iTunes {
   #responseTimeout = 10000
 
@@ -103,15 +152,11 @@ class iTunes {
   }
 
   cleanAudiobook(data) {
-    // artistName can be "Name1, Name2 & Name3" so we refactor this to "Name1, Name2, Name3"
-    //  see: https://github.com/advplyr/audiobookshelf/issues/1022
-    const author = (data.artistName || '').split(' & ').join(', ')
-
     return {
       id: data.collectionId,
       artistId: data.artistId,
       title: data.collectionName,
-      author,
+      author: cleanAuthor(data.artistName),
       description: data.description || null,
       publishedYear: data.releaseDate ? data.releaseDate.split('-')[0] : null,
       genres: data.primaryGenreName ? [data.primaryGenreName] : null,
