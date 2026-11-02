@@ -35,6 +35,7 @@ const MiscController = require('../controllers/MiscController')
 const ShareController = require('../controllers/ShareController')
 const StatsController = require('../controllers/StatsController')
 const ApiKeyController = require('../controllers/ApiKeyController')
+const WishlistController = require('../controllers/WishlistController')
 
 class ApiRouter {
   constructor(Server) {
@@ -339,6 +340,14 @@ class ApiRouter {
     this.router.post('/api-keys', ApiKeyController.middleware.bind(this), ApiKeyController.create.bind(this))
     this.router.patch('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.update.bind(this))
     this.router.delete('/api-keys/:id', ApiKeyController.middleware.bind(this), ApiKeyController.delete.bind(this))
+
+    //
+    // Wishlist Routes (fork addition)
+    //
+    this.router.get('/wishlist', WishlistController.getAll.bind(this))
+    this.router.post('/wishlist', WishlistController.create.bind(this))
+    this.router.patch('/wishlist/:id', WishlistController.middleware.bind(this), WishlistController.update.bind(this))
+    this.router.delete('/wishlist/:id', WishlistController.middleware.bind(this), WishlistController.delete.bind(this))
 
     //
     // Misc Routes

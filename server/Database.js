@@ -157,6 +157,11 @@ class Database {
     return this.models.device
   }
 
+  /** @type {typeof import('./models/WishlistItem')} */
+  get wishlistItemModel() {
+    return this.models.wishlistItem
+  }
+
   /**
    * Check if db file exists
    * @returns {boolean}
@@ -340,6 +345,7 @@ class Database {
     require('./models/Setting').init(this.sequelize)
     require('./models/CustomMetadataProvider').init(this.sequelize)
     require('./models/MediaItemShare').init(this.sequelize)
+    require('./models/WishlistItem').init(this.sequelize) // fork addition
 
     return this.sequelize.sync({ force, alter: false })
   }
