@@ -1,9 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, getAccessToken, onTokenChange, setAccessToken } from '../api/client'
+import { useSocketBridge } from '../api/socketBridge'
 import type { LoginResponse, User } from '../api/types'
+import { getPermissions, type Permissions } from './permissions'
 
 interface AuthContextValue {
   user: User | null
+  permissions: Permissions
   defaultLibraryId: string | null
   loading: boolean
   login: (username: string, password: string) => Promise<void>
@@ -32,6 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Refresh failure anywhere in the app logs the user out.
   useEffect(() => onTokenChange((t) => !t && setSession(null)), [])
 
+  // The server pushes user_updated when an admin changes this user's permissions or access.
+  const updateUser = useCallback((user: User) => setSession((s) => (s ? { ...s, user: { ...s.user, ...user } } : s)), [])
+  useSocketBridge(session?.user.id, updateUser)
+
   const login = useCallback(async (username: string, password: string) => {
     const data = await api<LoginResponse>('/login', { method: 'POST', body: JSON.stringify({ username, password }) })
     setAccessToken(data.user.accessToken ?? null)
@@ -47,13 +54,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  return (
-    <AuthContext.Provider
-      value={{ user: session?.user ?? null, defaultLibraryId: session?.userDefaultLibraryId ?? null, loading, login, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const user = session?.user ?? null
+  const value = useMemo(
+    () => ({
+      user,
+      permissions: getPermissions(user),
+      defaultLibraryId: session?.userDefaultLibraryId ?? null,
+      loading,
+      login,
+      logout
+    }),
+    [user, session?.userDefaultLibraryId, loading, login, logout]
   )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

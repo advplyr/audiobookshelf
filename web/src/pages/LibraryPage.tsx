@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { api, coverUrl } from '../api/client'
-import { getSocket } from '../api/socket'
+import { queryKeys } from '../api/queryKeys'
 import type { ItemsPage, LibraryItem } from '../api/types'
+import { ErrorScreen, IconButton, Select } from '../components/ui'
 
 const PAGE_SIZE = 48
 const SORTS = [
@@ -13,15 +15,15 @@ const SORTS = [
 ]
 
 export function LibraryPage() {
-  const { libraryId } = useParams<{ libraryId: string }>()
+  const { libraryId = '' } = useParams<{ libraryId: string }>()
   const [page, setPage] = useState(0)
   const [sort, setSort] = useState(SORTS[0])
-  const qc = useQueryClient()
 
   useEffect(() => setPage(0), [libraryId])
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['library-items', libraryId, page, sort.value],
+  // Live updates come from the socket bridge invalidating queryKeys.libraryItems(libraryId)
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: queryKeys.libraryItemsPage(libraryId, page, sort.value),
     queryFn: () =>
       api<ItemsPage>(
         `/api/libraries/${libraryId}/items?limit=${PAGE_SIZE}&page=${page}&sort=${sort.value}&desc=${sort.desc ? 1 : 0}&minified=1`
@@ -30,17 +32,7 @@ export function LibraryPage() {
     placeholderData: keepPreviousData
   })
 
-  // Live updates: refetch this library when the server reports changes to it.
-  useEffect(() => {
-    const socket = getSocket()
-    const onChange = (payload: { libraryId?: string } | { libraryId?: string }[]) => {
-      const items = Array.isArray(payload) ? payload : [payload]
-      if (items.some((i) => i.libraryId === libraryId)) qc.invalidateQueries({ queryKey: ['library-items', libraryId] })
-    }
-    const events = ['item_added', 'item_updated', 'item_removed', 'items_added', 'items_updated']
-    events.forEach((e) => socket.on(e, onChange))
-    return () => events.forEach((e) => socket.off(e, onChange))
-  }, [libraryId, qc])
+  if (error) return <ErrorScreen title="Couldn't load this library" detail={error.message} onRetry={() => refetch()} />
 
   const pageCount = data ? Math.ceil(data.total / PAGE_SIZE) : 0
 
@@ -48,8 +40,9 @@ export function LibraryPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted">{data ? `${data.total} items` : ' '}</p>
-        <select
-          className="rounded-md border border-border bg-surface px-2 py-1 text-sm"
+        <Select
+          aria-label="Sort by"
+          className="w-auto"
           value={sort.value}
           onChange={(e) => {
             setSort(SORTS.find((s) => s.value === e.target.value)!)
@@ -61,11 +54,10 @@ export function LibraryPage() {
               {s.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      {isLoading && <p className="text-muted">Loading…</p>}
-      {error && <p className="text-danger">Failed to load library.</p>}
+      {isLoading && <Loader2 className="mx-auto size-6 animate-spin text-muted" aria-label="Loading" />}
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
         {data?.results.map((item) => <ItemCard key={item.id} item={item} />)}
@@ -73,19 +65,11 @@ export function LibraryPage() {
 
       {pageCount > 1 && (
         <div className="flex items-center justify-center gap-3 pt-2">
-          <button className="rounded-md border border-border px-3 py-1 disabled:opacity-40" disabled={page === 0} onClick={() => setPage(page - 1)}>
-            Prev
-          </button>
+          <IconButton label="Previous page" icon={<ChevronLeft className="size-4" />} disabled={page === 0} onClick={() => setPage(page - 1)} />
           <span className="text-sm text-muted">
             {page + 1} / {pageCount}
           </span>
-          <button
-            className="rounded-md border border-border px-3 py-1 disabled:opacity-40"
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </button>
+          <IconButton label="Next page" icon={<ChevronRight className="size-4" />} disabled={page >= pageCount - 1} onClick={() => setPage(page + 1)} />
         </div>
       )}
     </div>

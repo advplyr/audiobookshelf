@@ -1,11 +1,26 @@
 // Partial shapes of ABS server responses. Only fields the UI uses; extend as needed.
 
+/** Server: User.toOldJSONForBrowser() (server/models/User.js) */
 export interface User {
   id: string
   username: string
   type: 'root' | 'admin' | 'user' | 'guest'
+  isActive: boolean
   accessToken?: string
   mediaProgress?: MediaProgress[]
+  permissions: {
+    download?: boolean
+    update?: boolean
+    delete?: boolean
+    upload?: boolean
+    createEreader?: boolean
+    accessAllLibraries?: boolean
+    accessAllTags?: boolean
+    accessExplicitContent?: boolean
+    selectedTagsNotAccessible?: boolean
+  }
+  librariesAccessible: string[]
+  itemTagsSelected: string[]
 }
 
 export interface LoginResponse {

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Heart, Settings } from 'lucide-react'
 import { SettingsPage } from './pages/SettingsPage'
 import { WishlistPage } from './pages/WishlistPage'
 
@@ -9,10 +10,13 @@ import { WishlistPage } from './pages/WishlistPage'
 export interface Section {
   path: string
   label: string
+  icon: ReactNode
   element: ReactNode
+  /** Hidden from non-admins (the server still enforces access on its side). */
+  adminOnly?: boolean
 }
 
 export const SECTIONS: Section[] = [
-  { path: 'wishlist', label: 'Wishlist', element: <WishlistPage /> },
-  { path: 'settings', label: 'Settings', element: <SettingsPage /> }
+  { path: 'wishlist', label: 'Wishlist', icon: <Heart className="size-4" aria-hidden />, element: <WishlistPage /> },
+  { path: 'settings', label: 'Settings', icon: <Settings className="size-4" aria-hidden />, element: <SettingsPage /> }
 ]
