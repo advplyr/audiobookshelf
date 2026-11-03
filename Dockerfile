@@ -9,6 +9,15 @@ COPY /client /client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
+### Fork addition: build the standalone web client (served at /web only when WEB_CLIENT_PATH is set) ###
+FROM node:24-alpine AS build-web
+
+WORKDIR /web
+COPY /web/package*.json /web/
+RUN npm ci && npm cache clean --force
+COPY /web /web
+RUN npm run build
+
 ### STAGE 1: Compile server on the builder CPU (avoid QEMU SIGILL from tsc on arm64) ###
 FROM --platform=$BUILDPLATFORM node:24-alpine AS compile-server
 
@@ -65,6 +74,7 @@ WORKDIR /app
 
 # Copy compiled frontend and server from build stages
 COPY --from=build-client /client/dist /app/client/dist
+COPY --from=build-web /web/dist /app/web/dist
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 

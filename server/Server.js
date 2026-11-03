@@ -15,6 +15,7 @@ const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
 const { toNumber } = require('./utils/index')
 const { getRequestOrigin } = require('./utils/requestUtils')
+const { mountWebClient } = require('./utils/webClient')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -403,6 +404,8 @@ class Server {
       res.json({ success: true })
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
+
+    mountWebClient(router) // fork addition: standalone web client at /web when WEB_CLIENT_PATH is set
 
     const ReactClientPath = process.env.REACT_CLIENT_PATH
     if (!ReactClientPath) {

@@ -16,6 +16,7 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-danger: var(--danger);
+  --color-success: var(--success);
   --radius-card: var(--radius);
   --font-sans: var(--font);
 }
@@ -31,6 +32,7 @@
   --accent: #b5651d;
   --accent-fg: #ffffff;
   --danger: #c0392b;
+  --success: #2e7d4f;
   --radius: 10px;
   --font: 'Inter', system-ui, sans-serif;
   color-scheme: light;
@@ -46,6 +48,7 @@
   --accent: #e0a458;
   --accent-fg: #121212;
   --danger: #ef6b5b;
+  --success: #5cc489;
   color-scheme: dark;
 }
 
@@ -59,6 +62,7 @@
   --accent: #7aa2ff;
   --accent-fg: #0b1020;
   --danger: #ff7a85;
+  --success: #6fd3a0;
   color-scheme: dark;
 }
 
@@ -72,6 +76,7 @@
   --accent: #8b4513;
   --accent-fg: #f8f0dc;
   --danger: #a93226;
+  --success: #4a7a3a;
   color-scheme: light;
 }
 

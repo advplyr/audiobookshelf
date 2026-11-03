@@ -6,11 +6,13 @@ import tailwindcss from '@tailwindcss/vite'
 // same-origin, so the httpOnly refresh_token cookie works without CORS tricks.
 // ABS_SERVER comes from the shell or a mode file: `npm run dev:test` uses .env.test
 // (the Docker test server in ../../test-server).
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const absServer = process.env.ABS_SERVER ?? env.ABS_SERVER ?? 'http://localhost:3333'
 
   return {
+    // Built app is served by the ABS server at /audiobookshelf/web/ (server/utils/webClient.js)
+    base: command === 'build' ? '/audiobookshelf/web/' : '/',
     plugins: [react(), tailwindcss()],
     server: {
       port: 5173,

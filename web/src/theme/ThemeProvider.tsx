@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 /** Variables a theme may set. Matches the tokens in index.css. */
-export const THEME_VARS = ['bg', 'surface', 'surface-2', 'border', 'fg', 'muted', 'accent', 'accent-fg', 'danger', 'radius', 'font'] as const
+export const THEME_VARS = ['bg', 'surface', 'surface-2', 'border', 'fg', 'muted', 'accent', 'accent-fg', 'danger', 'success', 'radius', 'font'] as const
 export type ThemeVar = (typeof THEME_VARS)[number]
 
 export interface CustomTheme {
