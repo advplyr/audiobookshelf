@@ -415,10 +415,9 @@ class Database {
    * Create root user
    * @param {string} username
    * @param {string} pash
-   * @param {Auth} auth
    * @returns {Promise<boolean>} true if created
    */
-  async createRootUser(username, pash, auth) {
+  async createRootUser(username, pash) {
     if (!this.sequelize) return false
     const transaction = await this.sequelize.transaction()
     try {
@@ -427,7 +426,7 @@ class Database {
         await transaction.rollback()
         return false
       }
-      await this.userModel.createRootUser(username, pash, auth, transaction)
+      await this.userModel.createRootUser(username, pash, transaction)
       await transaction.commit()
       this.hasRootUser = true
       return true

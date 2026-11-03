@@ -39,6 +39,16 @@ describe('TokenManager', () => {
   describe('jwtAuthCheck', () => {
     const user = { id: userId, username: 'testuser', isActive: true }
 
+    it('rejects legacy API tokens that have no type or expiration', async () => {
+      const legacyToken = jwt.sign({ userId, username: 'testuser' }, secret)
+      const decoded = jwt.verify(legacyToken, secret)
+      const done = sinon.spy()
+
+      await tokenManager.jwtAuthCheck(decoded, done)
+
+      expect(done.calledWith(null, null)).to.be.true
+    })
+
     it('rejects refresh tokens for API auth', async () => {
       const refreshToken = tokenManager.generateRefreshToken(user)
       const decoded = jwt.verify(refreshToken, secret)

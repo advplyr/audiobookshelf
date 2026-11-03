@@ -75,9 +75,6 @@ class Stream extends EventEmitter {
   get codecsToForceAAC() {
     return ['alac', 'ac3', 'eac3', 'opus']
   }
-  get userToken() {
-    return this.user.token
-  }
   // Fmp4 does not work on iOS devices: https://github.com/advplyr/audiobookshelf-app/issues/85
   //   Workaround: Force AAC transcode for FLAC
   get hlsSegmentType() {

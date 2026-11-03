@@ -5,7 +5,6 @@ const { LRUCache } = require('lru-cache')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const { isNullOrNaN } = require('../utils')
-const TokenManager = require('../auth/TokenManager')
 
 class UserCache {
   constructor() {
@@ -94,8 +93,6 @@ class User extends Model {
     this.pash
     /** @type {string} */
     this.type
-    /** @type {string} */
-    this.token
     /** @type {boolean} */
     this.isActive
     /** @type {boolean} */
@@ -186,20 +183,16 @@ class User extends Model {
    * Create root user
    * @param {string} username
    * @param {string} pash
-   * @param {import('../Auth')} auth
    * @returns {Promise<User>}
    */
-  static async createRootUser(username, pash, auth, transaction = null) {
+  static async createRootUser(username, pash, transaction = null) {
     const userId = uuidv4()
-
-    const token = auth.generateAccessToken({ id: userId, username })
 
     const newUser = {
       id: userId,
       type: 'root',
       username,
       pash,
-      token,
       isActive: true,
       permissions: this.getDefaultPermissionsForUserType('root'),
       bookmarks: [],
@@ -314,15 +307,12 @@ class User extends Model {
     const username = userinfo.preferred_username || userinfo.name || userinfo.sub
     const email = userinfo.email && userinfo.email_verified ? userinfo.email : null
 
-    const token = TokenManager.generateAccessToken({ id: userId, username })
-
     const newUser = {
       id: userId,
       type: 'user',
       username,
       email,
       pash: null,
-      token,
       isActive: true,
       permissions: this.getDefaultPermissionsForUserType('user'),
       bookmarks: [],
@@ -514,6 +504,7 @@ class User extends Model {
         email: DataTypes.STRING,
         pash: DataTypes.STRING,
         type: DataTypes.STRING,
+        // Column remains so existing databases do not need a migration. New users leave it null.
         token: DataTypes.STRING,
         isActive: {
           type: DataTypes.BOOLEAN,
@@ -596,11 +587,10 @@ class User extends Model {
   /**
    * User data for browser using old model
    *
-   * @param {boolean} [hideRootToken=false]
    * @param {boolean} [minimal=false]
    * @returns
    */
-  toOldJSONForBrowser(hideRootToken = false, minimal = false) {
+  toOldJSONForBrowser(minimal = false) {
     const seriesHideFromContinueListening = this.extraData?.seriesHideFromContinueListening || []
     const librariesAccessible = this.permissions?.librariesAccessible || []
     const itemTagsSelected = this.permissions?.itemTagsSelected || []
@@ -613,11 +603,6 @@ class User extends Model {
       username: this.username,
       email: this.email,
       type: this.type,
-      // TODO: Old non-expiring token
-      token: this.type === 'root' && hideRootToken ? '' : this.token,
-      // TODO: Temporary flag not saved in db that is set in Auth.js jwtAuthCheck
-      // Necessary to detect apps using old tokens that no longer match the old token stored on the user
-      isOldToken: this.isOldToken,
       mediaProgress: this.mediaProgresses?.map((mp) => mp.getOldMediaProgress()) || [],
       seriesHideFromContinueListening: [...seriesHideFromContinueListening],
       bookmarks: this.bookmarks?.map((b) => ({ ...b })) || [],

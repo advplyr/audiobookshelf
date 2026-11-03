@@ -80,7 +80,9 @@ class TokenManager {
    */
   static isBearerAccessTokenPayload(decoded) {
     if (!decoded?.userId) return false
-    if (decoded.type === 'refresh') return false
+    // Legacy API tokens were signed with only userId and username, and never expired.
+    if (decoded.type !== 'access') return false
+    if (!decoded.exp) return false
     return true
   }
 
@@ -98,30 +100,6 @@ class TokenManager {
     } catch (err) {
       return null
     }
-  }
-
-  /**
-   * Generate a JWT token for a given user
-   * TODO: Old method with no expiration
-   * @deprecated
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {string}
-   */
-  static generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, username: user.username }, TokenManager.TokenSecret)
-  }
-
-  /**
-   * Function to generate a jwt token for a given user
-   * TODO: Old method with no expiration
-   * @deprecated
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {string}
-   */
-  generateAccessToken(user) {
-    return TokenManager.generateAccessToken(user)
   }
 
   /**
@@ -323,15 +301,6 @@ class TokenManager {
         // deny login
         done(null, null)
         return
-      }
-
-      // TODO: Temporary flag to report old tokens to users
-      // May be a better place for this but here means we dont have to decode the token again
-      if (!jwt_payload.exp && !user.isOldToken) {
-        Logger.debug(`[TokenManager] User ${user.username} is using an access token without an expiration`)
-        user.isOldToken = true
-      } else if (jwt_payload.exp && user.isOldToken !== undefined) {
-        delete user.isOldToken
       }
 
       // approve login

@@ -40,15 +40,6 @@
 
           <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
 
-          <div v-if="showNewAuthSystemMessage" class="mb-4">
-            <widgets-alert type="warning">
-              <div>
-                <p>{{ $strings.MessageAuthenticationSecurityMessage }}</p>
-                <a v-if="showNewAuthSystemAdminMessage" href="https://github.com/advplyr/audiobookshelf/discussions/4460" target="_blank" class="underline">{{ $strings.LabelMoreInfo }}</a>
-              </div>
-            </widgets-alert>
-          </div>
-
           <form v-show="login_local" @submit.prevent="submitForm">
             <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
             <ui-text-input v-model.trim="username" autocomplete="username" :disabled="processing" class="mb-3 w-full" inputName="username" />
@@ -94,10 +85,7 @@ export default {
       MetadataPath: '',
       login_local: true,
       login_openid: false,
-      authFormData: null,
-      // New JWT auth system re-login flags
-      showNewAuthSystemMessage: false,
-      showNewAuthSystemAdminMessage: false
+      authFormData: null
     }
   },
   watch: {
@@ -201,8 +189,6 @@ export default {
     },
     async submitForm() {
       this.error = null
-      this.showNewAuthSystemMessage = false
-      this.showNewAuthSystemAdminMessage = false
       this.processing = true
 
       const payload = {
@@ -238,15 +224,6 @@ export default {
           }
         })
         .then((res) => {
-          // Force re-login if user is using an old token with no expiration
-          if (res.user.isOldToken) {
-            this.username = res.user.username
-            this.showNewAuthSystemMessage = true
-            // Admin user sees link to github discussion
-            this.showNewAuthSystemAdminMessage = res.user.type === 'admin' || res.user.type === 'root'
-            return false
-          }
-
           this.setUser(res)
           return true
         })

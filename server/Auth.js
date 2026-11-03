@@ -63,18 +63,6 @@ class Auth {
   }
 
   /**
-   * Function to generate a jwt token for a given user
-   * TODO: Old method with no expiration
-   * @deprecated
-   *
-   * @param {{ id:string, username:string }} user
-   * @returns {string}
-   */
-  generateAccessToken(user) {
-    return this.tokenManager.generateAccessToken(user)
-  }
-
-  /**
    * Invalidate all JWT sessions for a given user
    * If user is current user and refresh token is valid, rotate tokens for the current session
    *
@@ -269,10 +257,8 @@ class Auth {
     } else {
       // UI request -> check if we have a callback url
       if (req.cookies.auth_cb) {
-        let stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
-        // UI request -> redirect to auth_cb url and send the jwt token as parameter
-        // TODO: Temporarily continue sending the old token as setToken
-        res.redirect(302, `${req.cookies.auth_cb}?setToken=${userResponse.user.token}&accessToken=${userResponse.user.accessToken}${stateQuery}`)
+        const stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
+        res.redirect(302, `${req.cookies.auth_cb}?accessToken=${userResponse.user.accessToken}${stateQuery}`)
       } else {
         Logger.error('[Auth] No callback or already expired')
         res.redirect(`/login?error=${encodeURIComponent('No callback or already expired')}&autoLaunch=0`)

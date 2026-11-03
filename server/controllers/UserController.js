@@ -28,13 +28,12 @@ class UserController {
    */
   async findAll(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
-    const hideRootToken = !req.user.isRoot
 
     const includes = (req.query.include || '').split(',').map((i) => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
     const allUsers = await Database.userModel.findAll()
-    const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
+    const users = allUsers.map((u) => u.toOldJSONForBrowser(true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
@@ -97,7 +96,7 @@ class UserController {
       return oldMediaProgress
     })
 
-    const userJson = req.reqUser.toOldJSONForBrowser(!req.user.isRoot)
+    const userJson = req.reqUser.toOldJSONForBrowser()
 
     userJson.mediaProgress = oldMediaProgresses
 
@@ -128,7 +127,6 @@ class UserController {
 
     const userId = uuidv4()
     const pash = await this.auth.localAuthStrategy.hashPassword(req.body.password)
-    const token = this.auth.generateAccessToken({ id: userId, username: req.body.username })
     const userType = req.body.type || 'user'
 
     // librariesAccessible and itemTagsSelected can be on req.body or req.body.permissions
@@ -173,7 +171,6 @@ class UserController {
       username: req.body.username,
       email: typeof req.body.email === 'string' ? req.body.email : null,
       pash,
-      token,
       isActive: !!req.body.isActive,
       permissions,
       bookmarks: [],
@@ -236,16 +233,13 @@ class UserController {
     }
 
     let hasUpdates = false
-    let shouldUpdateToken = false
     let shouldInvalidateJwtSessions = false
-    // When changing username create a new API token
     if (updatePayload.username && updatePayload.username !== user.username) {
       const usernameExists = await Database.userModel.checkUserExistsWithUsername(updatePayload.username)
       if (usernameExists) {
         return res.status(400).send('Username already taken')
       }
       user.username = updatePayload.username
-      shouldUpdateToken = true
       shouldInvalidateJwtSessions = true
       hasUpdates = true
     }
@@ -327,11 +321,6 @@ class UserController {
     }
 
     if (hasUpdates) {
-      if (shouldUpdateToken) {
-        user.token = this.auth.generateAccessToken(user)
-        Logger.info(`[UserController] User ${user.username} has generated a new api token`)
-      }
-
       // Handle JWT session invalidation for username/password changes
       if (shouldInvalidateJwtSessions) {
         const newTokens = await this.auth.invalidateJwtSessionsForUser(user, req, res)

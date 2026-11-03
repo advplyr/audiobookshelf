@@ -13,11 +13,6 @@
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
-      <div v-if="legacyToken" class="text-xs space-y-2 mt-4">
-        <ui-text-input-with-label label="Legacy API Token" :value="legacyToken" readonly show-copy />
-
-        <p class="text-warning" v-html="$strings.MessageAuthenticationLegacyTokenWarning" />
-      </div>
       <div class="w-full h-px bg-white/10 my-2" />
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white/90 px-2 sm:px-0">{{ $strings.HeaderListeningStats }}</h1>
@@ -102,12 +97,6 @@ export default {
     }
   },
   computed: {
-    legacyToken() {
-      return this.user.token
-    },
-    userToken() {
-      return this.user.accessToken
-    },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
