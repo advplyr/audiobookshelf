@@ -4,7 +4,6 @@ const express = require('express')
 const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
-const fileUpload = require('./libs/expressFileupload')
 const cookieParser = require('cookie-parser')
 const axios = require('axios')
 
@@ -13,6 +12,7 @@ const { version } = require('../package.json')
 // Utils
 const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
+const { sweepUploadTempFiles } = require('./utils/fileUploadMiddleware')
 const { toNumber } = require('./utils/index')
 const { getRequestOrigin } = require('./utils/requestUtils')
 const Logger = require('./Logger')
@@ -199,6 +199,7 @@ class Server {
 
     await this.cleanUserData() // Remove invalid user item progress
     await CacheManager.ensureCachePaths()
+    await sweepUploadTempFiles()
 
     await ShareManager.init()
     await this.backupManager.init()
@@ -336,16 +337,6 @@ class Server {
 
     this.server = http.createServer(app)
 
-    // Skip file upload parsing for internal-api routes (Next.js proxies read multipart bodies).
-    router.use(
-      /^(?!\/internal-api).*/,
-      fileUpload({
-        defCharset: 'utf8',
-        defParamCharset: 'utf8',
-        useTempFiles: true,
-        tempFileDir: Path.join(global.MetadataPath, 'tmp')
-      })
-    )
     router.use(express.urlencoded({ extended: true, limit: '5mb' }))
 
     // Skip JSON parsing for internal-api routes

@@ -26,6 +26,18 @@ const waitFlushProperty = Symbol('wait flush property symbol');
  */
 module.exports = (options, req, res, next) => {
   req.files = null;
+  const pendingCleanups = [];
+  const runPendingCleanups = () => {
+    while (pendingCleanups.length) {
+      const cleanupFn = pendingCleanups.pop();
+      try {
+        cleanupFn();
+      } catch (err) {
+        debugLog(options, `Temp file cleanup failed: ${err}`);
+      }
+    }
+  };
+  res.once('close', runPendingCleanups);
 
   // Build busboy options and init busboy instance.
   const busboyOptions = buildOptions(options, { headers: req.headers });
@@ -62,6 +74,7 @@ module.exports = (options, req, res, next) => {
     } = options.useTempFiles
         ? tempFileHandler(options, field, filename) // Upload into temporary file.
         : memHandler(options, field, filename);     // Upload into RAM.
+    pendingCleanups.push(cleanup);
 
     const writePromise = options.useTempFiles
       ? getWritePromise().catch(err => {
@@ -161,6 +174,7 @@ module.exports = (options, req, res, next) => {
 
   busboy.on('error', (err) => {
     debugLog(options, `Busboy error`);
+    runPendingCleanups();
     next(err);
   });
 
