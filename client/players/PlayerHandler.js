@@ -140,12 +140,18 @@ export default class PlayerHandler {
 
   playerStateChange(state) {
     console.log('[PlayerHandler] Player state change', state)
+    const wasPlaying = this.playerState === 'PLAYING'
     this.playerState = state
 
     if (this.playerState === 'PLAYING') {
       this.setPlaybackRate(this.initialPlaybackRate)
       this.startPlayInterval()
     } else {
+      // The play interval is the only thing syncing while playing, so leaving it
+      // without a sync loses everything since the last one, including a seek.
+      if (wasPlaying) {
+        this.sendProgressSync(this.getCurrentTime())
+      }
       this.stopPlayInterval()
     }
 
