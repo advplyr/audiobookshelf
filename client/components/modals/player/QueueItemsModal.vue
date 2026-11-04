@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" name="queue-items" :width="800" :height="'unset'">
+  <modals-modal v-model="show" name="queue-items" :width="800" :height="'unset'" :z-index="zIndex">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="text-3xl text-white truncate">{{ $strings.HeaderPlayerQueue }}</p>
@@ -22,7 +22,11 @@
 <script>
 export default {
   props: {
-    value: Boolean
+    value: Boolean,
+    zIndex: {
+      type: Number,
+      default: 60
+    }
   },
   data() {
     return {}
