@@ -10,6 +10,7 @@ const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
 const LibraryScanner = require('./LibraryScanner')
+const EpisodeCoverManager = require('../managers/EpisodeCoverManager')
 const CoverManager = require('../managers/CoverManager')
 const TaskManager = require('../managers/TaskManager')
 
@@ -25,7 +26,9 @@ const TaskManager = require('../managers/TaskManager')
  */
 
 class Scanner {
-  constructor() {}
+  constructor() {
+    this.episodeCoverRefresh = Promise.resolve()
+  }
 
   /**
    *
@@ -367,18 +370,41 @@ class Scanner {
       return 0
     }
 
-    let numEpisodesUpdated = 0
+    const updatedEpisodes = []
     for (const episode of episodesToQuickMatch) {
       const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title, 0.1)
       if (episodeMatches?.length) {
         const wasUpdated = await this.updateEpisodeWithMatch(episode, episodeMatches[0].episode, options)
-        if (wasUpdated) numEpisodesUpdated++
+        if (wasUpdated) updatedEpisodes.push(episode)
       }
     }
+    const numEpisodesUpdated = updatedEpisodes.length
     if (numEpisodesUpdated) {
       Logger.info(`[Scanner] quickMatchPodcastEpisodes: Updated ${numEpisodesUpdated} episodes for "${libraryItem.media.title}"`)
+      this.episodeCoverRefresh = this.episodeCoverRefresh.then(() => this.refreshMatchedEpisodeCovers(libraryItem, updatedEpisodes)).catch((error) => Logger.warn('[Scanner] Matched episode cover refresh failed', error))
     }
     return numEpisodesUpdated
+  }
+
+  /**
+   * Refresh matched artwork after metadata is saved, serially across library items.
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')[]} episodes
+   * @returns {Promise<void>}
+   */
+  async refreshMatchedEpisodeCovers(libraryItem, episodes) {
+    let changed = false
+    for (const episode of episodes) {
+      try {
+        changed = (await EpisodeCoverManager.refreshEpisodeCover(libraryItem, episode)) || changed
+      } catch (error) {
+        Logger.warn('[Scanner] Matched episode cover refresh failed', error)
+      }
+    }
+    if (changed) {
+      const updatedItem = await Database.libraryItemModel.getExpandedById(libraryItem.id)
+      if (updatedItem) SocketAuthority.libraryItemEmitter('item_updated', updatedItem)
+    }
   }
 
   /**
@@ -395,6 +421,7 @@ class Scanner {
       subtitle: episodeToMatch.subtitle || '',
       description: episodeToMatch.description || '',
       enclosureURL: episodeToMatch.enclosure?.url || null,
+      imageURL: episodeToMatch.image || null,
       enclosureSize: episodeToMatch.enclosure?.length || null,
       enclosureType: episodeToMatch.enclosure?.type || null,
       episode: episodeToMatch.episode || '',

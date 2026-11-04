@@ -7,6 +7,8 @@ const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
+const CacheManager = require('./CacheManager')
+const EpisodeCoverManager = require('./EpisodeCoverManager')
 
 class RssFeedManager {
   constructor() {}
@@ -223,6 +225,47 @@ class RssFeedManager {
       res.setHeader('Content-Type', audioMimeType)
     }
     res.sendFile(episodePath)
+  }
+
+  /**
+   * GET: /feed/:slug/item/:episodeId/cover*
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
+  async getFeedItemCover(req, res) {
+    const feed = await Database.feedModel.findOne({
+      where: { slug: req.params.slug },
+      attributes: ['id']
+    })
+    if (!feed) {
+      return res.sendStatus(404)
+    }
+
+    const episode = await Database.feedEpisodeModel.findOne({
+      where: { id: req.params.episodeId, feedId: feed.id },
+      attributes: ['coverPath']
+    })
+    if (!episode) {
+      return res.sendStatus(404)
+    }
+
+    const libraryItemId = EpisodeCoverManager.getLibraryItemIdFromImagePath(episode.coverPath)
+    if (episode.coverPath && !libraryItemId) {
+      return res.sendStatus(404)
+    }
+
+    if (!EpisodeCoverManager.isCurrentImagePath(libraryItemId, episode.coverPath) || !(await fs.pathExists(episode.coverPath))) {
+      return this.getFeedCover(req, res)
+    }
+
+    const extname = Path.extname(episode.coverPath)
+    if (extname === '.webp') {
+      return CacheManager.handleEpisodeCoverCache(res, libraryItemId, episode.coverPath, { format: 'jpeg', fullSize: true })
+    }
+
+    res.type(extname === '.png' ? 'image/png' : 'image/jpeg')
+    return res.sendFile(Path.resolve(episode.coverPath))
   }
 
   /**

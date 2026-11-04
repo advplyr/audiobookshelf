@@ -41,16 +41,33 @@ class CacheManager {
   }
 
   async handleCoverCache(res, libraryItemId, options = {}) {
-    const format = options.format || 'webp'
-    const width = options.width || 400
-    const height = options.height || null
-
-    if (!['webp', 'jpeg', 'png'].includes(format) || !isUUID(libraryItemId) || !isValidCacheDimension(width) || (height !== null && !isValidCacheDimension(height))) {
+    if (!isUUID(libraryItemId)) {
       return res.sendStatus(400)
     }
+
+    return this.handleCoverFileCache(res, libraryItemId, () => Database.libraryItemModel.getCoverPath(libraryItemId), options)
+  }
+
+  async handleEpisodeCoverCache(res, libraryItemId, coverPath, options = {}) {
+    const sha = Path.parse(coverPath).name
+    if (!isUUID(libraryItemId) || !/^[a-f0-9]{64}$/.test(sha)) {
+      return res.sendStatus(400)
+    }
+
+    return this.handleCoverFileCache(res, `${libraryItemId}_ep_${sha}`, () => coverPath, options)
+  }
+
+  async handleCoverFileCache(res, key, getCoverPath, options = {}) {
+    const format = options.format || 'webp'
+    const width = options.fullSize ? null : options.width || 400
+    const height = options.height || null
+    if (!['webp', 'jpeg', 'png'].includes(format) || (width !== null && !isValidCacheDimension(width)) || (height !== null && !isValidCacheDimension(height))) {
+      return res.sendStatus(400)
+    }
+
     res.type(`image/${format}`)
 
-    const cachePath = Path.join(this.CoverCachePath, `${libraryItemId}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const cachePath = Path.join(this.CoverCachePath, `${key}_${width || 'raw'}${height ? `x${height}` : ''}.${format}`)
 
     // Cache exists
     if (await fs.pathExists(cachePath)) {
@@ -72,7 +89,7 @@ class CacheManager {
     }
 
     // Cached cover does not exist, generate it
-    const coverPath = await Database.libraryItemModel.getCoverPath(libraryItemId)
+    const coverPath = await getCoverPath()
     if (!coverPath || !(await fs.pathExists(coverPath))) {
       return res.sendStatus(404)
     }
