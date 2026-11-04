@@ -1,5 +1,11 @@
 <template>
   <div class="relative">
+    <!-- Smart Speed Indicator -->
+    <div v-if="isSmartSpeedEnabled && !isCasting" class="absolute -top-6 right-0 text-xs text-yellow-400 flex items-center bg-black/50 px-2 py-0.5 rounded shadow-sm z-10 pointer-events-none">
+      <span class="material-symbols text-sm mr-1">bolt</span>
+      <span>Smart Speed Active</span>
+    </div>
+
     <!-- Track -->
     <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
       <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
@@ -63,6 +69,12 @@ export default {
     }
   },
   computed: {
+    isCasting() {
+      return this.$store.state.globals.isCasting || false
+    },
+    isSmartSpeedEnabled() {
+      return this.$store.getters['user/getUserSetting']('enableSmartSpeed') || false
+    },
     _playbackRate() {
       if (!this.playbackRate || isNaN(this.playbackRate)) return 1
       return this.playbackRate
@@ -177,7 +189,7 @@ export default {
         this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
       }
       if (this.$refs.hoverTimestampText) {
-        var hoverText = this.$secondsToTimestamp(progressTime / this._playbackRate)
+        var hoverText = this.$secondsToTimestamp(progressTime)
 
         var chapter = this.chapters.find((chapter) => chapter.start <= totalTime && totalTime < chapter.end)
         if (chapter && chapter.title) {
