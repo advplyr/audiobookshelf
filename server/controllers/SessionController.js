@@ -361,6 +361,11 @@ class SessionController {
       return res.sendStatus(404)
     }
 
+    if (playbackSession.userId !== req.user.id && !req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] Non-admin user "${req.user.username}" attempted to access session belonging to another user "${req.params.id}"`)
+      return res.sendStatus(403)
+    }
+
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[SessionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
