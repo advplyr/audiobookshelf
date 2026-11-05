@@ -24,5 +24,15 @@
   "ButtonSave": "ذخیره",
   "ButtonSearch": "جستجو",
   "ButtonSeries": "مجموعه",
-  "ButtonSubmit": "ثبت"
+  "ButtonSubmit": "ثبت",
+  "ButtonYes": "بله",
+  "HeaderAccount": "حساب کاربری",
+  "HeaderAdvanced": "پیشرفته",
+  "HeaderChapters": "قسمت‌ها",
+  "HeaderCollection": "مجموعه",
+  "HeaderDetails": "جزئیات",
+  "HeaderEpisodes": "قسمت‌ها",
+  "HeaderEreaderSettings": "تنظیمات Ereader",
+  "HeaderLatestEpisodes": "آخرین قسمت‌ها",
+  "HeaderLibraries": "مجموعه‌ها"
 }
