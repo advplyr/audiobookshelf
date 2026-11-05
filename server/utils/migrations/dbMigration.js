@@ -175,6 +175,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     itunesArtistId: oldPodcastMetadata.itunesArtistId,
     language: oldPodcastMetadata.language,
     podcastType: oldPodcastMetadata.type,
+    podcastFilenameFormat: oldPodcastMetadata.podcastFilenameFormat,
     explicit: !!oldPodcastMetadata.explicit,
     autoDownloadEpisodes: !!oldPodcast.autoDownloadEpisodes,
     autoDownloadSchedule: oldPodcast.autoDownloadSchedule,

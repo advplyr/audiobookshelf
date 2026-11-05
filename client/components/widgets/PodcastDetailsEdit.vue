@@ -43,6 +43,16 @@
         <div class="w-1/4 px-1">
           <ui-dropdown :label="$strings.LabelPodcastType" v-model="details.type" :items="podcastTypes" small class="max-w-52" @input="handleInputChange" />
         </div>
+        <div class="w-1/4 px-1">
+          <ui-text-input-with-label ref="podcastFilenameFormatInput" v-model="details.podcastFilenameFormat" :label="$strings.PodcastFilenameFormatHelp" trim-whitespace @input="handleInputChange" >
+            <div class="flex -mb-0.5">
+              <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">{{ $strings.PodcastFilenameFormatHelp }}</p>
+              <ui-tooltip direction="top" :text="$strings.PodcastFilenameFormatHelpContent">
+                <span class="material-symbols text-base">info</span>
+              </ui-tooltip>
+            </div>
+          </ui-text-input-with-label>
+        </div>
       </div>
     </form>
   </div>
@@ -71,6 +81,7 @@ export default {
         itunesArtistId: null,
         explicit: false,
         language: null,
+        podcastFilenameFormat: null,
         type: null
       },
       newTags: []
@@ -158,6 +169,7 @@ export default {
       if (this.$refs.feedUrlInput) this.$refs.feedUrlInput.blur()
       if (this.$refs.itunesIdInput) this.$refs.itunesIdInput.blur()
       if (this.$refs.languageInput) this.$refs.languageInput.blur()
+      if (this.$refs.podcastFilenameFormatInput) this.$refs.podcastFilenameFormatInput.blur()
 
       if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
         this.$refs.genresSelect.forceBlur()
@@ -240,6 +252,7 @@ export default {
       this.details.itunesId = this.mediaMetadata.itunesId || ''
       this.details.itunesArtistId = this.mediaMetadata.itunesArtistId || ''
       this.details.language = this.mediaMetadata.language || ''
+      this.details.podcastFilenameFormat = this.mediaMetadata.podcastFilenameFormat || '%T'
       this.details.explicit = !!this.mediaMetadata.explicit
       this.details.type = this.mediaMetadata.type || 'episodic'
 
