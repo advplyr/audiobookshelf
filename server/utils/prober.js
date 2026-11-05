@@ -214,7 +214,7 @@ function parseTags(format, verbose) {
     file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
     file_tag_movementname: tryGrabTags(format, 'movementname', 'mvnm'),
     file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
-    file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
+    file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1', 'tags', 'tag'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
     file_tag_overdrive_media_marker: tryGrabTags(format, 'OverDrive MediaMarkers')
   }
