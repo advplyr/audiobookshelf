@@ -10,7 +10,7 @@ components:
       example: true
     filterBy:
       type: string
-      description: The field to filter by from the request. TODO
+      description: The filter from the request, as `group` or `group.value` where value is base64 encoded. Book library groups with a value are `genres`, `tags`, `series`, `authors`, `progress`, `narrators`, `publishers`, `publishedDecades`, `missing`, `languages`, `tracks`, `ebooks` and `duplicates` (`title`, `asin` or `isbn`, matching other books in the same library).
       example: 'media.metadata.title'
     collapseSeries:
       type: boolean
