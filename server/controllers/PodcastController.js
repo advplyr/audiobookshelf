@@ -295,8 +295,12 @@ class PodcastController {
     const maxEpisodesToDownload = !isNaN(req.query.limit) ? Number(req.query.limit) : 3
 
     const newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(req.libraryItem, maxEpisodesToDownload)
+    if (!newEpisodes) {
+      return res.status(500).send('Failed to check podcast RSS feed')
+    }
+
     res.json({
-      episodes: newEpisodes || []
+      episodes: newEpisodes
     })
   }
 
