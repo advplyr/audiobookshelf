@@ -30,6 +30,7 @@ const Fuse = require('../libs/fusejs')
  * @property {number} publishedAt - Unix timestamp
  * @property {{ url: string, type?: string, length?: string }} enclosure
  * @property {string} guid
+ * @property {string|null} image
  * @property {string} chaptersUrl
  * @property {string} chaptersType
  * @property {RssPodcastChapter[]} chapters
@@ -150,6 +151,29 @@ function extractPodcastMetadata(channel) {
   return metadata
 }
 
+function extractEpisodeImage(item) {
+  const itunesImage = item['itunes:image']?.[0]
+  const podcastImages = [...(item['podcast:image'] || [])].sort((a, b) => (Number(b?.$?.width) || 0) - (Number(a?.$?.width) || 0))
+  const mediaImages = (item['media:content'] || []).filter((content) => content?.$?.medium === 'image' || content?.$?.type?.startsWith('image/'))
+  const itunesImageText = typeof itunesImage === 'string' ? itunesImage : itunesImage?._
+  const podcastImageUrls = podcastImages.map((image) => image?.$?.href)
+  const mediaImageUrls = mediaImages.map((image) => image.$.url)
+  const thumbnailUrl = item['media:thumbnail']?.[0]?.$?.url
+  const candidates = [itunesImage?.$?.href, itunesImage?.$?.url, itunesImageText, ...podcastImageUrls, thumbnailUrl, ...mediaImageUrls]
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string' || !candidate.trim()) continue
+
+    const value = candidate.trim()
+    try {
+      const url = new URL(value)
+      if (url.protocol === 'http:' || url.protocol === 'https:') return value
+    } catch {}
+  }
+
+  return null
+}
+
 function extractEpisodeData(item) {
   // Episode must have url
   let enclosure
@@ -164,7 +188,8 @@ function extractEpisodeData(item) {
   }
 
   const episode = {
-    enclosure: enclosure
+    enclosure: enclosure,
+    image: extractEpisodeImage(item)
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
@@ -284,6 +309,7 @@ function cleanEpisodeData(data) {
     publishedAt,
     enclosure: data.enclosure,
     guid: data.guid || null,
+    image: data.image || null,
     chaptersUrl: data.chaptersUrl || null,
     chaptersType: data.chaptersType || null,
     chapters: data.chapters || []

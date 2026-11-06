@@ -74,6 +74,24 @@ async function extractCoverArt(filepath, outputpath) {
 }
 module.exports.extractCoverArt = extractCoverArt
 
+async function extractCoverArtCopy(filepath, outputpath, streamIndex = null) {
+  await fs.ensureDir(Path.dirname(outputpath))
+  return new Promise((resolve) => {
+    const ffmpeg = Ffmpeg(filepath)
+    ffmpeg.outputOptions(['-map', streamIndex === null ? '0:v:0' : `0:${streamIndex}`, '-c:v', 'copy', '-frames:v', '1', '-f', 'image2'])
+    ffmpeg.output(outputpath)
+    ffmpeg.on('error', (error) => {
+      Logger.debug('[FfmpegHelpers] Failed to copy embedded cover art', error)
+      resolve(false)
+    })
+    ffmpeg.on('end', () => {
+      resolve(outputpath)
+    })
+    ffmpeg.run()
+  })
+}
+module.exports.extractCoverArtCopy = extractCoverArtCopy
+
 //This should convert based on the output file extension as well
 async function resizeImage(filePath, outputPath, width, height) {
   return new Promise((resolve) => {
@@ -96,6 +114,15 @@ async function resizeImage(filePath, outputPath, width, height) {
   })
 }
 module.exports.resizeImage = resizeImage
+
+function getPodcastDownloadOutputOptions(ext) {
+  if (['mp3', 'm4a', 'm4b', 'mp4', 'flac'].includes(ext)) {
+    // Uppercase V excludes attached pictures, so the negative map removes only real video.
+    return ['-map', '0:a', '-map', '0:v?', '-map', '-0:V?', '-c', 'copy', '-metadata', 'podcast=1']
+  }
+  return ['-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1']
+}
+module.exports.getPodcastDownloadOutputOptions = getPodcastDownloadOutputOptions
 
 /**
  * Download podcast episode
@@ -152,7 +179,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.addOption('-loglevel debug') // Debug logs printed on error
-    ffmpeg.outputOptions('-c:a', 'copy', '-map', '0:a', '-metadata', 'podcast=1')
+    ffmpeg.outputOptions(getPodcastDownloadOutputOptions(podcastEpisodeDownload.fileExtension))
 
     /** @type {import('../models/Podcast')} */
     const podcast = podcastEpisodeDownload.libraryItem.media
