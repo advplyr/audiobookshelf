@@ -123,7 +123,7 @@ class ServerSettings {
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
-    this.metadataFileFormat = settings.metadataFileFormat || 'json'
+    this.metadataFileFormat = 'json'
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -200,18 +200,6 @@ class ServerSettings {
       // homeBookshelfView was added in 2.1.3
       this.homeBookshelfView = settings.bookshelfView
     }
-    if (settings.metadataFileFormat == undefined) {
-      // metadataFileFormat was added in 2.2.21
-      // All users using old settings will stay abs until changed
-      this.metadataFileFormat = 'abs'
-    }
-
-    // As of v2.4.5 only json is supported
-    if (this.metadataFileFormat !== 'json') {
-      Logger.warn(`[ServerSettings] Invalid metadataFileFormat ${this.metadataFileFormat} (as of v2.4.5 only json is supported)`)
-      this.metadataFileFormat = 'json'
-    }
-
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
     }
