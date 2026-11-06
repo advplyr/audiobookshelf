@@ -499,6 +499,84 @@ class User extends Model {
   }
 
   /**
+   * Remove bookmarks from users when their library items are deleted.
+   *
+   * @param {(bookmark: AudioBookmarkObject) => boolean} keepBookmark
+   * @returns {Promise<number>} The number of removed bookmarks
+   */
+  static async cleanBookmarks(keepBookmark) {
+    const users = await this.findAll({
+      attributes: ['id', 'bookmarks']
+    })
+    let removedCount = 0
+
+    for (const user of users) {
+      if (!Array.isArray(user.bookmarks)) continue
+
+      const bookmarks = user.bookmarks.filter(keepBookmark)
+      const removedForUser = user.bookmarks.length - bookmarks.length
+      if (!removedForUser) continue
+
+      await this.update(
+        {
+          bookmarks
+        },
+        {
+          where: {
+            id: user.id
+          }
+        }
+      )
+
+      const cachedUser = userCache.getById(user.id)
+      if (cachedUser) {
+        cachedUser.bookmarks = bookmarks
+        SocketAuthority.clientEmitter(cachedUser.id, 'user_updated', cachedUser.toOldJSONForBrowser())
+      }
+
+      removedCount += removedForUser
+    }
+
+    return removedCount
+  }
+
+  /**
+   * Remove bookmarks belonging to deleted library items.
+   *
+   * @param {string[]} libraryItemIds
+   * @returns {Promise<number>} The number of removed bookmarks
+   */
+  static async removeBookmarksForLibraryItems(libraryItemIds) {
+    const libraryItemIdSet = new Set(Array.isArray(libraryItemIds) ? libraryItemIds.filter((id) => typeof id === 'string' && id) : [])
+    if (!libraryItemIdSet.size) return 0
+
+    const removedCount = await this.cleanBookmarks((bookmark) => !libraryItemIdSet.has(bookmark?.libraryItemId))
+    if (removedCount) {
+      Logger.info(`[User] Removed ${removedCount} bookmarks for deleted library items`)
+    }
+    return removedCount
+  }
+
+  /**
+   * Remove bookmarks whose library items no longer exist.
+   *
+   * @returns {Promise<number>} The number of removed bookmarks
+   */
+  static async removeOrphanedBookmarks() {
+    const libraryItems = await this.sequelize.models.libraryItem.findAll({
+      attributes: ['id'],
+      hooks: false,
+      raw: true
+    })
+    const libraryItemIdSet = new Set(libraryItems.map((libraryItem) => libraryItem.id))
+    const removedCount = await this.cleanBookmarks((bookmark) => libraryItemIdSet.has(bookmark?.libraryItemId))
+    if (removedCount) {
+      Logger.info(`[User] Removed ${removedCount} orphaned bookmarks`)
+    }
+    return removedCount
+  }
+
+  /**
    * Initialize model
    * @param {import('../Database').sequelize} sequelize
    */
