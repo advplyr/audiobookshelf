@@ -33,6 +33,7 @@ class PodcastEpisodeDownload {
       episodeDisplayTitle: this.rssPodcastEpisode?.title ?? null,
       url: this.url,
       libraryItemId: this.libraryItemId,
+      libraryItemUpdatedAt: this.libraryItem?.updatedAt?.valueOf() ?? null,
       libraryId: this.libraryId || null,
       isFinished: this.isFinished,
       failed: this.failed,
