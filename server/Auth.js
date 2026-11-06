@@ -257,8 +257,16 @@ class Auth {
     } else {
       // UI request -> check if we have a callback url
       if (req.cookies.auth_cb) {
-        const stateQuery = req.cookies.auth_state ? `&state=${req.cookies.auth_state}` : ''
-        res.redirect(302, `${req.cookies.auth_cb}?accessToken=${userResponse.user.accessToken}${stateQuery}`)
+        // No token in the URL (it would end up in browser history, proxy logs and Referer headers).
+        // handleLoginSuccess already set the httpOnly refresh_token cookie, so the client
+        // gets its access token with POST /auth/refresh after landing on the callback url.
+        const params = new URLSearchParams({ oidcLogin: '1' })
+        if (req.cookies.auth_state) params.set('state', req.cookies.auth_state)
+        res.clearCookie('auth_cb')
+        res.clearCookie('auth_state')
+        // The callback url can already have a query (the React client sends ?redirect=...)
+        const separator = req.cookies.auth_cb.includes('?') ? '&' : '?'
+        res.redirect(302, `${req.cookies.auth_cb}${separator}${params.toString()}`)
       } else {
         Logger.error('[Auth] No callback or already expired')
         res.redirect(`/login?error=${encodeURIComponent('No callback or already expired')}&autoLaunch=0`)
