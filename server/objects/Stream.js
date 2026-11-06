@@ -34,6 +34,7 @@ class Stream extends EventEmitter {
 
     this.ffmpeg = null
     this.loop = null
+    this.isClosed = false
     this.isResetting = false
     this.isClientInitialized = false
     this.isTranscodeComplete = false
@@ -232,6 +233,8 @@ class Stream extends EventEmitter {
   }
 
   async start() {
+    if (this.isClosed) return
+
     Logger.info(`[STREAM] START STREAM - Num Segments: ${this.numSegments}`)
 
     /** @type {import('../libs/fluentFfmpeg/index').FfmpegCommand} */
@@ -240,6 +243,7 @@ class Stream extends EventEmitter {
 
     const adjustedStartTime = Math.max(this.startTime - this.maxSeekBackTime, 0)
     const trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, adjustedStartTime)
+    if (this.isClosed) return
     if (trackStartTime == null) {
       // Close stream show error
       this.ffmpeg = null
@@ -356,6 +360,9 @@ class Stream extends EventEmitter {
   }
 
   async close(errorMessage = null) {
+    if (this.isClosed) return
+    this.isClosed = true
+
     clearInterval(this.loop)
 
     Logger.info('Closing Stream', this.id)
@@ -395,6 +402,7 @@ class Stream extends EventEmitter {
   }
 
   async reset(time) {
+    if (this.isClosed) return
     if (this.isResetting) {
       return Logger.info(`[STREAM] Stream ${this.id} already resetting`)
     }
@@ -404,6 +412,7 @@ class Stream extends EventEmitter {
     if (this.ffmpeg) {
       this.cancelTranscode()
       await this.waitCancelTranscode()
+      if (this.isClosed) return
     }
 
     this.isTranscodeComplete = false
