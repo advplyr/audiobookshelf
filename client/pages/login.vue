@@ -288,9 +288,18 @@ export default {
     }
   },
   async mounted() {
-    // Token passed as query parameter after successful oidc login
-    if (this.$route.query?.accessToken) {
-      localStorage.setItem('token', this.$route.query.accessToken)
+    // After a successful oidc login the server sets the httpOnly refresh_token cookie and
+    // redirects here with ?oidcLogin=1. Exchange the cookie for an access token.
+    if (this.$route.query?.oidcLogin) {
+      await this.$store.dispatch('user/refreshToken').catch((error) => {
+        console.error('Failed to get access token after oidc login', error)
+      })
+
+      // Remove oidcLogin and state query strings
+      const newurl = new URL(location.href)
+      newurl.searchParams.delete('oidcLogin')
+      newurl.searchParams.delete('state')
+      window.history.replaceState({ path: newurl.href }, '', newurl.href)
     }
     if (localStorage.getItem('token')) {
       if (await this.checkAuth()) return // if valid user no need to check status
