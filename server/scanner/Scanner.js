@@ -7,6 +7,7 @@ const { getTitleIgnorePrefix } = require('../utils/index')
 const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
 
 const BookFinder = require('../finders/BookFinder')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryScan = require('./LibraryScan')
 const LibraryScanner = require('./LibraryScanner')
@@ -52,7 +53,7 @@ class Scanner {
       const searchISBN = options.isbn || libraryItem.media.isbn
       const searchASIN = options.asin || libraryItem.media.asin
 
-      const results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
+      const results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2, quickMatch: true })
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
@@ -197,10 +198,13 @@ class Scanner {
     const updatePayload = {}
 
     for (const key in matchData) {
-      if (matchData[key] && detailKeysToUpdate.includes(key)) {
+      // Match metadata can be a deliberate false (e.g. explicit: false),
+      // so guard on presence rather than truthiness.
+      const matchValue = matchData[key]
+      if ((matchValue || matchValue === false) && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
           if (!libraryItem.media.narrators?.length || options.overrideDetails) {
-            updatePayload.narrators = matchData[key]
+            updatePayload.narrators = matchValue
               .split(',')
               .map((v) => v.trim())
               .filter((v) => !!v)
@@ -208,11 +212,11 @@ class Scanner {
         } else if (key === 'genres') {
           if (!libraryItem.media.genres.length || options.overrideDetails) {
             let genresArray = []
-            if (Array.isArray(matchData[key])) genresArray = [...matchData[key]]
+            if (Array.isArray(matchValue)) genresArray = [...matchValue]
             else {
               // Genres should always be passed in as an array but just incase handle a string
-              Logger.warn(`[Scanner] quickMatch genres is not an array ${matchData[key]}`)
-              genresArray = matchData[key]
+              Logger.warn(`[Scanner] quickMatch genres is not an array ${matchValue}`)
+              genresArray = matchValue
                 .split(',')
                 .map((v) => v.trim())
                 .filter((v) => !!v)
@@ -222,16 +226,24 @@ class Scanner {
         } else if (key === 'tags') {
           if (!libraryItem.media.tags.length || options.overrideDetails) {
             let tagsArray = []
-            if (Array.isArray(matchData[key])) tagsArray = [...matchData[key]]
+            if (Array.isArray(matchValue)) tagsArray = [...matchValue]
             else
-              tagsArray = matchData[key]
+              tagsArray = matchValue
                 .split(',')
                 .map((v) => v.trim())
                 .filter((v) => !!v)
             updatePayload[key] = tagsArray
           }
-        } else if (!libraryItem.media[key] || options.overrideDetails) {
-          updatePayload[key] = matchData[key]
+        } else if (
+          // Only supplied content-flag booleans (e.g. explicit: false) can
+          // replace an existing opposite value; other fields still fill
+          // only when empty.
+          ((key === 'explicit' || key === 'abridged') && typeof matchValue === 'boolean'
+            ? libraryItem.media[key] !== matchValue
+            : !libraryItem.media[key]) ||
+          options.overrideDetails
+        ) {
+          updatePayload[key] = matchValue
         }
       }
     }
@@ -295,12 +307,14 @@ class Scanner {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesIdsRemoved = []
       for (const seriesMatchItem of matchData.series) {
+        // Undefined is omitted from Sequelize UPDATEs; null is the native unknown value.
+        const seriesMatchSequence = seriesMatchItem.sequence === undefined || seriesMatchItem.sequence === null ? null : String(seriesMatchItem.sequence)
         const existingSeries = libraryItem.media.series.find((s) => s.name.toLowerCase() === seriesMatchItem.series.toLowerCase())
         if (existingSeries) {
-          if (existingSeries.bookSeries.sequence !== seriesMatchItem.sequence) {
-            existingSeries.bookSeries.sequence = seriesMatchItem.sequence
+          if (existingSeries.bookSeries.sequence !== seriesMatchSequence) {
+            existingSeries.bookSeries.sequence = seriesMatchSequence
             await existingSeries.bookSeries.save()
-            Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series sequence for "${existingSeries.name}" to ${seriesMatchItem.sequence} in "${libraryItem.media.title}"`)
+            Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series sequence for "${existingSeries.name}" to ${seriesMatchSequence} in "${libraryItem.media.title}"`)
             hasSeriesUpdates = true
           }
         } else {
@@ -318,7 +332,7 @@ class Scanner {
           const bookSeries = await Database.bookSeriesModel.create({
             seriesId: seriesItem.id,
             bookId: libraryItem.media.id,
-            sequence: seriesMatchItem.sequence
+            sequence: seriesMatchSequence
           })
           seriesItem.bookSeries = bookSeries
           libraryItem.media.series.push(seriesItem)
@@ -499,23 +513,31 @@ class Scanner {
 
     let hasMoreChunks = true
     let isCanceled = false
-    while (hasMoreChunks) {
-      const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
-      if (!libraryItems.length) {
-        break
-      }
+    let failure = null
+    try {
+      while (hasMoreChunks) {
+        const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
+        if (!libraryItems.length) break
 
-      offset += limit
-      hasMoreChunks = libraryItems.length === limit
+        offset += limit
+        hasMoreChunks = libraryItems.length === limit
 
-      const shouldContinue = await this.matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan)
-      if (!shouldContinue) {
-        isCanceled = true
-        break
+        const shouldContinue = await this.matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan)
+        if (!shouldContinue) {
+          isCanceled = true
+          break
+        }
       }
+    } catch (error) {
+      failure = error instanceof AudiobookDBError ? error.message : 'Library matching failed. Check the server logs and try again.'
+      Logger.error(`[Scanner] matchLibraryItems: ${failure}`)
     }
 
-    if (offset === 0) {
+    if (failure) {
+      libraryScan.setComplete()
+      task.data.scanResults = libraryScan.scanResults
+      task.setFailed({ text: failure })
+    } else if (offset === 0) {
       Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
       libraryScan.setComplete()
       const taskFailedString = {

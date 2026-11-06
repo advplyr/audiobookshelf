@@ -1,3 +1,4 @@
+const http = require('http')
 const sinon = require('sinon')
 const chai = require('chai')
 const expect = chai.expect
@@ -592,5 +593,416 @@ describe('search', () => {
         expect(results[0]).to.not.have.property('matchConfidence')
       })
     })
+  })
+
+  describe('audiobookdb provider', () => {
+    const provider = 'audiobookdb'
+
+    it('allows an empty title when an explicit ASIN is supplied', async () => {
+      const results = await bookFinder.search(null, provider, '', '', null, 'B00B5HZGUG')
+      expect(results).to.deep.equal([])
+      sinon.assert.callCount(bookFinder.runSearch, 1)
+      expect(bookFinder.runSearch.firstCall.args.slice(0, 4)).to.deep.equal(['', '', provider, 'B00B5HZGUG'])
+      sinon.assert.notCalled(audnexusStub)
+    })
+
+    it('returns empty for an empty title without an explicit ASIN', async () => {
+      expect(await bookFinder.search(null, provider, '', '', null)).to.deep.equal([])
+      sinon.assert.callCount(bookFinder.runSearch, 0)
+    })
+
+    it('recovers a contaminated quick-match author through a bounded empty-author fallback', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('andorra', '').resolves(r)
+
+      // maxFuzzySearches 2: the fallback query list deduplicates the
+      // cleaned-author main title against the initial query (identical
+      // normalized title and author), so the no-author main title is the
+      // only additional search — reached without substituting any other
+      // author and without Audnexus. The initial search keeps original
+      // case; the fallback lowercases.
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading', null, null, { maxFuzzySearches: 2 })
+      expect(results).to.deep.equal(r)
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['Andorra', 'Kate Reading'],
+        ['andorra', '']
+      ])
+      sinon.assert.notCalled(audnexusStub)
+    })
+
+    it('keeps the intended author and only relaxes punctuation/initials', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('devon', 'devon ford').resolves(r)
+
+      // "Devon C. Ford" normalizes to "devon ford" (the middle initial is
+      // dropped, never substituted): the relaxed author search finds the
+      // match. The initial search keeps original case.
+      const results = await bookFinder.search(null, provider, 'Devon', 'Devon C. Ford', null, null, { maxFuzzySearches: 3 })
+      expect(results).to.deep.equal(r)
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['Devon', 'Devon C. Ford'],
+        ['devon', 'devon ford']
+      ])
+      sinon.assert.notCalled(audnexusStub)
+    })
+
+    it('bounds the fuzzy fallback by maxFuzzySearches', async () => {
+      runSearchStub.resolves([])
+
+      // Fallback order: the main title with the item's author comes first,
+      // immediately followed by the main title with no author; only then do
+      // title variants spend the remaining budget (each variant leading its
+      // author level). " - " separates parts, so budget 5 = 5 fallback
+      // searches: main title (author + no-author), then the first variant
+      // (author + no-author), then the second variant with the author.
+      const results = await bookFinder.search(null, provider, 'the - great - novel', 'someone', null, null, { maxFuzzySearches: 5 })
+      expect(results).to.deep.equal([])
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['the - great - novel', 'someone'],
+        ['the', 'someone'],
+        ['the', ''],
+        ['great', 'someone'],
+        ['great', ''],
+        ['novel', 'someone']
+      ])
+      sinon.assert.notCalled(audnexusStub)
+    })
+  })
+
+  describe('audiobookdb provider quickMatch', () => {
+    const provider = 'audiobookdb'
+    const cover = 'https://img.example.com/andorra.jpg'
+    const andorra = [{ id: 'ANDID1', title: 'Andorra', cover }]
+    const martian = [{ id: 'MARTID1', title: 'The Martian', cover }]
+    const unrelated = [
+      { title: 'Andorra Sector', cover },
+      { title: 'Andorra: The Leah Chronicles', cover }
+    ]
+    const martianDecoys = [
+      { title: 'The Martian Chronicles', cover },
+      { title: 'The Martian: A Novel', cover }
+    ]
+
+    it('keeps an exact-ASIN result when the local title is stale', async () => {
+      runSearchStub.resolves(martian)
+
+      const results = await bookFinder.search(null, provider, 'Different Local Title', 'Wrong Imported Author', null, 'B00B5HZGUG', {
+        quickMatch: true
+      })
+
+      expect(results).to.deep.equal(martian)
+      expect(bookFinder.runSearch.firstCall.args[3]).to.equal('B00B5HZGUG')
+      sinon.assert.callCount(bookFinder.runSearch, 1)
+    })
+
+    it('keeps an ASIN-shaped title probe hit when the local title is the ASIN itself', async () => {
+      // Item whose stored title is the ASIN (empty asin field): the provider
+      // probes the identifier exactly and returns the recorded title. The
+      // title identity gate must keep that exact match instead of comparing
+      // "The Martian" against "B00B5HZGUG".
+      runSearchStub.resolves([{ id: 'MARTID1', title: 'The Martian', asin: 'B00B5HZGUG', cover }])
+
+      const results = await bookFinder.search(null, provider, 'B00B5HZGUG', '', null, null, {
+        quickMatch: true,
+        maxFuzzySearches: 0
+      })
+
+      expect(results).to.deep.equal([{ id: 'MARTID1', title: 'The Martian', asin: 'B00B5HZGUG', cover }])
+      sinon.assert.callCount(bookFinder.runSearch, 1)
+    })
+
+    it('keeps a main-title match recovered from a hyphenated subtitle query', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('the martian', '').resolves(martian)
+
+      const results = await bookFinder.search(
+        null,
+        provider,
+        'The Martian - Unabridged',
+        'Wrong Imported Author',
+        null,
+        null,
+        { maxFuzzySearches: 2, quickMatch: true }
+      )
+
+      expect(results).to.deep.equal(martian)
+      expect(bookFinder.runSearch.getCalls().map((call) => call.args.slice(0, 2))).to.deep.equal([
+        ['The Martian - Unabridged', 'Wrong Imported Author'],
+        ['the martian', 'wrong imported author'],
+        ['the martian', '']
+      ])
+    })
+
+    it('reaches the no-author main-title search within the quick-match budget for a multi-part title', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('the martian', '').resolves(martian)
+
+      // Quick-match budget is 2: after the initial full-query search the
+      // fallback tries the cleaned-author main title, then the no-author
+      // main title — the contaminated author's relaxed query must not be
+      // starved by title variants. The match is found with no author
+      // substitution and no Audnexus, and its title matches the normalized
+      // main title, so it survives the quick-match gate.
+      const results = await bookFinder.search(
+        null,
+        provider,
+        'The Martian (Unabridged)',
+        'Kate Reading-Smith',
+        null,
+        null,
+        { maxFuzzySearches: 2, quickMatch: true }
+      )
+      expect(results).to.deep.equal(martian)
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['The Martian (Unabridged)', 'Kate Reading-Smith'],
+        ['the martian', 'kate reading-smith'],
+        ['the martian', '']
+      ])
+      sinon.assert.notCalled(audnexusStub)
+    })
+
+    it('rejects unrelated same-title hits on the multi-part title no-author path', async () => {
+      runSearchStub.resolves([])
+      // The relaxed no-author main-title search returns other same-prefix
+      // books (a same-prefix title and a subtitle decoy): quick-match must
+      // not take results[0] blindly. The gate compares against the
+      // normalized main title, so none of these is "The Martian".
+      runSearchStub.withArgs('the martian', '').resolves(martianDecoys)
+
+      const results = await bookFinder.search(
+        null,
+        provider,
+        'The Martian (Unabridged)',
+        'Kate Reading-Smith',
+        null,
+        null,
+        { maxFuzzySearches: 2, quickMatch: true }
+      )
+      expect(results).to.deep.equal([])
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['The Martian (Unabridged)', 'Kate Reading-Smith'],
+        ['the martian', 'kate reading-smith'],
+        ['the martian', '']
+      ])
+    })
+
+    it('keeps the exact main-title candidate when the multi-part no-author search returns it', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('the martian', '').resolves([...martianDecoys, martian[0]])
+
+      const results = await bookFinder.search(
+        null,
+        provider,
+        'The Martian (Unabridged)',
+        'Kate Reading-Smith',
+        null,
+        null,
+        { maxFuzzySearches: 2, quickMatch: true }
+      )
+      expect(results).to.deep.equal(martian)
+    })
+
+    it('does not apply the quick-match gate to manual matching for a multi-part title', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('the martian', '').resolves(martianDecoys)
+
+      // Without quickMatch the relaxed candidates are returned for user
+      // selection; nothing is filtered out.
+      const results = await bookFinder.search(null, provider, 'The Martian (Unabridged)', 'Kate Reading-Smith', null, null, {
+        maxFuzzySearches: 2
+      })
+      expect(results).to.deep.equal(martianDecoys)
+    })
+
+    it('recovers a contaminated quick-match author within the budget', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('andorra', '').resolves(andorra)
+
+      // The initial query already matches the normalized main-title/cleaned-
+      // author query, so that duplicate is skipped; the first distinct
+      // fallback is the no-author main title.
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, {
+        maxFuzzySearches: 2,
+        quickMatch: true
+      })
+      expect(results).to.deep.equal(andorra)
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['Andorra', 'Kate Reading-Smith'],
+        ['andorra', '']
+      ])
+      sinon.assert.notCalled(audnexusStub)
+    })
+
+    it('rejects unrelated same-title hits on the relaxed no-author path', async () => {
+      runSearchStub.resolves([])
+      // The relaxed no-author search returns other same-title books,
+      // including the subtitle decoy: quick-match must not take results[0]
+      // blindly. The gate keeps subtitles (keepSubtitle), so "Andorra: The
+      // Leah Chronicles" is not folded back into "andorra".
+      runSearchStub.withArgs('andorra', '').resolves(unrelated)
+
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, {
+        maxFuzzySearches: 2,
+        quickMatch: true
+      })
+      expect(results).to.deep.equal([])
+      expect(bookFinder.runSearch.getCalls().map((c) => c.args.slice(0, 2))).to.deep.equal([
+        ['Andorra', 'Kate Reading-Smith'],
+        ['andorra', '']
+      ])
+    })
+
+    it('keeps the exact-title candidate when the relaxed search returns it', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('andorra', '').resolves([...unrelated, andorra[0]])
+
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, {
+        maxFuzzySearches: 2,
+        quickMatch: true
+      })
+      expect(results).to.deep.equal(andorra)
+    })
+
+    it('does not apply the quick-match gate to manual matching', async () => {
+      runSearchStub.resolves([])
+      runSearchStub.withArgs('andorra', '').resolves(unrelated)
+
+      // Without quickMatch the relaxed candidates are returned for user
+      // selection; nothing is filtered out.
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, { maxFuzzySearches: 2 })
+      expect(results).to.deep.equal(unrelated)
+    })
+
+    it('abstains when exact-title candidates belong to distinct works', async () => {
+      runSearchStub.resolves([])
+      // Two distinct works carry the exact same title: the title gate passes
+      // both, but automatic selection cannot tell which is the real work, so
+      // quick-match must abstain instead of letting runtime ranking pick.
+      const sameTitleWorks = [
+        { id: 'WORKA', title: 'Andorra', cover },
+        { id: 'WORKB', title: 'Andorra', cover }
+      ]
+      runSearchStub.withArgs('andorra', '').resolves(sameTitleWorks)
+
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, {
+        maxFuzzySearches: 2,
+        quickMatch: true
+      })
+      expect(results).to.deep.equal([])
+    })
+
+    it('keeps both same-title work candidates for manual matching', async () => {
+      runSearchStub.resolves([])
+      // The exact-title candidates of two distinct works remain available
+      // for user selection without quickMatch.
+      const sameTitleWorks = [
+        { id: 'WORKA', title: 'Andorra', cover },
+        { id: 'WORKB', title: 'Andorra', cover }
+      ]
+      runSearchStub.withArgs('andorra', '').resolves(sameTitleWorks)
+
+      const results = await bookFinder.search(null, provider, 'Andorra', 'Kate Reading-Smith', null, null, { maxFuzzySearches: 2 })
+      expect(results).to.deep.equal(sameTitleWorks)
+    })
+
+  })
+})
+
+describe('findCovers AudiobookDB failures', () => {
+  const AudiobookDBError = require('../../../server/providers/AudiobookDBError')
+  let searchStub
+
+  beforeEach(() => {
+    sinon.stub(bookFinder, 'providers').value(['google', 'audiobookdb', 'openlibrary'])
+    searchStub = sinon.stub(bookFinder, 'search').resolves([])
+    searchStub.withArgs(null, 'google').resolves([{ cover: 'https://example.org/google.jpg' }])
+    searchStub.withArgs(null, 'openlibrary').resolves([{ cover: 'https://example.org/openlibrary.jpg' }])
+  })
+
+  afterEach(() => sinon.restore())
+
+  ;['audiobookdb_key_required', 'audiobookdb_auth', 'audiobookdb_rate_limited', 'audiobookdb_unavailable'].forEach((code) => {
+    it(`keeps other providers' covers and continues after ${code}`, async () => {
+      searchStub.withArgs(null, 'audiobookdb').rejects(new AudiobookDBError(code))
+      const covers = await bookFinder.findCovers('all', 'The Martian', 'Andy Weir')
+      expect(covers).to.deep.equal(['https://example.org/google.jpg', 'https://example.org/openlibrary.jpg'])
+      expect(searchStub.getCalls().map((call) => call.args[1])).to.deep.equal(['google', 'audiobookdb', 'openlibrary'])
+    })
+
+    it(`preserves actionable ${code} for an explicit AudiobookDB request`, async () => {
+      const failure = new AudiobookDBError(code)
+      searchStub.withArgs(null, 'audiobookdb').rejects(failure)
+      let caught
+      try {
+        await bookFinder.findCovers('audiobookdb', 'The Martian', 'Andy Weir')
+      } catch (error) {
+        caught = error
+      }
+      expect(caught).to.equal(failure)
+    })
+  })
+})
+
+describe('findCovers audiobookdb loopback', () => {
+  let server
+  let requests
+  let savedApiKey
+  const savedBaseUrl = bookFinder.audiobookdb.baseUrl
+
+  beforeEach(async () => {
+    savedApiKey = process.env.AUDIOBOOKDB_API_KEY
+    process.env.AUDIOBOOKDB_API_KEY = 'test-loopback-key'
+    requests = []
+    server = http.createServer((req, res) => {
+      // Exercise the real transport: the provider must send its own
+      // User-Agent; a bare client gets rejected, so this is not a mock echo.
+      if (!req.headers['user-agent']) {
+        res.writeHead(403, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ message: 'user agent required' }))
+        return
+      }
+      // axios url-joins baseUrl with absolute paths, doubling the slash;
+      // compare on the normalized path so the server exercises the provider
+      // as-is.
+      const url = new URL(req.url, 'http://127.0.0.1')
+      const norm = url.pathname.replace(/\/{2,}/g, '/')
+      requests.push(`${req.method} ${norm}`)
+      if (req.method === 'POST' && norm === '/api/search') {
+        // Actual SearchDocumentBook shape: the cover lives in image.url, and
+        // the full-resolution original in image.sourceUrl.
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(
+          JSON.stringify([
+            {
+              id: 'LOOPCOVER1',
+              title: 'The Martian',
+              image: {
+                url: 'https://cdn.audiobookdb.org/loopcoverkey',
+                sourceUrl: 'https://cdn.audiobookdb.org/loopcoverkey/source.jpg:book'
+              }
+            }
+          ])
+        )
+        return
+      }
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ message: 'not found' }))
+    })
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+    bookFinder.audiobookdb.baseUrl = `http://127.0.0.1:${server.address().port}/api`
+  })
+
+  afterEach(async () => {
+    bookFinder.audiobookdb.baseUrl = savedBaseUrl
+    if (savedApiKey === undefined) delete process.env.AUDIOBOOKDB_API_KEY
+    else process.env.AUDIOBOOKDB_API_KEY = savedApiKey
+    if (server) await new Promise((resolve) => server.close(resolve))
+  })
+
+  it('streams the cover from a real /api/search hit over loopback without detail fanout', async () => {
+    const covers = await bookFinder.findCovers('audiobookdb', 'The Martian', 'Andy Weir')
+    expect(covers).to.deep.equal(['https://cdn.audiobookdb.org/loopcoverkey/source.jpg:book'])
+    // Cover lookups stop at the search hit: no /books/ or /releases/ fanout.
+    expect(requests).to.deep.equal(['POST /api/search'])
   })
 })

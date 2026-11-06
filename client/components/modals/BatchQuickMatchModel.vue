@@ -13,7 +13,10 @@
             <p class="pr-4">{{ $strings.LabelProvider }}</p>
             <ui-dropdown v-model="options.provider" :items="providers" small />
           </div>
-          <p class="text-base px-8 py-2">{{ $strings.MessageBatchQuickMatchDescription }}</p>
+          <p class="text-base px-8 py-2">
+            {{ $strings.MessageBatchQuickMatchDescription }}
+          </p>
+          <p v-if="isAudiobookDBProvider" class="text-xs text-gray-300 px-8 pt-2" v-html="$getString('MessageBatchQuickMatchAudiobookDBHelp')"></p>
           <div class="flex px-8 items-end py-2">
             <ui-toggle-switch v-model="options.overrideCover" />
             <ui-tooltip :text="$strings.LabelUpdateCoverHelp">
@@ -92,6 +95,9 @@ export default {
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+    },
+    isAudiobookDBProvider() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType'] === 'book' && this.options.provider === 'audiobookdb'
     }
   },
   methods: {

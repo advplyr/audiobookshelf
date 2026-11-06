@@ -13,6 +13,7 @@ const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
 const SocketAuthority = require('../SocketAuthority')
 const BookFinder = require('../finders/BookFinder')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 const fsExtra = require('../libs/fsExtra')
 const EBookFile = require('../objects/files/EBookFile')
 const AudioFile = require('../objects/files/AudioFile')
@@ -1026,7 +1027,14 @@ class BookScanner {
       titleDistance: 2,
       authorDistance: 2
     }
-    const results = await BookFinder.findCovers(Database.serverSettings.scannerCoverProvider, title, author, options)
+    let results
+    try {
+      results = await BookFinder.findCovers(Database.serverSettings.scannerCoverProvider, title, author, options)
+    } catch (error) {
+      if (!(error instanceof AudiobookDBError)) throw error
+      libraryScan.addLog(LogLevel.ERROR, `AudiobookDB cover search failed: ${error.code} | ${error.message}`)
+      return null
+    }
     if (results.length) {
       libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${title}"`)
 

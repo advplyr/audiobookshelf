@@ -14,6 +14,7 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
@@ -540,8 +541,13 @@ class LibraryItemController {
       options.overrideDetails = !!reqBody.overrideDetails
     }
 
-    const matchResult = await Scanner.quickMatchLibraryItem(this, req.libraryItem, options)
-    res.json(matchResult)
+    try {
+      const matchResult = await Scanner.quickMatchLibraryItem(this, req.libraryItem, options)
+      res.json(matchResult)
+    } catch (error) {
+      if (error instanceof AudiobookDBError) return error.sendResponse(res)
+      throw error
+    }
   }
 
   /**
@@ -794,13 +800,26 @@ class LibraryItemController {
       options.overrideDetails = !!reqBodyOptions.overrideDetails
     }
 
-    for (const libraryItem of libraryItems) {
-      const matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
-      if (matchResult.updated) {
-        itemsUpdated++
-      } else if (matchResult.warning) {
-        itemsUnmatched++
+    try {
+      for (const libraryItem of libraryItems) {
+        const matchResult = await Scanner.quickMatchLibraryItem(this, libraryItem, options)
+        if (matchResult.updated) {
+          itemsUpdated++
+        } else if (matchResult.warning) {
+          itemsUnmatched++
+        }
       }
+    } catch (error) {
+      if (!(error instanceof AudiobookDBError)) throw error
+      SocketAuthority.clientEmitter(req.user.id, 'batch_quickmatch_complete', {
+        success: false,
+        updates: itemsUpdated,
+        unmatched: itemsUnmatched,
+        error: error.message,
+        code: error.code,
+        ...(error.retryAfter !== undefined ? { retryAfter: error.retryAfter } : {})
+      })
+      return
     }
 
     const result = {
