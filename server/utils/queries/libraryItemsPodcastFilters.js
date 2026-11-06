@@ -563,7 +563,7 @@ module.exports = {
    * @returns {Promise<{ totalSize:number, totalDuration:number, numAudioFiles:number, totalItems:number}>}
    */
   async getPodcastLibraryStats(libraryId) {
-    const [sizeResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize FROM libraryItems li WHERE li.mediaType = "podcast" AND li.libraryId = :libraryId;`, {
+    const [sizeResults] = await Database.sequelize.query(`SELECT SUM(li.size) AS totalSize FROM libraryItems li WHERE li.mediaType = 'podcast' AND li.libraryId = :libraryId;`, {
       replacements: {
         libraryId
       }

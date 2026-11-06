@@ -596,9 +596,9 @@ module.exports = {
       // When collapsing series and sorting by title then use the series name instead of the book title
       //  for this set an attribute "display_title" to use in sorting
       if (global.ServerSettings.sortingIgnorePrefix) {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`titleIgnorePrefix\`)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `'${v.id}'`).join(', ')})), \`libraryItem\`.\`titleIgnorePrefix\`)`), 'display_title'])
       } else {
-        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `"${v.id}"`).join(', ')})), \`libraryItem\`.\`title\`)`), 'display_title'])
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map((v) => `'${v.id}'`).join(', ')})), \`libraryItem\`.\`title\`)`), 'display_title'])
       }
     }
 
