@@ -711,6 +711,7 @@ export default {
         var router = this.$router || this.$nuxt.$router
         if (router) {
           if (this.collapsedSeries) router.push(`/library/${this.libraryId}/series/${this.collapsedSeries.id}`)
+          else if (this.recentEpisode) router.push(`/item/${this.libraryItemId}?episodeId=${this.recentEpisode.id}`)
           else router.push(`/item/${this.libraryItemId}`)
         }
       }
