@@ -63,6 +63,18 @@ describe('Auth', () => {
       expect(new URL(url, 'https://abs.example.com').searchParams.get('state')).to.equal('a b&c=d')
     })
 
+    it('appends to a callback url that already has a query', async () => {
+      sinon.stub(auth, 'handleLoginSuccess').resolves(userResponse)
+      const req = { cookies: { auth_method: 'openid', auth_cb: 'https://abs.example.com/login?redirect=%2Flibrary%2Fabc' } }
+      const res = createRes()
+
+      await auth.handleLoginSuccessBasedOnCookie(req, res)
+
+      const url = new URL(res.redirect.firstCall.args[1])
+      expect(url.searchParams.get('redirect')).to.equal('/library/abc')
+      expect(url.searchParams.get('oidcLogin')).to.equal('1')
+    })
+
     it('still returns tokens as json for mobile oidc logins', async () => {
       const handleLoginSuccess = sinon.stub(auth, 'handleLoginSuccess').resolves(userResponse)
       const req = { cookies: { auth_method: 'openid-mobile' } }

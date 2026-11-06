@@ -264,7 +264,9 @@ class Auth {
         if (req.cookies.auth_state) params.set('state', req.cookies.auth_state)
         res.clearCookie('auth_cb')
         res.clearCookie('auth_state')
-        res.redirect(302, `${req.cookies.auth_cb}?${params.toString()}`)
+        // The callback url can already have a query (the React client sends ?redirect=...)
+        const separator = req.cookies.auth_cb.includes('?') ? '&' : '?'
+        res.redirect(302, `${req.cookies.auth_cb}${separator}${params.toString()}`)
       } else {
         Logger.error('[Auth] No callback or already expired')
         res.redirect(`/login?error=${encodeURIComponent('No callback or already expired')}&autoLaunch=0`)
