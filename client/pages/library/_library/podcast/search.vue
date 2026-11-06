@@ -45,8 +45,7 @@
 <script>
 export default {
   async asyncData({ params, query, store, app, redirect }) {
-    // Podcast search/add page is restricted to admins
-    if (!store.getters['user/getIsAdminOrUp']) {
+    if (!store.getters['user/getUserCanAddPodcasts']) {
       return redirect(`/library/${params.library}`)
     }
 
