@@ -373,16 +373,8 @@ module.exports = {
           [Sequelize.Op.or]: [
             Sequelize.literal(matchTitle),
             Sequelize.literal(matchAuthor),
-            {
-              itunesId: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              itunesArtistId: {
-                [Sequelize.Op.substring]: query
-              }
-            }
+            Sequelize.literal(textSearchQuery.matchExpression('itunesId')),
+            Sequelize.literal(textSearchQuery.matchExpression('itunesArtistId'))
           ]
         },
         ...userPermissionPodcastWhere.podcastWhere
