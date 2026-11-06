@@ -516,6 +516,7 @@
   "LabelPermissionsDelete": "Can Delete",
   "LabelPermissionsDownload": "Can Download",
   "LabelPermissionsDownloadPodcastEpisodes": "Can Download Podcast Episodes",
+  "LabelPermissionsAddPodcasts": "Can Add Podcasts",
   "LabelPermissionsUpdate": "Can Update",
   "LabelPermissionsUpload": "Can Upload",
   "LabelPersonalYearReview": "Your Year in Review ({0})",

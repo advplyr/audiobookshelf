@@ -28,7 +28,7 @@
         <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>
         <span v-else class="material-symbols text-lg">groups</span>
       </nuxt-link>
-      <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-primary/40'">
+      <nuxt-link v-if="isPodcastLibrary && userCanAddPodcasts" :to="`/library/${currentLibraryId}/podcast/search`" class="grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary/80' : 'bg-primary/40'">
         <p class="text-sm">{{ $strings.ButtonAdd }}</p>
       </nuxt-link>
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="grow h-full flex justify-center items-center" :class="isPodcastDownloadQueuePage ? 'bg-primary/80' : 'bg-primary/40'">
@@ -220,6 +220,9 @@ export default {
     },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
+    },
+    userCanAddPodcasts() {
+      return this.$store.getters['user/getUserCanAddPodcasts']
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId

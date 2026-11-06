@@ -38,8 +38,8 @@ class PodcastController {
    * @param {Response} res
    */
   async create(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
+    if (!req.user.canAddPodcasts) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to create podcast without permission`)
       return res.sendStatus(403)
     }
     const payload = req.body
@@ -198,8 +198,8 @@ class PodcastController {
    * @param {Response} res
    */
   async getPodcastFeed(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get podcast feed`)
+    if (!req.user.canAddPodcasts) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to get podcast feed without permission`)
       return res.sendStatus(403)
     }
 
@@ -253,8 +253,8 @@ class PodcastController {
    * @param {Response} res
    */
   async getFeedsFromOPMLText(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get feeds from opml`)
+    if (!req.user.canAddPodcasts) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to get feeds from opml without permission`)
       return res.sendStatus(403)
     }
 
@@ -276,8 +276,8 @@ class PodcastController {
    * @param {Response} res
    */
   async bulkCreatePodcastsFromOpmlFeedUrls(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to bulk create podcasts`)
+    if (!req.user.canAddPodcasts) {
+      Logger.error(`[PodcastController] User "${req.user.username}" attempted to bulk create podcasts without permission`)
       return res.sendStatus(403)
     }
 
