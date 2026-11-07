@@ -24,6 +24,8 @@ class AudioFile {
     this.timeBase = null
     this.channels = null
     this.channelLayout = null
+    this.sampleRate = null
+    this.profile = null
     this.chapters = []
     this.embeddedCoverArt = null
 
@@ -62,6 +64,8 @@ class AudioFile {
       timeBase: this.timeBase,
       channels: this.channels,
       channelLayout: this.channelLayout,
+      sampleRate: this.sampleRate,
+      profile: this.profile,
       chapters: this.chapters,
       embeddedCoverArt: this.embeddedCoverArt,
       metaTags: this.metaTags?.toJSON() || {},
@@ -94,6 +98,8 @@ class AudioFile {
     this.timeBase = data.timeBase
     this.channels = data.channels
     this.channelLayout = data.channelLayout
+    this.sampleRate = data.sampleRate
+    this.profile = data.profile
     this.chapters = data.chapters
     this.embeddedCoverArt = data.embeddedCoverArt || null
 
@@ -130,6 +136,8 @@ class AudioFile {
     this.timeBase = probeData.timeBase
     this.channels = probeData.channels
     this.channelLayout = probeData.channelLayout
+    this.sampleRate = probeData.sampleRate
+    this.profile = probeData.profile
     this.chapters = probeData.chapters || []
     this.metaTags = probeData.audioMetaTags
     this.embeddedCoverArt = probeData.embeddedCoverArt
@@ -137,7 +145,7 @@ class AudioFile {
 
   syncChapters(updatedChapters) {
     if (this.chapters.length !== updatedChapters.length) {
-      this.chapters = updatedChapters.map(ch => ({ ...ch }))
+      this.chapters = updatedChapters.map((ch) => ({ ...ch }))
       return true
     } else if (updatedChapters.length === 0) {
       if (this.chapters.length > 0) {
@@ -154,7 +162,7 @@ class AudioFile {
       }
     }
     if (hasUpdates) {
-      this.chapters = updatedChapters.map(ch => ({ ...ch }))
+      this.chapters = updatedChapters.map((ch) => ({ ...ch }))
     }
     return hasUpdates
   }
@@ -164,8 +172,8 @@ class AudioFile {
   }
 
   /**
-   * 
-   * @param {AudioFile} scannedAudioFile 
+   *
+   * @param {AudioFile} scannedAudioFile
    * @returns {boolean} true if updates were made
    */
   updateFromScan(scannedAudioFile) {
