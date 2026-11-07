@@ -37,6 +37,7 @@ describe('LibraryController.downloadMultiple', () => {
     })
     const allowedItem = await Database.libraryItemModel.create({
       path: '/test-lib/allowed',
+      relPath: 'Authors/Allowed Book',
       isFile: false,
       libraryFiles: [],
       mediaId: allowedBook.id,
@@ -57,6 +58,7 @@ describe('LibraryController.downloadMultiple', () => {
     })
     const explicitItem = await Database.libraryItemModel.create({
       path: '/test-lib/explicit',
+      relPath: 'Authors/Explicit Book',
       isFile: false,
       libraryFiles: [],
       mediaId: explicitBook.id,
@@ -77,6 +79,7 @@ describe('LibraryController.downloadMultiple', () => {
     })
     const taggedItem = await Database.libraryItemModel.create({
       path: '/test-lib/tagged',
+      relPath: 'Restricted/Tagged Book',
       isFile: false,
       libraryFiles: [],
       mediaId: taggedBook.id,
@@ -174,5 +177,33 @@ describe('LibraryController.downloadMultiple', () => {
     const pathObjects = zipHelpers.zipDirectoriesPipe.firstCall.args[0]
     expect(pathObjects).to.have.length(1)
     expect(pathObjects[0].path).to.equal('/test-lib/allowed')
+  })
+
+  it('returns an indexed folder tree containing only accessible items', async () => {
+    const req = {
+      user: restrictedUser,
+      library: libraryRecord
+    }
+    const res = {
+      json: sinon.spy()
+    }
+
+    await LibraryController.getFolderTree(req, res)
+
+    expect(res.json.calledOnce).to.be.true
+    const payload = res.json.firstCall.args[0]
+    expect(payload.folders).to.deep.equal([{ id: libraryFolder.id, name: 'test-lib' }])
+    expect(payload.items).to.deep.equal([
+      {
+        id: allowedItemId,
+        folderId: libraryFolder.id,
+        relPath: 'Authors/Allowed Book',
+        title: 'Allowed Book',
+        author: '',
+        hasCover: false,
+        updatedAt: payload.items[0].updatedAt,
+        mediaType: 'book'
+      }
+    ])
   })
 })
