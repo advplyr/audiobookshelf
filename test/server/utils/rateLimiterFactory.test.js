@@ -21,6 +21,51 @@ function closeServer(server) {
   })
 }
 
+function patchPassword(port, { userId, headers = {} } = {}) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ password: 'current', newPassword: 'next' })
+    const req = http.request(
+      {
+        hostname: '127.0.0.1',
+        port,
+        path: '/me/password',
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+          'User-Agent': 'rate-limiter-test',
+          'x-user-id': userId,
+          ...headers
+        }
+      },
+      (res) => {
+        res.resume()
+        res.on('end', () => resolve({ status: res.statusCode }))
+      }
+    )
+    req.on('error', reject)
+    req.write(body)
+    req.end()
+  })
+}
+
+function passwordChangeApp(limiter) {
+  const app = express()
+  app.patch(
+    '/me/password',
+    (req, res, next) => {
+      const userId = req.get('x-user-id')
+      if (userId) req.user = { id: userId }
+      next()
+    },
+    limiter,
+    (req, res) => {
+      res.status(400).send('Invalid password')
+    }
+  )
+  return app
+}
+
 function postLogin(port, { headers = {} } = {}) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({ username: 'alice', password: 'guess' })
@@ -60,6 +105,7 @@ describe('rateLimiterFactory', () => {
 
   beforeEach(() => {
     RateLimiterFactory.authRateLimiter = null
+    RateLimiterFactory.passwordChangeRateLimiter = null
     process.env.RATE_LIMIT_AUTH_MAX = '3'
     process.env.RATE_LIMIT_AUTH_WINDOW = '60000'
     delete process.env.RATE_LIMIT_AUTH_MESSAGE
@@ -70,6 +116,7 @@ describe('rateLimiterFactory', () => {
 
   afterEach(() => {
     RateLimiterFactory.authRateLimiter = null
+    RateLimiterFactory.passwordChangeRateLimiter = null
     if (previousMax === undefined) delete process.env.RATE_LIMIT_AUTH_MAX
     else process.env.RATE_LIMIT_AUTH_MAX = previousMax
     if (previousWindow === undefined) delete process.env.RATE_LIMIT_AUTH_WINDOW
@@ -133,6 +180,64 @@ describe('rateLimiterFactory', () => {
       }
 
       expect(statuses).to.deep.equal([401, 401, 401, 429])
+    } finally {
+      await closeServer(server)
+    }
+  })
+
+  it('limits password changes per user and ignores client IP headers', async () => {
+    const app = passwordChangeApp(RateLimiterFactory.getPasswordChangeRateLimiter())
+    const { server, port } = await listen(app)
+    try {
+      const alice = []
+      for (let i = 0; i < 4; i++) {
+        const result = await patchPassword(port, {
+          userId: 'alice',
+          headers: {
+            'X-Client-IP': `10.2.0.${i}`,
+            'X-Forwarded-For': `198.51.100.${i}`
+          }
+        })
+        alice.push(result.status)
+      }
+      const bob = await patchPassword(port, { userId: 'bob' })
+
+      expect(alice).to.deep.equal([400, 400, 400, 429])
+      expect(bob.status).to.equal(400)
+      expect(Logger.warn.calledWithMatch(/User: alice/)).to.equal(true)
+    } finally {
+      await closeServer(server)
+    }
+  })
+
+  it('does not consume a password-change slot for a successful update', async () => {
+    let attempt = 0
+    const app = express()
+    const limiter = RateLimiterFactory.getPasswordChangeRateLimiter()
+    app.patch(
+      '/me/password',
+      (req, res, next) => {
+        req.user = { id: 'alice' }
+        next()
+      },
+      limiter,
+      (req, res) => {
+        attempt += 1
+        res.status(attempt === 1 ? 200 : 400).send(attempt === 1 ? 'ok' : 'Invalid password')
+      }
+    )
+
+    const { server, port } = await listen(app)
+    try {
+      const success = await patchPassword(port, { userId: 'alice' })
+      expect(success.status).to.equal(200)
+
+      const statuses = []
+      for (let i = 0; i < 4; i++) {
+        const result = await patchPassword(port, { userId: 'alice' })
+        statuses.push(result.status)
+      }
+      expect(statuses).to.deep.equal([400, 400, 400, 429])
     } finally {
       await closeServer(server)
     }

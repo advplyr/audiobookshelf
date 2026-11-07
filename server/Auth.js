@@ -22,6 +22,7 @@ class Auth {
 
     /** @type {import('express-rate-limit').RateLimitRequestHandler} */
     this.authRateLimiter = RateLimiterFactory.getAuthRateLimiter()
+    this.passwordChangeRateLimiter = RateLimiterFactory.getPasswordChangeRateLimiter()
 
     this.tokenManager = new TokenManager()
     this.localAuthStrategy = new LocalAuthStrategy()
