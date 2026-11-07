@@ -1,6 +1,5 @@
 const { rateLimit, RateLimitRequestHandler } = require('express-rate-limit')
 const Logger = require('../Logger')
-const requestIp = require('../libs/requestIp')
 
 /**
  * Factory for creating authentication rate limiters
@@ -8,6 +7,7 @@ const requestIp = require('../libs/requestIp')
 class RateLimiterFactory {
   static DEFAULT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
   static DEFAULT_MAX = 40 // 40 attempts
+  static LOCAL_LOGIN_KEY = 'local-login'
 
   constructor() {
     this.authRateLimiter = null
@@ -55,17 +55,15 @@ class RateLimiterFactory {
       max,
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: (req) => {
-        // Override keyGenerator to handle proxy IPs
-        return requestIp.getClientIp(req) || req.ip
-      },
+      // One process-wide bucket of failed local logins. Do not key on client IP headers.
+      keyGenerator: () => RateLimiterFactory.LOCAL_LOGIN_KEY,
+      skipSuccessfulRequests: true,
       handler: (req, res) => {
         const userAgent = req.get('User-Agent') || 'Unknown'
         const endpoint = req.path
         const method = req.method
-        const ip = requestIp.getClientIp(req) || req.ip
 
-        Logger.warn(`[RateLimiter] Rate limit exceeded - IP: ${ip}, Endpoint: ${method} ${endpoint}, User-Agent: ${userAgent}`)
+        Logger.warn(`[RateLimiter] Rate limit exceeded - Endpoint: ${method} ${endpoint}, User-Agent: ${userAgent}`)
 
         res.status(429).json({
           error: message
@@ -73,7 +71,7 @@ class RateLimiterFactory {
       }
     })
 
-    Logger.debug(`[RateLimiterFactory] Created auth rate limiter: ${max} attempts per ${windowMs / 1000 / 60} minutes`)
+    Logger.debug(`[RateLimiterFactory] Created auth rate limiter: ${max} failed attempts per ${windowMs / 1000 / 60} minutes`)
 
     return this.authRateLimiter
   }
