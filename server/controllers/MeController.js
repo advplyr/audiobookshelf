@@ -495,7 +495,7 @@ class MeController {
     for (const mediaProgress of mediaProgressesInProgress) {
       const oldMediaProgress = mediaProgress.getOldMediaProgress()
       const libraryItem = libraryItems.find((li) => li.id === oldMediaProgress.libraryItemId)
-      if (libraryItem) {
+      if (libraryItem && req.user.checkCanAccessLibraryItem(libraryItem)) {
         if (oldMediaProgress.episodeId && libraryItem.isPodcast) {
           const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === oldMediaProgress.episodeId)
           if (episode) {
