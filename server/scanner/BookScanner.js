@@ -224,12 +224,16 @@ class BookScanner {
           if (!media.authors.some((au) => au.name === authorName)) {
             const existingAuthorId = await Database.getAuthorIdByName(libraryItemData.libraryId, authorName)
             if (existingAuthorId) {
-              await Database.bookAuthorModel.create({
-                bookId: media.id,
-                authorId: existingAuthorId
-              })
-              libraryScan.authorsNumBooksChangedIds.add(existingAuthorId)
-              libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
+              try {
+                await Database.bookAuthorModel.create({
+                  bookId: media.id,
+                  authorId: existingAuthorId
+                })
+                libraryScan.authorsNumBooksChangedIds.add(existingAuthorId)
+                libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added author "${authorName}"`)
+              } catch (error) {
+                if (error.name !== 'SequelizeUniqueConstraintError') throw error
+              }
               authorsUpdated = true
             } else {
               const newAuthor = await Database.authorModel.create({
@@ -262,22 +266,51 @@ class BookScanner {
           if (!existingBookSeries) {
             const existingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
             if (existingSeriesId) {
-              await Database.bookSeriesModel.create({
-                bookId: media.id,
-                seriesId: existingSeriesId,
-                sequence: seriesObj.sequence
-              })
-              libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
+              try {
+                await Database.bookSeriesModel.create({
+                  bookId: media.id,
+                  seriesId: existingSeriesId,
+                  sequence: seriesObj.sequence
+                })
+                libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
+              } catch (error) {
+                if (error.name !== 'SequelizeUniqueConstraintError') throw error
+              }
               seriesUpdated = true
             } else {
-              const newSeries = await Database.seriesModel.create({
-                name: seriesObj.name,
-                nameIgnorePrefix: getTitleIgnorePrefix(seriesObj.name),
-                libraryId: libraryItemData.libraryId
-              })
-              await media.addSeries(newSeries, { through: { sequence: seriesObj.sequence } })
-              Database.addSeriesToFilterData(libraryItemData.libraryId, newSeries.name, newSeries.id)
-              libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
+              let newSeries
+              let seriesCreated = false
+              try {
+                newSeries = await Database.seriesModel.create({
+                  name: seriesObj.name,
+                  nameIgnorePrefix: getTitleIgnorePrefix(seriesObj.name),
+                  libraryId: libraryItemData.libraryId
+                })
+                seriesCreated = true
+              } catch (error) {
+                if (error.name !== 'SequelizeUniqueConstraintError') throw error
+                newSeries = await Database.seriesModel.findOne({
+                  where: { name: seriesObj.name, libraryId: libraryItemData.libraryId }
+                })
+                if (!newSeries) throw error
+              }
+              if (seriesCreated) {
+                Database.addSeriesToFilterData(libraryItemData.libraryId, newSeries.name, newSeries.id)
+              }
+              try {
+                await Database.bookSeriesModel.create({
+                  bookId: media.id,
+                  seriesId: newSeries.id,
+                  sequence: seriesObj.sequence
+                })
+                if (seriesCreated) {
+                  libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added new series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
+                } else {
+                  libraryScan.addLog(LogLevel.DEBUG, `Updating book "${bookMetadata.title}" added series "${seriesObj.name}"${seriesObj.sequence ? ` with sequence "${seriesObj.sequence}"` : ''}`)
+                }
+              } catch (error) {
+                if (error.name !== 'SequelizeUniqueConstraintError') throw error
+              }
               seriesUpdated = true
             }
           } else if (seriesObj.sequence && existingBookSeries.bookSeries.sequence !== seriesObj.sequence) {
@@ -507,24 +540,38 @@ class BookScanner {
       }
     }
     if (bookMetadata.series.length) {
+      const linkedSeriesIds = new Set()
       for (const seriesObj of bookMetadata.series) {
         if (!seriesObj.name) continue
-        const matchingSeriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
-        if (matchingSeriesId) {
-          bookObject.bookSeries.push({
-            seriesId: matchingSeriesId,
-            sequence: seriesObj.sequence
-          })
-        } else {
-          bookObject.bookSeries.push({
-            sequence: seriesObj.sequence,
-            series: {
+        let seriesId = await Database.getSeriesIdByName(libraryItemData.libraryId, seriesObj.name)
+        if (!seriesId) {
+          let series
+          let seriesCreated = false
+          try {
+            series = await Database.seriesModel.create({
               name: seriesObj.name,
               nameIgnorePrefix: getTitleIgnorePrefix(seriesObj.name),
               libraryId: libraryItemData.libraryId
-            }
-          })
+            })
+            seriesCreated = true
+          } catch (error) {
+            if (error.name !== 'SequelizeUniqueConstraintError') throw error
+            series = await Database.seriesModel.findOne({
+              where: { name: seriesObj.name, libraryId: libraryItemData.libraryId }
+            })
+            if (!series) throw error
+          }
+          seriesId = series.id
+          if (seriesCreated) {
+            Database.addSeriesToFilterData(libraryItemData.libraryId, series.name, series.id)
+          }
         }
+        if (linkedSeriesIds.has(seriesId)) continue
+        linkedSeriesIds.add(seriesId)
+        bookObject.bookSeries.push({
+          seriesId,
+          sequence: seriesObj.sequence
+        })
       }
     }
 
@@ -703,8 +750,14 @@ class BookScanner {
       bookMetadata.description = htmlSanitizer.sanitize(bookMetadata.description)
     }
 
-    // One dedupe after every metadata source. A repeated name inserts the same bookAuthor twice and aborts the scan.
+    // One dedupe after every metadata source. A repeated name inserts the same bookAuthor or bookSeries twice and aborts the scan.
     bookMetadata.authors = parseNameString.dedupeNames(bookMetadata.authors)
+    const seenSeriesNames = new Set()
+    bookMetadata.series = bookMetadata.series.filter((series) => {
+      if (!series?.name || seenSeriesNames.has(series.name)) return false
+      seenSeriesNames.add(series.name)
+      return true
+    })
 
     return bookMetadata
   }
