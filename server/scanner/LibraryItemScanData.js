@@ -47,6 +47,10 @@ class LibraryItemScanData {
     this.libraryFilesAdded = []
     /** @type {LibraryFileModifiedObject[]} */
     this.libraryFilesModified = []
+
+    // Set when scanned as a new library item but a matching missing library item was reused instead
+    /** @type {boolean} */
+    this.reusedMissingLibraryItem = false
   }
 
   /**
