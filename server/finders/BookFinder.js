@@ -3,6 +3,8 @@ const GoogleBooks = require('../providers/GoogleBooks')
 const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
 const Audnexus = require('../providers/Audnexus')
+const AudiobookDB = require('../providers/AudiobookDB')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 const FantLab = require('../providers/FantLab')
 const AudiobookCovers = require('../providers/AudiobookCovers')
 const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
@@ -19,11 +21,12 @@ class BookFinder {
     this.audible = new Audible()
     this.iTunesApi = new iTunes()
     this.audnexus = new Audnexus()
+    this.audiobookdb = new AudiobookDB()
     this.fantLab = new FantLab()
     this.audiobookCovers = new AudiobookCovers()
     this.customProviderAdapter = new CustomProviderAdapter()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es', 'audiobookdb']
 
     this.verbose = false
   }
@@ -167,6 +170,24 @@ class BookFinder {
     const covers = await this.audiobookCovers.search(search, this.#providerResponseTimeout)
     if (this.verbose) Logger.debug(`AudiobookCovers Search Results: ${covers.length || 0}`)
     return covers || []
+  }
+
+  /**
+   *
+   * @param {string} title
+   * @param {string} author
+   * @param {string} asin
+   * @param {boolean} coversOnly
+   * @param {number|null} deadline
+   * @returns {Promise<Object[]>}
+   */
+  async getAudiobookDBResults(title, author, asin, coversOnly = false, deadline = null) {
+    // Share the caller's operation-wide deadline: only the remaining time
+    // is left for this call.
+    const timeout = deadline ? Math.max(0, deadline - Date.now()) : this.#providerResponseTimeout
+    const books = await this.audiobookdb.search(title, author, asin, timeout, { coversOnly })
+    if (this.verbose) Logger.debug(`AudiobookDB Search Results: ${books.length || 0}`)
+    return books || []
   }
 
   /**
@@ -368,7 +389,7 @@ class BookFinder {
    * @param {string} author
    * @param {string} isbn
    * @param {string} asin
-   * @param {{titleDistance:number, authorDistance:number, maxFuzzySearches:number}} options
+   * @param {{titleDistance:number, authorDistance:number, maxFuzzySearches:number, coversOnly?:boolean, quickMatch?:boolean}} options
    * @returns {Promise<Object[]>}
    */
   async search(libraryItem, provider, title, author, isbn, asin, options = {}) {
@@ -378,25 +399,41 @@ class BookFinder {
     const maxFuzzySearches = !isNaN(options.maxFuzzySearches) ? Number(options.maxFuzzySearches) : 5
     let numFuzzySearches = 0
 
+    // Cover lookups need only the cover image: AudiobookDB serves them
+    // straight from /search hits without any detail fanout.
+    const coversOnly = provider === 'audiobookdb' && !!options.coversOnly
+    // One deadline for the whole AudiobookDB operation (throttle waits and
+    // fallback attempts share it).
+    const audiobookdbDeadline = provider === 'audiobookdb' ? Date.now() + this.#providerResponseTimeout : null
+    // The library item's runtime, used to rank multi-recording results by
+    // length.
+    const libraryItemDurationMinutes = libraryItem?.media?.duration ? libraryItem.media.duration / 60 : null
+
     // Custom providers are assumed to be correct
     if (provider.startsWith('custom-')) {
       return this.getCustomProviderResults(title, author, isbn, provider)
     }
 
-    if (!title) return books
+    // An explicit ASIN is enough to resolve a recording on the identifier
+    // providers; an ASIN-shaped title alone is not an identifier signal.
+    const explicitAsin = typeof asin === 'string' ? asin.trim() : ''
+    const canResolveWithoutTitle = !!(explicitAsin && (provider.startsWith('audible') || provider === 'audiobookdb'))
+    if (!title && !canResolveWithoutTitle) return books
 
     // Truncate excessively long inputs to prevent ReDoS attacks
     const MAX_INPUT_LENGTH = 500
-    title = title.substring(0, MAX_INPUT_LENGTH)
+    title = title ? title.substring(0, MAX_INPUT_LENGTH) : ''
     author = author?.substring(0, MAX_INPUT_LENGTH) || author
 
     const isTitleAsin = isValidASIN(title.toUpperCase())
 
     let actualTitleQuery = title
     let actualAuthorQuery = author
-    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance, coversOnly, audiobookdbDeadline)
 
-    if (!books.length && maxFuzzySearches > 0) {
+    // Audnexus fuzzy-author re-searches are only useful for providers whose
+    // backend search does not handle matching; AudiobookDB search already does.
+    if (!books.length && maxFuzzySearches > 0 && provider !== 'audiobookdb') {
       // Normalize title and author
       title = title.trim().toLowerCase()
       author = author?.trim().toLowerCase() || ''
@@ -422,22 +459,125 @@ class BookFinder {
           if (++numFuzzySearches > maxFuzzySearches) break loop_author
           actualTitleQuery = titleCandidate
           actualAuthorQuery = authorCandidate
-          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance, coversOnly, audiobookdbDeadline)
           if (books.length) break loop_author
         }
+      }
+    } else if (!books.length && maxFuzzySearches > 0 && provider === 'audiobookdb') {
+      // Bounded local fallback for AudiobookDB: the backend matching is
+      // lenient, so the fallback only relaxes the query — never substituting
+      // a different author for the one the item carries. Order: the main
+      // title with the item's cleaned author, immediately followed by the
+      // main title with no author; only then does the remaining budget
+      // spend on title variants and the aggressively cleaned author level —
+      // so a two-search quick-match budget reaches the no-author main-title
+      // recovery even for multi-part/annotated titles, while the manual
+      // default budget keeps the author-relaxed attempts first. All
+      // attempts share the maxFuzzySearches budget and deadline.
+      if (!coversOnly && !canResolveWithoutTitle) {
+        title = title.trim().toLowerCase()
+        author = author?.trim().toLowerCase() || ''
+
+        const cleanAuthor = cleanAuthorForCompares(author)
+        const aggressiveAuthor = cleanAuthor.replace(/[,/-].*$/, '').trim()
+        // Only relaxations of the author the item carries (or none): the
+        // full normalized author and its aggressively cleaned form are
+        // derived from it, so no other author is ever substituted.
+        const authorCandidates = []
+        for (const candidate of [cleanAuthor, '', aggressiveAuthor]) {
+          if (!authorCandidates.includes(candidate)) authorCandidates.push(candidate)
+        }
+
+        // Remove underscores and parentheses with their contents, and replace with a separator
+        // Use negated character classes to prevent ReDoS vulnerability (input length validated at entry point)
+        const cleanTitle = title.replace(/\[[^\]]*\]|\([^)]*\)|{[^}]*}|_/g, ' - ')
+        // Split title into hypen-separated parts
+        const titleParts = cleanTitle.split(/ - | -|- /)
+        const mainTitle = cleanTitleForCompares(title)
+
+        const titleCandidates = new BookFinder.TitleCandidates('')
+        for (const titlePart of titleParts) titleCandidates.add(titlePart)
+        const titleVariants = titleCandidates.getCandidates()
+
+        // Title variants exclude the main title, which always leads.
+        const variantTail = titleVariants.filter((v) => v !== mainTitle)
+
+        // Query order: the main title with the item's cleaned author is
+        // immediately followed by the main title with no author, so the
+        // two-search quick-match budget reaches the no-author recovery
+        // before any title variant can spend it. The remaining budget then
+        // spends on title variants and the aggressively cleaned author
+        // level, with each variant leading its author level.
+        const tried = new Set([`${actualTitleQuery.toLowerCase()}|${(actualAuthorQuery || '').toLowerCase()}`])
+        const fallbackQueries = []
+        for (const [titleQuery, authorQuery] of [
+          [mainTitle, cleanAuthor],
+          [mainTitle, ''],
+          ...variantTail.flatMap((titleQuery) => authorCandidates.map((authorQuery) => [titleQuery, authorQuery]))
+        ]) {
+          if (!titleQuery) continue
+          const key = `${titleQuery}|${authorQuery}`
+          if (tried.has(key)) continue // We already tried this
+          tried.add(key)
+          fallbackQueries.push([titleQuery, authorQuery])
+        }
+
+        loop_fallback: for (const [titleCandidate, authorCandidate] of fallbackQueries) {
+          if (audiobookdbDeadline && Date.now() >= audiobookdbDeadline) break loop_fallback
+          if (++numFuzzySearches > maxFuzzySearches) break loop_fallback
+          actualTitleQuery = titleCandidate
+          actualAuthorQuery = authorCandidate
+          books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance, coversOnly, audiobookdbDeadline)
+          if (books.length) break loop_fallback
+        }
+      }
+    }
+
+    // Main-title fallback can intentionally remove a subtitle from the
+    // submitted query. Compare against that effective query while retaining
+    // subtitles on candidates, so unrelated same-prefix works stay rejected.
+    // Manual matching returns the candidates for user selection and is left
+    // untouched. An explicit ASIN already pins a matched release, so its
+    // exact candidate is not rejected by a stale local title. A successful
+    // ASIN-shaped title probe does the same: the provider resolved the
+    // identifier exactly, and the resolved candidate's ASIN proves the
+    // identity a stale local title cannot.
+    if (provider === 'audiobookdb' && options.quickMatch && !explicitAsin && books.length) {
+      const titleAsin = isTitleAsin ? title.toUpperCase() : ''
+      const normMainTitle = cleanTitleForCompares(actualTitleQuery, true)
+      books = books.filter(
+        (book) =>
+          cleanTitleForCompares(book.title, true) === normMainTitle ||
+          (titleAsin && (book.asin || '').toUpperCase() === titleAsin)
+      )
+      if (!books.length) {
+        Logger.debug(`[BookFinder] quickMatch title identity gate rejected all AudiobookDB results for "${title}"`)
+        return []
+      }
+      // An exact title can still belong to several distinct works (e.g. two
+      // unrelated "Andorra" audiobooks): multiple release candidates of one
+      // work share its book id, so more than one distinct id — or any
+      // candidate without one — is ambiguous and must abstain rather than
+      // fall back to runtime ranking to break the tie.
+      const workIds = [...new Set(books.map((book) => book.id))]
+      if (workIds.length !== 1 || !workIds[0]) {
+        Logger.debug(`[BookFinder] quickMatch work identity gate abstained: ${workIds.length} distinct work id(s) for exact title "${title}"`)
+        return []
       }
     }
 
     if (books.length && libraryItem) {
       const isAudibleProvider = provider.startsWith('audible')
-      const libraryItemDurationMinutes = libraryItem?.media?.duration ? libraryItem.media.duration / 60 : null
+      const isAudiobookDBProvider = provider === 'audiobookdb'
 
       books.forEach((book) => {
         if (typeof book !== 'object' || !isAudibleProvider) return
         book.matchConfidence = this.calculateMatchConfidence(book, libraryItemDurationMinutes, actualTitleQuery, actualAuthorQuery, isTitleAsin)
       })
 
-      if (isAudibleProvider && libraryItemDurationMinutes) {
+      // For multi-recording results prefer the recording closest in runtime to
+      // the library item (e.g. different narrated editions of the same book).
+      if ((isAudibleProvider || isAudiobookDBProvider) && libraryItemDurationMinutes) {
         books.sort((a, b) => {
           const aDuration = a.duration || Number.POSITIVE_INFINITY
           const bDuration = b.duration || Number.POSITIVE_INFINITY
@@ -570,12 +710,14 @@ class BookFinder {
    * @param {string} title
    * @param {string} author
    * @param {string} provider
-   * @param {string} asin only used for audible providers
+   * @param {string} asin only used for audible and audiobookdb providers
    * @param {number} maxTitleDistance only used for openlibrary provider
    * @param {number} maxAuthorDistance only used for openlibrary provider
+   * @param {boolean} coversOnly only used for the audiobookdb provider
+   * @param {number|null} deadline operation-wide deadline for the audiobookdb provider
    * @returns {Promise<Object[]>}
    */
-  async runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance) {
+  async runSearch(title, author, provider, asin, maxTitleDistance, maxAuthorDistance, coversOnly = false, deadline = null) {
     Logger.debug(`Book Search: title: "${title}", author: "${author || ''}", provider: ${provider}`)
 
     let books = []
@@ -592,6 +734,8 @@ class BookFinder {
       books = await this.getFantLabResults(title, author)
     } else if (provider === 'audiobookcovers') {
       books = await this.getAudiobookCoversResults(title)
+    } else if (provider === 'audiobookdb') {
+      books = await this.getAudiobookDBResults(title, author, asin, coversOnly, deadline)
     } else {
       books = await this.getGoogleBooksResults(title, author)
     }
@@ -607,10 +751,19 @@ class BookFinder {
 
   async findCovers(provider, title, author, options = {}) {
     let searchResults = []
+    // Cover lookups skip detail fanout where the provider supports it.
+    const searchOptions = { ...options, coversOnly: true }
 
     if (provider === 'all') {
       for (const providerString of this.providers) {
-        const providerResults = await this.search(null, providerString, title, author, options)
+        let providerResults
+        try {
+          providerResults = await this.search(null, providerString, title, author, undefined, undefined, searchOptions)
+        } catch (error) {
+          if (providerString !== 'audiobookdb' || !(error instanceof AudiobookDBError)) throw error
+          Logger.warn(`[BookFinder] AudiobookDB cover search failed: ${error.code}`)
+          continue
+        }
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)
       }
@@ -618,12 +771,12 @@ class BookFinder {
       // Best providers: google, fantlab, and audible.com
       const bestProviders = ['google', 'fantlab', 'audible']
       for (const providerString of bestProviders) {
-        const providerResults = await this.search(null, providerString, title, author, options)
+        const providerResults = await this.search(null, providerString, title, author, undefined, undefined, searchOptions)
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
         searchResults.push(...providerResults)
       }
     } else {
-      searchResults = await this.search(null, provider, title, author, options)
+      searchResults = await this.search(null, provider, title, author, undefined, undefined, searchOptions)
     }
     Logger.debug(`[BookFinder] FindCovers search results: ${searchResults.length}`)
 

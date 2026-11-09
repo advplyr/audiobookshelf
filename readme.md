@@ -31,6 +31,7 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 - Progressive Web App (PWA)
 - Chromecast support on the web app and android app
 - Fetch metadata and cover art from several sources
+- Fetch metadata and cover art from [AudiobookDB](https://audiobookdb.org) (requires an account API key via `AUDIOBOOKDB_API_KEY`; [docs](https://audiobookdb.org/docs))
 - Chapter editor and chapter lookup (using [Audnexus API](https://audnex.us/))
 - Merge your audio files into a single m4b
 - Embed metadata and cover image into your audio files

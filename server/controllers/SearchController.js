@@ -1,6 +1,7 @@
 const { Request, Response } = require('express')
 const Logger = require('../Logger')
 const BookFinder = require('../finders/BookFinder')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const Database = require('../Database')
@@ -25,7 +26,8 @@ const providerMap = {
   'audible.it': 'Audible.it',
   'audible.in': 'Audible.in',
   'audible.es': 'Audible.es',
-  audnexus: 'Audnexus'
+  audnexus: 'Audnexus',
+  audiobookdb: 'AudiobookDB'
 }
 
 /**
@@ -90,13 +92,28 @@ class SearchController {
       const author = getQueryParamAsString(query, 'author', '')
       const id = getQueryParamAsString(query, 'id', undefined)
 
+      // Explicit ASIN is only meaningful for AudiobookDB and must be an
+      // intentional identifier lookup, never the ASIN-shaped title text.
+      const rawAsin = getQueryParamAsString(query, 'asin', '')
+      let asin = null
+      if (provider === 'audiobookdb' && rawAsin.trim()) {
+        asin = rawAsin.trim().toUpperCase()
+        if (!isValidASIN(asin)) throw new ValidationError('asin', 'is invalid')
+      }
+
+      // An empty title is only allowed with an explicit ASIN
+      if (provider === 'audiobookdb' && !title && !asin) {
+        throw new ValidationError('title', 'is required')
+      }
+
       // Fetch library item
       const libraryItem = id ? await SearchController.fetchLibraryItem(id) : null
 
-      const results = await BookFinder.search(libraryItem, provider, title, author)
+      const results = await BookFinder.search(libraryItem, provider, title, author, undefined, asin)
       res.json(results)
     } catch (error) {
       Logger.error(`[SearchController] findBooks: ${error.message}`)
+      if (error instanceof AudiobookDBError) return error.sendResponse(res)
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         return res.status(error.status).json({ error: error.message })
       }
@@ -124,6 +141,7 @@ class SearchController {
       res.json({ results })
     } catch (error) {
       Logger.error(`[SearchController] findCovers: ${error.message}`)
+      if (error instanceof AudiobookDBError) return error.sendResponse(res)
       if (error instanceof ValidationError) {
         return res.status(error.status).json({ error: error.message })
       }

@@ -351,7 +351,17 @@ export default {
     },
     batchQuickMatchComplete(result) {
       var success = result.success || false
-      var toast = 'Batch quick match complete!\n' + result.updates + ' Updated'
+      var toast
+      if (result.error) {
+        // Provider failure: show the actionable message plus what already completed
+        toast = this.$strings.MessageBatchQuickMatchFailed + '\n' + result.error + '\n' + result.updates + ' Updated'
+        if (result.unmatched && result.unmatched > 0) {
+          toast += '\n' + result.unmatched + ' with no matches'
+        }
+        this.$toast.error(toast, { timeout: 30000 })
+        return
+      }
+      toast = 'Batch quick match complete!\n' + result.updates + ' Updated'
       if (result.unmatched && result.unmatched > 0) {
         toast += '\n' + result.unmatched + ' with no matches'
       }

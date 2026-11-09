@@ -5,8 +5,19 @@
         <div v-if="providersLoaded" class="w-36 px-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
+        <div v-if="showAudiobookDBCredit" class="px-1 items-end pb-4 flex gap-1">
+          <ui-tooltip :text="$strings.MessageAudiobookDBHelp" direction="bottom">
+            <a href="https://audiobookdb.org/docs" target="_blank" class="inline-flex w-5">
+              <span class="material-symbols text-xl w-5">help_outline</span>
+            </a>
+          </ui-tooltip>
+          <span class="text-xs" v-html="$strings.MessageAudiobookDBCredit"></span>
+        </div>
         <div class="grow md:w-72 px-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
+          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" @input="onSearchTitleInput" />
+        </div>
+        <div v-if="!isPodcast && provider == 'audiobookdb'" class="w-40 md:w-48 px-1">
+          <ui-text-input-with-label v-model="searchAsin" label="ASIN" :placeholder="$strings.PlaceholderSearch" @input="onSearchAsinInput" />
         </div>
         <div v-show="provider != 'itunes'" class="w-60 md:w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
@@ -17,10 +28,15 @@
     <div v-show="processing" class="flex h-full items-center justify-center">
       <p>{{ $strings.MessageLoading }}</p>
     </div>
-    <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
+    <div v-show="!processing && searchError && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
+      <p class="max-w-xl text-center text-red-300">{{ searchError }}</p>
+    </div>
+    <div v-show="!processing && !searchError && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
       <p>{{ $strings.MessageNoResults }}</p>
     </div>
-    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
+    <div v-show="!processing"
+         class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4"
+         :class="showAudiobookDBCredit ? 'matchListWrapper-credit' : ''">
       <template v-for="(res, index) in searchResults">
         <cards-book-match-card :key="index" :book="res" :current-book-duration="currentBookDuration" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
@@ -247,9 +263,14 @@ export default {
       libraryItemId: null,
       searchTitle: null,
       searchAuthor: null,
+      searchAsin: '',
+      lastPrefilledAsin: '',
+      searchTitleEdited: false,
+      searchAsinEdited: false,
       lastSearch: null,
       provider: 'google',
       searchResults: [],
+      searchError: null,
       hasSearched: false,
       selectedMatch: null,
       selectedMatchOrig: null,
@@ -293,6 +314,16 @@ export default {
         this.waitingForProviders = false
         this.initProviderAndSearch()
       }
+    },
+    provider(newVal) {
+      this.searchError = null
+      if (newVal === 'audiobookdb' && !this.isPodcast) {
+        this.prefillAsin()
+      } else {
+        // Clear only a stored-ASIN prefill; keep a user-entered identifier
+        if (this.isStoredAsinPrefill()) this.searchAsin = ''
+        this.lastPrefilledAsin = ''
+      }
     }
   },
   computed: {
@@ -332,6 +363,9 @@ export default {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.bookProviders
     },
+    showAudiobookDBCredit() {
+      return this.providersLoaded && !this.isPodcast && this.provider === 'audiobookdb'
+    },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
       else if (this.provider == 'itunes') return this.$strings.LabelSearchTerm
@@ -366,6 +400,27 @@ export default {
     }
   },
   methods: {
+    isStoredAsinPrefill() {
+      return !!this.lastPrefilledAsin && this.searchAsin === this.lastPrefilledAsin
+    },
+    prefillAsin() {
+      if (this.searchTitleEdited || this.searchAsinEdited || this.isStoredAsinPrefill() || this.searchAsin) return
+      const storedAsin = this.mediaMetadata.asin
+      if (storedAsin) {
+        this.searchAsin = storedAsin
+        this.lastPrefilledAsin = storedAsin
+      }
+    },
+    onSearchAsinInput() {
+      // Any user input into the ASIN field is deliberate identifier intent
+      this.searchAsinEdited = true
+      this.lastPrefilledAsin = ''
+    },
+    onSearchTitleInput() {
+      // Intentional title edit: never re-inject a stored ASIN prefill
+      this.searchTitleEdited = true
+      if (this.isStoredAsinPrefill()) this.searchAsin = ''
+    },
     setMatchFieldValue(field, value) {
       if (Array.isArray(value)) {
         this.selectedMatch[field] = [...value]
@@ -401,13 +456,18 @@ export default {
     },
     getSearchQuery() {
       if (this.isPodcast) return `term=${encodeURIComponent(this.searchTitle)}`
-      var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle)}`
+      var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${encodeURIComponent(this.searchTitle || '')}`
       if (this.searchAuthor) searchQuery += `&author=${encodeURIComponent(this.searchAuthor)}`
+      if (this.provider === 'audiobookdb' && this.searchAsin.trim()) {
+        // Explicit ASIN is an intentional identifier lookup, distinct from title text
+        searchQuery += `&asin=${encodeURIComponent(this.searchAsin.trim().toUpperCase())}`
+      }
       if (this.libraryItemId) searchQuery += `&id=${this.libraryItemId}`
       return searchQuery
     },
     submitSearch() {
-      if (!this.searchTitle) {
+      const hasExplicitAsin = this.provider === 'audiobookdb' && !!this.searchAsin && this.searchAsin.trim()
+      if (!this.searchTitle && !hasExplicitAsin) {
         this.$toast.warning(this.$strings.ToastTitleRequired)
         return
       }
@@ -420,11 +480,19 @@ export default {
       const searchQuery = this.getSearchQuery()
       if (this.lastSearch === searchQuery) return
       this.searchResults = []
+      this.searchError = null
       this.isProcessing = true
       this.lastSearch = searchQuery
       const searchEntity = this.isPodcast ? 'podcast' : 'books'
       let results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
+        this.lastSearch = null
         console.error('Failed', error)
+        // Provider errors arrive as JSON { error, code } and must stay
+        // visible; a genuine "no matches" response is 200 with an empty list
+        const data = error.response?.data
+        if (data && typeof data === 'object' && !Array.isArray(data) && data.error) {
+          this.searchError = data.error
+        }
         return []
       })
       // console.log('Got search results', results)
@@ -503,6 +571,11 @@ export default {
         this.searchAuthor = ''
       }
 
+      // Prefill the explicit ASIN field with the stored media ASIN for AudiobookDB
+      if (this.provider === 'audiobookdb' && !this.isPodcast) {
+        this.prefillAsin()
+      }
+
       if (this.searchTitle) {
         this.submitSearch()
       }
@@ -514,6 +587,11 @@ export default {
       if (this.libraryItem.id !== this.libraryItemId) {
         this.searchResults = []
         this.hasSearched = false
+        this.searchError = null
+        this.searchAsin = ''
+        this.lastPrefilledAsin = ''
+        this.searchTitleEdited = false
+        this.searchAsinEdited = false
         this.libraryItemId = this.libraryItem.id
       }
 
@@ -570,7 +648,10 @@ export default {
       updatePayload.metadata = {}
 
       for (const key in this.selectedMatchUsage) {
-        if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
+        if (
+          this.selectedMatchUsage[key] &&
+          (key === 'explicit' || key === 'abridged' ? typeof this.selectedMatch[key] === 'boolean' : this.selectedMatch[key])
+        ) {
           if (key === 'series') {
             if (!Array.isArray(this.selectedMatch[key])) {
               console.error('Invalid series in selectedMatch', this.selectedMatch[key])
@@ -676,6 +757,16 @@ export default {
 @media (min-width: 768px) {
   .matchListWrapper {
     height: calc(100% - 80px);
+  }
+}
+
+.matchListWrapper-credit {
+  height: calc(100% - 146px);
+}
+
+@media (min-width: 768px) {
+  .matchListWrapper-credit {
+    height: calc(100% - 102px);
   }
 }
 </style>

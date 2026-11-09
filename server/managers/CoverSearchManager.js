@@ -128,12 +128,16 @@ class CoverSearchManager {
 
     Logger.debug(`[CoverSearchManager] Searching ${providers.length} providers in parallel`)
 
+    // Cover-only: AudiobookDB serves covers straight from /search hits and
+    // skips the /books/ detail fanout.
+    const coverSearchOptions = { coversOnly: true }
+
     // Search all providers in parallel
     const searchPromises = providers.map(async (providerName) => {
       if (signal.aborted) return
 
       try {
-        const searchResults = await this.executeWithTimeout(() => BookFinder.search(null, providerName, title, author || ''), this.providerTimeout, signal)
+        const searchResults = await this.executeWithTimeout(() => BookFinder.search(null, providerName, title, author || '', undefined, undefined, coverSearchOptions), this.providerTimeout, signal)
 
         if (signal.aborted) return
 

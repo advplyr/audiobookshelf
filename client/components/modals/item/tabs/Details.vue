@@ -112,7 +112,8 @@ export default {
           }
         })
         .catch((error) => {
-          var errMsg = error.response ? error.response.data || '' : ''
+          var data = error.response ? error.response.data || '' : ''
+          var errMsg = typeof data === 'object' && data.error ? data.error : data
           console.error('Failed to match', error)
           this.$toast.error(errMsg || 'Failed to match')
           this.quickMatching = false

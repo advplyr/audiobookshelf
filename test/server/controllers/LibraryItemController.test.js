@@ -8,6 +8,9 @@ const LibraryItemController = require('../../../server/controllers/LibraryItemCo
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
+const Scanner = require('../../../server/scanner/Scanner')
+const AudiobookDBError = require('../../../server/providers/AudiobookDBError')
+const SocketAuthority = require('../../../server/SocketAuthority')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */
@@ -32,6 +35,46 @@ describe('LibraryItemController', () => {
 
     // Clear all tables
     await Database.sequelize.sync({ force: true })
+  })
+
+  describe('AudiobookDB match failures', () => {
+    it('returns a provider failure through the single-item HTTP path', async () => {
+      const error = new AudiobookDBError('audiobookdb_rate_limited', 20)
+      sinon.stub(Scanner, 'quickMatchLibraryItem').rejects(error)
+      const res = {
+        set: sinon.spy(),
+        json: sinon.spy(),
+        status(status) {
+          this.statusCode = status
+          return this
+        }
+      }
+      await LibraryItemController.match.bind(apiRouter)({ body: { provider: 'audiobookdb' }, libraryItem: {} }, res)
+      expect(res.statusCode).to.equal(429)
+      sinon.assert.calledWith(res.set, 'Retry-After', '20')
+      sinon.assert.calledWith(res.json, { error: error.message, code: error.code, retryAfter: 20 })
+    })
+
+    it('stops selected batch matching and emits a failed completion with prior updates', async () => {
+      const error = new AudiobookDBError('audiobookdb_auth')
+      const match = sinon.stub(Scanner, 'quickMatchLibraryItem')
+      match.onFirstCall().resolves({ updated: true })
+      match.onSecondCall().rejects(error)
+      sinon.stub(Database.libraryItemModel, 'findAllExpandedWhere').resolves([{ id: 'one' }, { id: 'two' }, { id: 'three' }])
+      const emitter = sinon.stub(SocketAuthority, 'clientEmitter')
+      const res = { sendStatus: sinon.spy() }
+      const req = { user: { id: 'user', isAdminOrUp: true }, body: { libraryItemIds: ['one', 'two', 'three'], options: { provider: 'audiobookdb' } } }
+      await LibraryItemController.batchQuickMatch.bind(apiRouter)(req, res)
+      sinon.assert.calledTwice(match)
+      sinon.assert.calledWith(res.sendStatus, 200)
+      sinon.assert.calledWith(emitter, 'user', 'batch_quickmatch_complete', {
+        success: false,
+        updates: 1,
+        unmatched: 0,
+        error: error.message,
+        code: error.code
+      })
+    })
   })
 
   describe('checkRemoveAuthorsAndSeries', () => {
