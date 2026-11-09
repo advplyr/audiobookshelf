@@ -96,12 +96,8 @@ class CollectionController {
       return res.status(500).send('Failed to create collection')
     }
 
-    // Load books expanded
-    newCollection.books = await newCollection.getBooksExpandedWithLibraryItem()
-
-    // Note: The old collection model stores expanded libraryItems in the books property
-    const jsonExpanded = newCollection.toOldJSONExpanded()
-    SocketAuthority.emitter('collection_added', jsonExpanded)
+    const jsonExpanded = await newCollection.getOldJsonExpanded(req.user)
+    if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_added', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -196,9 +192,9 @@ class CollectionController {
       }
     }
 
-    const jsonExpanded = await req.collection.getOldJsonExpanded()
-    if (wasUpdated) {
-      SocketAuthority.emitter('collection_updated', jsonExpanded)
+    const jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
+    if (wasUpdated && jsonExpanded) {
+      SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
@@ -212,14 +208,17 @@ class CollectionController {
    * @param {Response} res
    */
   async delete(req, res) {
-    const jsonExpanded = await req.collection.getOldJsonExpanded()
+    const jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
 
     // Close rss feed - remove from db and emit socket event
     await RssFeedManager.closeFeedForEntityId(req.collection.id)
 
+    if (jsonExpanded) {
+      SocketAuthority.clientEmitter(req.user.id, 'collection_removed', jsonExpanded)
+    }
+
     await req.collection.destroy()
 
-    SocketAuthority.emitter('collection_removed', jsonExpanded)
     res.sendStatus(200)
   }
 
@@ -254,8 +253,8 @@ class CollectionController {
       bookId: libraryItem.mediaId,
       order: collectionBooks.length + 1
     })
-    const jsonExpanded = await req.collection.getOldJsonExpanded()
-    SocketAuthority.emitter('collection_updated', jsonExpanded)
+    const jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
+    if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -299,10 +298,10 @@ class CollectionController {
         order++
       }
 
-      jsonExpanded = await req.collection.getOldJsonExpanded()
-      SocketAuthority.emitter('collection_updated', jsonExpanded)
+      jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
+      if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     } else {
-      jsonExpanded = await req.collection.getOldJsonExpanded()
+      jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
     }
     res.json(jsonExpanded)
   }
@@ -361,10 +360,10 @@ class CollectionController {
     if (hasUpdated) {
       await Database.collectionBookModel.bulkCreate(collectionBooksToAdd)
 
-      jsonExpanded = await req.collection.getOldJsonExpanded()
-      SocketAuthority.emitter('collection_updated', jsonExpanded)
+      jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
+      if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     } else {
-      jsonExpanded = await req.collection.getOldJsonExpanded()
+      jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
     }
     res.json(jsonExpanded)
   }
@@ -417,9 +416,9 @@ class CollectionController {
       order++
     }
 
-    let jsonExpanded = await req.collection.getOldJsonExpanded()
-    if (hasUpdated) {
-      SocketAuthority.emitter('collection_updated', jsonExpanded)
+    let jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
+    if (hasUpdated && jsonExpanded) {
+      SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
