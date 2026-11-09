@@ -260,16 +260,21 @@ class Scanner {
             // Update filter data
             Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
           }
-          await Database.bookAuthorModel
-            .create({
+          let bookAuthorCreated = true
+          try {
+            await Database.bookAuthorModel.create({
               authorId: author.id,
               bookId: libraryItem.media.id
             })
-            .then(() => {
-              Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added author "${author.name}" to "${libraryItem.media.title}"`)
-              libraryItem.media.authors.push(author)
-              hasAuthorUpdates = true
-            })
+          } catch (error) {
+            if (error.name !== 'SequelizeUniqueConstraintError') throw error
+            bookAuthorCreated = false
+          }
+          libraryItem.media.authors.push(author)
+          hasAuthorUpdates = true
+          if (bookAuthorCreated) {
+            Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added author "${author.name}" to "${libraryItem.media.title}"`)
+          }
         }
         const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => ma.toLowerCase() === a.name.toLowerCase()))
         if (authorsRemoved.length) {
@@ -315,14 +320,22 @@ class Scanner {
             Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
             SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
           }
-          const bookSeries = await Database.bookSeriesModel.create({
-            seriesId: seriesItem.id,
-            bookId: libraryItem.media.id,
-            sequence: seriesMatchItem.sequence
-          })
+          let bookSeries
+          try {
+            bookSeries = await Database.bookSeriesModel.create({
+              seriesId: seriesItem.id,
+              bookId: libraryItem.media.id,
+              sequence: seriesMatchItem.sequence
+            })
+            Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added series "${seriesItem.name}" to "${libraryItem.media.title}"`)
+          } catch (error) {
+            if (error.name !== 'SequelizeUniqueConstraintError') throw error
+            bookSeries = await Database.bookSeriesModel.findOne({
+              where: { seriesId: seriesItem.id, bookId: libraryItem.media.id }
+            })
+          }
           seriesItem.bookSeries = bookSeries
           libraryItem.media.series.push(seriesItem)
-          Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added series "${seriesItem.name}" to "${libraryItem.media.title}"`)
           hasSeriesUpdates = true
         }
         const seriesRemoved = libraryItem.media.series.filter((s) => !matchData.series.find((ms) => ms.series.toLowerCase() === s.name.toLowerCase()))
