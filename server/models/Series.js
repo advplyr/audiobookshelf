@@ -75,11 +75,21 @@ class Series extends Model {
   static async findOrCreateByNameAndLibrary(seriesName, libraryId) {
     const series = await this.getByNameAndLibrary(seriesName, libraryId)
     if (series) return series
-    return this.create({
-      name: seriesName,
-      nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
-      libraryId
-    })
+    try {
+      return await this.create({
+        name: seriesName,
+        nameIgnorePrefix: getTitleIgnorePrefix(seriesName),
+        libraryId
+      })
+    } catch (error) {
+      if (error.name !== 'SequelizeUniqueConstraintError') throw error
+      // The unique index is on the exact name. lower() can miss that row.
+      const existingSeries = await this.findOne({
+        where: { name: seriesName, libraryId }
+      })
+      if (!existingSeries) throw error
+      return existingSeries
+    }
   }
 
   /**
