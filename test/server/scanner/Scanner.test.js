@@ -74,6 +74,29 @@ describe('Scanner.quickMatchBookBuildUpdatePayload', () => {
     expect(links).to.have.lengthOf(1)
   })
 
+  it('reuses an existing series when create hits the name unique constraint', async () => {
+    const series = await Database.seriesModel.create({ name: 'Crescent City', libraryId: library.id })
+    sinon.stub(Database.seriesModel, 'getByNameAndLibrary').resolves(null)
+
+    const result = await Scanner.quickMatchBookBuildUpdatePayload(
+      apiRouterCtx,
+      libraryItem,
+      {
+        series: [{ series: 'Crescent City', sequence: '3' }]
+      },
+      {}
+    )
+
+    expect(result.hasSeriesUpdates).to.be.true
+    expect(libraryItem.media.series).to.have.lengthOf(1)
+    expect(libraryItem.media.series[0].id).to.equal(series.id)
+
+    const seriesRows = await Database.seriesModel.findAll({ where: { libraryId: library.id, name: 'Crescent City' } })
+    expect(seriesRows).to.have.lengthOf(1)
+    const links = await Database.bookSeriesModel.findAll({ where: { bookId: book.id, seriesId: series.id } })
+    expect(links).to.have.lengthOf(1)
+  })
+
   it('does not throw when bookAuthor link already exists from a concurrent quick match', async () => {
     const author = await Database.authorModel.create({ name: 'Sarah Maas', libraryId: library.id })
     await Database.bookAuthorModel.create({ bookId: book.id, authorId: author.id })

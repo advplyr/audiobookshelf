@@ -311,14 +311,26 @@ class Scanner {
         } else {
           let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
           if (!seriesItem) {
-            seriesItem = await Database.seriesModel.create({
-              name: seriesMatchItem.series,
-              nameIgnorePrefix: getTitleIgnorePrefix(seriesMatchItem.series),
-              libraryId: libraryItem.libraryId
-            })
-            // Update filter data
-            Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
-            SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
+            let seriesCreated = false
+            try {
+              seriesItem = await Database.seriesModel.create({
+                name: seriesMatchItem.series,
+                nameIgnorePrefix: getTitleIgnorePrefix(seriesMatchItem.series),
+                libraryId: libraryItem.libraryId
+              })
+              seriesCreated = true
+            } catch (error) {
+              if (error.name !== 'SequelizeUniqueConstraintError') throw error
+              seriesItem = await Database.seriesModel.findOne({
+                where: { name: seriesMatchItem.series, libraryId: libraryItem.libraryId }
+              })
+              if (!seriesItem) throw error
+            }
+            if (seriesCreated) {
+              // Update filter data
+              Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
+              SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
+            }
           }
           let bookSeries
           try {
