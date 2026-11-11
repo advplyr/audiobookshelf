@@ -287,8 +287,9 @@ export default {
       }
 
       function isValidRedirectURI(uri) {
-        // Check for somestring://someother/string
-        const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
+        // scheme://host/path, or the RFC 8252 form com.example.app:/path
+        // Keep in sync with server/utils/mobileRedirectUri.js
+        const pattern = /^\w[\w+.-]*:(\/\/[\w.-]+(\/[\w./-]*)?|\/[\w.-][\w./-]*)$/i
         return pattern.test(uri)
       }
 
