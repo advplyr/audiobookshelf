@@ -47,7 +47,7 @@ class CoverManager {
   async removeOldCovers(dirpath, newCoverExt) {
     var filesInDir = await this.getFilesInDirectory(dirpath)
 
-    const imageExtensions = ['.jpeg', '.jpg', '.png', '.webp', '.jiff']
+    const imageExtensions = ['.jpeg', '.jpg', '.png', '.webp', '.avif', '.jiff']
     for (let i = 0; i < filesInDir.length; i++) {
       var file = filesInDir[i]
       var _extname = Path.extname(file).toLowerCase()
