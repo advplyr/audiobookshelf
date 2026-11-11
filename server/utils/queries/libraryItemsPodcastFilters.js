@@ -534,9 +534,12 @@ module.exports = {
         }
       ],
       order: [['publishedAt', 'DESC']],
-      subQuery: false,
-      limit,
-      offset
+      subQuery: false
+    }
+    // A limit of 0 means no limit
+    if (limit > 0) {
+      findOptions.limit = limit
+      findOptions.offset = offset
     }
 
     const findtAll = process.env.QUERY_PROFILING ? profile(Database.podcastEpisodeModel.findAll.bind(Database.podcastEpisodeModel)) : Database.podcastEpisodeModel.findAll.bind(Database.podcastEpisodeModel)
