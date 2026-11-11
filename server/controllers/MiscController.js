@@ -9,11 +9,10 @@ const Watcher = require('../Watcher')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const cron = require('../libs/nodeCron')
-const { isObject, getTitleIgnorePrefix } = require('../utils/index')
+const { isObject, getTitleIgnorePrefix, isValidMobileRedirectURI } = require('../utils/index')
 const ServerSettings = require('../objects/settings/ServerSettings')
 const { sanitizeFilename } = require('../utils/fileUtils')
 const { sanitize } = require('../utils/htmlSanitizer')
-const { isValidMobileRedirectUri } = require('../utils/mobileRedirectUri')
 
 const TaskManager = require('../managers/TaskManager')
 const adminStats = require('../utils/queries/adminStats')
@@ -683,7 +682,7 @@ class MiscController {
         }
       } else if (key === 'authOpenIDMobileRedirectURIs') {
         const uris = settingsUpdate[key]
-        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidMobileRedirectUri(uri))) {
+        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidMobileRedirectURI(uri))) {
           Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
           continue
         }

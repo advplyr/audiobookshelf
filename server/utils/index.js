@@ -263,6 +263,18 @@ module.exports.isValidASIN = (str) => {
 }
 
 /**
+ * Check if a string is a valid mobile redirect URI
+ * e.g. audiobookshelf://oauth or com.example.app:/callback (RFC 8252)
+ *
+ * @param {string} uri
+ * @returns {boolean}
+ */
+module.exports.isValidMobileRedirectURI = (uri) => {
+  if (!uri || typeof uri !== 'string') return false
+  return /^\w[\w+.-]*:(\/\/[\w.-]+(\/[\w./-]*)?|\/[\w.-][\w./-]*)$/i.test(uri)
+}
+
+/**
  * Convert timestamp to seconds
  * @example "01:00:00" => 3600
  * @example "01:00" => 60
