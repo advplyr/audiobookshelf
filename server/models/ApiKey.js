@@ -10,6 +10,7 @@ const Logger = require('../Logger')
  * @property {boolean} delete
  * @property {boolean} upload
  * @property {boolean} createEreader
+ * @property {boolean} downloadPodcastEpisodes
  * @property {boolean} accessAllLibraries
  * @property {boolean} accessAllTags
  * @property {boolean} accessExplicitContent
@@ -88,6 +89,7 @@ class ApiKey extends Model {
       delete: true,
       upload: true,
       createEreader: true,
+      downloadPodcastEpisodes: true,
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: true,
