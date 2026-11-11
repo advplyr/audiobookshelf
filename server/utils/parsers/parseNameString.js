@@ -36,6 +36,28 @@ module.exports.nameToLastFirst = (firstLast) => {
 }
 
 /**
+ * Trim names, drop blanks, and drop exact repeats. The first spelling is kept.
+ * Callers that build bookAuthors rows should use this instead of deduping per metadata source.
+ *
+ * @param {string[]} names
+ * @returns {string[]}
+ */
+function dedupeNames(names) {
+  if (!Array.isArray(names)) return []
+  const seen = new Set()
+  const deduped = []
+  for (const name of names) {
+    if (typeof name !== 'string') continue
+    const trimmed = name.trim()
+    if (!trimmed || seen.has(trimmed)) continue
+    seen.add(trimmed)
+    deduped.push(trimmed)
+  }
+  return deduped
+}
+module.exports.dedupeNames = dedupeNames
+
+/**
  * Parses a name string into an array of names
  *
  * @param {string} nameString - The name string to parse
@@ -62,7 +84,7 @@ module.exports.parse = (nameString) => {
   // If names are in Chinese，Japanese and Korean languages, return as is.
   if (/[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]/.test(splitNames[0])) {
     return {
-      names: splitNames
+      names: dedupeNames(splitNames)
     }
   }
 
@@ -102,7 +124,7 @@ module.exports.parse = (nameString) => {
   names = names.filter((n) => n.first_name || n.last_name)
 
   // Set name strings and remove duplicates
-  const namesArray = [...new Set(names.map((a) => (a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)))]
+  const namesArray = dedupeNames(names.map((a) => (a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)))
 
   return {
     names: namesArray // Array of first last

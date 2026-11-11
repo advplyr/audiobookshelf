@@ -29,6 +29,9 @@ class LibraryScan {
     /** @type {string[]} */
     this.seriesRemovedFromBooks = []
 
+    /** @type {string} item label while a library item is being scanned, so a thrown error can name it */
+    this.failureItem = null
+
     this.logs = []
   }
 

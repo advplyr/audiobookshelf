@@ -439,6 +439,7 @@ class Book extends Model {
    */
   async updateAuthorsFromRequest(authors, libraryId) {
     if (!Array.isArray(authors)) return null
+    authors = parseNameString.dedupeNames(authors)
 
     if (!this.authors) {
       throw new Error(`[Book] Cannot update authors because authors are not loaded for book ${this.id}`)
@@ -466,7 +467,15 @@ class Book extends Model {
     const authorsAdded = []
     for (const authorName of newAuthorNames) {
       const { author, created } = await authorModel.findOrCreateByNameAndLibrary(authorName, libraryId)
-      await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
+      // findOrCreate matches case-insensitively, so a second spelling can resolve to an author just linked
+      if (this.authors.some((au) => au.id === author.id)) continue
+      try {
+        await bookAuthorModel.create({ bookId: this.id, authorId: author.id })
+      } catch (error) {
+        if (error.name !== 'SequelizeUniqueConstraintError') throw error
+        this.authors.push(author)
+        continue
+      }
       if (created) {
         SocketAuthority.emitter('author_added', author.toOldJSON())
       } else {
@@ -522,11 +531,23 @@ class Book extends Model {
         }
       } else {
         const series = await seriesModel.findOrCreateByNameAndLibrary(seriesObj.name, libraryId)
-        series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
+        try {
+          series.bookSeries = await bookSeriesModel.create({ bookId: this.id, seriesId: series.id, sequence: seriesObjSequence })
+          seriesAdded.push(series)
+          hasUpdates = true
+          Logger.debug(`[Book] "${this.title}" Added series "${series.name}"`)
+        } catch (error) {
+          if (error.name !== 'SequelizeUniqueConstraintError') throw error
+          series.bookSeries = await bookSeriesModel.findOne({ where: { bookId: this.id, seriesId: series.id } })
+          if (!series.bookSeries) throw error
+          if (series.bookSeries.sequence !== seriesObjSequence) {
+            series.bookSeries.sequence = seriesObjSequence
+            await series.bookSeries.save()
+            hasUpdates = true
+            Logger.debug(`[Book] "${this.title}" Updated series "${series.name}" sequence ${seriesObjSequence}`)
+          }
+        }
         this.series.push(series)
-        seriesAdded.push(series)
-        hasUpdates = true
-        Logger.debug(`[Book] "${this.title}" Added series "${series.name}"`)
       }
     }
 

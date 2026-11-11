@@ -1,0 +1,102 @@
+# Builds the v3 test image
+#
+# Moves the :v3 tag on Docker Hub and GHCR, the same way master
+# moves :edge. Using the server's v3 branch and react-client master.
+#
+# repository_dispatch (build-v3) is for triggering a build on updates to react-client
+
+name: Build and Push v3 Docker Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [v3]
+  repository_dispatch:
+    types: [build-v3]
+
+jobs:
+  build:
+    if: ${{ github.repository == 'advplyr/audiobookshelf' && (github.event_name != 'push' || !contains(github.event.head_commit.message, 'skip ci')) }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out server
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'repository_dispatch' && 'v3' || github.sha }}
+
+      - name: Check out React client
+        uses: actions/checkout@v4
+        with:
+          repository: audiobookshelf/audiobookshelf-client-react
+          ref: master
+          path: client-react
+
+      - name: Server sha
+        id: server-sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Client sha
+        id: client-sha
+        working-directory: client-react
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: advplyr/audiobookshelf,ghcr.io/${{ github.repository_owner }}/audiobookshelf
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=v3
+          labels: |
+            audiobookshelf.server.sha=${{ steps.server-sha.outputs.sha }}
+            audiobookshelf.client.sha=${{ steps.client-sha.outputs.sha }}
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-v3-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-v3-
+
+      - name: Login to Dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Login to ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PASSWORD }}
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          file: client-react/Dockerfile
+          context: .
+          build-contexts: |
+            abs-client=client-react
+            abs-server=.
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
