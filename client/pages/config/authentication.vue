@@ -288,7 +288,7 @@ export default {
 
       function isValidRedirectURI(uri) {
         // Check for somestring://someother/string or some.string:/other/string
-        const pattern = /^\w[\w+.-]*:(\/\/[\w.-]+(\/[\w./-]*)?|\/[\w.-][\w./-]*)$/i
+        const pattern = new RegExp('^\\w[\\w+\\.-]*:(//[\\w\\.-]+(/[\\w\\./-]*)?|/[\\w\\.-][\\w\\./-]*)$', 'i')
         return pattern.test(uri)
       }
 

@@ -9,7 +9,7 @@ const Watcher = require('../Watcher')
 
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const cron = require('../libs/nodeCron')
-const { isObject, getTitleIgnorePrefix, isValidMobileRedirectURI } = require('../utils/index')
+const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const ServerSettings = require('../objects/settings/ServerSettings')
 const { sanitizeFilename } = require('../utils/fileUtils')
 const { sanitize } = require('../utils/htmlSanitizer')
@@ -681,8 +681,14 @@ class MiscController {
           Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
         }
       } else if (key === 'authOpenIDMobileRedirectURIs') {
+        function isValidRedirectURI(uri) {
+          if (typeof uri !== 'string') return false
+          const pattern = new RegExp('^\\w[\\w+\\.-]*:(//[\\w\\.-]+(/[\\w\\./-]*)?|/[\\w\\.-][\\w\\./-]*)$', 'i')
+          return pattern.test(uri)
+        }
+
         const uris = settingsUpdate[key]
-        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidMobileRedirectURI(uri))) {
+        if (!Array.isArray(uris) || (uris.includes('*') && uris.length > 1) || uris.some((uri) => uri !== '*' && !isValidRedirectURI(uri))) {
           Logger.warn(`[MiscController] Invalid value for authOpenIDMobileRedirectURIs`)
           continue
         }
