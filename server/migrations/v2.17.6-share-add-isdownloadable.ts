@@ -1,11 +1,5 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a Sequelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { DataTypes } from 'sequelize'
+import type { MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.17.6'
 const migrationName = `${migrationVersion}-share-add-isdownloadable`
@@ -17,7 +11,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
   if (await queryInterface.tableExists('mediaItemShares')) {
@@ -25,7 +19,7 @@ async function up({ context: { queryInterface, logger } }) {
     if (!tableDescription.isDownloadable) {
       logger.info(`${loggerPrefix} Adding isDownloadable column to mediaItemShares table`)
       await queryInterface.addColumn('mediaItemShares', 'isDownloadable', {
-        type: queryInterface.sequelize.Sequelize.DataTypes.BOOLEAN,
+        type: DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: false
       })
@@ -46,7 +40,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
   if (await queryInterface.tableExists('mediaItemShares')) {
@@ -65,4 +59,4 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
 }
 
-module.exports = { up, down }
+export = { up, down }
