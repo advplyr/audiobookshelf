@@ -75,7 +75,7 @@ class PodcastManager {
    * @param {import('../utils/podcastUtils').RssPodcastEpisode[]} episodesToDownload
    * @param {boolean} isAutoDownload - If this download was triggered by auto download
    */
-  async downloadPodcastEpisodes(libraryItem: PodcastItem, episodesToDownload: RssPodcastEpisode[], isAutoDownload: boolean) {
+  async downloadPodcastEpisodes(libraryItem: PodcastItem, episodesToDownload: RssPodcastEpisode[], isAutoDownload?: boolean) {
     for (const ep of episodesToDownload) {
       const newPeDl: PodcastEpisodeDownload = new PodcastEpisodeDownload()
       newPeDl.setData(ep, libraryItem, isAutoDownload, libraryItem.libraryId)

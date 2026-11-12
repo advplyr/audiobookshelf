@@ -14,7 +14,7 @@ class PodcastEpisodeDownload {
   declare url: string | null
   declare libraryItem: PodcastItem | null
   declare libraryId: string | null | undefined
-  declare isAutoDownload: boolean
+  declare isAutoDownload: boolean | undefined
   declare isFinished: boolean
   declare failed: boolean
   declare appendRandomId: boolean
@@ -124,7 +124,7 @@ class PodcastEpisodeDownload {
    * @param {*} isAutoDownload
    * @param {*} libraryId
    */
-  setData(rssPodcastEpisode: RssPodcastEpisode, libraryItem: PodcastItem, isAutoDownload: boolean, libraryId: string | null | undefined): asserts this is this & PodcastEpisodeDownload.Initialized {
+  setData(rssPodcastEpisode: RssPodcastEpisode, libraryItem: PodcastItem, isAutoDownload: boolean | undefined, libraryId: string | null | undefined): asserts this is this & PodcastEpisodeDownload.Initialized {
     this.id = uuidv4()
     this.rssPodcastEpisode = rssPodcastEpisode
 

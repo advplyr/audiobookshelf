@@ -1,43 +1,47 @@
-const Path = require('path')
-const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+import Path from 'path'
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type LibraryItem from '../models/LibraryItem'
+import type Podcast from '../models/Podcast'
+import type PodcastEpisode from '../models/PodcastEpisode'
+import type PodcastManager from '../managers/PodcastManager'
+import type CronManager from '../managers/CronManager'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
 
-const fs = require('../libs/fsExtra')
-const cron = require('../libs/nodeCron')
+import fs from '../libs/fsExtra'
+import cron from '../libs/nodeCron'
 
-const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils')
-const { validateUrl } = require('../utils/index')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+import { getPodcastFeed, findMatchingEpisodes } from '../utils/podcastUtils'
+import { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } from '../utils/fileUtils'
+import { validateUrl } from '../utils/index'
+import htmlSanitizer from '../utils/htmlSanitizer'
 
-const Scanner = require('../scanner/Scanner')
-const CoverManager = require('../managers/CoverManager')
+import Scanner from '../scanner/Scanner'
+import CoverManager from '../managers/CoverManager'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- *
- * @typedef RequestEntityObject
- * @property {import('../models/LibraryItem')} libraryItem
- *
- * @typedef {RequestWithUser & RequestEntityObject} RequestWithLibraryItem
- */
+type PodcastMediaBody = Parameters<typeof Database.podcastModel.createFromRequest>[0]
+type PodcastCreateBody = { media?: PodcastMediaBody & { autoDownloadSchedule?: string }; libraryId: string; folderId: string; path?: string }
+type OpmlCreateBody = { feeds?: string[]; libraryId?: string; folderId?: string; autoDownloadEpisodes?: boolean }
+type PodcastRequest<Body = unknown> = Request<Record<string, string>, unknown, Body, { limit?: string; title?: string; override?: string; hard?: string }> & { user: User }
+type PodcastLibraryItem = LibraryItem & { path: string; media: Podcast.PodcastExpanded }
+type RequestWithPodcast<Body = unknown> = PodcastRequest<Body> & { libraryItem: PodcastLibraryItem }
+type PodcastContext = { podcastManager: PodcastManager; cronManager: CronManager }
+type EpisodeTextKey = 'title' | 'subtitle' | 'description' | 'pubDate' | 'episode' | 'season' | 'episodeType'
+type EpisodeUpdateBody = Partial<Record<EpisodeTextKey, string>> & {
+  enclosure?: { url?: string; type?: string; length?: string | number | null } | null
+  chapters?: PodcastEpisode.ChapterObject[]
+  publishedAt?: number
+}
+type EpisodeUpdatePayload = Partial<Pick<PodcastEpisode, EpisodeTextKey | 'enclosureURL' | 'enclosureSize' | 'enclosureType' | 'chapters'>> & { publishedAt?: number }
 
 class PodcastController {
   /**
    * POST /api/podcasts
    * Create podcast
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async create(req, res) {
+  async create(this: PodcastContext, req: PodcastRequest<PodcastCreateBody>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to create podcast`)
       return res.sendStatus(403)
@@ -58,7 +62,7 @@ class PodcastController {
       return res.status(404).send('Library not found')
     }
 
-    const folder = library.libraryFolders.find((fold) => fold.id === payload.folderId)
+    const folder = library.libraryFolders!.find((fold) => fold.id === payload.folderId)
     if (!folder) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
       return res.status(404).send('Folder not found')
@@ -68,7 +72,7 @@ class PodcastController {
       return res.status(400).send('Invalid request body. "path" must be a non-empty string')
     }
 
-    const libraryFolderPath = filePathToPOSIX(folder.path)
+    const libraryFolderPath = filePathToPOSIX(folder.path!)
     const podcastPath = filePathToPOSIX(payload.path)
 
     if (!isSameOrSubPath(libraryFolderPath, podcastPath)) {
@@ -102,14 +106,14 @@ class PodcastController {
     let relPath = podcastPath.replace(libraryFolderPath, '')
     if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
-    let newLibraryItem = null
-    const transaction = await Database.sequelize.transaction()
+    let newLibraryItem: LibraryItem
+    const transaction = await Database.sequelize!.transaction()
     try {
       const podcast = await Database.podcastModel.createFromRequest(payload.media, transaction)
 
       newLibraryItem = await Database.libraryItemModel.create(
         {
-          ino: libraryItemFolderStats.ino,
+          ino: libraryItemFolderStats ? libraryItemFolderStats.ino : undefined,
           path: podcastPath,
           relPath,
           mediaId: podcast.id,
@@ -117,9 +121,9 @@ class PodcastController {
           isFile: false,
           isMissing: false,
           isInvalid: false,
-          mtime: libraryItemFolderStats.mtimeMs || 0,
-          ctime: libraryItemFolderStats.ctimeMs || 0,
-          birthtime: libraryItemFolderStats.birthtimeMs || 0,
+          mtime: (libraryItemFolderStats && libraryItemFolderStats.mtimeMs) || 0,
+          ctime: (libraryItemFolderStats && libraryItemFolderStats.ctimeMs) || 0,
+          birthtime: (libraryItemFolderStats && libraryItemFolderStats.birthtimeMs) || 0,
           size: 0,
           libraryFiles: [],
           extraData: {},
@@ -133,12 +137,14 @@ class PodcastController {
 
       await transaction.commit()
     } catch (error) {
-      Logger.error(`[PodcastController] Failed to create podcast: ${error}`)
+      Logger.error(`[PodcastController] Failed to create podcast: ${String(error)}`)
       await transaction.rollback()
       return res.status(500).send('Failed to create podcast')
     }
 
-    newLibraryItem.media = await newLibraryItem.getMediaExpanded()
+    // The item was created with podcast media, and the expansion loads its episodes.
+    const podcastMedia = (await newLibraryItem.getMediaExpanded()) as Podcast.PodcastExpanded
+    newLibraryItem.media = podcastMedia
 
     // Download and save cover image
     if (typeof payload.media.metadata.imageUrl === 'string' && payload.media.metadata.imageUrl.startsWith('http')) {
@@ -154,7 +160,7 @@ class PodcastController {
           // Add libraryFile to libraryItem and coverPath to podcast
           const newLibraryFile = {
             ino: coverImageFileStats.ino,
-            fileType: 'image',
+            fileType: 'image' as const,
             addedAt: Date.now(),
             updatedAt: Date.now(),
             metadata: {
@@ -168,12 +174,12 @@ class PodcastController {
               birthtimeMs: coverImageFileStats.birthtimeMs || 0
             }
           }
-          newLibraryItem.libraryFiles.push(newLibraryFile)
+          newLibraryItem.libraryFiles!.push(newLibraryFile)
           newLibraryItem.changed('libraryFiles', true)
           await newLibraryItem.save()
 
-          newLibraryItem.media.coverPath = coverResponse.cover
-          await newLibraryItem.media.save()
+          podcastMedia.coverPath = coverResponse.cover
+          await podcastMedia.save()
         }
       }
     }
@@ -183,21 +189,15 @@ class PodcastController {
     res.json(newLibraryItem.toOldJSONExpanded())
 
     // Turn on podcast auto download cron if not already on
-    if (newLibraryItem.media.autoDownloadEpisodes) {
-      this.cronManager.checkUpdatePodcastCron(newLibraryItem)
+    if (podcastMedia.autoDownloadEpisodes) {
+      this.cronManager.checkUpdatePodcastCron(newLibraryItem as PodcastLibraryItem)
     }
   }
 
   /**
    * POST: /api/podcasts/feed
-   *
-   * @typedef getPodcastFeedReqBody
-   * @property {string} rssFeed
-   *
-   * @param {Request<{}, {}, getPodcastFeedReqBody, {}> & RequestUserObject} req
-   * @param {Response} res
    */
-  async getPodcastFeed(req, res) {
+  async getPodcastFeed(req: PodcastRequest<{ rssFeed?: string }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get podcast feed`)
       return res.sendStatus(403)
@@ -217,13 +217,8 @@ class PodcastController {
 
   /**
    * POST: /api/podcasts/opml
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getFeedsFromOPMLText(req, res) {
+  async getFeedsFromOPMLText(this: PodcastContext, req: PodcastRequest<{ opmlText?: string }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to get feeds from opml`)
       return res.sendStatus(403)
@@ -236,17 +231,13 @@ class PodcastController {
     res.json({
       feeds: this.podcastManager.getParsedOPMLFileFeeds(req.body.opmlText)
     })
+    return Promise.resolve()
   }
 
   /**
    * POST: /api/podcasts/opml/create
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async bulkCreatePodcastsFromOpmlFeedUrls(req, res) {
+  async bulkCreatePodcastsFromOpmlFeedUrls(this: PodcastContext, req: PodcastRequest<OpmlCreateBody>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to bulk create podcasts`)
       return res.sendStatus(403)
@@ -268,20 +259,16 @@ class PodcastController {
       return res.status(404).send('Folder not found')
     }
     const autoDownloadEpisodes = !!req.body.autoDownloadEpisodes
-    this.podcastManager.createPodcastsFromFeedUrls(rssFeeds, folder, autoDownloadEpisodes, this.cronManager)
+    void this.podcastManager.createPodcastsFromFeedUrls(rssFeeds, folder, autoDownloadEpisodes, this.cronManager)
 
     res.sendStatus(200)
+    return Promise.resolve()
   }
 
   /**
    * GET: /api/podcasts/:id/checknew
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async checkNewEpisodes(req, res) {
+  async checkNewEpisodes(this: PodcastContext, req: RequestWithPodcast, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to check/download episodes`)
       return res.sendStatus(403)
@@ -292,7 +279,7 @@ class PodcastController {
       return res.status(400).send('Podcast has no rss feed url')
     }
 
-    const maxEpisodesToDownload = !isNaN(req.query.limit) ? Number(req.query.limit) : 3
+    const maxEpisodesToDownload = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 3
 
     const newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(req.libraryItem, maxEpisodesToDownload)
     res.json({
@@ -302,13 +289,8 @@ class PodcastController {
 
   /**
    * GET: /api/podcasts/:id/clear-queue
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  clearEpisodeDownloadQueue(req, res) {
+  clearEpisodeDownloadQueue(this: PodcastContext, req: PodcastRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempting to clear download queue`)
       return res.sendStatus(403)
@@ -319,13 +301,8 @@ class PodcastController {
 
   /**
    * GET: /api/podcasts/:id/downloads
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  getEpisodeDownloads(req, res) {
+  getEpisodeDownloads(this: PodcastContext, req: RequestWithPodcast, res: Response) {
     const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
     res.json({
       downloads: downloadsInQueue.map((d) => d.toJSONForClient())
@@ -335,11 +312,8 @@ class PodcastController {
   /**
    * GET: /api/podcasts/:id/search-episode
    * Search for an episode in a podcast
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async findEpisode(req, res) {
+  async findEpisode(req: RequestWithPodcast, res: Response) {
     const rssFeedUrl = req.libraryItem.media.feedURL
     if (!rssFeedUrl) {
       Logger.error(`[PodcastController] findEpisode: Podcast has no feed url`)
@@ -358,13 +332,8 @@ class PodcastController {
 
   /**
    * POST: /api/podcasts/:id/download-episodes
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async downloadEpisodes(req, res) {
+  async downloadEpisodes(this: PodcastContext, req: RequestWithPodcast<Parameters<PodcastManager['downloadPodcastEpisodes']>[1]>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to download episodes`)
       return res.sendStatus(403)
@@ -375,19 +344,15 @@ class PodcastController {
       return res.sendStatus(400)
     }
 
-    this.podcastManager.downloadPodcastEpisodes(req.libraryItem, episodes)
+    void this.podcastManager.downloadPodcastEpisodes(req.libraryItem, episodes)
     res.sendStatus(200)
+    return Promise.resolve()
   }
 
   /**
    * POST: /api/podcasts/:id/match-episodes
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async quickMatchEpisodes(req, res) {
+  async quickMatchEpisodes(req: RequestWithPodcast, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user "${req.user.username}" attempted to download episodes`)
       return res.sendStatus(403)
@@ -406,21 +371,19 @@ class PodcastController {
 
   /**
    * PATCH: /api/podcasts/:id/episode/:episodeId
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async updateEpisode(req, res) {
+  async updateEpisode(req: RequestWithPodcast<EpisodeUpdateBody>, res: Response) {
     /** @type {import('../models/PodcastEpisode')} */
     const episode = req.libraryItem.media.podcastEpisodes.find((ep) => ep.id === req.params.episodeId)
     if (!episode) {
       return res.status(404).send('Episode not found')
     }
 
-    const updatePayload = {}
-    const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
+    const updatePayload: EpisodeUpdatePayload = {}
+    const supportedStringKeys: readonly string[] = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
     for (const key in req.body) {
-      if (supportedStringKeys.includes(key) && typeof req.body[key] === 'string') {
+      const textKey = key as EpisodeTextKey
+      if (supportedStringKeys.includes(key) && typeof req.body[textKey] === 'string') {
         // Sanitize description HTML
         if (key === 'description' && req.body[key]) {
           const sanitizedDescription = htmlSanitizer.sanitize(req.body[key])
@@ -436,7 +399,7 @@ class PodcastController {
           }
         }
 
-        updatePayload[key] = req.body[key]
+        updatePayload[textKey] = req.body[textKey]
       } else if (key === 'enclosure') {
         const enclosure = req.body.enclosure
         if (enclosure === null) {
@@ -472,11 +435,8 @@ class PodcastController {
 
   /**
    * GET: /api/podcasts/:id/episode/:episodeId
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async getEpisode(req, res) {
+  async getEpisode(req: RequestWithPodcast, res: Response) {
     const episodeId = req.params.episodeId
 
     /** @type {import('../models/PodcastEpisode')} */
@@ -487,15 +447,13 @@ class PodcastController {
     }
 
     res.json(episode.toOldJSON(req.libraryItem.id))
+    return Promise.resolve()
   }
 
   /**
    * DELETE: /api/podcasts/:id/episode/:episodeId
-   *
-   * @param {RequestWithLibraryItem} req
-   * @param {Response} res
    */
-  async removeEpisode(req, res) {
+  async removeEpisode(req: RequestWithPodcast, res: Response) {
     const episodeId = req.params.episodeId
     const hardDelete = req.query.hard === '1'
 
@@ -510,10 +468,10 @@ class PodcastController {
     req.libraryItem.media.podcastEpisodes = req.libraryItem.media.podcastEpisodes.filter((ep) => ep.id !== episodeId)
 
     if (hardDelete) {
-      const audioFile = episode.audioFile
+      const audioFile = episode.audioFile!
       // TODO: this will trigger the watcher. should maybe handle this gracefully
       await fs
-        .remove(audioFile.metadata.path)
+        .remove(audioFile.metadata.path!)
         .then(() => {
           Logger.info(`[PodcastController] Hard deleted episode file at "${audioFile.metadata.path}"`)
         })
@@ -539,25 +497,19 @@ class PodcastController {
     await episode.destroy()
 
     // Remove library file
-    req.libraryItem.libraryFiles = req.libraryItem.libraryFiles.filter((file) => file.ino !== episode.audioFile.ino)
+    req.libraryItem.libraryFiles = req.libraryItem.libraryFiles!.filter((file) => file.ino !== episode.audioFile!.ino)
     req.libraryItem.changed('libraryFiles', true)
     await req.libraryItem.save()
 
     // update number of episodes
     req.libraryItem.media.numEpisodes = req.libraryItem.media.podcastEpisodes.length
-    await req.libraryItem.media.save()
+    await (req.libraryItem.media as Podcast).save()
 
     SocketAuthority.libraryItemEmitter('item_updated', req.libraryItem)
     res.json(req.libraryItem.toOldJSON())
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  async middleware(req, res, next) {
+  async middleware(req: PodcastRequest & { libraryItem?: PodcastLibraryItem }, res: Response, next: NextFunction) {
     const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
     if (!libraryItem?.media) return res.sendStatus(404)
 
@@ -578,8 +530,8 @@ class PodcastController {
       return res.sendStatus(403)
     }
 
-    req.libraryItem = libraryItem
+    req.libraryItem = libraryItem as PodcastLibraryItem
     next()
   }
 }
-module.exports = new PodcastController()
+export = new PodcastController()
