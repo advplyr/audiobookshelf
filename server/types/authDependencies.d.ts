@@ -1,11 +1,13 @@
 declare module 'passport' {
-  import type { NextFunction, Request, Response } from 'express'
+  import type { NextFunction, Request, RequestHandler, Response } from 'express'
   interface AuthenticateOptions {
     session?: boolean
     redirect_uri?: string
   }
 
   interface Authenticator {
+    initialize(): RequestHandler
+    session(): RequestHandler
     use(strategy: object): Authenticator
     use(name: string, strategy: object): Authenticator
     unuse(name: string): Authenticator

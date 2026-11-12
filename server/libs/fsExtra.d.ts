@@ -1,7 +1,9 @@
 // Promise and stream APIs used by migrated code. Runtime implementation remains embedded JavaScript.
 import type { PathLike } from 'fs'
 
-export { createReadStream, createWriteStream } from 'fs'
+export { createReadStream, createWriteStream, mkdirSync } from 'fs'
+export const chmod: typeof import('fs/promises').chmod
+export function pathExistsSync(path: PathLike): boolean
 export const stat: typeof import('fs/promises').stat
 export const lstat: typeof import('fs/promises').lstat
 export const readFile: typeof import('fs/promises').readFile

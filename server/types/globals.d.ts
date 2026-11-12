@@ -3,6 +3,9 @@ import type ServerSettings from '../objects/settings/ServerSettings'
 declare global {
   // Set by the entry point before the server starts handling requests.
   var appRoot: string
+  var Source: string | undefined
+  var AllowCors: boolean | undefined
+  var MaxFailedEpisodeChecks: number | undefined
   var XAccel: string | undefined
   var RouterBasePath: string
 
@@ -14,6 +17,8 @@ declare global {
 
   // Initialized by the server before sorting and directory metadata parsing are used.
   var ServerSettings: {
+    allowIframe?: ServerSettings['allowIframe']
+    allowedOrigins?: ServerSettings['allowedOrigins']
     sortingPrefixes: string[] | null | undefined
     authOpenIDMatchExistingBy?: ServerSettings['authOpenIDMatchExistingBy']
     storeMetadataWithItem?: ServerSettings['storeMetadataWithItem']
