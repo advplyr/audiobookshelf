@@ -31,7 +31,7 @@ export async function extractCoverImage(comicPath: string, comicImageFilepath: s
  * Parse metadata from a comic.
  */
 export async function parse(ebookFile: EBookFileObject): Promise<EBookFileScanData | null> {
-  const comicPath = ebookFile.metadata.path
+  const comicPath = ebookFile.metadata.path!
   Logger.debug(`[parseComicMetadata] Parsing comic metadata at "${comicPath}"`)
   let archive: ReturnType<typeof createComicBookExtractor> | null = null
   try {
@@ -67,7 +67,7 @@ export async function parse(ebookFile: EBookFileObject): Promise<EBookFileScanDa
 
     const payload: EBookFileScanData = {
       path: comicPath,
-      ebookFormat: ebookFile.ebookFormat,
+      ebookFormat: ebookFile.ebookFormat!,
       metadata
     }
 

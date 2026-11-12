@@ -1,6 +1,5 @@
 import { parseNfoMetadata } from '../utils/parsers/parseNfoMetadata'
 import { readTextFile } from '../utils/fileUtils'
-import type LibraryItem from '../models/LibraryItem'
 
 type NfoMetadata = NonNullable<Awaited<ReturnType<typeof parseNfoMetadata>>>
 
@@ -10,7 +9,7 @@ class NfoFileScanner {
   /**
    * Parse metadata from .nfo file found in library scan and update bookMetadata
    */
-  async scanBookNfoFile(nfoLibraryFileObj: Pick<LibraryItem.LibraryFileObject, 'metadata'>, bookMetadata: Record<string, unknown>) {
+  async scanBookNfoFile(nfoLibraryFileObj: { metadata: { path: string } }, bookMetadata: Record<string, unknown>) {
     const nfoText = await readTextFile(nfoLibraryFileObj.metadata.path)
     const nfoMetadata = nfoText ? parseNfoMetadata(nfoText) : null
     if (nfoMetadata) {

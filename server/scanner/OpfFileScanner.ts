@@ -1,7 +1,6 @@
 import { parseOpfMetadataXML } from '../utils/parsers/parseOpfMetadata'
 import type { OpfMetadataResult } from '../utils/parsers/parseOpfMetadata'
 import { readTextFile } from '../utils/fileUtils'
-import type LibraryItem from '../models/LibraryItem'
 
 class OpfFileScanner {
   constructor() {}
@@ -9,7 +8,7 @@ class OpfFileScanner {
   /**
    * Parse metadata from .opf file found in library scan and update bookMetadata
    */
-  async scanBookOpfFile(opfLibraryFileObj: Pick<LibraryItem.LibraryFileObject, 'metadata'>, bookMetadata: Record<string, unknown>) {
+  async scanBookOpfFile(opfLibraryFileObj: { metadata: { path: string } }, bookMetadata: Record<string, unknown>) {
     const xmlText = await readTextFile(opfLibraryFileObj.metadata.path)
     const opfMetadata = xmlText ? await parseOpfMetadataXML(xmlText) : null
     if (opfMetadata) {

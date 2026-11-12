@@ -34,7 +34,8 @@ type LibraryItemAttributes = {
   title: string | null; titleIgnorePrefix: string | null; authorNamesFirstLast: string | null; authorNamesLastFirst: string | null
   book?: Book | null; podcast?: Podcast | null; media?: Book | Podcast | null
 }
-type LibraryItemCreation = Omit<Partial<LibraryItemAttributes>, 'podcast'> & {
+type LibraryItemCreation = Omit<Partial<LibraryItemAttributes>, 'book' | 'podcast'> & {
+  book?: Book | Book.BookWithAssociationsCreation | null
   podcast?: Podcast | (CreationAttributes<Podcast> & { podcastEpisodes?: CreationAttributes<PodcastEpisode>[] }) | null
 }
 type MinifiedJSON = {

@@ -10,6 +10,8 @@ interface EBookFileData {
   updatedAt: number | null | undefined
 }
 
+type EBookFileConstructData = Partial<Omit<EBookFileData, 'metadata'>> & { metadata?: Partial<FileMetadataJSON> }
+
 /** A library file with a metadata that can be read by the ebook reader */
 interface EBookSourceFile {
   ino: string | null | undefined
@@ -23,13 +25,13 @@ class EBookFile {
   addedAt: number | null | undefined = null
   updatedAt: number | null | undefined = null
 
-  constructor(file?: Partial<EBookFileData> | null) {
+  constructor(file?: EBookFileConstructData | null) {
     if (file) {
       this.construct(file)
     }
   }
 
-  construct(file: Partial<EBookFileData>) {
+  construct(file: EBookFileConstructData) {
     this.ino = file.ino
     this.metadata = new FileMetadata(file.metadata)
     this.ebookFormat = file.ebookFormat || this.metadata.format

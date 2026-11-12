@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type { Attributes, BelongsToManyAddAssociationMixin, BelongsToManyGetAssociationsMixin, BuildOptions, CreationAttributes, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 import type Author from './Author'
 import type Series from './Series'
 import type BookSeries from './BookSeries'
@@ -18,21 +18,15 @@ type AudioFileJSON = ReturnType<AudioFile['toJSON']>
 // Historical file JSON may omit fields added by later versions.
 type AudioFileObject = Partial<Omit<AudioFileJSON, 'metadata'>> & { metadata: Partial<AudioFileJSON['metadata']> }
 type EBookFileJSON = ReturnType<EBookFile['toJSON']>
-type StoredEBookFile = Partial<Omit<EBookFileJSON, 'metadata'>> & { metadata: Partial<EBookFileJSON['metadata']> }
-// Scanners pass a complete file to the ebook parsers; persisted historical JSON can be partial.
-type EBookFileObject = {
-  ino: string
-  ebookFormat: string
-  addedAt: number
-  updatedAt: number
-  metadata: { filename: string; ext: string; path: string; relPath: string; size: number; mtimeMs: number; ctimeMs: number; birthtimeMs: number }
-}
+// Historical ebook JSON can omit fields that a new scan supplies.
+type EBookFileObject = Partial<Omit<EBookFileJSON, 'metadata'>> & { metadata: Partial<EBookFileJSON['metadata']> }
 type ChapterObject = { id: number; start: number; end: number; title: string }
 type AudioTrackProperties = { title: string | null | undefined; contentUrl: string; startOffset: number }
 type AudioTrack = AudioFileObject & AudioTrackProperties
 type SeriesExpandedProperties = { bookSeries?: BookSeries }
 type SeriesExpanded = Series & SeriesExpandedProperties
-type BookExpandedProperties = { authors: Author[]; series: SeriesExpanded[] }
+type AuthorExpanded = Author & { bookAuthor?: BookAuthor }
+type BookExpandedProperties = { authors: AuthorExpanded[]; series: SeriesExpanded[] }
 type BookExpanded = Book & BookExpandedProperties
 type BookExpandedWithLibraryItemProperties = { libraryItem: LibraryItem }
 type BookExpandedWithLibraryItem = BookExpanded & BookExpandedWithLibraryItemProperties
@@ -65,12 +59,18 @@ type BookAttributes = {
   tags: string[] | null
   genres: string[] | null
   audioFiles: AudioFileObject[] | null
-  ebookFile: StoredEBookFile | null
+  ebookFile: EBookFileObject | null
   chapters: ChapterObject[] | null
   createdAt?: Date
   updatedAt?: Date
 }
 type BookCreation = Optional<BookAttributes, keyof BookAttributes>
+type NewBookAuthor = Omit<CreationAttributes<BookAuthor>, 'createdAt'> & {
+  createdAt?: Date | number
+  author?: CreationAttributes<Author>
+}
+type NewBookSeries = CreationAttributes<BookSeries> & { series?: CreationAttributes<Series> }
+type BookWithAssociationsCreation = BookCreation & { bookAuthors?: NewBookAuthor[]; bookSeries?: NewBookSeries[] }
 
 class Book extends Model<BookAttributes, BookCreation> {
   declare id: string
@@ -92,13 +92,17 @@ class Book extends Model<BookAttributes, BookCreation> {
   declare tags: string[] | null
   declare genres: string[] | null
   declare audioFiles: AudioFileObject[] | null
-  declare ebookFile: StoredEBookFile | null
+  declare ebookFile: EBookFileObject | null
   declare chapters: ChapterObject[] | null
   declare createdAt: Date
   declare updatedAt: Date
   declare libraryItem?: LibraryItem
-  declare authors?: Author[]
+  declare authors?: AuthorExpanded[]
   declare series?: SeriesExpanded[]
+  declare getAuthors: BelongsToManyGetAssociationsMixin<AuthorExpanded>
+  declare getSeries: BelongsToManyGetAssociationsMixin<SeriesExpanded>
+  declare addAuthor: BelongsToManyAddAssociationMixin<Author, string>
+  declare addSeries: BelongsToManyAddAssociationMixin<Series, string>
 
   constructor(values?: BookCreation, options?: BuildOptions) {
     super(values, options)
@@ -675,7 +679,7 @@ class Book extends Model<BookAttributes, BookCreation> {
 }
 
 declare namespace Book {
-  export type { EBookFileObject, ChapterObject, SeriesExpandedProperties, SeriesExpanded, BookExpandedProperties, BookExpanded, BookExpandedWithLibraryItemProperties, BookExpandedWithLibraryItem, AudioFileObject, AudioTrackProperties, AudioTrack }
+  export type { NewBookAuthor, NewBookSeries, BookWithAssociationsCreation, EBookFileObject, ChapterObject, SeriesExpandedProperties, SeriesExpanded, BookExpandedProperties, BookExpanded, BookExpandedWithLibraryItemProperties, BookExpandedWithLibraryItem, AudioFileObject, AudioTrackProperties, AudioTrack }
 }
 
 export = Book

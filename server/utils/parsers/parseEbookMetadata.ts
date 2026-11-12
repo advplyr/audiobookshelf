@@ -24,7 +24,7 @@ export async function parse(ebookFile: EBookFileObject | null | undefined): Prom
 
   if (ebookFile.ebookFormat === 'epub') {
     return parseEpubMetadata(ebookFile)
-  } else if (['cbz', 'cbr'].includes(ebookFile.ebookFormat)) {
+  } else if (ebookFile.ebookFormat === 'cbz' || ebookFile.ebookFormat === 'cbr') {
     return parseComicMetadata(ebookFile)
   }
   return null
