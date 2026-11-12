@@ -1,13 +1,7 @@
-const util = require('util')
-
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { DataTypes } from 'sequelize'
+import util from 'node:util'
+import type { ModelAttributeColumnOptions } from 'sequelize'
+import type { MigrationContext, MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.19.1'
 const migrationName = `${migrationVersion}-copy-title-to-library-items`
@@ -21,16 +15,16 @@ const loggerPrefix = `[${migrationVersion} migration]`
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
-  await addColumn(queryInterface, logger, 'libraryItems', 'title', { type: queryInterface.sequelize.Sequelize.STRING, allowNull: true })
+  await addColumn(queryInterface, logger, 'libraryItems', 'title', { type: DataTypes.STRING, allowNull: true })
   await copyColumn(queryInterface, logger, 'books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
   await addTrigger(queryInterface, logger, 'books', 'title', 'id', 'libraryItems', 'title', 'mediaId')
   await addIndex(queryInterface, logger, 'libraryItems', ['libraryId', 'mediaType', { name: 'title', collate: 'NOCASE' }])
 
-  await addColumn(queryInterface, logger, 'libraryItems', 'titleIgnorePrefix', { type: queryInterface.sequelize.Sequelize.STRING, allowNull: true })
+  await addColumn(queryInterface, logger, 'libraryItems', 'titleIgnorePrefix', { type: DataTypes.STRING, allowNull: true })
   await copyColumn(queryInterface, logger, 'books', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
   await addTrigger(queryInterface, logger, 'books', 'titleIgnorePrefix', 'id', 'libraryItems', 'titleIgnorePrefix', 'mediaId')
   await addIndex(queryInterface, logger, 'libraryItems', ['libraryId', 'mediaType', { name: 'titleIgnorePrefix', collate: 'NOCASE' }])
@@ -47,7 +41,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
@@ -72,15 +66,15 @@ async function down({ context: { queryInterface, logger } }) {
  * @param {string} tableName
  * @param {string[]} columns
  */
-async function addIndex(queryInterface, logger, tableName, columns) {
+async function addIndex(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], tableName: string, columns: (string | { name: string; collate: string })[]) {
   const columnString = columns.map((column) => util.inspect(column)).join(', ')
   const indexName = convertToSnakeCase(`${tableName}_${columns.map((column) => (typeof column === 'string' ? column : column.name)).join('_')}`)
   try {
     logger.info(`${loggerPrefix} adding index on [${columnString}] to table ${tableName}. index name: ${indexName}"`)
-    await queryInterface.addIndex(tableName, columns)
+    await queryInterface.addIndex(tableName, { fields: columns })
     logger.info(`${loggerPrefix} added index on [${columnString}] to table ${tableName}. index name: ${indexName}"`)
   } catch (error) {
-    if (error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
+    if (error instanceof Error && error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
       logger.info(`${loggerPrefix} index [${columnString}] for table "${tableName}" already exists`)
     } else {
       throw error
@@ -97,13 +91,13 @@ async function addIndex(queryInterface, logger, tableName, columns) {
  * @param {string} tableName
  * @param {string[]} columns
  */
-async function removeIndex(queryInterface, logger, tableName, columns) {
+async function removeIndex(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], tableName: string, columns: string[]) {
   logger.info(`${loggerPrefix} removing index [${columns.join(', ')}] from table "${tableName}"`)
   await queryInterface.removeIndex(tableName, columns)
   logger.info(`${loggerPrefix} removed index [${columns.join(', ')}] from table "${tableName}"`)
 }
 
-async function addColumn(queryInterface, logger, table, column, options) {
+async function addColumn(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], table: string, column: string, options: ModelAttributeColumnOptions) {
   logger.info(`${loggerPrefix} adding column "${column}" to table "${table}"`)
   const tableDescription = await queryInterface.describeTable(table)
   if (!tableDescription[column]) {
@@ -114,13 +108,13 @@ async function addColumn(queryInterface, logger, table, column, options) {
   }
 }
 
-async function removeColumn(queryInterface, logger, table, column) {
+async function removeColumn(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], table: string, column: string) {
   logger.info(`${loggerPrefix} removing column "${column}" from table "${table}"`)
   await queryInterface.removeColumn(table, column)
   logger.info(`${loggerPrefix} removed column "${column}" from table "${table}"`)
 }
 
-async function copyColumn(queryInterface, logger, sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
+async function copyColumn(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], sourceTable: string, sourceColumn: string, sourceIdColumn: string, targetTable: string, targetColumn: string, targetIdColumn: string) {
   logger.info(`${loggerPrefix} copying column "${sourceColumn}" from table "${sourceTable}" to table "${targetTable}"`)
   await queryInterface.sequelize.query(`
     UPDATE ${targetTable}
@@ -131,7 +125,7 @@ async function copyColumn(queryInterface, logger, sourceTable, sourceColumn, sou
   logger.info(`${loggerPrefix} copied column "${sourceColumn}" from table "${sourceTable}" to table "${targetTable}"`)
 }
 
-async function addTrigger(queryInterface, logger, sourceTable, sourceColumn, sourceIdColumn, targetTable, targetColumn, targetIdColumn) {
+async function addTrigger(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], sourceTable: string, sourceColumn: string, sourceIdColumn: string, targetTable: string, targetColumn: string, targetIdColumn: string) {
   logger.info(`${loggerPrefix} adding trigger to update ${targetTable}.${targetColumn} when ${sourceTable}.${sourceColumn} is updated`)
   const triggerName = convertToSnakeCase(`update_${targetTable}_${targetColumn}`)
 
@@ -150,15 +144,15 @@ async function addTrigger(queryInterface, logger, sourceTable, sourceColumn, sou
   logger.info(`${loggerPrefix} added trigger to update ${targetTable}.${targetColumn} when ${sourceTable}.${sourceColumn} is updated`)
 }
 
-async function removeTrigger(queryInterface, logger, targetTable, targetColumn) {
+async function removeTrigger(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], targetTable: string, targetColumn: string) {
   logger.info(`${loggerPrefix} removing trigger to update ${targetTable}.${targetColumn}`)
   const triggerName = convertToSnakeCase(`update_${targetTable}_${targetColumn}`)
   await queryInterface.sequelize.query(`DROP TRIGGER IF EXISTS ${triggerName}`)
   logger.info(`${loggerPrefix} removed trigger to update ${targetTable}.${targetColumn}`)
 }
 
-function convertToSnakeCase(str) {
+function convertToSnakeCase(str: string) {
   return str.replace(/([A-Z])/g, '_$1').toLowerCase()
 }
 
-module.exports = { up, down }
+export = { up, down }

@@ -1,14 +1,7 @@
-const util = require('util')
-const { Sequelize } = require('sequelize')
-
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import util from 'node:util'
+import { DataTypes } from 'sequelize'
+import type { ModelAttributeColumnOptions } from 'sequelize'
+import type { MigrationContext, MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.20.0'
 const migrationName = `${migrationVersion}-improve-author-sort-queries`
@@ -20,8 +13,8 @@ const bookAuthors = 'bookAuthors'
 const authors = 'authors'
 const podcastEpisodes = 'podcastEpisodes'
 const columns = [
-  { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: Sequelize.STRING, allowNull: true } },
-  { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: Sequelize.STRING, allowNull: true } }
+  { name: 'authorNamesFirstLast', source: `${authors}.name`, spec: { type: DataTypes.STRING, allowNull: true } },
+  { name: 'authorNamesLastFirst', source: `${authors}.lastFirst`, spec: { type: DataTypes.STRING, allowNull: true } }
 ]
 const authorsSort = `${bookAuthors}.createdAt ASC`
 const columnNames = columns.map((column) => column.name).join(', ')
@@ -38,7 +31,7 @@ const authorsJoin = `${authors} JOIN ${bookAuthors} ON ${authors}.id = ${bookAut
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   const helper = new MigrationHelper(queryInterface, logger)
 
   // Upwards migration script
@@ -71,7 +64,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
@@ -93,12 +86,15 @@ async function down({ context: { queryInterface, logger } }) {
 }
 
 class MigrationHelper {
-  constructor(queryInterface, logger) {
+  queryInterface: MigrationContext['queryInterface']
+  logger: MigrationContext['logger']
+
+  constructor(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger']) {
     this.queryInterface = queryInterface
     this.logger = logger
   }
 
-  async addColumn(table, column, options) {
+  async addColumn(table: string, column: string, options: ModelAttributeColumnOptions) {
     this.logger.info(`${loggerPrefix} adding column "${column}" to table "${table}"`)
     const tableDescription = await this.queryInterface.describeTable(table)
     if (!tableDescription[column]) {
@@ -117,7 +113,7 @@ class MigrationHelper {
     this.logger.info(`${loggerPrefix} added ${columnNames} columns to ${libraryItems} table`)
   }
 
-  async removeColumn(table, column) {
+  async removeColumn(table: string, column: string) {
     this.logger.info(`${loggerPrefix} removing column "${column}" from table "${table}"`)
     const tableDescription = await this.queryInterface.describeTable(table)
     if (tableDescription[column]) {
@@ -151,7 +147,7 @@ class MigrationHelper {
     this.logger.info(`${loggerPrefix} populated ${columnNames} columns in ${libraryItems} table`)
   }
 
-  async addBookAuthorsTrigger(action) {
+  async addBookAuthorsTrigger(action: 'insert' | 'delete' | 'update') {
     this.logger.info(`${loggerPrefix} adding trigger to update ${libraryItems} ${columnNames} on ${bookAuthors} ${action}`)
     const modifiedRecord = action === 'delete' ? 'OLD' : 'NEW'
     const triggerName = convertToSnakeCase(`update_${libraryItems}_authorNames_on_${bookAuthors}_${action}`)
@@ -205,7 +201,7 @@ class MigrationHelper {
     await this.addAuthorsUpdateTrigger()
   }
 
-  async removeBookAuthorsTrigger(action) {
+  async removeBookAuthorsTrigger(action: 'insert' | 'delete' | 'update') {
     this.logger.info(`${loggerPrefix} removing trigger to update ${libraryItems} ${columnNames} on ${bookAuthors} ${action}`)
     const triggerName = convertToSnakeCase(`update_${libraryItems}_authorNames_on_${bookAuthors}_${action}`)
     await this.queryInterface.sequelize.query(`DROP TRIGGER IF EXISTS ${triggerName}`)
@@ -225,15 +221,15 @@ class MigrationHelper {
     await this.removeAuthorsUpdateTrigger()
   }
 
-  async addIndex(tableName, columns) {
+  async addIndex(tableName: string, columns: (string | { name: string; collate: string })[]) {
     const columnString = columns.map((column) => util.inspect(column)).join(', ')
     const indexName = convertToSnakeCase(`${tableName}_${columns.map((column) => (typeof column === 'string' ? column : column.name)).join('_')}`)
     try {
       this.logger.info(`${loggerPrefix} adding index on [${columnString}] to table ${tableName}. index name: ${indexName}"`)
-      await this.queryInterface.addIndex(tableName, columns)
+      await this.queryInterface.addIndex(tableName, { fields: columns })
       this.logger.info(`${loggerPrefix} added index on [${columnString}] to table ${tableName}. index name: ${indexName}"`)
     } catch (error) {
-      if (error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
+      if (error instanceof Error && error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
         this.logger.info(`${loggerPrefix} index [${columnString}] for table "${tableName}" already exists`)
       } else {
         throw error
@@ -247,7 +243,7 @@ class MigrationHelper {
     }
   }
 
-  async removeIndex(tableName, columns) {
+  async removeIndex(tableName: string, columns: string[]) {
     this.logger.info(`${loggerPrefix} removing index [${columns.join(', ')}] from table "${tableName}"`)
     await this.queryInterface.removeIndex(tableName, columns)
     this.logger.info(`${loggerPrefix} removed index [${columns.join(', ')}] from table "${tableName}"`)
@@ -265,8 +261,8 @@ class MigrationHelper {
  * @param {string} str - the string to convert to snake case.
  * @returns {string} - the string in snake case.
  */
-function convertToSnakeCase(str) {
+function convertToSnakeCase(str: string) {
   return str.replace(/([A-Z])/g, '_$1').toLowerCase()
 }
 
-module.exports = { up, down }
+export = { up, down }
