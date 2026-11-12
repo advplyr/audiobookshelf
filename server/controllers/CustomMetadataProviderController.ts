@@ -1,27 +1,23 @@
-const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type CustomMetadataProvider from '../models/CustomMetadataProvider'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
 
-const { validateUrl } = require('../utils/index')
+import { validateUrl } from '../utils/index'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type RequestWithUser = Request & { user: User }
+type RequestWithBody<Body> = Request<Record<string, string>, unknown, Body> & { user: User }
+type ProviderContext = { customMetadataProvider: CustomMetadataProvider }
 
 class CustomMetadataProviderController {
   constructor() {}
 
   /**
    * GET: /api/custom-metadata-providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAll(req, res) {
+  async getAll(_req: RequestWithUser, res: Response) {
     const providers = await Database.customMetadataProviderModel.findAll()
 
     res.json({
@@ -31,11 +27,8 @@ class CustomMetadataProviderController {
 
   /**
    * POST: /api/custom-metadata-providers
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async create(req, res) {
+  async create(req: RequestWithBody<{ name?: string; url?: string; mediaType?: string; authHeaderValue?: string | null }>, res: Response) {
     const { name, url, mediaType, authHeaderValue } = req.body
 
     if (!name || !url || !mediaType) {
@@ -65,14 +58,10 @@ class CustomMetadataProviderController {
 
   /**
    * DELETE: /api/custom-metadata-providers/:id
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async delete(req, res) {
+  async delete(req: RequestWithUser & ProviderContext, res: Response) {
     const slug = `custom-${req.params.id}`
 
-    /** @type {import('../models/CustomMetadataProvider')} */
     const provider = req.customMetadataProvider
     const providerClientJson = provider.toClientJson()
 
@@ -100,12 +89,8 @@ class CustomMetadataProviderController {
 
   /**
    * Middleware that requires admin or up
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
    */
-  async middleware(req, res, next) {
+  async middleware(req: RequestWithUser & { customMetadataProvider?: CustomMetadataProvider | null }, res: Response, next: NextFunction) {
     if (!req.user.isAdminOrUp) {
       Logger.warn(`[CustomMetadataProviderController] Non-admin user "${req.user.username}" attempted access route "${req.path}"`)
       return res.sendStatus(403)
@@ -122,4 +107,4 @@ class CustomMetadataProviderController {
     next()
   }
 }
-module.exports = new CustomMetadataProviderController()
+export = new CustomMetadataProviderController()

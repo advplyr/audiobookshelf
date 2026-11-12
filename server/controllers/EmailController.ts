@@ -1,25 +1,24 @@
-const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type Book from '../models/Book'
+import type EmailManager from '../managers/EmailManager'
+import type EmailSettings from '../objects/settings/EmailSettings'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type RequestWithUser = Request & { user: User }
+type RequestWithBody<Body> = Request<Record<string, string>, unknown, Body> & { user: User }
+type EReaderDevice = Parameters<EmailSettings['checkUserCanAccessDevice']>[0]
+type EmailContext = { emailManager: EmailManager }
 
 class EmailController {
   constructor() {}
 
   /**
    * GET: /api/emails/settings
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  getSettings(req, res) {
+  getSettings(_req: RequestWithUser, res: Response) {
     res.json({
       settings: Database.emailSettings
     })
@@ -27,14 +26,11 @@ class EmailController {
 
   /**
    * PATCH: /api/emails/settings
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async updateSettings(req, res) {
-    const updated = Database.emailSettings.update(req.body)
+  async updateSettings(req: RequestWithBody<Parameters<EmailSettings['update']>[0]>, res: Response) {
+    const updated = Database.emailSettings!.update(req.body)
     if (updated) {
-      await Database.updateSetting(Database.emailSettings)
+      await Database.updateSetting(Database.emailSettings!)
     }
     res.json({
       settings: Database.emailSettings
@@ -43,23 +39,16 @@ class EmailController {
 
   /**
    * POST: /api/emails/test
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async sendTest(req, res) {
-    this.emailManager.sendTest(res)
+  async sendTest(this: EmailContext, _req: RequestWithUser, res: Response) {
+    void this.emailManager.sendTest(res)
+    return Promise.resolve()
   }
 
   /**
    * POST: /api/emails/ereader-devices
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async updateEReaderDevices(req, res) {
+  async updateEReaderDevices(req: RequestWithBody<{ ereaderDevices?: EReaderDevice[] }>, res: Response) {
     if (!req.body.ereaderDevices || !Array.isArray(req.body.ereaderDevices)) {
       return res.status(400).send('Invalid payload. ereaderDevices array required')
     }
@@ -71,17 +60,17 @@ class EmailController {
       }
     }
 
-    const updated = Database.emailSettings.update({
+    const updated = Database.emailSettings!.update({
       ereaderDevices
     })
     if (updated) {
-      await Database.updateSetting(Database.emailSettings)
+      await Database.updateSetting(Database.emailSettings!)
       SocketAuthority.adminEmitter('ereader-devices-updated', {
-        ereaderDevices: Database.emailSettings.ereaderDevices
+        ereaderDevices: Database.emailSettings!.ereaderDevices
       })
     }
     res.json({
-      ereaderDevices: Database.emailSettings.ereaderDevices
+      ereaderDevices: Database.emailSettings!.ereaderDevices
     })
   }
 
@@ -89,20 +78,17 @@ class EmailController {
    * POST: /api/emails/send-ebook-to-device
    * Send ebook to device
    * User must have access to device and library item
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async sendEBookToDevice(req, res) {
+  async sendEBookToDevice(this: EmailContext, req: RequestWithBody<{ libraryItemId: string; deviceName: string }>, res: Response) {
     Logger.debug(`[EmailController] Send ebook to device requested by user "${req.user.username}" for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
 
-    const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
+    const device = Database.emailSettings!.getEReaderDevice(req.body.deviceName)
     if (!device) {
       return res.status(404).send('Ereader device not found')
     }
 
     // Check user has access to device
-    if (!Database.emailSettings.checkUserCanAccessDevice(device, req.user)) {
+    if (!Database.emailSettings!.checkUserCanAccessDevice(device, req.user)) {
       return res.sendStatus(403)
     }
 
@@ -116,21 +102,15 @@ class EmailController {
       return res.sendStatus(403)
     }
 
-    const ebookFile = libraryItem.media.ebookFile
+    const ebookFile = (libraryItem.media as Book).ebookFile
     if (!ebookFile) {
       return res.status(404).send('Ebook file not found')
     }
 
-    this.emailManager.sendEBookToDevice(ebookFile, device, res)
+    void this.emailManager.sendEBookToDevice(ebookFile, device, res)
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  adminMiddleware(req, res, next) {
+  adminMiddleware(req: RequestWithUser, res: Response, next: NextFunction) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(404)
     }
@@ -138,4 +118,4 @@ class EmailController {
     next()
   }
 }
-module.exports = new EmailController()
+export = new EmailController()

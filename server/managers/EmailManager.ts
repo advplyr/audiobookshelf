@@ -1,4 +1,5 @@
 import type { Response } from 'express'
+import type Book from '../models/Book'
 import nodemailer from 'nodemailer'
 import Database from '../Database'
 import Logger from '../Logger'
@@ -38,7 +39,7 @@ class EmailManager {
     })
   }
 
-  async sendEBookToDevice(ebookFile: { metadata: { filename: string; path: string } }, device: { name?: string | null; email?: string | null }, res: Response) {
+  async sendEBookToDevice(ebookFile: Pick<Book.EBookFileObject, 'metadata'>, device: { name?: string | null; email?: string | null }, res: Response) {
     Logger.info(`[EmailManager] Sending ebook "${ebookFile.metadata.filename}" to device "${device.name}"/"${device.email}"`)
     const transporter = this.getTransporter()
 
@@ -58,8 +59,9 @@ class EmailManager {
       html: '<div dir="auto"></div>',
       attachments: [
         {
-          filename: ebookFile.metadata.filename,
-          path: ebookFile.metadata.path,
+          // Forward stored attachment values as-is, including incomplete legacy metadata.
+          filename: ebookFile.metadata.filename!,
+          path: ebookFile.metadata.path!,
         }
       ]
     }).then((result) => {
