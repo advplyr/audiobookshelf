@@ -57,7 +57,7 @@ export default [
     }
   },
   {
-    ignores: ['**/node_modules/**', 'client/**', 'dist/**', 'dist-server/**', 'coverage/**', 'server/libs/**']
+    ignores: ['**/node_modules/**', 'client/**', 'dist/**', 'dist-server/**', 'coverage/**', 'server/libs/**/*.js', 'server/libs/fluentFfmpeg.d.ts']
   },
   {
     files: ['dev.js', 'server/**/*.js'],
