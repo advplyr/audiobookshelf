@@ -1,62 +1,46 @@
-const uuidv4 = require('uuid').v4
-const Path = require('path')
-const { LogLevel } = require('../utils/constants')
-const { getTitleIgnorePrefix } = require('../utils/index')
-const AudioFileScanner = require('./AudioFileScanner')
-const Database = require('../Database')
-const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
-const AudioFile = require('../objects/files/AudioFile')
-const CoverManager = require('../managers/CoverManager')
-const LibraryFile = require('../objects/files/LibraryFile')
-const fsExtra = require('../libs/fsExtra')
-const PodcastEpisode = require('../models/PodcastEpisode')
-const AbsMetadataFileScanner = require('./AbsMetadataFileScanner')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+import { v4 as uuidv4 } from 'uuid'
+import Path from 'path'
+import { LogLevel } from '../utils/constants'
+import { getTitleIgnorePrefix } from '../utils'
+import AudioFileScanner from './AudioFileScanner'
+import Database from '../Database'
+import { filePathToPOSIX, getFileTimestampsWithIno } from '../utils/fileUtils'
+import AudioFile from '../objects/files/AudioFile'
+import CoverManager from '../managers/CoverManager'
+import LibraryFile from '../objects/files/LibraryFile'
+import fsExtra from '../libs/fsExtra'
+import AbsMetadataFileScanner from './AbsMetadataFileScanner'
+import htmlSanitizer from '../utils/htmlSanitizer'
+import type Library from '../models/Library'
+import type LibraryItem from '../models/LibraryItem'
+import type Podcast from '../models/Podcast'
+import type PodcastEpisode from '../models/PodcastEpisode'
+import type LibraryItemScanData from './LibraryItemScanData'
+import type LibraryScan from './LibraryScan'
 
-/**
- * Metadata for podcasts pulled from files
- * @typedef PodcastMetadataObject
- * @property {string} title
- * @property {string} titleIgnorePrefix
- * @property {string} author
- * @property {string} releaseDate
- * @property {string} feedURL
- * @property {string} imageURL
- * @property {string} description
- * @property {string} itunesPageURL
- * @property {string} itunesId
- * @property {string} language
- * @property {string} podcastType
- * @property {string[]} genres
- * @property {string[]} tags
- * @property {boolean} explicit
- */
+type PodcastWithMetadata = Podcast & { asin?: string }
+type PodcastScanMetadata = Partial<Pick<PodcastWithMetadata, 'titleIgnorePrefix' | 'author' | 'releaseDate' | 'feedURL' | 'imageURL' | 'description' | 'itunesPageURL' | 'itunesId' | 'itunesArtistId' | 'asin' | 'language' | 'podcastType' | 'explicit' | 'coverPath'>> & {
+  title: string
+  tags: string[]
+  genres: string[]
+}
 
 class PodcastScanner {
   constructor() {}
 
-  /**
-   * @param {import('../models/LibraryItem')} existingLibraryItem
-   * @param {import('./LibraryItemScanData')} libraryItemData
-   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {import('./LibraryScan')} libraryScan
-   * @returns {Promise<{libraryItem:import('../models/LibraryItem'), wasUpdated:boolean}>}
-   */
-  async rescanExistingPodcastLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
-    /** @type {import('../models/Podcast')} */
-    const media = await existingLibraryItem.getMedia({
+  async rescanExistingPodcastLibraryItem(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
+    // The item scanner dispatches podcast items here and the query includes their episodes.
+    const media = (await existingLibraryItem.getMedia({
       include: [
         {
           model: Database.podcastEpisodeModel
         }
       ]
-    })
+    })) as Podcast.PodcastExpanded & PodcastWithMetadata
 
-    /** @type {import('../models/PodcastEpisode')[]} */
     let existingPodcastEpisodes = media.podcastEpisodes
 
-    /** @type {AudioFile[]} */
-    let newAudioFiles = []
+    const newAudioFiles: Awaited<ReturnType<typeof AudioFileScanner.executeMediaFileScans>> = []
 
     // Track episode add/remove/update so item_updated includes the current episode list
     let hasEpisodeChanges = false
@@ -64,9 +48,9 @@ class PodcastScanner {
     if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== existingPodcastEpisodes.length) {
       // Filter out and destroy episodes that were removed.
       // filter() returns a new array — reassign to media.podcastEpisodes before emit.
-      const episodesToRemove = []
+      const episodesToRemove: PodcastEpisode[] = []
       existingPodcastEpisodes = existingPodcastEpisodes.filter((ep) => {
-        if (libraryItemData.checkAudioFileRemoved(ep.audioFile)) {
+        if (libraryItemData.checkAudioFileRemoved(ep.audioFile!)) {
           episodesToRemove.push(ep)
           return false
         }
@@ -105,9 +89,9 @@ class PodcastScanner {
         )
 
         for (const podcastEpisode of existingPodcastEpisodes) {
-          let matchedScannedAudioFile = scannedAudioFiles.find((saf) => saf.metadata.path === podcastEpisode.audioFile.metadata.path)
+          let matchedScannedAudioFile = scannedAudioFiles.find((saf) => saf.metadata.path === podcastEpisode.audioFile!.metadata.path)
           if (!matchedScannedAudioFile) {
-            matchedScannedAudioFile = scannedAudioFiles.find((saf) => saf.ino === podcastEpisode.audioFile.ino)
+            matchedScannedAudioFile = scannedAudioFiles.find((saf) => saf.ino === podcastEpisode.audioFile!.ino)
           }
 
           if (matchedScannedAudioFile) {
@@ -119,7 +103,9 @@ class PodcastScanner {
 
             // Set metadata and save episode
             AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(podcastEpisode, libraryScan)
-            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${podcastEpisode.title}" keys changed [${podcastEpisode.changed()?.join(', ')}]`)
+            // The audioFile key was explicitly marked as changed above.
+            const changedKeys = podcastEpisode.changed() as string[]
+            libraryScan.addLog(LogLevel.INFO, `Podcast episode "${podcastEpisode.title}" keys changed [${changedKeys?.join(', ')}]`)
             await podcastEpisode.save()
             hasEpisodeChanges = true
           }
@@ -187,7 +173,8 @@ class PodcastScanner {
         const coverPath = coverMatch.new.metadata.path
         if (coverPath !== media.coverPath) {
           libraryScan.addLog(LogLevel.DEBUG, `Updating podcast cover "${media.coverPath}" => "${coverPath}" for podcast "${media.title}"`)
-          media.coverPath = coverPath
+          // Historical file JSON can omit a path, which this update copies as-is.
+          Object.assign(media, { coverPath })
           media.changed('coverPath', true)
           hasMediaChanges = true
         }
@@ -204,7 +191,9 @@ class PodcastScanner {
 
     const podcastMetadata = await this.getPodcastMetadataFromScanData(existingPodcastEpisodes, libraryItemData, libraryScan, existingLibraryItem.id)
 
-    for (const key in podcastMetadata) {
+    for (const metadataKey in podcastMetadata) {
+      // File metadata is filtered to podcast keys before being merged with the scan defaults.
+      const key = metadataKey as keyof PodcastScanMetadata
       // Ignore unset metadata and empty arrays
       if (podcastMetadata[key] === undefined || (Array.isArray(podcastMetadata[key]) && !podcastMetadata[key].length)) continue
 
@@ -225,15 +214,15 @@ class PodcastScanner {
           hasMediaChanges = true
         }
       } else if (podcastMetadata[key] !== media[key]) {
-        libraryScan.addLog(LogLevel.DEBUG, `Updating podcast ${key} "${media[key]}" => "${podcastMetadata[key]}" for podcast "${podcastMetadata.title}"`)
-        media[key] = podcastMetadata[key]
+        libraryScan.addLog(LogLevel.DEBUG, `Updating podcast ${key} "${String(media[key])}" => "${String(podcastMetadata[key])}" for podcast "${podcastMetadata.title}"`)
+        Object.assign(media, { [key]: podcastMetadata[key] })
         hasMediaChanges = true
       }
     }
 
     // If no cover then extract cover from audio file if available
     if (!media.coverPath && existingPodcastEpisodes.length) {
-      const audioFiles = existingPodcastEpisodes.map((ep) => ep.audioFile)
+      const audioFiles = existingPodcastEpisodes.map((ep) => ep.audioFile!)
       const extractedCoverPath = await CoverManager.saveEmbeddedCoverArt(audioFiles, existingLibraryItem.id, existingLibraryItem.path)
       if (extractedCoverPath) {
         libraryScan.addLog(LogLevel.DEBUG, `Updating podcast "${podcastMetadata.title}" extracted embedded cover art from audio file to path "${extractedCoverPath}"`)
@@ -244,7 +233,7 @@ class PodcastScanner {
 
     existingLibraryItem.media = media
 
-    let libraryItemUpdated = false
+    let libraryItemUpdated: boolean | undefined = false
 
     // Save Podcast changes to db
     if (hasMediaChanges) {
@@ -264,16 +253,9 @@ class PodcastScanner {
     }
   }
 
-  /**
-   *
-   * @param {import('./LibraryItemScanData')} libraryItemData
-   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {import('./LibraryScan')} libraryScan
-   * @returns {Promise<import('../models/LibraryItem')>}
-   */
-  async scanNewPodcastLibraryItem(libraryItemData, librarySettings, libraryScan) {
+  async scanNewPodcastLibraryItem(libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
     // Scan audio files found
-    let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryItemData.mediaType, libraryItemData, libraryItemData.audioLibraryFiles)
+    const scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryItemData.mediaType, libraryItemData, libraryItemData.audioLibraryFiles)
 
     // Do not add library items that have no valid audio files
     if (!scannedAudioFiles.length) {
@@ -288,7 +270,7 @@ class PodcastScanner {
       // Podcast episode audio files always have index 1
       audioFile.index = 1
 
-      const newEpisode = {
+      const newEpisode: Pick<PodcastEpisode, 'title' | 'subtitle' | 'season' | 'episode' | 'episodeType' | 'pubDate' | 'description' | 'audioFile' | 'chapters'> & { publishedAt: number | null } = {
         title: audioFile.metaTags.tagTitle || audioFile.metadata.filenameNoExt,
         subtitle: null,
         season: null,
@@ -333,13 +315,15 @@ class PodcastScanner {
       numEpisodes: newPodcastEpisodes.length
     }
 
-    const libraryItemObj = libraryItemData.libraryItemObject
-    libraryItemObj.id = uuidv4() // Generate library item id ahead of time to use for saving extracted cover image
-    libraryItemObj.isMissing = false
-    libraryItemObj.isInvalid = false
-    libraryItemObj.extraData = {}
-    libraryItemObj.title = podcastObject.title
-    libraryItemObj.titleIgnorePrefix = getTitleIgnorePrefix(podcastObject.title)
+    const libraryItemObj = {
+      ...libraryItemData.libraryItemObject,
+      id: uuidv4(), // Generate the item id before extracting the cover.
+      isMissing: false,
+      isInvalid: false,
+      extraData: {},
+      title: podcastObject.title,
+      titleIgnorePrefix: getTitleIgnorePrefix(podcastObject.title)
+    }
 
     // If cover was not found in folder then check embedded covers in audio files
     if (!podcastObject.coverPath && scannedAudioFiles.length) {
@@ -347,20 +331,19 @@ class PodcastScanner {
       podcastObject.coverPath = await CoverManager.saveEmbeddedCoverArt(scannedAudioFiles, libraryItemObj.id, libraryItemObj.path)
     }
 
-    libraryItemObj.podcast = podcastObject
-    const libraryItem = await Database.libraryItemModel.create(libraryItemObj, {
+    const libraryItem = await Database.libraryItemModel.create(Object.assign(libraryItemObj, { podcast: podcastObject }), {
       include: {
         model: Database.podcastModel,
-        include: Database.podcastEpisodeModel
+        include: [Database.podcastEpisodeModel]
       }
     })
 
-    Database.addGenresToFilterData(libraryItemData.libraryId, libraryItem.podcast.genres)
-    Database.addTagsToFilterData(libraryItemData.libraryId, libraryItem.podcast.tags)
+    Database.addGenresToFilterData(libraryItemData.libraryId, libraryItem.podcast!.genres)
+    Database.addTagsToFilterData(libraryItemData.libraryId, libraryItem.podcast!.tags)
 
     // Load for emitting to client
     libraryItem.media = await libraryItem.getMedia({
-      include: Database.podcastEpisodeModel
+      include: [Database.podcastEpisodeModel]
     })
 
     await this.saveMetadataFile(libraryItem, libraryScan)
@@ -372,16 +355,8 @@ class PodcastScanner {
     return libraryItem
   }
 
-  /**
-   *
-   * @param {PodcastEpisode[]} podcastEpisodes Not the models for new podcasts
-   * @param {import('./LibraryItemScanData')} libraryItemData
-   * @param {import('./LibraryScan')} libraryScan
-   * @param {string} [existingLibraryItemId]
-   * @returns {Promise<PodcastMetadataObject>}
-   */
-  async getPodcastMetadataFromScanData(podcastEpisodes, libraryItemData, libraryScan, existingLibraryItemId = null) {
-    const podcastMetadata = {
+  async getPodcastMetadataFromScanData(podcastEpisodes: Pick<PodcastEpisode, 'audioFile'>[], libraryItemData: LibraryItemScanData, libraryScan: LibraryScan, existingLibraryItemId: string | null = null) {
+    const podcastMetadata: PodcastScanMetadata = {
       title: libraryItemData.mediaMetadata.title,
       titleIgnorePrefix: undefined,
       author: undefined,
@@ -401,7 +376,7 @@ class PodcastScanner {
 
     // Use audio meta tags
     if (podcastEpisodes.length) {
-      AudioFileScanner.setPodcastMetadataFromAudioMetaTags(podcastEpisodes[0].audioFile, podcastMetadata, libraryScan)
+      AudioFileScanner.setPodcastMetadataFromAudioMetaTags(podcastEpisodes[0].audioFile!, podcastMetadata, libraryScan)
     }
 
     // Use metadata.json file
@@ -416,17 +391,11 @@ class PodcastScanner {
     return podcastMetadata
   }
 
-  /**
-   *
-   * @param {import('../models/LibraryItem')} libraryItem
-   * @param {import('./LibraryScan')} libraryScan
-   * @returns {Promise}
-   */
-  async saveMetadataFile(libraryItem, libraryScan) {
-    let metadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+  async saveMetadataFile(libraryItem: LibraryItem, libraryScan: LibraryScan) {
+    let metadataPath = Path.join(global.MetadataPath!, 'items', libraryItem.id)
     let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
     if (storeMetadataWithItem) {
-      metadataPath = libraryItem.path
+      metadataPath = libraryItem.path!
     } else {
       // Make sure metadata book dir exists
       storeMetadataWithItem = false
@@ -438,34 +407,35 @@ class PodcastScanner {
     /**
      * Keys must match abmetadataGenerator.js
      */
+    const media = libraryItem.media as PodcastWithMetadata
     const jsonObject = {
-      tags: libraryItem.media.tags || [],
-      title: libraryItem.media.title,
-      author: libraryItem.media.author,
-      description: libraryItem.media.description,
-      releaseDate: libraryItem.media.releaseDate,
-      genres: libraryItem.media.genres || [],
-      feedURL: libraryItem.media.feedURL,
-      imageURL: libraryItem.media.imageURL,
-      itunesPageURL: libraryItem.media.itunesPageURL,
-      itunesId: libraryItem.media.itunesId,
-      itunesArtistId: libraryItem.media.itunesArtistId,
-      asin: libraryItem.media.asin,
-      language: libraryItem.media.language,
-      explicit: !!libraryItem.media.explicit,
-      podcastType: libraryItem.media.podcastType
+      tags: media.tags || [],
+      title: media.title,
+      author: media.author,
+      description: media.description,
+      releaseDate: media.releaseDate,
+      genres: media.genres || [],
+      feedURL: media.feedURL,
+      imageURL: media.imageURL,
+      itunesPageURL: media.itunesPageURL,
+      itunesId: media.itunesId,
+      itunesArtistId: media.itunesArtistId,
+      asin: media.asin,
+      language: media.language,
+      explicit: !!media.explicit,
+      podcastType: media.podcastType
     }
     return fsExtra
       .writeFile(metadataFilePath, JSON.stringify(jsonObject, null, 2))
       .then(async () => {
         // Add metadata.json to libraryFiles array if it is new
-        let metadataLibraryFile = libraryItem.libraryFiles.find((lf) => lf.metadata.path === filePathToPOSIX(metadataFilePath))
+        let metadataLibraryFile = libraryItem.libraryFiles!.find((lf) => lf.metadata.path === filePathToPOSIX(metadataFilePath))
         if (storeMetadataWithItem) {
           if (!metadataLibraryFile) {
             const newLibraryFile = new LibraryFile()
             await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
             metadataLibraryFile = newLibraryFile.toJSON()
-            libraryItem.libraryFiles.push(metadataLibraryFile)
+            libraryItem.libraryFiles!.push(metadataLibraryFile)
           } else {
             const fileTimestamps = await getFileTimestampsWithIno(metadataFilePath)
             if (fileTimestamps) {
@@ -475,12 +445,12 @@ class PodcastScanner {
               metadataLibraryFile.ino = fileTimestamps.ino
             }
           }
-          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path)
+          const libraryItemDirTimestamps = await getFileTimestampsWithIno(libraryItem.path!)
           if (libraryItemDirTimestamps) {
             libraryItem.mtime = libraryItemDirTimestamps.mtimeMs
             libraryItem.ctime = libraryItemDirTimestamps.ctimeMs
             let size = 0
-            libraryItem.libraryFiles.forEach((lf) => (size += !isNaN(lf.metadata.size) ? Number(lf.metadata.size) : 0))
+            libraryItem.libraryFiles!.forEach((lf) => (size += !isNaN(Number(lf.metadata.size)) ? Number(lf.metadata.size) : 0))
             libraryItem.size = size
           }
         }
@@ -495,4 +465,4 @@ class PodcastScanner {
       })
   }
 }
-module.exports = new PodcastScanner()
+export = new PodcastScanner()

@@ -9,13 +9,16 @@ import AudioFile from '../objects/files/AudioFile'
 import type Book from '../models/Book'
 import type Podcast from '../models/Podcast'
 import type PodcastEpisode from '../models/PodcastEpisode'
+import type FileMetadata from '../objects/metadata/FileMetadata'
+import type AudioMetaTags from '../objects/metadata/AudioMetaTags'
 import type LibraryItemScanData from './LibraryItemScanData'
 import type LibraryScan from './LibraryScan'
 import type ScanLogger from './ScanLogger'
 
 type ScannedLibraryFile = LibraryItemScanData['audioLibraryFiles'][number] | LibraryItemScanData['audioLibraryFilesModified'][number]['new']
 type FilenameMetadata = LibraryItemScanData['mediaMetadata'] & { author?: string; series?: string; publishedYear?: string | null }
-type ScannedAudioFile = AudioFile | Book.AudioFileObject
+type ProbedAudioFile = AudioFile & { metadata: FileMetadata; metaTags: AudioMetaTags }
+type ScannedAudioFile = ProbedAudioFile | Book.AudioFileObject
 type TrackOrderFields = Pick<ScannedAudioFile, 'index' | 'discNumFromMeta' | 'discNumFromFilename' | 'trackNumFromMeta' | 'trackNumFromFilename'>
 type BookMetadata = Partial<Pick<Book, 'title' | 'subtitle' | 'description' | 'publisher' | 'publishedYear' | 'isbn' | 'language' | 'asin' | 'narrators' | 'genres' | 'chapters'>> & {
   authors?: string[]
@@ -159,7 +162,7 @@ class AudioFileScanner {
     }
   }
 
-  async scan(mediaType: string, libraryFile: ScannedLibraryFile, mediaMetadataFromScan: FilenameMetadata) {
+  async scan(mediaType: string | null, libraryFile: ScannedLibraryFile, mediaMetadataFromScan: FilenameMetadata) {
     // Stored files passed by rescans are expected to have a path, like freshly scanned files.
     const probeData = await prober.probe(libraryFile.metadata.path!)
 
@@ -182,15 +185,16 @@ class AudioFileScanner {
     }
     audioFile.setDataFromProbe(libraryFile, probeData)
 
-    return audioFile
+    // setDataFromProbe creates the metadata and assigns the tags from the successful probe.
+    return audioFile as ProbedAudioFile
   }
 
   /**
    * Scan LibraryFiles and return AudioFiles
    */
-  async executeMediaFileScans(mediaType: string, libraryItemScanData: Pick<LibraryItemScanData, 'mediaMetadata'>, audioLibraryFiles: ScannedLibraryFile[]) {
+  async executeMediaFileScans(mediaType: string | null, libraryItemScanData: Pick<LibraryItemScanData, 'mediaMetadata'>, audioLibraryFiles: ScannedLibraryFile[]) {
     const batchSize = 32
-    const results: AudioFile[] = []
+    const results: ProbedAudioFile[] = []
     for (let batch = 0; batch < audioLibraryFiles.length; batch += batchSize) {
       const proms = []
       for (let i = batch; i < Math.min(batch + batchSize, audioLibraryFiles.length); i++) {
@@ -502,7 +506,7 @@ class AudioFileScanner {
             const afChaptersCleaned =
               file.chapters?.filter((c, i) => {
                 if (c.end - c.start < 0.1) {
-                  libraryScan.addLog(LogLevel.WARN, `Audio file "${file.metadata!.filename}" Chapter "${c.title}" (index ${i}) has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
+                  libraryScan.addLog(LogLevel.WARN, `Audio file "${file.metadata.filename}" Chapter "${c.title}" (index ${i}) has invalid duration of ${c.end - c.start} seconds. Skipping this chapter.`)
                   return false
                 }
                 return true
@@ -535,7 +539,7 @@ class AudioFileScanner {
       let currStartTime = 0
       audioFiles.forEach((file) => {
         if (file.duration) {
-          let title = file.metadata!.filename ? Path.basename(file.metadata!.filename, Path.extname(file.metadata!.filename)) : `Chapter ${currChapterId}`
+          let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
           // The unique-title count above guarantees a title for every file.
           if (useMetaTagAsTitle) {
             title = file.metaTags!.tagTitle!

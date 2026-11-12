@@ -41,7 +41,7 @@ interface AudioFileData {
 }
 
 /** Persisted audio file json. `cdNumFromFilename` is the old name of `discNumFromFilename` */
-type AudioFileConstructData = Partial<Omit<AudioFileData, 'mimeType'>> & { cdNumFromFilename?: number | null }
+type AudioFileConstructData = Partial<Omit<AudioFileData, 'mimeType' | 'metadata'>> & { metadata?: Partial<FileMetadataJSON>; cdNumFromFilename?: number | null }
 
 /** Data from MediaProbeData */
 interface AudioFileProbeData {

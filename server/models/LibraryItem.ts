@@ -1,8 +1,9 @@
 import Path from 'path'
 import { DataTypes, Model } from 'sequelize'
-import type { Attributes, BelongsToGetAssociationMixin, BindOrReplacements, BuildOptions, FindOptions, IncludeOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize, WhereOptions } from 'sequelize'
+import type { Attributes, BelongsToGetAssociationMixin, BindOrReplacements, BuildOptions, CreationAttributes, FindOptions, IncludeOptions, InitOptions, ModelAttributes, ModelStatic, Sequelize, WhereOptions } from 'sequelize'
 import type { BookExpanded } from './Book'
 import type { PodcastExpanded } from './Podcast'
+import type PodcastEpisode from './PodcastEpisode'
 import type Library from './Library'
 import type User from './User'
 import type Author from './Author'
@@ -33,7 +34,9 @@ type LibraryItemAttributes = {
   title: string | null; titleIgnorePrefix: string | null; authorNamesFirstLast: string | null; authorNamesLastFirst: string | null
   book?: Book | null; podcast?: Podcast | null; media?: Book | Podcast | null
 }
-type LibraryItemCreation = Optional<LibraryItemAttributes, keyof LibraryItemAttributes>
+type LibraryItemCreation = Omit<Partial<LibraryItemAttributes>, 'podcast'> & {
+  podcast?: Podcast | (CreationAttributes<Podcast> & { podcastEpisodes?: CreationAttributes<PodcastEpisode>[] }) | null
+}
 type MinifiedJSON = {
   id: string; ino: string | null; oldLibraryItemId: string | null; libraryId: string | null; folderId: string | null
   path: string | null; relPath: string | null; isFile: boolean | null
