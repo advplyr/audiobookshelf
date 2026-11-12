@@ -471,7 +471,7 @@ class Database {
     }
     // Build migrations
     if (this.serverSettings.buildNumber <= 0) {
-      const metadataMigration = loadModule('./utils/migrations/absMetadataMigration') as { migrate(database: Database): Promise<void> }
+      const metadataMigration = loadModule('./utils/migrations/absMetadataMigration') as typeof import('./utils/migrations/absMetadataMigration')
       await metadataMigration.migrate(this)
     }
 

@@ -4,7 +4,7 @@ declare namespace StreamZip {
     constructor(options: { file: string })
     entries(): Promise<Record<string, { isDirectory: boolean }>>
     entryData(entry: string): Promise<Buffer>
-    extract(entry: string, outputPath: string): Promise<number | undefined>
+    extract(entry: string | null, outputPath: string): Promise<number | undefined>
     close(): Promise<void>
   }
 }

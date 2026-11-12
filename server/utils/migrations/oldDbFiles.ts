@@ -1,18 +1,23 @@
-const { once } = require('events')
-const { createInterface } = require('readline')
-const Path = require('path')
-const Logger = require('../../Logger')
-const fs = require('../../libs/fsExtra')
-const archiver = require('../../libs/archiver')
-const StreamZip = require('../../libs/nodeStreamZip')
+import { once } from 'node:events'
+import { createInterface } from 'node:readline'
+import Path from 'node:path'
+import Logger from '../../Logger'
+import fs from '../../libs/fsExtra'
+import archiver from '../../libs/archiver'
+import StreamZip from '../../libs/nodeStreamZip'
 
-async function processDbFile(filepath) {
+function getConfigPath() {
+  if (global.ConfigPath === undefined) throw new TypeError('Configuration directory is unavailable.')
+  return global.ConfigPath
+}
+
+async function processDbFile(filepath: string) {
   if (!fs.pathExistsSync(filepath)) {
     Logger.error(`[oldDbFiles] Db file does not exist at "${filepath}"`)
     return []
   }
 
-  const entities = []
+  const entities: unknown[] = []
 
   try {
     const fileStream = fs.createReadStream(filepath)
@@ -25,7 +30,7 @@ async function processDbFile(filepath) {
     rl.on('line', (line) => {
       if (line && line.trim()) {
         try {
-          const entity = JSON.parse(line)
+          const entity: unknown = JSON.parse(line)
           if (entity && Object.keys(entity).length) entities.push(entity)
         } catch (jsonParseError) {
           Logger.error(`[oldDbFiles] Failed to parse line "${line}" in db file "${filepath}"`, jsonParseError)
@@ -44,12 +49,12 @@ async function processDbFile(filepath) {
   }
 }
 
-async function loadDbData(dbpath) {
+async function loadDbData(dbpath: string) {
   try {
     Logger.info(`[oldDbFiles] Loading db data at "${dbpath}"`)
     const files = await fs.readdir(dbpath)
 
-    const entities = []
+    const entities: unknown[] = []
     for (const filename of files) {
       if (Path.extname(filename).toLowerCase() !== '.json') {
         Logger.warn(`[oldDbFiles] Ignoring filename "${filename}" in db folder "${dbpath}"`)
@@ -71,29 +76,29 @@ async function loadDbData(dbpath) {
   }
 }
 
-module.exports.loadOldData = async (dbName) => {
-  const dbPath = Path.join(global.ConfigPath, dbName, 'data')
+async function loadOldData(dbName: string) {
+  const dbPath = Path.join(getConfigPath(), dbName, 'data')
   const dbData = await loadDbData(dbPath) || []
   Logger.info(`[oldDbFiles] ${dbData.length} ${dbName} loaded`)
   return dbData
 }
 
-module.exports.zipWrapOldDb = async () => {
-  const dbs = {
-    libraryItems: Path.join(global.ConfigPath, 'libraryItems'),
-    users: Path.join(global.ConfigPath, 'users'),
-    sessions: Path.join(global.ConfigPath, 'sessions'),
-    libraries: Path.join(global.ConfigPath, 'libraries'),
-    settings: Path.join(global.ConfigPath, 'settings'),
-    collections: Path.join(global.ConfigPath, 'collections'),
-    playlists: Path.join(global.ConfigPath, 'playlists'),
-    authors: Path.join(global.ConfigPath, 'authors'),
-    series: Path.join(global.ConfigPath, 'series'),
-    feeds: Path.join(global.ConfigPath, 'feeds')
+async function zipWrapOldDb() {
+  const dbs: Record<string, string> = {
+    libraryItems: Path.join(getConfigPath(), 'libraryItems'),
+    users: Path.join(getConfigPath(), 'users'),
+    sessions: Path.join(getConfigPath(), 'sessions'),
+    libraries: Path.join(getConfigPath(), 'libraries'),
+    settings: Path.join(getConfigPath(), 'settings'),
+    collections: Path.join(getConfigPath(), 'collections'),
+    playlists: Path.join(getConfigPath(), 'playlists'),
+    authors: Path.join(getConfigPath(), 'authors'),
+    series: Path.join(getConfigPath(), 'series'),
+    feeds: Path.join(getConfigPath(), 'feeds')
   }
 
-  return new Promise((resolve) => {
-    const oldDbPath = Path.join(global.ConfigPath, 'oldDb.zip')
+  return new Promise<boolean>((resolve) => {
+    const oldDbPath = Path.join(getConfigPath(), 'oldDb.zip')
     const output = fs.createWriteStream(oldDbPath)
     const archive = archiver('zip', {
       zlib: { level: 9 } // Sets the compression level.
@@ -101,7 +106,7 @@ module.exports.zipWrapOldDb = async () => {
 
     // listen for all archive data to be written
     // 'close' event is fired only when a file descriptor is involved
-    output.on('close', async () => {
+    const removeArchivedFolders = async () => {
       Logger.info(`[oldDbFiles] Old db files have been zipped in ${oldDbPath}. ${archive.pointer()} total bytes`)
 
       // Remove old db folders have successful zip
@@ -110,7 +115,8 @@ module.exports.zipWrapOldDb = async () => {
       }
 
       resolve(true)
-    })
+    }
+    output.on('close', () => void removeArchivedFolders())
 
     // This event is fired when the data source is drained no matter what was the data source.
     // It is not part of this library but rather from the NodeJS Stream API.
@@ -120,7 +126,7 @@ module.exports.zipWrapOldDb = async () => {
     })
 
     // good practice to catch this error explicitly
-    archive.on('error', (err) => {
+    archive.on('error', (err: Error) => {
       Logger.error(`[oldDbFiles] Failed to zip old db folders`, err)
       resolve(false)
     })
@@ -134,22 +140,22 @@ module.exports.zipWrapOldDb = async () => {
 
     // finalize the archive (ie we are done appending files but streams have to finish yet)
     // 'close', 'end' or 'finish' may be fired right after calling this method so register to them beforehand
-    archive.finalize()
+    void archive.finalize()
   })
 }
 
-module.exports.checkHasOldDb = async () => {
-  const dbs = {
-    libraryItems: Path.join(global.ConfigPath, 'libraryItems'),
-    users: Path.join(global.ConfigPath, 'users'),
-    sessions: Path.join(global.ConfigPath, 'sessions'),
-    libraries: Path.join(global.ConfigPath, 'libraries'),
-    settings: Path.join(global.ConfigPath, 'settings'),
-    collections: Path.join(global.ConfigPath, 'collections'),
-    playlists: Path.join(global.ConfigPath, 'playlists'),
-    authors: Path.join(global.ConfigPath, 'authors'),
-    series: Path.join(global.ConfigPath, 'series'),
-    feeds: Path.join(global.ConfigPath, 'feeds')
+async function checkHasOldDb() {
+  const dbs: Record<string, string> = {
+    libraryItems: Path.join(getConfigPath(), 'libraryItems'),
+    users: Path.join(getConfigPath(), 'users'),
+    sessions: Path.join(getConfigPath(), 'sessions'),
+    libraries: Path.join(getConfigPath(), 'libraries'),
+    settings: Path.join(getConfigPath(), 'settings'),
+    collections: Path.join(getConfigPath(), 'collections'),
+    playlists: Path.join(getConfigPath(), 'playlists'),
+    authors: Path.join(getConfigPath(), 'authors'),
+    series: Path.join(getConfigPath(), 'series'),
+    feeds: Path.join(getConfigPath(), 'feeds')
   }
   for (const db in dbs) {
     if (await fs.pathExists(dbs[db])) {
@@ -159,29 +165,29 @@ module.exports.checkHasOldDb = async () => {
   return false
 }
 
-module.exports.checkHasOldDbZip = async () => {
-  const oldDbPath = Path.join(global.ConfigPath, 'oldDb.zip')
+async function checkHasOldDbZip() {
+  const oldDbPath = Path.join(getConfigPath(), 'oldDb.zip')
   if (!await fs.pathExists(oldDbPath)) {
     return false
   }
 
   // Extract oldDb.zip
   const zip = new StreamZip.async({ file: oldDbPath })
-  await zip.extract(null, global.ConfigPath)
+  await zip.extract(null, getConfigPath())
   await zip.close()
 
-  return this.checkHasOldDb()
+  return checkHasOldDb()
 }
 
 /**
  * Used for migration from 2.3.0 -> 2.3.1
  * @returns {boolean} true if extracted
  */
-module.exports.checkExtractItemsUsersAndLibraries = async () => {
-  const oldDbPath = Path.join(global.ConfigPath, 'oldDb.zip')
+async function checkExtractItemsUsersAndLibraries() {
+  const oldDbPath = Path.join(getConfigPath(), 'oldDb.zip')
 
   const zip = new StreamZip.async({ file: oldDbPath })
-  const libraryItemsPath = Path.join(global.ConfigPath, 'libraryItems')
+  const libraryItemsPath = Path.join(getConfigPath(), 'libraryItems')
   await zip.extract('libraryItems/', libraryItemsPath)
 
   if (!await fs.pathExists(libraryItemsPath)) {
@@ -189,7 +195,7 @@ module.exports.checkExtractItemsUsersAndLibraries = async () => {
     return false
   }
 
-  const usersPath = Path.join(global.ConfigPath, 'users')
+  const usersPath = Path.join(getConfigPath(), 'users')
   await zip.extract('users/', usersPath)
 
   if (!await fs.pathExists(usersPath)) {
@@ -198,7 +204,7 @@ module.exports.checkExtractItemsUsersAndLibraries = async () => {
     return false
   }
 
-  const librariesPath = Path.join(global.ConfigPath, 'libraries')
+  const librariesPath = Path.join(getConfigPath(), 'libraries')
   await zip.extract('libraries/', librariesPath)
 
   if (!await fs.pathExists(librariesPath)) {
@@ -216,11 +222,12 @@ module.exports.checkExtractItemsUsersAndLibraries = async () => {
 /**
  * Used for migration from 2.3.0 -> 2.3.1
  */
-module.exports.removeOldItemsUsersAndLibrariesFolders = async () => {
-  const libraryItemsPath = Path.join(global.ConfigPath, 'libraryItems')
-  const usersPath = Path.join(global.ConfigPath, 'users')
-  const librariesPath = Path.join(global.ConfigPath, 'libraries')
+async function removeOldItemsUsersAndLibrariesFolders() {
+  const libraryItemsPath = Path.join(getConfigPath(), 'libraryItems')
+  const usersPath = Path.join(getConfigPath(), 'users')
+  const librariesPath = Path.join(getConfigPath(), 'libraries')
   await fs.remove(libraryItemsPath)
   await fs.remove(usersPath)
   await fs.remove(librariesPath)
 }
+export = { loadOldData, zipWrapOldDb, checkHasOldDb, checkHasOldDbZip, checkExtractItemsUsersAndLibraries, removeOldItemsUsersAndLibrariesFolders }
