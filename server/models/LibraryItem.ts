@@ -161,6 +161,7 @@ class LibraryItem extends Model<LibraryItemAttributes, LibraryItemCreation> {
    * @returns {Promise<LibraryItemExpanded[]>}
    */
   static async findAllExpandedWhere(where: WhereOptions | null = null) {
+    // The includes and afterFind hook populate the expanded media association.
     return this.findAll({
       where: where as WhereOptions,
       include: [
@@ -193,7 +194,7 @@ class LibraryItem extends Model<LibraryItemAttributes, LibraryItemCreation> {
         [this.sequelize.models.book, this.sequelize.models.author, this.sequelize.models.bookAuthor, 'createdAt', 'ASC'],
         [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
       ]
-    })
+    }) as Promise<LibraryItemExpanded[]>
   }
 
   /**
