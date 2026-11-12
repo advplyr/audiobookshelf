@@ -1,10 +1,19 @@
-'use strict';
-const toBytes = s => [...s].map(c => c.charCodeAt(0));
+import stream from 'node:stream';
+import type { PassThrough, Readable } from 'node:stream';
+
+interface FileTypeResult {
+  ext: string;
+  mime: string;
+}
+
+type DetectedStream = PassThrough & { fileType?: FileTypeResult | null };
+
+const toBytes = (s: string) => [...s].map(c => c.charCodeAt(0));
 const xpiZipFilename = toBytes('META-INF/mozilla.rsa');
 const oxmlContentTypes = toBytes('[Content_Types].xml');
 const oxmlRels = toBytes('_rels/.rels');
 
-function readUInt64LE(buf, offset = 0) {
+function readUInt64LE(buf: Uint8Array, offset = 0) {
   let n = buf[offset];
   let mul = 1;
   let i = 0;
@@ -16,7 +25,7 @@ function readUInt64LE(buf, offset = 0) {
   return n;
 }
 
-const fileType = input => {
+const fileType = (input: unknown): FileTypeResult | null => {
   if (!(input instanceof Uint8Array || input instanceof ArrayBuffer || Buffer.isBuffer(input))) {
     throw new TypeError(`Expected the \`input\` argument to be of type \`Uint8Array\` or \`Buffer\` or \`ArrayBuffer\`, got \`${typeof input}\``);
   }
@@ -27,10 +36,10 @@ const fileType = input => {
     return null;
   }
 
-  const check = (header, options) => {
-    options = Object.assign({
+  const check = (header: number[], overrides?: { offset?: number; mask?: number[] }) => {
+    const options = Object.assign({
       offset: 0
-    }, options);
+    }, overrides);
 
     for (let i = 0; i < header.length; i++) {
       // If a bitmask is set
@@ -47,7 +56,7 @@ const fileType = input => {
     return true;
   };
 
-  const checkString = (header, options) => check(toBytes(header), options);
+  const checkString = (header: string, options?: Parameters<typeof check>[1]) => check(toBytes(header), options);
 
   if (check([0xFF, 0xD8, 0xFF])) {
     return {
@@ -173,7 +182,7 @@ const fileType = input => {
     // - one entry named '[Content_Types].xml' or '_rels/.rels',
     // - one entry indicating specific type of file.
     // MS Office, OpenOffice and LibreOffice may put the parts in different order, so the check should not rely on it.
-    const findNextZipHeaderIndex = (arr, startAt = 0) => arr.findIndex((el, i, arr) => i >= startAt && arr[i] === 0x50 && arr[i + 1] === 0x4B && arr[i + 2] === 0x3 && arr[i + 3] === 0x4);
+    const findNextZipHeaderIndex = (arr: Uint8Array, startAt = 0) => arr.findIndex((el, i, arr) => i >= startAt && arr[i] === 0x50 && arr[i + 1] === 0x4B && arr[i + 2] === 0x3 && arr[i + 3] === 0x4);
 
     let zipHeaderIndex = 0; // The first zip header was already found at index 0
     let oxmlFound = false;
@@ -307,7 +316,7 @@ const fileType = input => {
 
     if (idPos !== -1) {
       const docTypePos = idPos + 3;
-      const findDocType = type => [...type].every((c, i) => sliced[docTypePos + i] === c.charCodeAt(0));
+      const findDocType = (type: string) => [...type].every((c, i) => sliced[docTypePos + i] === c.charCodeAt(0));
 
       if (findDocType('matroska')) {
         return {
@@ -923,23 +932,19 @@ const fileType = input => {
   return null;
 };
 
-module.exports = fileType;
-// TODO: Remove this for the next major release
-module.exports.default = fileType;
+// Keep the callable CommonJS export and the legacy default alias.
+const detector = Object.assign(fileType, { default: fileType });
+const minimumBytes = 4100;
+Object.defineProperty(detector, 'minimumBytes', { value: minimumBytes });
 
-Object.defineProperty(fileType, 'minimumBytes', { value: 4100 });
-
-module.exports.stream = readableStream => new Promise((resolve, reject) => {
-  // Using `eval` to work around issues when bundling with Webpack
-  const stream = eval('require')('stream'); // eslint-disable-line no-eval
-
+const detectStream = (readableStream: Readable) => new Promise<DetectedStream>((resolve, reject) => {
   readableStream.once('readable', () => {
-    const pass = new stream.PassThrough();
-    const chunk = readableStream.read(module.exports.minimumBytes) || readableStream.read();
+    const pass: DetectedStream = new stream.PassThrough();
+    const chunk: unknown = readableStream.read(minimumBytes) || readableStream.read();
     try {
       pass.fileType = fileType(chunk);
     } catch (error) {
-      reject(error);
+      reject(error instanceof Error ? error : new Error('Failed to detect stream type', { cause: error }));
     }
 
     readableStream.unshift(chunk);
@@ -951,3 +956,6 @@ module.exports.stream = readableStream => new Promise((resolve, reject) => {
     }
   });
 });
+
+const exportedDetector = Object.assign(detector, { stream: detectStream });
+export = exportedDetector as typeof exportedDetector & { readonly minimumBytes: number };

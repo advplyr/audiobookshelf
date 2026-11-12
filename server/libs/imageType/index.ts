@@ -1,5 +1,4 @@
-'use strict';
-const fileType = require('./fileType');
+import fileType from './fileType';
 
 const imageExts = new Set([
   'jpg',
@@ -22,13 +21,14 @@ const imageExts = new Set([
   'dcm'
 ]);
 
-const imageType = input => {
+const imageType = (input: unknown) => {
   const ret = fileType(input);
-  return imageExts.has(ret && ret.ext) ? ret : null;
+  return ret && imageExts.has(ret.ext) ? ret : null;
 };
 
-module.exports = imageType;
 // TODO: Remove this for the next major release
-module.exports.default = imageType;
+const detector = Object.assign(imageType, { default: imageType });
 
 Object.defineProperty(imageType, 'minimumBytes', { value: fileType.minimumBytes });
+
+export = detector as typeof detector & { readonly minimumBytes: number };
