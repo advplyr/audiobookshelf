@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import Watcher from './libs/watcher/watcher'
+import watcherModule from './libs/watcher/watcher'
 import Logger from './Logger'
 import TaskManager from './managers/TaskManager'
 import type Task from './objects/Task'
@@ -8,13 +8,38 @@ import type LibraryFolder from './models/LibraryFolder'
 
 import { filePathToPOSIX, isSameOrSubPath, getFileMTimeMs, shouldIgnoreFile } from './utils/fileUtils'
 
+type NativeWatcherEvents = {
+  add: [path: string]
+  change: [path: string]
+  unlink: [path: string]
+  rename: [from: string, to: string]
+  error: [error: Error]
+  ready: []
+  close: []
+}
+type NativeWatcher = {
+  on<Event extends keyof NativeWatcherEvents>(event: Event, listener: (...args: NativeWatcherEvents[Event]) => void): NativeWatcher
+  close(): boolean
+}
+type WatcherOptions = {
+  ignored: RegExp
+  renameDetection: boolean
+  renameTimeout: number
+  recursive: boolean
+  ignoreInitial: boolean
+  persistent: boolean
+}
+
+// The embedded constructor's third argument is optional; type the two-argument call used here.
+const Watcher = watcherModule as new (paths: string[], options: WatcherOptions) => NativeWatcher
+
 type PendingFileUpdate = { path: string; relPath: string; folderId: string; libraryId: string; type: string }
 type LibraryWatcher = {
   id: string
   name: string | null
   libraryFolders: LibraryFolder[]
   paths: string[]
-  watcher: Watcher
+  watcher: NativeWatcher
 }
 
 class FolderWatcher extends EventEmitter<{ scanFilesChanged: [PendingFileUpdate[], Task] }> {
