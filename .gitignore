@@ -1,5 +1,6 @@
 .env
 /dev.js
+/dev.ts
 **/node_modules/
 /config/
 /audiobooks/

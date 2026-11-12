@@ -3,9 +3,9 @@
 # Mark the working directory as safe for use with git
 git config --global --add safe.directory $PWD
 
-# If there is no dev.js file, create it
-if [ ! -f dev.js ]; then
-  cp .devcontainer/dev.js .
+# Create a development configuration when neither format exists.
+if [ ! -f dev.ts ] && [ ! -f dev.js ]; then
+  cp .devcontainer/dev.ts .
 fi
 
 # Update permissions for node_modules folders

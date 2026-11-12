@@ -15,6 +15,6 @@
     "tsBuildInfoFile": "dist-server/.tsbuildinfo",
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["index.js", "dev.js", "server/**/*.js", "server/**/*.ts", "test/**/*.js", "test/**/*.ts"],
+  "include": ["index.ts", "prod.ts", "dev.ts", "dev.js", "server/**/*.js", "server/**/*.ts", "test/**/*.js", "test/**/*.ts"],
   "exclude": ["node_modules", "dist-server", "client"]
 }

@@ -36,7 +36,7 @@ const rules = {
 
 export default [
   {
-    files: ['server/**/*.ts', 'test/**/*.ts'],
+    files: ['index.ts', 'prod.ts', 'server/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       sourceType: 'module',
@@ -60,7 +60,7 @@ export default [
     ignores: ['**/node_modules/**', 'client/**', 'dist/**', 'dist-server/**', 'coverage/**', 'server/libs/**']
   },
   {
-    files: ['index.js', 'prod.js', 'dev.js', 'server/**/*.js'],
+    files: ['dev.js', 'server/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
