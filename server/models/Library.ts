@@ -26,7 +26,7 @@ type LibraryAttributes = {
   icon: string | null
   mediaType: string | null
   provider: string | null
-  lastScan: Date | null
+  lastScan: Date | number | null
   lastScanVersion: string | null
   settings: LibrarySettings | null
   extraData: { lastScanMetadataPrecedence?: string[]; [key: string]: unknown } | null
@@ -45,7 +45,7 @@ class Library extends Model<LibraryAttributes, LibraryCreation> {
   declare icon: string | null
   declare mediaType: string | null
   declare provider: string | null
-  declare lastScan: Date | null
+  declare lastScan: Date | number | null
   declare lastScanVersion: string | null
   declare settings: LibrarySettings | null
   declare extraData: { lastScanMetadataPrecedence?: string[]; [key: string]: unknown } | null

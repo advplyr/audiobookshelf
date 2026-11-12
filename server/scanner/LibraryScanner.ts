@@ -1,65 +1,65 @@
-const sequelize = require('sequelize')
-const Path = require('path')
-const packageJson = require('../../package.json')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const fs = require('../libs/fsExtra')
-const fileUtils = require('../utils/fileUtils')
-const scanUtils = require('../utils/scandir')
-const { LogLevel, ScanResult } = require('../utils/constants')
-const libraryFilters = require('../utils/queries/libraryFilters')
-const TaskManager = require('../managers/TaskManager')
-const LibraryItemScanner = require('./LibraryItemScanner')
-const LibraryScan = require('./LibraryScan')
-const LibraryItemScanData = require('./LibraryItemScanData')
-const Task = require('../objects/Task')
+import * as sequelize from 'sequelize'
+import Path from 'path'
+import packageJson from '../../package.json'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
+import fs from '../libs/fsExtra'
+import fileUtils from '../utils/fileUtils'
+import scanUtils from '../utils/scandir'
+import { LogLevel, ScanResult } from '../utils/constants'
+import libraryFilters from '../utils/queries/libraryFilters'
+import TaskManager from '../managers/TaskManager'
+import LibraryItemScanner from './LibraryItemScanner'
+import LibraryScan from './LibraryScan'
+import LibraryItemScanData from './LibraryItemScanData'
+import type Task from '../objects/Task'
+import type Watcher from '../Watcher'
+import type Library from '../models/Library'
+import type LibraryFolder from '../models/LibraryFolder'
+import type LibraryItem from '../models/LibraryItem'
+
+type PendingFileUpdate = (typeof Watcher.pendingFileUpdates)[number]
+type FolderFileUpdates = { libraryId: string; folderId: string; fileUpdates: PendingFileUpdate[] }
+type GroupedItemFiles = ReturnType<typeof scanUtils.groupFileItemsIntoLibraryItemDirs>
+type UpdatedLibraryItemDetails = NonNullable<Parameters<typeof LibraryItemScanner.scanLibraryItem>[1]>
+type InodeMatchItem = Pick<LibraryItem | LibraryItemScanData, 'ino' | 'isFile' | 'libraryFiles'>
 
 class LibraryScanner {
+  declare cancelLibraryScan: Record<string, boolean>
+  declare librariesScanning: string[]
+  declare scanningFilesChanged: boolean
+  declare pendingFileUpdatesToScan: [PendingFileUpdate[], Task][]
+
   constructor() {
     this.cancelLibraryScan = {}
-    /** @type {string[]} - library ids */
     this.librariesScanning = []
 
     this.scanningFilesChanged = false
-    /** @type {[import('../Watcher').PendingFileUpdate[], Task][]} */
     this.pendingFileUpdatesToScan = []
   }
 
-  /**
-   * @param {string} libraryId
-   * @returns {boolean}
-   */
-  isLibraryScanning(libraryId) {
+  isLibraryScanning(libraryId: string) {
     return this.librariesScanning.some((lid) => lid === libraryId)
   }
 
-  /**
-   *
-   * @param {string} libraryId
-   */
-  setCancelLibraryScan(libraryId) {
+  setCancelLibraryScan(libraryId: string) {
     if (!this.isLibraryScanning(libraryId)) return
     this.cancelLibraryScan[libraryId] = true
   }
 
-  /**
-   *
-   * @param {import('../models/Library')} library
-   * @param {boolean} [forceRescan]
-   */
-  async scan(library, forceRescan = false) {
+  async scan(library: Library, forceRescan = false) {
     if (this.isLibraryScanning(library.id)) {
       Logger.error(`[LibraryScanner] Already scanning ${library.id}`)
       return
     }
 
-    if (!library.libraryFolders.length) {
+    if (!library.libraryFolders!.length) {
       Logger.warn(`[LibraryScanner] Library has no folders to scan "${library.name}"`)
       return
     }
 
-    const metadataPrecedence = library.settings.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
+    const metadataPrecedence = library.settings!.metadataPrecedence || Database.libraryModel.defaultMetadataPrecedence
     if (library.isBook && metadataPrecedence.join() !== library.lastScanMetadataPrecedence.join()) {
       const lastScanMetadataPrecedence = library.lastScanMetadataPrecedence?.join() || 'Unset'
       Logger.info(`[LibraryScanner] Library metadata precedence changed since last scan. From [${lastScanMetadataPrecedence}] to [${metadataPrecedence.join()}]`)
@@ -103,7 +103,7 @@ class LibraryScanner {
         await library.save()
       }
 
-      task.data.scanResults = libraryScan.scanResults
+      task.data!.scanResults = libraryScan.scanResults
       if (canceled) {
         const taskFinishedString = {
           text: 'Task canceled by user',
@@ -118,7 +118,7 @@ class LibraryScanner {
 
       Logger.error(`[LibraryScanner] Library scan ${libraryScan.id} failed after ${libraryScan.elapsedTimestamp} | ${libraryScan.resultStats}.`, err)
 
-      task.data.scanResults = libraryScan.scanResults
+      task.data!.scanResults = libraryScan.scanResults
       const taskFailedString = {
         text: 'Failed',
         key: 'MessageTaskFailed'
@@ -131,27 +131,20 @@ class LibraryScanner {
 
     TaskManager.taskFinished(task)
 
-    libraryScan.saveLog()
+    void libraryScan.saveLog()
   }
 
-  /**
-   *
-   * @param {import('./LibraryScan')} libraryScan
-   * @param {boolean} forceRescan
-   * @returns {Promise<boolean>} true if scan canceled
-   */
-  async scanLibrary(libraryScan, forceRescan) {
+  async scanLibrary(libraryScan: LibraryScan, forceRescan: boolean) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(libraryScan.libraryMediaType, libraryScan.libraryId)
+    await libraryFilters.getFilterData(libraryScan.libraryMediaType!, libraryScan.libraryId)
 
-    /** @type {LibraryItemScanData[]} */
-    let libraryItemDataFound = []
+    let libraryItemDataFound: LibraryItemScanData[] = []
 
     // Scan each library folder
-    for (let i = 0; i < libraryScan.libraryFolders.length; i++) {
-      const folder = libraryScan.libraryFolders[i]
-      const itemDataFoundInFolder = await this.scanFolder(libraryScan.library, folder)
+    for (let i = 0; i < libraryScan.libraryFolders!.length; i++) {
+      const folder = libraryScan.libraryFolders![i]
+      const itemDataFoundInFolder = await this.scanFolder(libraryScan.library!, folder)
       libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.path}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
@@ -167,7 +160,7 @@ class LibraryScanner {
     if (this.shouldCancelScan(libraryScan)) return true
 
     const libraryItemIdsMissing = []
-    let libraryItemsUpdated = []
+    let libraryItemsUpdated: LibraryItem[] = []
     for (const existingLibraryItem of existingLibraryItems) {
       // First try to find matching library item with exact file path
       let libraryItemData = libraryItemDataFound.find((lid) => lid.path === existingLibraryItem.path)
@@ -181,7 +174,7 @@ class LibraryScanner {
 
       if (!libraryItemData) {
         // Podcast folder can have no episodes and still be valid
-        if (libraryScan.libraryMediaType === 'podcast' && (await fs.pathExists(existingLibraryItem.path))) {
+        if (libraryScan.libraryMediaType === 'podcast' && (await fs.pathExists(existingLibraryItem.path!))) {
           libraryScan.addLog(LogLevel.INFO, `Library item "${existingLibraryItem.relPath}" folder exists but has no episodes`)
         } else {
           libraryScan.addLog(LogLevel.WARN, `Library Item "${existingLibraryItem.path}" (inode: ${existingLibraryItem.ino}) is missing`)
@@ -200,10 +193,10 @@ class LibraryScanner {
         }
       } else {
         libraryItemDataFound = libraryItemDataFound.filter((lidf) => lidf !== libraryItemData)
-        let libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
+        const libraryItemDataUpdated = await libraryItemData.checkLibraryItemData(existingLibraryItem, libraryScan)
         if (libraryItemDataUpdated || forceRescan) {
           if (forceRescan || libraryItemData.hasLibraryFileChanges || libraryItemData.hasPathChange) {
-            const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library.settings, libraryScan)
+            const { libraryItem, wasUpdated } = await LibraryItemScanner.rescanLibraryItemMedia(existingLibraryItem, libraryItemData, libraryScan.library!.settings!, libraryScan)
             if (!forceRescan || wasUpdated) {
               libraryScan.resultsUpdated++
               libraryItemsUpdated.push(libraryItem)
@@ -214,7 +207,7 @@ class LibraryScanner {
             libraryScan.resultsUpdated++
             // TODO: Temporary while using old model to socket emit
             const libraryItem = await Database.libraryItemModel.getExpandedById(existingLibraryItem.id)
-            libraryItemsUpdated.push(libraryItem)
+            libraryItemsUpdated.push(libraryItem!)
           }
         } else {
           libraryScan.addLog(LogLevel.DEBUG, `Library item "${existingLibraryItem.relPath}" is up-to-date`)
@@ -257,9 +250,9 @@ class LibraryScanner {
 
     // Add new library items
     if (libraryItemDataFound.length) {
-      let newLibraryItems = []
+      let newLibraryItems: LibraryItem[] = []
       for (const libraryItemData of libraryItemDataFound) {
-        const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library.settings, libraryScan)
+        const newLibraryItem = await LibraryItemScanner.scanNewLibraryItem(libraryItemData, libraryScan.library!.settings!, libraryScan)
         if (newLibraryItem) {
           newLibraryItems.push(newLibraryItem)
 
@@ -287,7 +280,7 @@ class LibraryScanner {
     return false
   }
 
-  shouldCancelScan(libraryScan) {
+  shouldCancelScan(libraryScan: LibraryScan) {
     if (this.cancelLibraryScan[libraryScan.libraryId]) {
       libraryScan.addLog(LogLevel.INFO, `Scan canceled. ${libraryScan.resultStats}`)
       return true
@@ -297,12 +290,9 @@ class LibraryScanner {
 
   /**
    * Get scan data for library folder
-   * @param {import('../models/Library')} library
-   * @param {import('../models/LibraryFolder')} folder
-   * @returns {LibraryItemScanData[]}
    */
-  async scanFolder(library, folder) {
-    const folderPath = fileUtils.filePathToPOSIX(folder.path)
+  async scanFolder(library: Library, folder: LibraryFolder) {
+    const folderPath = fileUtils.filePathToPOSIX(folder.path!)
 
     const pathExists = await fs.pathExists(folderPath)
     if (!pathExists) {
@@ -311,7 +301,7 @@ class LibraryScanner {
     }
 
     const fileItems = await fileUtils.recurseFiles(folderPath)
-    const libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType, fileItems, library.settings.audiobooksOnly)
+    const libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType!, fileItems, library.settings!.audiobooksOnly!)
 
     if (!Object.keys(libraryItemGrouping).length) {
       Logger.error(`Root path has no media folders: ${folderPath}`)
@@ -321,9 +311,10 @@ class LibraryScanner {
     const items = []
     for (const libraryItemPath in libraryItemGrouping) {
       let isFile = false // item is not in a folder
-      let libraryItemData = null
-      let fileObjs = []
-      if (libraryItemPath === libraryItemGrouping[libraryItemPath]) {
+      let libraryItemData: ReturnType<typeof scanUtils.getDataFromMediaDir>
+      let fileObjs: Awaited<ReturnType<typeof scanUtils.buildLibraryFile>>
+      const itemFiles = libraryItemGrouping[libraryItemPath]
+      if (isSingleMediaFile(libraryItemPath, itemFiles)) {
         // Media file in root only get title
         libraryItemData = {
           mediaMetadata: {
@@ -335,13 +326,13 @@ class LibraryScanner {
         fileObjs = await scanUtils.buildLibraryFile(folderPath, [libraryItemPath])
         isFile = true
       } else {
-        libraryItemData = scanUtils.getDataFromMediaDir(library.mediaType, folderPath, libraryItemPath)
-        fileObjs = await scanUtils.buildLibraryFile(libraryItemData.path, libraryItemGrouping[libraryItemPath])
+        libraryItemData = scanUtils.getDataFromMediaDir(library.mediaType!, folderPath, libraryItemPath)
+        fileObjs = await scanUtils.buildLibraryFile(libraryItemData.path, itemFiles)
       }
 
       const libraryItemFolderStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
 
-      if (!libraryItemFolderStats.ino) {
+      if (!libraryItemFolderStats || !libraryItemFolderStats.ino) {
         Logger.warn(`[LibraryScanner] Library item folder "${libraryItemData.path}" has no inode value`)
         continue
       }
@@ -349,7 +340,7 @@ class LibraryScanner {
       items.push(
         new LibraryItemScanData({
           libraryFolderId: folder.id,
-          libraryId: folder.libraryId,
+          libraryId: folder.libraryId!,
           mediaType: library.mediaType,
           ino: libraryItemFolderStats.ino,
           mtimeMs: libraryItemFolderStats.mtimeMs || 0,
@@ -358,8 +349,9 @@ class LibraryScanner {
           path: libraryItemData.path,
           relPath: libraryItemData.relPath,
           isFile,
-          mediaMetadata: libraryItemData.mediaMetadata || null,
-          libraryFiles: fileObjs
+          mediaMetadata: libraryItemData.mediaMetadata,
+          // buildLibraryFile fills path fields before returning each file.
+          libraryFiles: fileObjs as LibraryItemScanData['libraryFiles']
         })
       )
     }
@@ -368,10 +360,8 @@ class LibraryScanner {
 
   /**
    * Scan files changed from Watcher
-   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates
-   * @param {Task} pendingTask
    */
-  async scanFilesChanged(fileUpdates, pendingTask) {
+  async scanFilesChanged(fileUpdates: PendingFileUpdate[] | null | undefined, pendingTask: Task) {
     if (!fileUpdates?.length) return
 
     // If already scanning files from watcher then add these updates to queue
@@ -406,10 +396,10 @@ class LibraryScanner {
         Logger.error(`[LibraryScanner] Library "${libraryId}" not found in files changed ${libraryId}`)
         continue
       }
-      const folder = library.libraryFolders[0]
+      const folder = library.libraryFolders![0]
 
       const filePathItems = folderGroups[folderId].fileUpdates.map((fileUpdate) => fileUtils.getFilePathItemFromFileUpdate(fileUpdate))
-      const fileUpdateGroup = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType, filePathItems, !!library.settings?.audiobooksOnly, true)
+      const fileUpdateGroup = scanUtils.groupFileItemsIntoLibraryItemDirs(library.mediaType!, filePathItems, !!library.settings?.audiobooksOnly, true)
 
       if (!Object.keys(fileUpdateGroup).length) {
         Logger.info(`[LibraryScanner] No important changes to scan for in folder "${folderId}"`)
@@ -447,10 +437,10 @@ class LibraryScanner {
     let scanResultStr = 'No changes needed'
     if (resultStrs.length) scanResultStr = resultStrs.join(', ')
 
-    pendingTask.data.scanResults = {
+    pendingTask.data!.scanResults = {
       ...results,
       text: scanResultStr,
-      elapsed: Date.now() - pendingTask.startedAt
+      elapsed: Date.now() - Number(pendingTask.startedAt)
     }
     pendingTask.setFinished(null, true)
     TaskManager.taskFinished(pendingTask)
@@ -459,17 +449,15 @@ class LibraryScanner {
 
     if (this.pendingFileUpdatesToScan.length) {
       Logger.debug(`[LibraryScanner] File updates finished scanning with more updates in queue (${this.pendingFileUpdatesToScan.length})`)
-      this.scanFilesChanged(...this.pendingFileUpdatesToScan.shift())
+      void this.scanFilesChanged(...this.pendingFileUpdatesToScan.shift()!)
     }
   }
 
   /**
    * Group array of PendingFileUpdate from Watcher by folder
-   * @param {import('../Watcher').PendingFileUpdate[]} fileUpdates
-   * @returns {Record<string,{libraryId:string, folderId:string, fileUpdates:import('../Watcher').PendingFileUpdate[]}>}
    */
-  getFileUpdatesGrouped(fileUpdates) {
-    const folderGroups = {}
+  getFileUpdatesGrouped(fileUpdates: PendingFileUpdate[]) {
+    const folderGroups: Record<string, FolderFileUpdates> = {}
     fileUpdates.forEach((file) => {
       if (folderGroups[file.folderId]) {
         folderGroups[file.folderId].fileUpdates.push(file)
@@ -486,15 +474,11 @@ class LibraryScanner {
 
   /**
    * Scan grouped paths for library folder coming from Watcher
-   * @param {import('../models/Library')} library
-   * @param {import('../models/LibraryFolder')} folder
-   * @param {Record<string, string[]>} fileUpdateGroup
-   * @returns {Promise<Record<string,number>>}
    */
-  async scanFolderUpdates(library, folder, fileUpdateGroup) {
+  async scanFolderUpdates(library: Library, folder: LibraryFolder, fileUpdateGroup: GroupedItemFiles) {
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(library.mediaType, library.id)
+    await libraryFilters.getFilterData(library.mediaType!, library.id)
     Logger.debug(`[Scanner] Scanning file update groups in folder "${folder.id}" of library "${library.name}"`)
     Logger.debug(`[Scanner] scanFolderUpdates fileUpdateGroup`, fileUpdateGroup)
 
@@ -502,15 +486,16 @@ class LibraryScanner {
     //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
     const updateGroup = { ...fileUpdateGroup }
     for (const itemDir in updateGroup) {
-      if (isSingleMediaFile(fileUpdateGroup, itemDir)) continue // Media in root path
+      const itemFiles = fileUpdateGroup[itemDir]
+      if (isSingleMediaFile(itemDir, itemFiles)) continue // Media in root path
 
-      const itemDirNestedFiles = fileUpdateGroup[itemDir].filter((b) => b.includes('/'))
+      const itemDirNestedFiles = itemFiles.filter((b) => b.includes('/'))
       if (!itemDirNestedFiles.length) continue
 
       const firstNest = itemDirNestedFiles[0].split('/').shift()
       const altDir = `${itemDir}/${firstNest}`
 
-      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
+      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path!), itemDir)
       const childLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
@@ -523,7 +508,7 @@ class LibraryScanner {
         continue
       }
 
-      const altFullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), altDir)
+      const altFullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path!), altDir)
       const altChildLibraryItem = await Database.libraryItemModel.findOne({
         attributes: ['id', 'path'],
         where: {
@@ -542,9 +527,9 @@ class LibraryScanner {
     }
 
     // Second pass: Check for new/updated/removed items
-    const itemGroupingResults = {}
+    const itemGroupingResults: Record<string, (typeof ScanResult)[keyof typeof ScanResult]> = {}
     for (const itemDir in fileUpdateGroup) {
-      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path), itemDir)
+      const fullPath = Path.posix.join(fileUtils.filePathToPOSIX(folder.path!), itemDir)
 
       const itemDirParts = itemDir.split('/').slice(0, -1)
 
@@ -552,7 +537,7 @@ class LibraryScanner {
       for (let i = 0; i < itemDirParts.length; i++) {
         potentialChildDirs.push(
           Path.posix.join(
-            fileUtils.filePathToPOSIX(folder.path),
+            fileUtils.filePathToPOSIX(folder.path!),
             itemDir
               .split('/')
               .slice(0, -1 - i)
@@ -567,9 +552,9 @@ class LibraryScanner {
         path: potentialChildDirs
       })
 
-      let updatedLibraryItemDetails = {}
+      const updatedLibraryItemDetails: UpdatedLibraryItemDetails = {}
       if (!existingLibraryItem) {
-        const isSingleMedia = isSingleMediaFile(fileUpdateGroup, itemDir)
+        const isSingleMedia = isSingleMediaFile(itemDir, fileUpdateGroup[itemDir])
         existingLibraryItem = (await findLibraryItemByItemToItemInoMatch(library.id, fullPath)) || (await findLibraryItemByItemToFileInoMatch(library.id, fullPath, isSingleMedia)) || (await findLibraryItemByFileToItemInoMatch(library.id, fullPath, isSingleMedia, fileUpdateGroup[itemDir]))
         if (existingLibraryItem) {
           // Update library item paths for scan
@@ -599,7 +584,7 @@ class LibraryScanner {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.title}" with id "${existingLibraryItem.id}" - scan for updates`)
         itemGroupingResults[itemDir] = await LibraryItemScanner.scanLibraryItem(existingLibraryItem.id, updatedLibraryItemDetails)
         continue
-      } else if (library.settings.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
+      } else if (library.settings!.audiobooksOnly && !hasAudioFiles(fileUpdateGroup, itemDir)) {
         Logger.debug(`[LibraryScanner] Folder update for relative path "${itemDir}" has no audio files`)
         continue
       } else if (!(await fs.pathExists(fullPath))) {
@@ -625,7 +610,7 @@ class LibraryScanner {
       }
 
       Logger.debug(`[LibraryScanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
-      const isSingleMediaItem = isSingleMediaFile(fileUpdateGroup, itemDir)
+      const isSingleMediaItem = isSingleMediaFile(itemDir, fileUpdateGroup[itemDir])
       const newLibraryItem = await LibraryItemScanner.scanPotentialNewLibraryItem(fullPath, library, folder, isSingleMediaItem)
       if (newLibraryItem) {
         SocketAuthority.libraryItemEmitter('item_added', newLibraryItem)
@@ -636,25 +621,27 @@ class LibraryScanner {
     return itemGroupingResults
   }
 }
-module.exports = new LibraryScanner()
+export = new LibraryScanner()
 
-function ItemToFileInoMatch(libraryItem1, libraryItem2) {
-  return libraryItem1.isFile && libraryItem2.libraryFiles.some((lf) => lf.ino === libraryItem1.ino)
+function ItemToFileInoMatch(libraryItem1: InodeMatchItem, libraryItem2: InodeMatchItem) {
+  return libraryItem1.isFile && libraryItem2.libraryFiles!.some((lf) => lf.ino === libraryItem1.ino)
 }
 
-function ItemToItemInoMatch(libraryItem1, libraryItem2) {
+function ItemToItemInoMatch(libraryItem1: InodeMatchItem, libraryItem2: InodeMatchItem) {
   return libraryItem1.ino === libraryItem2.ino
 }
 
-function hasAudioFiles(fileUpdateGroup, itemDir) {
-  return isSingleMediaFile(fileUpdateGroup, itemDir) ? scanUtils.checkFilepathIsAudioFile(fileUpdateGroup[itemDir]) : fileUpdateGroup[itemDir].some(scanUtils.checkFilepathIsAudioFile)
+function hasAudioFiles(fileUpdateGroup: GroupedItemFiles, itemDir: string) {
+  const itemFiles = fileUpdateGroup[itemDir]
+  return isSingleMediaFile(itemDir, itemFiles) ? scanUtils.checkFilepathIsAudioFile(itemFiles) : itemFiles.some(scanUtils.checkFilepathIsAudioFile)
 }
 
-function isSingleMediaFile(fileUpdateGroup, itemDir) {
-  return itemDir === fileUpdateGroup[itemDir]
+// The grouping function represents a root media file with its own relative path.
+function isSingleMediaFile(itemDir: string, itemFiles: string | string[]): itemFiles is string {
+  return itemDir === itemFiles
 }
 
-async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
+async function findLibraryItemByItemToItemInoMatch(libraryId: string, fullPath: string) {
   const ino = await fileUtils.getIno(fullPath)
   if (!ino) return null
   const existingLibraryItem = await Database.libraryItemModel.findOneExpanded({
@@ -665,7 +652,7 @@ async function findLibraryItemByItemToItemInoMatch(libraryId, fullPath) {
   return existingLibraryItem
 }
 
-async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingleMedia) {
+async function findLibraryItemByItemToFileInoMatch(libraryId: string, fullPath: string, isSingleMedia: boolean) {
   if (!isSingleMedia) return null
   // check if it was moved from another folder by comparing the ino to the library files
   const ino = await fileUtils.getIno(fullPath)
@@ -687,10 +674,10 @@ async function findLibraryItemByItemToFileInoMatch(libraryId, fullPath, isSingle
   return existingLibraryItem
 }
 
-async function findLibraryItemByFileToItemInoMatch(libraryId, fullPath, isSingleMedia, itemFiles) {
+async function findLibraryItemByFileToItemInoMatch(libraryId: string, fullPath: string, isSingleMedia: boolean, itemFiles: string | string[]) {
   if (isSingleMedia) return null
   // check if it was moved from the root folder by comparing the ino to the ino of the scanned files
-  let itemFileInos = []
+  const itemFileInos: string[] = []
   for (const itemFile of itemFiles) {
     const ino = await fileUtils.getIno(Path.posix.join(fullPath, itemFile))
     if (ino) itemFileInos.push(ino)
