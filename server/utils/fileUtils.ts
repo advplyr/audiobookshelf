@@ -362,7 +362,9 @@ const downloadImageFile = (url: string, filepath: string): Promise<void> => {
   return fileUtils.downloadFile(url, filepath, contentTypeFilter)
 }
 
-const sanitizeFilename = (value: unknown, colonReplacement = ' - '): string | false => {
+function sanitizeFilename(value: string, colonReplacement?: string): string
+function sanitizeFilename(value: unknown, colonReplacement?: string): string | false
+function sanitizeFilename(value: unknown, colonReplacement = ' - '): string | false {
   if (typeof value !== 'string') {
     return false
   }

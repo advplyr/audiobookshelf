@@ -1,28 +1,38 @@
-const Sequelize = require('sequelize')
-const Path = require('path')
-const { Request, Response } = require('express')
-const fs = require('../libs/fsExtra')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const Watcher = require('../Watcher')
+import * as Sequelize from 'sequelize'
+import Path from 'path'
+import type { Request, Response } from 'express'
+import type User from '../models/User'
+import type Auth from '../Auth'
+import type AudioMetadataManager from '../managers/AudioMetadataManager'
+import type BackupManager from '../managers/BackupManager'
+import fs from '../libs/fsExtra'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
+import Watcher from '../Watcher'
 
-const libraryItemFilters = require('../utils/queries/libraryItemFilters')
-const cron = require('../libs/nodeCron')
-const { isObject, getTitleIgnorePrefix } = require('../utils/index')
-const ServerSettings = require('../objects/settings/ServerSettings')
-const { sanitizeFilename } = require('../utils/fileUtils')
-const { sanitize } = require('../utils/htmlSanitizer')
+import libraryItemFilters from '../utils/queries/libraryItemFilters'
+import cron from '../libs/nodeCron'
+import { isObject, getTitleIgnorePrefix } from '../utils/index'
+import ServerSettings from '../objects/settings/ServerSettings'
+import { sanitizeFilename } from '../utils/fileUtils'
+import htmlSanitizer from '../utils/htmlSanitizer'
+const { sanitize } = htmlSanitizer
 
-const TaskManager = require('../managers/TaskManager')
-const adminStats = require('../utils/queries/adminStats')
+import TaskManager from '../managers/TaskManager'
+import adminStats from '../utils/queries/adminStats'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type MiscRequest<Body = unknown> = Request<Record<string, string>, unknown, Body, { include?: string }> & { user: User }
+type UploadBody = { title?: string; author?: string | null; series?: string | null; folder?: string; library?: string }
+type UploadFile = { name: string; mv(path: string): Promise<void> }
+type AuthSettings = ServerSettings['authenticationSettings']
+type MiscContext = { auth: Auth; audioMetadataManager: AudioMetadataManager; backupManager: BackupManager }
+type MediaWithFilters = {
+  title: string | null
+  tags: string[] | null
+  genres: string[] | null
+  update(values: { tags?: string[] | null; genres?: string[] | null }): Promise<unknown>
+}
 
 class MiscController {
   constructor() {}
@@ -30,11 +40,8 @@ class MiscController {
   /**
    * POST: /api/upload
    * Update library item
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async handleUpload(req, res) {
+  async handleUpload(req: MiscRequest<UploadBody> & { files?: Record<string, UploadFile | UploadFile[]> | null }, res: Response) {
     if (!req.user.canUpload) {
       Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
       return res.sendStatus(403)
@@ -67,7 +74,7 @@ class MiscController {
       return res.sendStatus(403)
     }
 
-    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+    const folder = library.libraryFolders!.find((fold) => fold.id === folderId)
     if (!folder) {
       return res.status(404).send('Folder not found')
     }
@@ -77,8 +84,8 @@ class MiscController {
     // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
     // before sanitizing all the directory parts to remove illegal chars and finally prepending
     // the base folder path
-    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
-    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
+    const cleanedOutputDirectoryParts = outputDirectoryParts.filter((part): part is string => Boolean(part)).map((part) => sanitizeFilename(part))
+    const outputDirectory = Path.join(folder.path!, ...cleanedOutputDirectoryParts)
 
     try {
       await fs.ensureDir(outputDirectory)
@@ -109,16 +116,12 @@ class MiscController {
   /**
    * GET: /api/tasks
    * Get tasks for task manager
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  getTasks(req, res) {
+  getTasks(this: Pick<MiscContext, 'audioMetadataManager'>, req: MiscRequest, res: Response) {
     const includeArray = (req.query.include || '').split(',')
 
-    const data = {
-      tasks: TaskManager.tasks.map((t) => t.toJSON())
-    }
+    const tasks = TaskManager.tasks.map((t) => t.toJSON())
+    const data: { tasks: typeof tasks; queuedTaskData?: { embedMetadata: ReturnType<AudioMetadataManager['getQueuedTaskData']> } } = { tasks }
 
     if (includeArray.includes('queue')) {
       data.queuedTaskData = {
@@ -132,11 +135,8 @@ class MiscController {
   /**
    * PATCH: /api/settings
    * Update server settings
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async updateServerSettings(req, res) {
+  async updateServerSettings(this: Pick<MiscContext, 'backupManager'>, req: MiscRequest<Record<string, unknown>>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`User "${req.user.username}" other than admin attempting to update server settings`)
       return res.sendStatus(403)
@@ -149,7 +149,7 @@ class MiscController {
       Logger.warn('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
       return res.status(400).send('Cannot disable iframe when ALLOW_IFRAME is enabled in environment')
     }
-    const filteredUpdate = {}
+    const filteredUpdate: Record<string, unknown> = {}
     for (const key in settingsUpdate) {
       if (ServerSettings.patchableSettingsKeys.has(key)) {
         filteredUpdate[key] = settingsUpdate[key]
@@ -160,42 +160,39 @@ class MiscController {
       return res.status(400).send('allowedOrigins must be an array')
     }
 
-    const madeUpdates = Database.serverSettings.update(filteredUpdate)
+    const madeUpdates = Database.serverSettings!.update(filteredUpdate)
     if (madeUpdates) {
       await Database.updateServerSettings()
 
       // If backup schedule is updated - update backup manager
       if (filteredUpdate.backupSchedule !== undefined) {
-        this.backupManager.updateCronSchedule()
+        void this.backupManager.updateCronSchedule()
       }
     }
     return res.json({
-      serverSettings: Database.serverSettings.toJSONForBrowser()
+      serverSettings: Database.serverSettings!.toJSONForBrowser()
     })
   }
 
   /**
    * PATCH: /api/sorting-prefixes
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async updateSortingPrefixes(req, res) {
+  async updateSortingPrefixes(req: MiscRequest<{ sortingPrefixes?: (string | null | undefined)[] }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`User "${req.user.username}" other than admin attempting to update server sorting prefixes`)
       return res.sendStatus(403)
     }
-    let sortingPrefixes = req.body.sortingPrefixes
-    if (!sortingPrefixes?.length || !Array.isArray(sortingPrefixes)) {
+    const requestedPrefixes = req.body.sortingPrefixes
+    if (!requestedPrefixes?.length || !Array.isArray(requestedPrefixes)) {
       return res.status(400).send('Invalid request body')
     }
-    sortingPrefixes = [...new Set(sortingPrefixes.map((p) => p?.trim?.().toLowerCase()).filter((p) => p))]
+    const sortingPrefixes = [...new Set(requestedPrefixes.map((p) => p?.trim?.().toLowerCase()).filter((p): p is string => Boolean(p)))]
     if (!sortingPrefixes.length) {
       return res.status(400).send('Invalid sortingPrefixes in request body')
     }
 
     Logger.debug(`[MiscController] Updating sorting prefixes ${sortingPrefixes.join(', ')}`)
-    Database.serverSettings.sortingPrefixes = sortingPrefixes
+    Database.serverSettings!.sortingPrefixes = sortingPrefixes
     await Database.updateServerSettings()
 
     let rowsUpdated = 0
@@ -203,7 +200,7 @@ class MiscController {
     const books = await Database.bookModel.findAll({
       attributes: ['id', 'title', 'titleIgnorePrefix']
     })
-    const bulkUpdateBooks = []
+    const bulkUpdateBooks: { id: string; titleIgnorePrefix: string }[] = []
     books.forEach((book) => {
       const titleIgnorePrefix = getTitleIgnorePrefix(book.title)
       if (titleIgnorePrefix !== book.titleIgnorePrefix) {
@@ -225,7 +222,7 @@ class MiscController {
     const podcasts = await Database.podcastModel.findAll({
       attributes: ['id', 'title', 'titleIgnorePrefix']
     })
-    const bulkUpdatePodcasts = []
+    const bulkUpdatePodcasts: { id: string; titleIgnorePrefix: string }[] = []
     podcasts.forEach((podcast) => {
       const titleIgnorePrefix = getTitleIgnorePrefix(podcast.title)
       if (titleIgnorePrefix !== podcast.titleIgnorePrefix) {
@@ -247,7 +244,7 @@ class MiscController {
     const allSeries = await Database.seriesModel.findAll({
       attributes: ['id', 'name', 'nameIgnorePrefix', 'libraryId']
     })
-    const bulkUpdateSeries = []
+    const bulkUpdateSeries: { id: string; name: string | null; libraryId: string | null; nameIgnorePrefix: string }[] = []
     allSeries.forEach((series) => {
       const nameIgnorePrefix = getTitleIgnorePrefix(series.name)
       if (nameIgnorePrefix !== series.nameIgnorePrefix) {
@@ -269,20 +266,15 @@ class MiscController {
 
     res.json({
       rowsUpdated,
-      serverSettings: Database.serverSettings.toJSONForBrowser()
+      serverSettings: Database.serverSettings!.toJSONForBrowser()
     })
   }
 
   /**
    * POST: /api/authorize
    * Used to authorize an API token
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async authorize(req, res) {
+  async authorize(this: Pick<MiscContext, 'auth'>, req: MiscRequest, res: Response) {
     const userResponse = await this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
@@ -290,17 +282,14 @@ class MiscController {
   /**
    * GET: /api/tags
    * Get all tags
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAllTags(req, res) {
+  async getAllTags(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllTags`)
       return res.sendStatus(403)
     }
 
-    const tags = []
+    const tags: string[] = []
     const books = await Database.bookModel.findAll({
       attributes: ['tags'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('tags')), {
@@ -308,7 +297,7 @@ class MiscController {
       })
     })
     for (const book of books) {
-      for (const tag of book.tags) {
+      for (const tag of book.tags!) {
         if (!tags.includes(tag)) tags.push(tag)
       }
     }
@@ -320,7 +309,7 @@ class MiscController {
       })
     })
     for (const podcast of podcasts) {
-      for (const tag of podcast.tags) {
+      for (const tag of podcast.tags!) {
         if (!tags.includes(tag)) tags.push(tag)
       }
     }
@@ -334,11 +323,8 @@ class MiscController {
    * POST: /api/tags/rename
    * Rename tag
    * Req.body { tag, newTag }
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async renameTag(req, res) {
+  async renameTag(req: MiscRequest<{ tag?: string; newTag?: string }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameTag`)
       return res.sendStatus(403)
@@ -359,18 +345,19 @@ class MiscController {
 
     const libraryItemsWithTag = await libraryItemFilters.getAllLibraryItemsWithTags([tag, newTag])
     for (const libraryItem of libraryItemsWithTag) {
-      if (libraryItem.media.tags.includes(newTag)) {
+      const media: MediaWithFilters = libraryItem.media!
+      if (media.tags!.includes(newTag)) {
         tagMerged = true // new tag is an existing tag so this is a merge
       }
 
-      if (libraryItem.media.tags.includes(tag)) {
-        libraryItem.media.tags = libraryItem.media.tags.filter((t) => t !== tag) // Remove old tag
-        if (!libraryItem.media.tags.includes(newTag)) {
-          libraryItem.media.tags.push(newTag)
+      if (media.tags!.includes(tag)) {
+        media.tags = media.tags!.filter((t) => t !== tag) // Remove old tag
+        if (!media.tags.includes(newTag)) {
+          media.tags.push(newTag)
         }
-        Logger.debug(`[MiscController] Rename tag "${tag}" to "${newTag}" for item "${libraryItem.media.title}"`)
-        await libraryItem.media.update({
-          tags: libraryItem.media.tags
+        Logger.debug(`[MiscController] Rename tag "${tag}" to "${newTag}" for item "${media.title}"`)
+        await media.update({
+          tags: media.tags
         })
         await libraryItem.saveMetadataFile()
 
@@ -389,11 +376,8 @@ class MiscController {
    * DELETE: /api/tags/:tag
    * Remove a tag
    * :tag param is base64 encoded
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async deleteTag(req, res) {
+  async deleteTag(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteTag`)
       return res.sendStatus(403)
@@ -410,10 +394,11 @@ class MiscController {
     let numItemsUpdated = 0
     // Remove tag from items
     for (const libraryItem of libraryItemsWithTag) {
-      Logger.debug(`[MiscController] Remove tag "${tag}" from item "${libraryItem.media.title}"`)
-      libraryItem.media.tags = libraryItem.media.tags.filter((t) => t !== tag)
-      await libraryItem.media.update({
-        tags: libraryItem.media.tags
+      const media: MediaWithFilters = libraryItem.media!
+      Logger.debug(`[MiscController] Remove tag "${tag}" from item "${media.title}"`)
+      media.tags = media.tags!.filter((t) => t !== tag)
+      await media.update({
+        tags: media.tags
       })
       await libraryItem.saveMetadataFile()
 
@@ -429,16 +414,13 @@ class MiscController {
   /**
    * GET: /api/genres
    * Get all genres
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAllGenres(req, res) {
+  async getAllGenres(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to getAllGenres`)
       return res.sendStatus(403)
     }
-    const genres = []
+    const genres: string[] = []
     const books = await Database.bookModel.findAll({
       attributes: ['genres'],
       where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('genres')), {
@@ -446,7 +428,7 @@ class MiscController {
       })
     })
     for (const book of books) {
-      for (const tag of book.genres) {
+      for (const tag of book.genres!) {
         if (!genres.includes(tag)) genres.push(tag)
       }
     }
@@ -458,7 +440,7 @@ class MiscController {
       })
     })
     for (const podcast of podcasts) {
-      for (const tag of podcast.genres) {
+      for (const tag of podcast.genres!) {
         if (!genres.includes(tag)) genres.push(tag)
       }
     }
@@ -472,11 +454,8 @@ class MiscController {
    * POST: /api/genres/rename
    * Rename genres
    * Req.body { genre, newGenre }
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async renameGenre(req, res) {
+  async renameGenre(req: MiscRequest<{ genre?: string; newGenre?: string }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to renameGenre`)
       return res.sendStatus(403)
@@ -497,18 +476,19 @@ class MiscController {
 
     const libraryItemsWithGenre = await libraryItemFilters.getAllLibraryItemsWithGenres([genre, newGenre])
     for (const libraryItem of libraryItemsWithGenre) {
-      if (libraryItem.media.genres.includes(newGenre)) {
+      const media: MediaWithFilters = libraryItem.media!
+      if (media.genres!.includes(newGenre)) {
         genreMerged = true // new genre is an existing genre so this is a merge
       }
 
-      if (libraryItem.media.genres.includes(genre)) {
-        libraryItem.media.genres = libraryItem.media.genres.filter((t) => t !== genre) // Remove old genre
-        if (!libraryItem.media.genres.includes(newGenre)) {
-          libraryItem.media.genres.push(newGenre)
+      if (media.genres!.includes(genre)) {
+        media.genres = media.genres!.filter((t) => t !== genre) // Remove old genre
+        if (!media.genres.includes(newGenre)) {
+          media.genres.push(newGenre)
         }
-        Logger.debug(`[MiscController] Rename genre "${genre}" to "${newGenre}" for item "${libraryItem.media.title}"`)
-        await libraryItem.media.update({
-          genres: libraryItem.media.genres
+        Logger.debug(`[MiscController] Rename genre "${genre}" to "${newGenre}" for item "${media.title}"`)
+        await media.update({
+          genres: media.genres
         })
         await libraryItem.saveMetadataFile()
 
@@ -527,11 +507,8 @@ class MiscController {
    * DELETE: /api/genres/:genre
    * Remove a genre
    * :genre param is base64 encoded
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async deleteGenre(req, res) {
+  async deleteGenre(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to deleteGenre`)
       return res.sendStatus(403)
@@ -548,10 +525,11 @@ class MiscController {
     let numItemsUpdated = 0
     // Remove genre from items
     for (const libraryItem of libraryItemsWithGenre) {
-      Logger.debug(`[MiscController] Remove genre "${genre}" from item "${libraryItem.media.title}"`)
-      libraryItem.media.genres = libraryItem.media.genres.filter((g) => g !== genre)
-      await libraryItem.media.update({
-        genres: libraryItem.media.genres
+      const media: MediaWithFilters = libraryItem.media!
+      Logger.debug(`[MiscController] Remove genre "${genre}" from item "${media.title}"`)
+      media.genres = media.genres!.filter((g) => g !== genre)
+      await media.update({
+        genres: media.genres
       })
       await libraryItem.saveMetadataFile()
 
@@ -570,13 +548,8 @@ class MiscController {
    * Req.body { libraryId, path, type, [oldPath] }
    * type = add, unlink, rename
    * oldPath = required only for rename
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  updateWatchedPath(req, res) {
+  updateWatchedPath(req: MiscRequest<{ libraryId?: string; path?: string; type?: string; oldPath?: string }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to updateWatchedPath`)
       return res.sendStatus(403)
@@ -613,7 +586,7 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  validateCronExpression(req, res) {
+  validateCronExpression(req: MiscRequest<{ expression?: string }>, res: Response) {
     const expression = req.body.expression
     if (!expression) {
       return res.sendStatus(400)
@@ -628,26 +601,20 @@ class MiscController {
 
   /**
    * GET: api/auth-settings (admin only)
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  getAuthSettings(req, res) {
+  getAuthSettings(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get auth settings`)
       return res.sendStatus(403)
     }
-    return res.json(Database.serverSettings.authenticationSettings)
+    return res.json(Database.serverSettings!.authenticationSettings)
   }
 
   /**
    * PATCH: api/auth-settings
    * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async updateAuthSettings(req, res) {
+  async updateAuthSettings(this: Pick<MiscContext, 'auth'>, req: MiscRequest<Partial<AuthSettings>>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to update auth settings`)
       return res.sendStatus(403)
@@ -660,28 +627,29 @@ class MiscController {
 
     let hasUpdates = false
 
-    const currentAuthenticationSettings = Database.serverSettings.authenticationSettings
+    const currentAuthenticationSettings = Database.serverSettings!.authenticationSettings
     const originalAuthMethods = [...currentAuthenticationSettings.authActiveAuthMethods]
 
     // TODO: Better validation of auth settings once auth settings are separated from server settings
-    for (const key in currentAuthenticationSettings) {
+    for (const settingKey in currentAuthenticationSettings) {
+      const key = settingKey as keyof AuthSettings
       if (settingsUpdate[key] === undefined) continue
 
       if (key === 'authActiveAuthMethods') {
-        let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings.supportedAuthMethods.includes(authMeth))
+        let updatedAuthMethods = settingsUpdate[key]?.filter?.((authMeth) => Database.serverSettings!.supportedAuthMethods.includes(authMeth))
         if (Array.isArray(updatedAuthMethods) && updatedAuthMethods.length) {
           updatedAuthMethods.sort()
           currentAuthenticationSettings[key].sort()
           if (updatedAuthMethods.join() !== currentAuthenticationSettings[key].join()) {
             Logger.debug(`[MiscController] Updating auth settings key "authActiveAuthMethods" from "${currentAuthenticationSettings[key].join()}" to "${updatedAuthMethods.join()}"`)
-            Database.serverSettings[key] = updatedAuthMethods
+            Database.serverSettings![key] = updatedAuthMethods
             hasUpdates = true
           }
         } else {
           Logger.warn(`[MiscController] Invalid value for authActiveAuthMethods`)
         }
       } else if (key === 'authOpenIDMobileRedirectURIs') {
-        function isValidRedirectURI(uri) {
+        function isValidRedirectURI(uri: unknown) {
           if (typeof uri !== 'string') return false
           const pattern = new RegExp('^\\w+://[\\w\\.-]+(/[\\w\\./-]*)*$', 'i')
           return pattern.test(uri)
@@ -694,9 +662,9 @@ class MiscController {
         }
 
         // Update the URIs
-        if (Database.serverSettings[key].some((uri) => !uris.includes(uri)) || uris.some((uri) => !Database.serverSettings[key].includes(uri))) {
-          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${Database.serverSettings[key]}" to "${uris}"`)
-          Database.serverSettings[key] = uris
+        if (Database.serverSettings![key].some((uri) => !uris.includes(uri)) || uris.some((uri) => !Database.serverSettings![key].includes(uri))) {
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${String(Database.serverSettings![key])}" to "${String(uris)}"`)
+          Database.serverSettings![key] = uris
           hasUpdates = true
         }
       } else {
@@ -717,8 +685,8 @@ class MiscController {
         if (currentValue === '' && key != 'authOpenIDSubfolderForRedirectURLs') currentValue = null
 
         if (updatedValue !== currentValue) {
-          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${currentValue}" to "${updatedValue}"`)
-          Database.serverSettings[key] = updatedValue
+          Logger.debug(`[MiscController] Updating auth settings key "${key}" from "${String(currentValue)}" to "${String(updatedValue)}"`)
+          Object.assign(Database.serverSettings!, { [key]: updatedValue })
           hasUpdates = true
         }
       }
@@ -728,12 +696,12 @@ class MiscController {
       await Database.updateServerSettings()
 
       // Use/unuse auth methods
-      Database.serverSettings.supportedAuthMethods.forEach((authMethod) => {
-        if (originalAuthMethods.includes(authMethod) && !Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+      Database.serverSettings!.supportedAuthMethods.forEach((authMethod) => {
+        if (originalAuthMethods.includes(authMethod) && !Database.serverSettings!.authActiveAuthMethods.includes(authMethod)) {
           // Auth method has been removed
           Logger.info(`[MiscController] Disabling active auth method "${authMethod}"`)
           this.auth.unuseAuthStrategy(authMethod)
-        } else if (!originalAuthMethods.includes(authMethod) && Database.serverSettings.authActiveAuthMethods.includes(authMethod)) {
+        } else if (!originalAuthMethods.includes(authMethod) && Database.serverSettings!.authActiveAuthMethods.includes(authMethod)) {
           // Auth method has been added
           Logger.info(`[MiscController] Enabling active auth method "${authMethod}"`)
           this.auth.useAuthStrategy(authMethod)
@@ -743,17 +711,14 @@ class MiscController {
 
     res.json({
       updated: hasUpdates,
-      serverSettings: Database.serverSettings.toJSONForBrowser()
+      serverSettings: Database.serverSettings!.toJSONForBrowser()
     })
   }
 
   /**
    * GET: /api/stats/year/:year
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAdminStatsForYear(req, res) {
+  async getAdminStatsForYear(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get admin stats for year`)
       return res.sendStatus(403)
@@ -770,19 +735,17 @@ class MiscController {
   /**
    * GET: /api/logger-data
    * admin or up
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getLoggerData(req, res) {
+  async getLoggerData(req: MiscRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[MiscController] Non-admin user "${req.user.username}" attempted to get logger data`)
       return res.sendStatus(403)
     }
 
     res.json({
-      currentDailyLogs: Logger.logManager.getMostRecentCurrentDailyLogs()
+      currentDailyLogs: Logger.logManager!.getMostRecentCurrentDailyLogs()
     })
+    return Promise.resolve()
   }
 }
-module.exports = new MiscController()
+export = new MiscController()
