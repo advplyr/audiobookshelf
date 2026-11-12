@@ -4,11 +4,9 @@ const fs = fsExtra as typeof fsExtra & { unlink: typeof unlink; rename: typeof r
 
 import Path from 'path'
 import Logger from '../Logger'
-import readChunkModule from '../libs/readChunk'
-const readChunk: (path: string, start: number, length: number) => Promise<Buffer> = readChunkModule
-import imageTypeModule from '../libs/imageType'
-type ImageType = { ext: string; mime: string; error?: never }
-const imageType: (buffer: Buffer) => ImageType | null = imageTypeModule
+import readChunk from '../libs/readChunk'
+import imageType from '../libs/imageType'
+type ImageType = NonNullable<ReturnType<typeof imageType>> & { error?: never }
 
 import globals from '../utils/globals'
 import fileUtils from '../utils/fileUtils'
