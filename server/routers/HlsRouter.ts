@@ -1,14 +1,21 @@
-const express = require('express')
-const Path = require('path')
+import type { Request, Response } from 'express'
+import type Auth from '../Auth'
+import type PlaybackSessionManager from '../managers/PlaybackSessionManager'
+import express from 'express'
+import Path from 'path'
 
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
 
-const fs = require('../libs/fsExtra')
+import fs from '../libs/fsExtra'
 
 
 class HlsRouter {
-  constructor(auth, playbackSessionManager) {
+  declare auth: Auth
+  declare playbackSessionManager: PlaybackSessionManager
+  declare router: express.Express
+
+  constructor(auth: Auth, playbackSessionManager: PlaybackSessionManager) {
     this.auth = auth
     this.playbackSessionManager = playbackSessionManager
 
@@ -18,10 +25,12 @@ class HlsRouter {
   }
 
   init() {
-    this.router.get('/:stream/:file', this.streamFileRequest.bind(this))
+    this.router.get('/:stream/:file', (req, res) => {
+      void this.streamFileRequest(req, res)
+    })
   }
 
-  parseSegmentFilename(filename) {
+  parseSegmentFilename(filename: string) {
     var basename = Path.basename(filename, Path.extname(filename))
     var num_part = basename.split('-')[1]
     return Number(num_part)
@@ -36,7 +45,7 @@ class HlsRouter {
    * @param {string} filepath 
    * @returns {boolean}
    */
-  validateStreamFilePath(streamDir, filepath) {
+  validateStreamFilePath(streamDir: string, filepath: string) {
     const relative = Path.relative(streamDir, filepath)
     return relative && !relative.startsWith('..') && !Path.isAbsolute(relative)
   }
@@ -48,7 +57,7 @@ class HlsRouter {
    * @param {express.Request} req 
    * @param {express.Response} res 
    */
-  async streamFileRequest(req, res) {
+  async streamFileRequest(req: Request<{ stream: string; file: string }>, res: Response) {
     const streamId = req.params.stream
     // Ensure stream is open
     const stream = this.playbackSessionManager.getStream(streamId)
@@ -97,4 +106,4 @@ class HlsRouter {
     res.sendFile(fullFilePath)
   }
 }
-module.exports = HlsRouter
+export = HlsRouter
