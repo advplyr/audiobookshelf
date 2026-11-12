@@ -1,11 +1,5 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a Sequelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { DataTypes } from 'sequelize'
+import type { MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.35.0'
 const migrationName = `${migrationVersion}-add-last-refresh-token`
@@ -17,7 +11,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
   if (await queryInterface.tableExists('sessions')) {
@@ -26,7 +20,7 @@ async function up({ context: { queryInterface, logger } }) {
     if (!tableDescription.lastRefreshToken) {
       logger.info(`${loggerPrefix} Adding lastRefreshToken column to sessions table`)
       await queryInterface.addColumn('sessions', 'lastRefreshToken', {
-        type: queryInterface.sequelize.Sequelize.DataTypes.STRING,
+        type: DataTypes.STRING,
         allowNull: true
       })
     } else {
@@ -36,7 +30,7 @@ async function up({ context: { queryInterface, logger } }) {
     if (!tableDescription.lastRefreshTokenExpiresAt) {
       logger.info(`${loggerPrefix} Adding lastRefreshTokenExpiresAt column to sessions table`)
       await queryInterface.addColumn('sessions', 'lastRefreshTokenExpiresAt', {
-        type: queryInterface.sequelize.Sequelize.DataTypes.DATE,
+        type: DataTypes.DATE,
         allowNull: true
       })
     } else {
@@ -55,7 +49,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
   if (await queryInterface.tableExists('sessions')) {
@@ -81,4 +75,4 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
 }
 
-module.exports = { up, down }
+export = { up, down }

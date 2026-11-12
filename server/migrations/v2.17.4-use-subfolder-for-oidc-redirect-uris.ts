@@ -1,11 +1,9 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import type { MigrationContext, MigrationOptions } from '../types/migrations'
+
+interface HistoricalServerSettings {
+  authActiveAuthMethods?: string[]
+  authOpenIDSubfolderForRedirectURLs?: string
+}
 
 /**
  * This upward migration adds an subfolder setting for OIDC redirect URIs.
@@ -16,7 +14,7 @@
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info('[2.17.4 migration] UPGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris')
 
@@ -24,7 +22,7 @@ async function up({ context: { queryInterface, logger } }) {
   if (serverSettings.authActiveAuthMethods?.includes('openid')) {
     logger.info('[2.17.4 migration] OIDC is enabled, adding authOpenIDSubfolderForRedirectURLs to server settings')
     serverSettings.authOpenIDSubfolderForRedirectURLs = ''
-    await updateServerSettings(queryInterface, logger, serverSettings)
+    await updateServerSettings(queryInterface, serverSettings)
   } else {
     logger.info('[2.17.4 migration] OIDC is not enabled, no action required')
   }
@@ -38,7 +36,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info('[2.17.4 migration] DOWNGRADE BEGIN: 2.17.4-use-subfolder-for-oidc-redirect-uris ')
 
@@ -47,7 +45,7 @@ async function down({ context: { queryInterface, logger } }) {
   if (serverSettings.authOpenIDSubfolderForRedirectURLs !== undefined) {
     logger.info('[2.17.4 migration] Removing authOpenIDSubfolderForRedirectURLs from server settings')
     delete serverSettings.authOpenIDSubfolderForRedirectURLs
-    await updateServerSettings(queryInterface, logger, serverSettings)
+    await updateServerSettings(queryInterface, serverSettings)
   } else {
     logger.info('[2.17.4 migration] authOpenIDSubfolderForRedirectURLs not found in server settings, no action required')
   }
@@ -55,16 +53,16 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info('[2.17.4 migration] DOWNGRADE END: 2.17.4-use-subfolder-for-oidc-redirect-uris ')
 }
 
-async function getServerSettings(queryInterface, logger) {
-  const result = await queryInterface.sequelize.query('SELECT value FROM settings WHERE key = "server-settings";')
-  if (!result[0].length) {
+async function getServerSettings(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger']) {
+  const [rows] = await queryInterface.sequelize.query('SELECT value FROM settings WHERE key = "server-settings";')
+  if (!rows.length) {
     logger.error('[2.17.4 migration] Server settings not found')
     throw new Error('Server settings not found')
   }
 
-  let serverSettings = null
+  let serverSettings: HistoricalServerSettings
   try {
-    serverSettings = JSON.parse(result[0][0].value)
+    serverSettings = JSON.parse((rows[0] as { value: string }).value) as HistoricalServerSettings
   } catch (error) {
     logger.error('[2.17.4 migration] Error parsing server settings:', error)
     throw error
@@ -73,7 +71,7 @@ async function getServerSettings(queryInterface, logger) {
   return serverSettings
 }
 
-async function updateServerSettings(queryInterface, logger, serverSettings) {
+async function updateServerSettings(queryInterface: MigrationContext['queryInterface'], serverSettings: HistoricalServerSettings) {
   await queryInterface.sequelize.query('UPDATE settings SET value = :value WHERE key = "server-settings";', {
     replacements: {
       value: JSON.stringify(serverSettings)
@@ -81,4 +79,4 @@ async function updateServerSettings(queryInterface, logger, serverSettings) {
   })
 }
 
-module.exports = { up, down }
+export = { up, down }

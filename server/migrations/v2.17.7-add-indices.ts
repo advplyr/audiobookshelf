@@ -1,11 +1,4 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import type { MigrationContext, MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.17.7'
 const migrationName = `${migrationVersion}-add-indices`
@@ -17,7 +10,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
@@ -33,7 +26,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
@@ -51,13 +44,13 @@ async function down({ context: { queryInterface, logger } }) {
  * @param {string} tableName
  * @param {string[]} columns
  */
-async function addIndex(queryInterface, logger, tableName, columns) {
+async function addIndex(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], tableName: string, columns: string[]) {
   try {
     logger.info(`${loggerPrefix} adding index [${columns.join(', ')}] to table "${tableName}"`)
     await queryInterface.addIndex(tableName, columns)
     logger.info(`${loggerPrefix} added index [${columns.join(', ')}] to table "${tableName}"`)
   } catch (error) {
-    if (error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
+    if (error instanceof Error && error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
       logger.info(`${loggerPrefix} index [${columns.join(', ')}] for table "${tableName}" already exists`)
     } else {
       throw error
@@ -74,10 +67,10 @@ async function addIndex(queryInterface, logger, tableName, columns) {
  * @param {string} tableName
  * @param {string[]} columns
  */
-async function removeIndex(queryInterface, logger, tableName, columns) {
+async function removeIndex(queryInterface: MigrationContext['queryInterface'], logger: MigrationContext['logger'], tableName: string, columns: string[]) {
   logger.info(`${loggerPrefix} removing index [${columns.join(', ')}] from table "${tableName}"`)
   await queryInterface.removeIndex(tableName, columns)
   logger.info(`${loggerPrefix} removed index [${columns.join(', ')}] from table "${tableName}"`)
 }
 
-module.exports = { up, down }
+export = { up, down }

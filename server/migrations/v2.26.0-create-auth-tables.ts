@@ -1,11 +1,5 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { DataTypes } from 'sequelize'
+import type { MigrationOptions } from '../types/migrations'
 
 const migrationVersion = '2.26.0'
 const migrationName = `${migrationVersion}-create-auth-tables`
@@ -17,7 +11,7 @@ const loggerPrefix = `[${migrationVersion} migration]`
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info(`${loggerPrefix} UPGRADE BEGIN: ${migrationName}`)
 
@@ -27,7 +21,6 @@ async function up({ context: { queryInterface, logger } }) {
   } else {
     // Create table
     logger.info(`${loggerPrefix} creating table "sessions"`)
-    const DataTypes = queryInterface.sequelize.Sequelize.DataTypes
     await queryInterface.createTable('sessions', {
       id: {
         type: DataTypes.UUID,
@@ -73,7 +66,6 @@ async function up({ context: { queryInterface, logger } }) {
   } else {
     // Create table
     logger.info(`${loggerPrefix} creating table "apiKeys"`)
-    const DataTypes = queryInterface.sequelize.Sequelize.DataTypes
     await queryInterface.createTable('apiKeys', {
       id: {
         type: DataTypes.UUID,
@@ -135,7 +127,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info(`${loggerPrefix} DOWNGRADE BEGIN: ${migrationName}`)
 
@@ -160,4 +152,4 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info(`${loggerPrefix} DOWNGRADE END: ${migrationName}`)
 }
 
-module.exports = { up, down }
+export = { up, down }
