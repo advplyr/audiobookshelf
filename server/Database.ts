@@ -37,7 +37,7 @@ import packageJson from '../package.json'
 import fs from './libs/fsExtra'
 import Logger from './Logger'
 
-import legacyDbMigration from './utils/migrations/dbMigration'
+import dbMigration from './utils/migrations/dbMigration'
 // Preserve Auth's original module-load side effects; it is otherwise only a parameter type.
 import './Auth'
 
@@ -46,7 +46,6 @@ import MigrationManager from './managers/MigrationManager'
 // Models must load synchronously inside buildModels to preserve circular initialization order.
 const loadModule = createRequire(__filename)
 // The legacy JS annotation says boolean, but this function is async.
-const dbMigration = legacyDbMigration as unknown as Omit<typeof legacyDbMigration, 'checkShouldMigrate'> & { checkShouldMigrate(): Promise<boolean> }
 
 type ModelRegistry = {
   user: typeof User

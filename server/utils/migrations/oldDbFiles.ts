@@ -5,6 +5,7 @@ import Logger from '../../Logger'
 import fs from '../../libs/fsExtra'
 import archiver from '../../libs/archiver'
 import StreamZip from '../../libs/nodeStreamZip'
+import type { LegacyDbRecords } from './legacyDbRecords'
 
 function getConfigPath() {
   if (global.ConfigPath === undefined) throw new TypeError('Configuration directory is unavailable.')
@@ -76,11 +77,12 @@ async function loadDbData(dbpath: string) {
   }
 }
 
-async function loadOldData(dbName: string) {
+async function loadOldData<Name extends keyof LegacyDbRecords>(dbName: Name): Promise<LegacyDbRecords[Name][]> {
   const dbPath = Path.join(getConfigPath(), dbName, 'data')
   const dbData = await loadDbData(dbPath) || []
   Logger.info(`[oldDbFiles] ${dbData.length} ${dbName} loaded`)
-  return dbData
+  // Each legacy folder contains the serialized records for that store.
+  return dbData as LegacyDbRecords[Name][]
 }
 
 async function zipWrapOldDb() {

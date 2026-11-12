@@ -14,5 +14,6 @@ export function pathExists(path: PathLike): Promise<boolean>
 export function remove(path: PathLike): Promise<void>
 
 export function ensureDir(path: PathLike): Promise<void | string>
+export function emptyDir(path: string): Promise<void>
 export function copy(source: string, destination: string): Promise<void>
 export function move(source: string, destination: string, options?: { overwrite?: boolean }): Promise<void>
