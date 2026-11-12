@@ -1,7 +1,8 @@
 import { DataTypes, Model, Sequelize } from 'sequelize'
 import type { Attributes, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, WhereOptions } from 'sequelize'
-import type { BookExpanded, BookExpandedWithLibraryItem } from './Book'
+import type { BookExpandedWithLibraryItem } from './Book'
 import type CollectionBook from './CollectionBook'
+import type LibraryItem from './LibraryItem'
 
 // Association boundaries are expanded by the queries below; legacy JSON remains opaque here.
 type CollectionFeed = { toOldJSON(): unknown }
@@ -15,7 +16,7 @@ type CollectionAttributes = {
   updatedAt?: Date
 }
 type CollectionCreation = Optional<CollectionAttributes, keyof CollectionAttributes>
-type CollectionExpandedJSON = Omit<ReturnType<Collection['toOldJSON']>, 'books'> & { books: unknown[]; rssFeed?: unknown }
+type CollectionExpandedJSON = Omit<ReturnType<Collection['toOldJSON']>, 'books'> & { books: ReturnType<LibraryItem['toOldJSONExpanded']>[]; rssFeed?: unknown }
 
 class Collection extends Model<CollectionAttributes, CollectionCreation> {
   declare static sequelize: Sequelize
@@ -299,10 +300,10 @@ class Collection extends Model<CollectionAttributes, CollectionCreation> {
       throw new Error('Books are required to expand Collection')
     }
 
-    const json: CollectionExpandedJSON = this.toOldJSON<unknown>()
+    const json: CollectionExpandedJSON = this.toOldJSON<ReturnType<LibraryItem['toOldJSONExpanded']>>()
     json.books = this.books.map((book) => {
-      // The query includes a library item for each book. Its serializer is still JavaScript.
-      const libraryItem = book.libraryItem as { media: BookExpanded; toOldJSONExpanded(): unknown }
+      // The query includes a library item for each book.
+      const libraryItem = book.libraryItem
       delete (book as Partial<BookExpandedWithLibraryItem>).libraryItem
       libraryItem.media = book
       return libraryItem.toOldJSONExpanded()

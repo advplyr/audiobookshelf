@@ -1,20 +1,17 @@
-const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const htmlSanitizer = require('../utils/htmlSanitizer')
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type Playlist from '../models/Playlist'
+import type Podcast from '../models/Podcast'
+import type LibraryItem from '../models/LibraryItem'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
+import htmlSanitizer from '../utils/htmlSanitizer'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- *
- * @typedef RequestEntityObject
- * @property {import('../models/Playlist')} playlist
- *
- * @typedef {RequestWithUser & RequestEntityObject} PlaylistControllerRequest
- */
+type PlaylistItemBody = { libraryItemId: string; episodeId?: string }
+type PlaylistBody = { name?: string; description?: string | null; libraryId?: string; userId?: string; items?: PlaylistItemBody[] }
+type PlaylistRequest<Body = unknown> = Request<Record<string, string>, unknown, Body> & { user: User }
+type RequestWithPlaylist<Body = unknown> = PlaylistRequest<Body> & { playlist: Playlist }
 
 class PlaylistController {
   constructor() {}
@@ -22,11 +19,8 @@ class PlaylistController {
   /**
    * POST: /api/playlists
    * Create playlist
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async create(req, res) {
+  async create(req: PlaylistRequest<PlaylistBody>, res: Response) {
     const reqBody = req.body || {}
 
     // Validation
@@ -43,7 +37,7 @@ class PlaylistController {
     }
     const items = reqBody.items || []
     const isPodcast = items.some((i) => i.episodeId)
-    const libraryItemIds = new Set()
+    const libraryItemIds = new Set<string>()
     for (const item of items) {
       if (!item.libraryItemId || typeof item.libraryItemId !== 'string') {
         return res.status(400).send('Invalid playlist item')
@@ -71,7 +65,7 @@ class PlaylistController {
 
     // Validate podcast episodes
     if (isPodcast) {
-      const podcastEpisodeIds = items.map((i) => i.episodeId)
+      const podcastEpisodeIds = items.map((i) => i.episodeId!)
       const podcastEpisodes = await Database.podcastEpisodeModel.findAll({
         attributes: ['id'],
         where: {
@@ -83,7 +77,7 @@ class PlaylistController {
       }
     }
 
-    const transaction = await Database.sequelize.transaction()
+    const transaction = await Database.sequelize!.transaction()
     try {
       // Create playlist
       const newPlaylist = await Database.playlistModel.create(
@@ -102,7 +96,7 @@ class PlaylistController {
         const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
         playlistItemPayloads.push({
           playlistId: newPlaylist.id,
-          mediaItemId: item.episodeId || libraryItem.mediaId,
+          mediaItemId: item.episodeId || libraryItem!.mediaId,
           mediaItemType: item.episodeId ? 'podcastEpisode' : 'book',
           order: index + 1
         })
@@ -131,11 +125,8 @@ class PlaylistController {
    *
    * GET: /api/playlists
    * Get all playlists for user
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async findAllForUser(req, res) {
+  async findAllForUser(req: PlaylistRequest, res: Response) {
     const playlistsForUser = await Database.playlistModel.getOldPlaylistsForUserAndLibrary(req.user.id)
     const accessiblePlaylists = playlistsForUser.filter((p) => req.user.checkCanAccessLibrary(p.libraryId))
     res.json({
@@ -145,11 +136,8 @@ class PlaylistController {
 
   /**
    * GET: /api/playlists/:id
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async findOne(req, res) {
+  async findOne(req: RequestWithPlaylist, res: Response) {
     req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
     res.json(req.playlist.toOldJSONExpanded())
   }
@@ -159,11 +147,8 @@ class PlaylistController {
    * Update playlist
    *
    * Used for updating name and description or reordering items
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async update(req, res) {
+  async update(req: RequestWithPlaylist<PlaylistBody>, res: Response) {
     // Validation
     const reqBody = req.body || {}
     if (reqBody.libraryId || reqBody.userId) {
@@ -180,7 +165,7 @@ class PlaylistController {
       return res.status(400).send('Invalid playlist items')
     }
 
-    const playlistUpdatePayload = {}
+    const playlistUpdatePayload: Partial<Pick<Playlist, 'name' | 'description'>> = {}
 
     const nameCleaned = htmlSanitizer.stripAllTags(reqBody.name)
     if (nameCleaned) {
@@ -193,7 +178,7 @@ class PlaylistController {
     if (Object.keys(playlistUpdatePayload).length) {
       req.playlist.set(playlistUpdatePayload)
       const changed = req.playlist.changed()
-      if (changed?.length) {
+      if (changed && changed.length) {
         await req.playlist.save()
         Logger.debug(`[PlaylistController] Updated playlist ${req.playlist.id} keys [${changed.join(',')}]`)
         wasUpdated = true
@@ -221,10 +206,10 @@ class PlaylistController {
       }
 
       // Set an array of mediaItemId
-      const newMediaItemIdOrder = []
+      const newMediaItemIdOrder: (string | null)[] = []
       for (const item of reqBody.items) {
         const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
-        const mediaItemId = item.episodeId || libraryItem.mediaId
+        const mediaItemId = item.episodeId || libraryItem!.mediaId
         newMediaItemIdOrder.push(mediaItemId)
       }
 
@@ -258,11 +243,8 @@ class PlaylistController {
   /**
    * DELETE: /api/playlists/:id
    * Remove playlist
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async delete(req, res) {
+  async delete(req: RequestWithPlaylist, res: Response) {
     req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
     const jsonExpanded = req.playlist.toOldJSONExpanded()
 
@@ -276,11 +258,8 @@ class PlaylistController {
    * Add item to playlist
    *
    * This is not used by Abs web client or mobile apps. Only the batch endpoints are used.
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async addItem(req, res) {
+  async addItem(req: RequestWithPlaylist<Partial<PlaylistItemBody>>, res: Response) {
     const itemToAdd = req.body || {}
 
     if (!itemToAdd.libraryItemId) {
@@ -297,7 +276,7 @@ class PlaylistController {
     if ((itemToAdd.episodeId && !libraryItem.isPodcast) || (libraryItem.isPodcast && !itemToAdd.episodeId)) {
       return res.status(400).send('Invalid item to add for this library type')
     }
-    if (itemToAdd.episodeId && !libraryItem.media.podcastEpisodes.some((pe) => pe.id === itemToAdd.episodeId)) {
+    if (itemToAdd.episodeId && !(libraryItem.media as Podcast.PodcastExpanded).podcastEpisodes.some((pe) => pe.id === itemToAdd.episodeId)) {
       return res.status(400).send('Episode not found in library item')
     }
 
@@ -319,10 +298,10 @@ class PlaylistController {
 
     // Add the new item to to the old json expanded to prevent having to fully reload the playlist media items
     if (itemToAdd.episodeId) {
-      const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === itemToAdd.episodeId)
+      const episode = (libraryItem.media as Podcast.PodcastExpanded).podcastEpisodes.find((ep) => ep.id === itemToAdd.episodeId)
       jsonExpanded.items.push({
         episodeId: itemToAdd.episodeId,
-        episode: episode.toOldJSONExpanded(libraryItem.id),
+        episode: episode!.toOldJSONExpanded(libraryItem.id),
         libraryItemId: libraryItem.id,
         libraryItem: libraryItem.toOldJSONMinified()
       })
@@ -340,18 +319,15 @@ class PlaylistController {
   /**
    * DELETE: /api/playlists/:id/item/:libraryItemId/:episodeId?
    * Remove item from playlist
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async removeItem(req, res) {
+  async removeItem(req: RequestWithPlaylist, res: Response) {
     req.playlist.playlistMediaItems = await req.playlist.getMediaItemsExpandedWithLibraryItem()
 
     let playlistMediaItem = null
     if (req.params.episodeId) {
       playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => pmi.mediaItemId === req.params.episodeId)
     } else {
-      playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => pmi.mediaItem.libraryItem?.id === req.params.libraryItemId)
+      playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => (pmi.mediaItem as { libraryItem?: Pick<LibraryItem, 'id'> }).libraryItem?.id === req.params.libraryItemId)
     }
     if (!playlistMediaItem) {
       return res.status(404).send('Media item not found in playlist')
@@ -387,11 +363,8 @@ class PlaylistController {
   /**
    * POST: /api/playlists/:id/batch/add
    * Batch add playlist items
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async addBatch(req, res) {
+  async addBatch(req: RequestWithPlaylist<PlaylistBody>, res: Response) {
     if (!req.body.items?.length || !Array.isArray(req.body.items) || req.body.items.some((i) => !i?.libraryItemId || typeof i.libraryItemId !== 'string' || (i.episodeId && typeof i.episodeId !== 'string'))) {
       return res.status(400).send('Invalid request body items')
     }
@@ -414,7 +387,7 @@ class PlaylistController {
     for (const item of req.body.items) {
       const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
 
-      const mediaItemId = item.episodeId || libraryItem.media.id
+      const mediaItemId = item.episodeId || libraryItem!.media!.id
       if (req.playlist.playlistMediaItems.some((pmi) => pmi.mediaItemId === mediaItemId)) {
         // Already exists in playlist
         continue
@@ -428,17 +401,17 @@ class PlaylistController {
 
         // Add the new item to to the old json expanded to prevent having to fully reload the playlist media items
         if (item.episodeId) {
-          const episode = libraryItem.media.podcastEpisodes.find((ep) => ep.id === item.episodeId)
+          const episode = (libraryItem!.media as Podcast.PodcastExpanded).podcastEpisodes.find((ep) => ep.id === item.episodeId)
           jsonExpanded.items.push({
             episodeId: item.episodeId,
-            episode: episode.toOldJSONExpanded(libraryItem.id),
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONMinified()
+            episode: episode!.toOldJSONExpanded(libraryItem!.id),
+            libraryItemId: libraryItem!.id,
+            libraryItem: libraryItem!.toOldJSONMinified()
           })
         } else {
           jsonExpanded.items.push({
-            libraryItemId: libraryItem.id,
-            libraryItem: libraryItem.toOldJSONExpanded()
+            libraryItemId: libraryItem!.id,
+            libraryItem: libraryItem!.toOldJSONExpanded()
           })
         }
       }
@@ -456,11 +429,8 @@ class PlaylistController {
   /**
    * POST: /api/playlists/:id/batch/remove
    * Batch remove playlist items
-   *
-   * @param {PlaylistControllerRequest} req
-   * @param {Response} res
    */
-  async removeBatch(req, res) {
+  async removeBatch(req: RequestWithPlaylist<PlaylistBody>, res: Response) {
     if (!req.body.items?.length || !Array.isArray(req.body.items) || req.body.items.some((i) => !i?.libraryItemId || typeof i.libraryItemId !== 'string' || (i.episodeId && typeof i.episodeId !== 'string'))) {
       return res.status(400).send('Invalid request body items')
     }
@@ -474,7 +444,7 @@ class PlaylistController {
       if (item.episodeId) {
         playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => pmi.mediaItemId === item.episodeId)
       } else {
-        playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => pmi.mediaItem.libraryItem?.id === item.libraryItemId)
+        playlistMediaItem = req.playlist.playlistMediaItems.find((pmi) => (pmi.mediaItem as { libraryItem?: Pick<LibraryItem, 'id'> }).libraryItem?.id === item.libraryItemId)
       }
       if (!playlistMediaItem) {
         Logger.warn(`[PlaylistController] Playlist item not found in playlist ${req.playlist.id}`, item)
@@ -504,11 +474,8 @@ class PlaylistController {
   /**
    * POST: /api/playlists/collection/:collectionId
    * Create a playlist from a collection
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async createFromCollection(req, res) {
+  async createFromCollection(req: PlaylistRequest, res: Response) {
     const collection = await Database.collectionModel.findByPk(req.params.collectionId)
     if (!collection) {
       return res.status(404).send('Collection not found')
@@ -529,7 +496,7 @@ class PlaylistController {
       return res.status(400).send('Collection has no books')
     }
 
-    const transaction = await Database.sequelize.transaction()
+    const transaction = await Database.sequelize!.transaction()
     try {
       const playlist = await Database.playlistModel.create(
         {
@@ -566,13 +533,7 @@ class PlaylistController {
     }
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  async middleware(req, res, next) {
+  async middleware(req: PlaylistRequest & { playlist?: Playlist }, res: Response, next: NextFunction) {
     if (req.params.id) {
       const playlist = await Database.playlistModel.findByPk(req.params.id)
       if (!playlist) {
@@ -592,4 +553,4 @@ class PlaylistController {
     next()
   }
 }
-module.exports = new PlaylistController()
+export = new PlaylistController()

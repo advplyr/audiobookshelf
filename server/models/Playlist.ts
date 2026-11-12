@@ -20,7 +20,6 @@ type PlaylistCreation = Optional<PlaylistAttributes, keyof PlaylistAttributes>
 // Legacy library item serializers remain JavaScript; preserve their result at this boundary.
 type PlaylistLibraryItem = { id: string; media: Book | Podcast; toOldJSONExpanded(): unknown; toOldJSONMinified(): unknown }
 type LegacyPlaylistItem = { libraryItemId: string; libraryItem: unknown; episodeId?: string | null; episode?: ReturnType<PodcastEpisode['toOldJSONExpanded']> }
-type LegacyPlaylist = ReturnType<Playlist['toOldJSON']> & { items?: LegacyPlaylistItem[] }
 
 class Playlist extends Model<PlaylistAttributes, PlaylistCreation> {
   declare static sequelize: Sequelize
@@ -45,7 +44,7 @@ class Playlist extends Model<PlaylistAttributes, PlaylistCreation> {
    * @param {string} libraryId
    * @async
    */
-  static async getOldPlaylistsForUserAndLibrary(userId: string | null, libraryId: string | null) {
+  static async getOldPlaylistsForUserAndLibrary(userId: string | null, libraryId?: string | null) {
     if (!userId && !libraryId) return []
 
     const whereQuery: { userId?: string; libraryId?: string } = {}
@@ -372,8 +371,8 @@ class Playlist extends Model<PlaylistAttributes, PlaylistCreation> {
       throw new Error('playlistMediaItems are required to expand Playlist')
     }
 
-    const json: LegacyPlaylist = this.toOldJSON()
-    json.items = this.playlistMediaItems.map((pmi) => {
+    const json = this.toOldJSON()
+    const items: LegacyPlaylistItem[] = this.playlistMediaItems.map((pmi) => {
       if (pmi.mediaItemType === 'book') {
         // The includes above load a book and its library item for this discriminator.
         const mediaItem = pmi.mediaItem as Book
@@ -399,7 +398,7 @@ class Playlist extends Model<PlaylistAttributes, PlaylistCreation> {
       }
     })
 
-    return json
+    return Object.assign(json, { items })
   }
 }
 
