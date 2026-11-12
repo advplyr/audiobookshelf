@@ -72,10 +72,10 @@ type ProgressUpdatePayload = {
 }
 type PermissionFlag = 'download' | 'update' | 'delete' | 'upload' | 'createEreader' | 'accessAllLibraries' | 'accessAllTags' | 'accessExplicitContent' | 'selectedTagsNotAccessible'
 type UserPermissions = Partial<Record<PermissionFlag, boolean>> & { librariesAccessible?: string[]; itemTagsSelected?: string[]; [key: string]: unknown }
-type UserExtraData = { oldUserId?: string; authOpenIDSub?: string; seriesHideFromContinueListening?: string[]; [key: string]: unknown }
+type UserExtraData = { oldUserId?: string; authOpenIDSub?: string | null; seriesHideFromContinueListening?: string[]; [key: string]: unknown }
 type UserAttributes = {
   id: string; username: string | null; email: string | null; pash: string | null; type: string | null; token: string | null
-  isActive: boolean | null; isLocked: boolean | null; lastSeen: Date | null
+  isActive: boolean | null; isLocked: boolean | null; lastSeen: Date | number | null
   permissions: UserPermissions | null; bookmarks: AudioBookmarkObject[] | null; extraData: UserExtraData | null
   createdAt?: Date; updatedAt?: Date
 }
@@ -104,7 +104,7 @@ class User extends Model<UserAttributes, UserCreation> {
   declare token: string | null
   declare isActive: boolean | null
   declare isLocked: boolean | null
-  declare lastSeen: Date | null
+  declare lastSeen: Date | number | null
   declare permissions: UserPermissions | null
   declare bookmarks: AudioBookmarkObject[] | null
   declare extraData: UserExtraData | null

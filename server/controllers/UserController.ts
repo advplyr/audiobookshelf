@@ -1,32 +1,42 @@
-const { Request, Response, NextFunction } = require('express')
-const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type Auth from '../Auth'
+import type Podcast from '../models/Podcast'
+import type PlaybackSessionManager from '../managers/PlaybackSessionManager'
+import { v4 as uuidv4 } from 'uuid'
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
 
-const { toNumber } = require('../utils/index')
+import { toNumber } from '../utils/index'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- *
- * @typedef RequestEntityObject
- * @property {import('../models/User')} reqUser
- *
- * @typedef {RequestWithUser & RequestEntityObject} UserControllerRequest
- */
+type UserBody = {
+  username?: string
+  password?: string
+  email?: string
+  type?: string
+  isActive?: boolean
+  lastSeen?: number
+  librariesAccessible?: string[] | null
+  itemTagsSelected?: string[] | null
+  permissions?: User.UserPermissions | null
+  [key: string]: unknown
+}
+type UserRequest = Request<Record<string, string>, unknown, UserBody, { include?: string; itemsPerPage?: string; page?: string }> & { user: User }
+type RequestWithTargetUser = UserRequest & { reqUser: User }
+type ListeningSessions = Exclude<Awaited<ReturnType<typeof Database.getPlaybackSessions>>, false>
+type UserContext = {
+  auth: Auth
+  playbackSessionManager: PlaybackSessionManager
+  getUserListeningSessionsHelper(userId: string): Promise<ListeningSessions>
+  getUserListeningStatsHelpers(userId: string): Promise<unknown>
+}
+type ProgressMedia = { title: string | null; podcast?: Podcast; coverPath?: string | null; updatedAt: Date }
 
 class UserController {
   constructor() {}
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async findAll(req, res) {
+  async findAll(req: UserRequest, res: Response) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
 
@@ -34,12 +44,12 @@ class UserController {
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
     const allUsers = await Database.userModel.findAll()
-    const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
+    const users: (ReturnType<User['toOldJSONForBrowser']> & { latestSession?: ListeningSessions[number] | null })[] = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
-        const userSessions = await Database.getPlaybackSessions({ userId: user.id })
-        user.latestSession = userSessions.sort((a, b) => b.updatedAt - a.updatedAt).shift() || null
+        const userSessions = (await Database.getPlaybackSessions({ userId: user.id })) as ListeningSessions
+        user.latestSession = userSessions.sort((a, b) => b.updatedAt! - a.updatedAt!).shift() || null
       }
     }
 
@@ -52,11 +62,8 @@ class UserController {
    * GET: /api/users/:id
    * Get a single user toJSONForBrowser
    * Media progress items include: `displayTitle`, `displaySubtitle` (for podcasts), `coverPath` and `mediaUpdatedAt`
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async findOne(req, res) {
+  async findOne(req: RequestWithTargetUser, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`Non-admin user "${req.user.username}" attempted to get user`)
       return res.sendStatus(403)
@@ -75,24 +82,25 @@ class UserController {
         {
           model: Database.podcastEpisodeModel,
           attributes: ['id', 'title'],
-          include: {
+          include: [{
             model: Database.podcastModel,
             attributes: ['id', 'title', 'coverPath', 'updatedAt']
-          }
+          }]
         }
       ]
     })
 
     const oldMediaProgresses = mediaProgresses.map((mp) => {
-      const oldMediaProgress = mp.getOldMediaProgress()
-      oldMediaProgress.displayTitle = mp.mediaItem?.title
-      if (mp.mediaItem?.podcast) {
-        oldMediaProgress.displaySubtitle = mp.mediaItem.podcast?.title
-        oldMediaProgress.coverPath = mp.mediaItem.podcast?.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.podcast?.updatedAt
-      } else if (mp.mediaItem) {
-        oldMediaProgress.coverPath = mp.mediaItem.coverPath
-        oldMediaProgress.mediaUpdatedAt = mp.mediaItem.updatedAt
+      const mediaItem: ProgressMedia | null | undefined = mp.mediaItem
+      const oldMediaProgress: ReturnType<typeof mp.getOldMediaProgress> & { displayTitle?: string | null; displaySubtitle?: string | null; coverPath?: string | null; mediaUpdatedAt?: Date } = mp.getOldMediaProgress()
+      oldMediaProgress.displayTitle = mediaItem?.title
+      if (mediaItem?.podcast) {
+        oldMediaProgress.displaySubtitle = mediaItem.podcast?.title
+        oldMediaProgress.coverPath = mediaItem.podcast?.coverPath
+        oldMediaProgress.mediaUpdatedAt = mediaItem.podcast?.updatedAt
+      } else if (mediaItem) {
+        oldMediaProgress.coverPath = mediaItem.coverPath
+        oldMediaProgress.mediaUpdatedAt = mediaItem.updatedAt
       }
       return oldMediaProgress
     })
@@ -107,13 +115,8 @@ class UserController {
   /**
    * POST: /api/users
    * Create a new user
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async create(req, res) {
+  async create(this: UserContext, req: UserRequest, res: Response) {
     if (!req.body.username || !req.body.password || typeof req.body.username !== 'string' || typeof req.body.password !== 'string') {
       return res.status(400).send('Username and password are required')
     }
@@ -133,14 +136,14 @@ class UserController {
 
     // librariesAccessible and itemTagsSelected can be on req.body or req.body.permissions
     // Old model stored them outside of permissions, new model stores them inside permissions
-    let reqLibrariesAccessible = req.body.librariesAccessible || req.body.permissions?.librariesAccessible
+    let reqLibrariesAccessible: string[] | null | undefined = req.body.librariesAccessible || req.body.permissions?.librariesAccessible
     if (reqLibrariesAccessible && (!Array.isArray(reqLibrariesAccessible) || reqLibrariesAccessible.some((libId) => typeof libId !== 'string'))) {
-      Logger.warn(`[UserController] create: Invalid librariesAccessible value: ${reqLibrariesAccessible}`)
+      Logger.warn(`[UserController] create: Invalid librariesAccessible value: ${String(reqLibrariesAccessible)}`)
       reqLibrariesAccessible = null
     }
-    let reqItemTagsSelected = req.body.itemTagsSelected || req.body.permissions?.itemTagsSelected
+    let reqItemTagsSelected: string[] | null | undefined = req.body.itemTagsSelected || req.body.permissions?.itemTagsSelected
     if (reqItemTagsSelected && (!Array.isArray(reqItemTagsSelected) || reqItemTagsSelected.some((tagId) => typeof tagId !== 'string'))) {
-      Logger.warn(`[UserController] create: Invalid itemTagsSelected value: ${reqItemTagsSelected}`)
+      Logger.warn(`[UserController] create: Invalid itemTagsSelected value: ${String(reqItemTagsSelected)}`)
       reqItemTagsSelected = null
     }
     if (req.body.permissions?.itemTagsSelected || req.body.permissions?.librariesAccessible) {
@@ -196,13 +199,8 @@ class UserController {
   /**
    * PATCH: /api/users/:id
    * Update user
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async update(req, res) {
+  async update(this: UserContext, req: RequestWithTargetUser, res: Response) {
     const user = req.reqUser
 
     if (user.isRoot && !req.user.isRoot) {
@@ -252,20 +250,20 @@ class UserController {
 
     // Updating password
     if (updatePayload.password) {
-      user.pash = await this.auth.localAuthStrategy.hashPassword(updatePayload.password)
+      Object.assign(user, { pash: await this.auth.localAuthStrategy.hashPassword(updatePayload.password) })
       shouldInvalidateJwtSessions = true
       hasUpdates = true
     }
 
     let hasPermissionsUpdates = false
-    let updateLibrariesAccessible = updatePayload.librariesAccessible || updatePayload.permissions?.librariesAccessible
+    let updateLibrariesAccessible: string[] | null | undefined = updatePayload.librariesAccessible || updatePayload.permissions?.librariesAccessible
     if (updateLibrariesAccessible && (!Array.isArray(updateLibrariesAccessible) || updateLibrariesAccessible.some((libId) => typeof libId !== 'string'))) {
-      Logger.warn(`[UserController] update: Invalid librariesAccessible value: ${updateLibrariesAccessible}`)
+      Logger.warn(`[UserController] update: Invalid librariesAccessible value: ${String(updateLibrariesAccessible)}`)
       updateLibrariesAccessible = null
     }
-    let updateItemTagsSelected = updatePayload.itemTagsSelected || updatePayload.permissions?.itemTagsSelected
+    let updateItemTagsSelected: string[] | null | undefined = updatePayload.itemTagsSelected || updatePayload.permissions?.itemTagsSelected
     if (updateItemTagsSelected && (!Array.isArray(updateItemTagsSelected) || updateItemTagsSelected.some((tagId) => typeof tagId !== 'string'))) {
-      Logger.warn(`[UserController] update: Invalid itemTagsSelected value: ${updateItemTagsSelected}`)
+      Logger.warn(`[UserController] update: Invalid itemTagsSelected value: ${String(updateItemTagsSelected)}`)
       updateItemTagsSelected = null
     }
     if (updatePayload.permissions?.itemTagsSelected || updatePayload.permissions?.librariesAccessible) {
@@ -291,11 +289,11 @@ class UserController {
         }
       }
 
-      if (updateItemTagsSelected && updateItemTagsSelected.join(',') !== user.permissions.itemTagsSelected.join(',')) {
+      if (updateItemTagsSelected && updateItemTagsSelected.join(',') !== user.permissions!.itemTagsSelected!.join(',')) {
         permissions.itemTagsSelected = updateItemTagsSelected
         hasPermissionsUpdates = true
       }
-      if (updateLibrariesAccessible && updateLibrariesAccessible.join(',') !== user.permissions.librariesAccessible.join(',')) {
+      if (updateLibrariesAccessible && updateLibrariesAccessible.join(',') !== user.permissions!.librariesAccessible!.join(',')) {
         permissions.librariesAccessible = updateLibrariesAccessible
         hasPermissionsUpdates = true
       }
@@ -304,7 +302,7 @@ class UserController {
 
     // Permissions were updated
     if (hasPermissionsUpdates) {
-      user.permissions = updatePayload.permissions
+      user.permissions = updatePayload.permissions!
       user.changed('permissions', true)
       hasUpdates = true
     }
@@ -356,11 +354,8 @@ class UserController {
   /**
    * DELETE: /api/users/:id
    * Delete a user
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async delete(req, res) {
+  async delete(req: RequestWithTargetUser, res: Response) {
     const user = req.reqUser
 
     if (req.user.id === req.params.id) {
@@ -407,18 +402,15 @@ class UserController {
 
   /**
    * PATCH: /api/users/:id/openid-unlink
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async unlinkFromOpenID(req, res) {
+  async unlinkFromOpenID(req: RequestWithTargetUser, res: Response) {
     Logger.debug(`[UserController] Unlinking user "${req.reqUser.username}" from OpenID with sub "${req.reqUser.authOpenIDSub}"`)
 
     if (!req.reqUser.authOpenIDSub) {
       return res.sendStatus(200)
     }
 
-    req.reqUser.extraData.authOpenIDSub = null
+    req.reqUser.extraData!.authOpenIDSub = null
     req.reqUser.changed('extraData', true)
     await req.reqUser.save()
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.reqUser.toOldJSONForBrowser())
@@ -427,11 +419,8 @@ class UserController {
 
   /**
    * GET: /api/users/:id/listening-sessions
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async getListeningSessions(req, res) {
+  async getListeningSessions(this: UserContext, req: RequestWithTargetUser, res: Response) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
@@ -462,26 +451,16 @@ class UserController {
 
   /**
    * GET: /api/users/:id/listening-stats
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {UserControllerRequest} req
-   * @param {Response} res
    */
-  async getListeningStats(req, res) {
+  async getListeningStats(this: UserContext, req: RequestWithTargetUser, res: Response) {
     var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
     res.json(listeningStats)
   }
 
   /**
    * GET: /api/users/online
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getOnlineUsers(req, res) {
+  async getOnlineUsers(this: UserContext, req: UserRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
@@ -490,15 +469,10 @@ class UserController {
       usersOnline: SocketAuthority.getUsersOnline(),
       openSessions: this.playbackSessionManager.sessions
     })
+    return Promise.resolve()
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  async middleware(req, res, next) {
+  async middleware(req: UserRequest & { reqUser?: User | null }, res: Response, next: NextFunction) {
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
@@ -515,4 +489,4 @@ class UserController {
     next()
   }
 }
-module.exports = new UserController()
+export = new UserController()
