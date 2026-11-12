@@ -3,5 +3,8 @@ export type SortDirection<T> = { asc?: (item: T) => unknown; desc?: (item: T) =>
 
 export function createNewSortInstance(options: { comparer: (left: string, right: string) => number }): <T>(items: T[]) => {
   asc(selector?: (item: T) => unknown): T[]
+  desc(selector?: (item: T) => unknown): T[]
   by(directions: SortDirection<T>[]): T[]
 }
+
+export const sort: ReturnType<typeof createNewSortInstance>
