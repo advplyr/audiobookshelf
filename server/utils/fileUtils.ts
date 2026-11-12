@@ -193,7 +193,7 @@ const recurseFiles = async (path: string, relPathToReplace: string | null = null
     relPathToReplace = path
   }
 
-  const options: rra.ListOptions = {
+  const options = {
     mode: rra.LIST,
     recursive: true,
     stats: false,
@@ -202,9 +202,9 @@ const recurseFiles = async (path: string, relPathToReplace: string | null = null
     deep: true,
     realPath: true,
     normalizePath: false
-  }
+  } satisfies rra.ListOptions
   const list = await rra.list(path, options)
-  if (list.error) {
+  if (!Array.isArray(list)) {
     Logger.error('[fileUtils] Recurse files error', list.error)
     return []
   }
