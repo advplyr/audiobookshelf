@@ -21,15 +21,15 @@ type ChapterMarker = {
 type AbsChapter = {
   id: number
   start: number
-  end?: number
+  end: number
   title: string
 }
 
 type AudioFileWithMarker = {
-  duration: number
-  metaTags: {
+  duration?: number | null
+  metaTags?: {
     tagOverdriveMediaMarker?: string | null
-  }
+  } | null
 }
 
 // given the array of Overdrive Media Markers from generateOverdriveMediaMarkers()
@@ -82,17 +82,12 @@ function removeExtraChapters(parsedOverdriveMediaMarkers: ChapterMarker[][]): Ch
 }
 
 // Given a set of chapters from generateParsedChapters, add the end time to each one
-function addChapterEndTimes(chapters: AbsChapter[], totalAudioDuration: number): AbsChapter[] {
+function addChapterEndTimes(chapters: Omit<AbsChapter, 'end'>[], totalAudioDuration: number): AbsChapter[] {
   Logger.debug('[parseOverdriveMediaMarkers] Adding chapter end times')
-  chapters.forEach((chapter, chapter_index) => {
-    if (chapter_index < chapters.length - 1) {
-      chapter.end = chapters[chapter_index + 1].start
-    } else {
-      chapter.end = totalAudioDuration
-    }
-  })
-
-  return chapters
+  return chapters.map((chapter, index) => ({
+    ...chapter,
+    end: index < chapters.length - 1 ? chapters[index + 1].start : totalAudioDuration
+  }))
 }
 
 // The function that actually generates the Chapters object that we update ABS with
@@ -100,7 +95,7 @@ function generateParsedChapters(includedAudioFiles: AudioFileWithMarker[], clean
   Logger.debug('[parseOverdriveMediaMarkers] Generating new chapters for ABS')
   // logic ported over from benonymity's OverdriveChapterizer:
   //    https://github.com/benonymity/OverdriveChapterizer/blob/main/chapters.py
-  let parsedChapters: AbsChapter[] = []
+  const parsedChapters: Omit<AbsChapter, 'end'>[] = []
   let length = 0.0
   let index = 0
   let time = 0.0
@@ -128,16 +123,15 @@ function generateParsedChapters(includedAudioFiles: AudioFileWithMarker[], clean
       }
       parsedChapters.push(newChapterData)
     })
-    length += track.duration
+    length += Number(track.duration)
   })
 
-  parsedChapters = addChapterEndTimes(parsedChapters, length) // we need all the start times sorted out before we can add the end times
-
-  return parsedChapters
+  // All start times must be known before assigning the end times.
+  return addChapterEndTimes(parsedChapters, length)
 }
 
 export function parseOverdriveMediaMarkersAsChapters(includedAudioFiles: AudioFileWithMarker[]): AbsChapter[] | null {
-  const overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter((af): af is string => Boolean(af)) || []
+  const overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags!.tagOverdriveMediaMarker).filter((af): af is string => Boolean(af)) || []
   if (!overdriveMediaMarkers.length) return null
 
   const cleanedOverdriveMediaMarkers = cleanOverdriveMediaMarkers(overdriveMediaMarkers)

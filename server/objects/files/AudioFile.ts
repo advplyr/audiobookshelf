@@ -31,7 +31,7 @@ interface AudioFileData {
   language: string | null | undefined
   codec: string | null
   timeBase: string | null | undefined
-  channels: number | null | undefined
+  channels: number | string | null | undefined
   channelLayout: string | null | undefined
   chapters: AudioFileChapter[] | undefined
   embeddedCoverArt: string | null | undefined
@@ -51,7 +51,7 @@ interface AudioFileProbeData {
   language: string | null | undefined
   codec?: string | null
   timeBase: string | null | undefined
-  channels: number | null | undefined
+  channels: number | string | null | undefined
   channelLayout: string | null | undefined
   chapters?: AudioFileChapter[] | null
   audioMetaTags: AudioMetaTags | null
@@ -61,7 +61,7 @@ interface AudioFileProbeData {
 /** A library file being turned into an audio file */
 interface AudioFileSource {
   ino?: string | null
-  metadata: FileMetadata | FileMetadataJSON
+  metadata: FileMetadata | Partial<FileMetadataJSON>
 }
 
 class AudioFile {
@@ -83,7 +83,7 @@ class AudioFile {
   language: string | null | undefined = null
   codec: string | null = null
   timeBase: string | null | undefined = null
-  channels: number | null | undefined = null
+  channels: number | string | null | undefined = null
   channelLayout: string | null | undefined = null
   chapters: AudioFileChapter[] | undefined = []
   embeddedCoverArt: string | null | undefined = null
