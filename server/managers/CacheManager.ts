@@ -5,7 +5,7 @@ import type { unlink } from 'fs/promises'
 import type { Response } from 'express'
 // fsExtra exposes both the original streams and promise-based filesystem methods.
 const fs = fsExtra as typeof fsExtra & { createReadStream: typeof createReadStream; unlink: typeof unlink }
-type CacheOptions = { format?: string; width?: number; height?: number | null }
+type CacheOptions = { format?: string; width?: number | null; height?: number | null }
 
 import stream from 'stream'
 import Logger from '../Logger'

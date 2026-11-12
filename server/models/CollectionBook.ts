@@ -1,4 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
+import type Book from './Book'
 import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 
 type CollectionBookAttributes = {
@@ -15,6 +16,7 @@ class CollectionBook extends Model<CollectionBookAttributes, CollectionBookCreat
   declare id: string
   declare order: number | null
   declare bookId: string | null
+  declare book?: Book
   declare collectionId: string | null
   declare createdAt: Date
 

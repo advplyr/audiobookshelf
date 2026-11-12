@@ -1,10 +1,11 @@
 import { DataTypes, Model, Sequelize } from 'sequelize'
 import type { Attributes, BuildOptions, FindOptions, InitOptions, ModelAttributes, ModelStatic, Optional, WhereOptions } from 'sequelize'
 import type { BookExpanded, BookExpandedWithLibraryItem } from './Book'
+import type CollectionBook from './CollectionBook'
 
 // Association boundaries are expanded by the queries below; legacy JSON remains opaque here.
 type CollectionFeed = { toOldJSON(): unknown }
-type CollectionUser = { checkCanAccessLibraryItemWithTags(tags: string[]): boolean; readonly canAccessExplicitContent: boolean }
+type CollectionUser = { checkCanAccessLibraryItemWithTags(tags: string[]): boolean; readonly canAccessExplicitContent: boolean | null }
 type CollectionAttributes = {
   id: string
   name: string | null
@@ -29,6 +30,7 @@ class Collection extends Model<CollectionAttributes, CollectionCreation> {
   declare books?: BookExpandedWithLibraryItem[]
   declare feeds?: CollectionFeed[]
   declare getBooks: (options?: FindOptions) => Promise<BookExpandedWithLibraryItem[]>
+  declare getCollectionBooks: (options?: FindOptions) => Promise<CollectionBook[]>
   declare getFeeds: (options?: FindOptions) => Promise<CollectionFeed[]>
 
   constructor(values?: CollectionCreation, options?: BuildOptions) {
@@ -120,7 +122,7 @@ class Collection extends Model<CollectionAttributes, CollectionCreation> {
 
         return collectionExpanded
       })
-      .filter((c) => c)
+      .filter((c): c is NonNullable<typeof c> => Boolean(c))
   }
 
   /**
@@ -239,7 +241,7 @@ class Collection extends Model<CollectionAttributes, CollectionCreation> {
    * @param {string[]} [include]
    * @async
    */
-  async getOldJsonExpanded(user: CollectionUser | null, include?: string[]) {
+  async getOldJsonExpanded(user?: CollectionUser | null, include?: string[]) {
     this.books = await this.getBooksExpandedWithLibraryItem()
 
     // Filter books using user permissions
