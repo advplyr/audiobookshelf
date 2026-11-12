@@ -18,6 +18,8 @@ class FeedEpisode extends Model {
     /** @type {string} */
     this.description
     /** @type {string} */
+    this.subtitle
+    /** @type {string} */
     this.siteURL
     /** @type {string} */
     this.enclosureURL
@@ -62,6 +64,7 @@ class FeedEpisode extends Model {
       title: episode.title,
       author: feed.author,
       description: episode.description,
+      subtitle: episode.subtitle,
       siteURL: feed.siteURL,
       enclosureURL: `/feed/${slug}/item/${episodeId}/media${Path.extname(episode.audioFile.metadata.filename)}`,
       enclosureType: episode.audioFile.mimeType,
@@ -106,7 +109,7 @@ class FeedEpisode extends Model {
       feedEpisodeObjs.push(this.getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisode?.id))
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'subtitle', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
@@ -166,6 +169,7 @@ class FeedEpisode extends Model {
       title,
       author: feed.author,
       description: book.description || '',
+      subtitle: book.subtitle,
       siteURL: feed.siteURL,
       enclosureURL: contentUrl,
       enclosureType: audioTrack.mimeType,
@@ -203,7 +207,7 @@ class FeedEpisode extends Model {
       feedEpisodeObjs.push(this.getFeedEpisodeObjFromAudiobookTrack(libraryItemExpanded.media, libraryItemExpanded.createdAt, feed, slug, track, useChapterTitles, i, existingEpisode?.id))
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'subtitle', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
@@ -240,7 +244,7 @@ class FeedEpisode extends Model {
       }
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'subtitle', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
   }
 
   /**
@@ -258,6 +262,7 @@ class FeedEpisode extends Model {
         title: DataTypes.STRING,
         author: DataTypes.STRING,
         description: DataTypes.TEXT,
+        subtitle: DataTypes.STRING,
         siteURL: DataTypes.STRING,
         enclosureURL: DataTypes.STRING,
         enclosureType: DataTypes.STRING,
@@ -327,6 +332,9 @@ class FeedEpisode extends Model {
     })
     if (this.description) {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
+    }
+    if (this.subtitle) {
+      customElements.push({ 'itunes:subtitle': this.subtitle })
     }
 
     return {
