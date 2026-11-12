@@ -1,11 +1,6 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { QueryTypes } from 'sequelize'
+import type { ColumnsDescription, QueryInterface } from 'sequelize'
+import type { MigrationOptions } from '../types/migrations'
 
 /**
  * This upward migration script changes foreign key constraints for the
@@ -14,7 +9,7 @@
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info('[2.17.3 migration] UPGRADE BEGIN: 2.17.3-fk-constraints')
 
@@ -103,7 +98,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { logger } }: MigrationOptions) {
   // Downward migration script
   logger.info('[2.17.3 migration] DOWNGRADE BEGIN: 2.17.3-fk-constraints')
 
@@ -112,27 +107,34 @@ async function down({ context: { queryInterface, logger } }) {
 
   // Completed migration
   logger.info('[2.17.3 migration] DOWNGRADE END: 2.17.3-fk-constraints')
+  return Promise.resolve()
 }
 
-/**
- * @typedef ConstraintUpdateObj
- * @property {string} field - The field to update
- * @property {string} onDelete - The onDelete constraint
- * @property {string} onUpdate - The onUpdate constraint
- */
+interface ConstraintUpdateObj {
+  field: string
+  onDelete: string
+  onUpdate: string
+}
 
-/**
- * @typedef SequelizeFKObj
- * @property {{ model: string, key: string }} references
- * @property {string} onDelete
- * @property {string} onUpdate
- */
+interface SequelizeFKObj {
+  references: { model: string; key: string }
+  onDelete: string
+  onUpdate: string
+}
+
+interface ForeignKeyPragmaRow {
+  table: string
+  from: string
+  to: string
+  on_delete: string
+  on_update: string
+}
 
 /**
  * @param {Object} fk - The foreign key object from PRAGMA foreign_key_list
  * @returns {SequelizeFKObj} - The foreign key object formatted for Sequelize
  */
-const formatFKsPragmaToSequelizeFK = (fk) => {
+const formatFKsPragmaToSequelizeFK = (fk: ForeignKeyPragmaRow): SequelizeFKObj => {
   return {
     references: {
       model: fk.table,
@@ -150,14 +152,15 @@ const formatFKsPragmaToSequelizeFK = (fk) => {
  * @param {ConstraintUpdateObj[]} constraints
  * @returns {Promise<Record<string, SequelizeFKObj>|null>}
  */
-async function getUpdatedForeignKeys(queryInterface, tableName, constraints) {
+async function getUpdatedForeignKeys(queryInterface: QueryInterface, tableName: string, constraints: ConstraintUpdateObj[]) {
   const execQuery = queryInterface.sequelize.query.bind(queryInterface.sequelize)
   const quotedTableName = queryInterface.quoteIdentifier(tableName)
 
-  const foreignKeys = await execQuery(`PRAGMA foreign_key_list(${quotedTableName});`)
+  // Sequelize returns PRAGMA foreign_key_list rows directly for SQLite.
+  const foreignKeys = (await execQuery(`PRAGMA foreign_key_list(${quotedTableName});`)) as unknown as ForeignKeyPragmaRow[]
 
   let hasUpdates = false
-  const foreignKeysByColName = foreignKeys.reduce((prev, curr) => {
+  const foreignKeysByColName = foreignKeys.reduce<Record<string, SequelizeFKObj>>((prev, curr) => {
     const fk = formatFKsPragmaToSequelizeFK(curr)
 
     const constraint = constraints.find((c) => c.field === curr.from)
@@ -180,7 +183,7 @@ async function getUpdatedForeignKeys(queryInterface, tableName, constraints) {
  * @param {String} tableName
  * @param {Record<string, SequelizeFKObj>} updatedForeignKeys
  */
-async function describeTableWithFKs(queryInterface, tableName, updatedForeignKeys) {
+async function describeTableWithFKs(queryInterface: QueryInterface, tableName: string, updatedForeignKeys: Record<string, SequelizeFKObj>) {
   const tableDescription = await queryInterface.describeTable(tableName)
 
   const tableDescriptionWithFks = Object.entries(tableDescription).reduce((prev, [col, attributes]) => {
@@ -207,7 +210,7 @@ async function describeTableWithFKs(queryInterface, tableName, updatedForeignKey
  * @param {ConstraintUpdateObj[]} constraints
  * @returns {Promise<boolean>} - Return false if no changes are needed, true otherwise
  */
-async function changeConstraints(queryInterface, tableName, constraints) {
+async function changeConstraints(queryInterface: QueryInterface, tableName: string, constraints: ConstraintUpdateObj[]) {
   const updatedForeignKeys = await getUpdatedForeignKeys(queryInterface, tableName, constraints)
   if (!updatedForeignKeys) {
     return false
@@ -219,41 +222,41 @@ async function changeConstraints(queryInterface, tableName, constraints) {
   const backupTableName = `${tableName}_${Math.round(Math.random() * 100)}_backup`
   const quotedBackupTableName = queryInterface.quoteIdentifier(backupTableName)
 
-  try {
-    const tableDescriptionWithFks = await describeTableWithFKs(queryInterface, tableName, updatedForeignKeys)
+  const tableDescriptionWithFks = await describeTableWithFKs(queryInterface, tableName, updatedForeignKeys)
 
-    const attributes = queryInterface.queryGenerator.attributesToSQL(tableDescriptionWithFks)
-
-    // Create the backup table
-    await queryInterface.createTable(backupTableName, attributes)
-
-    const attributeNames = Object.keys(attributes)
-      .map((attr) => queryInterface.quoteIdentifier(attr))
-      .join(', ')
-
-    // Copy all data from the target table to the backup table
-    await execQuery(`INSERT INTO ${quotedBackupTableName} SELECT ${attributeNames} FROM ${quotedTableName};`)
-
-    // Drop the old (original) table
-    await queryInterface.dropTable(tableName)
-
-    // Rename the backup table to the original table's name
-    await queryInterface.renameTable(backupTableName, tableName)
-
-    // Validate that all foreign key constraints are correct
-    const result = await execQuery(`PRAGMA foreign_key_check(${quotedTableName});`, {
-      type: queryInterface.sequelize.Sequelize.QueryTypes.SELECT
-    })
-
-    // There are foreign key violations, exit
-    if (result.length) {
-      return Promise.reject(`Foreign key violations detected: ${JSON.stringify(result, null, 2)}`)
-    }
-
-    return true
-  } catch (error) {
-    return Promise.reject(error)
+  // Sequelize does not expose the SQLite generator methods in its QueryInterface types.
+  const queryGenerator = queryInterface.queryGenerator as {
+    attributesToSQL(columns: ColumnsDescription): Record<string, string>
   }
+  const attributes = queryGenerator.attributesToSQL(tableDescriptionWithFks)
+
+  // Create the backup table
+  await queryInterface.createTable(backupTableName, attributes)
+
+  const attributeNames = Object.keys(attributes)
+    .map((attr) => queryInterface.quoteIdentifier(attr))
+    .join(', ')
+
+  // Copy all data from the target table to the backup table
+  await execQuery(`INSERT INTO ${quotedBackupTableName} SELECT ${attributeNames} FROM ${quotedTableName};`)
+
+  // Drop the old (original) table
+  await queryInterface.dropTable(tableName)
+
+  // Rename the backup table to the original table's name
+  await queryInterface.renameTable(backupTableName, tableName)
+
+  // Validate that all foreign key constraints are correct
+  const result = await execQuery(`PRAGMA foreign_key_check(${quotedTableName});`, {
+    type: QueryTypes.SELECT
+  })
+
+  // There are foreign key violations, exit
+  if (result.length) {
+    throw new Error(`Foreign key violations detected: ${JSON.stringify(result, null, 2)}`)
+  }
+
+  return true
 }
 
-module.exports = { up, down }
+export = { up, down }

@@ -1,11 +1,5 @@
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { QueryTypes } from 'sequelize'
+import type { MigrationIndex, MigrationOptions } from '../types/migrations'
 
 /**
  * This upward migration script cleans any duplicate series in the `Series` table and
@@ -14,7 +8,7 @@
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   // Upwards migration script
   logger.info('[2.15.0 migration] UPGRADE BEGIN: 2.15.0-series-column-unique ')
 
@@ -23,7 +17,7 @@ async function up({ context: { queryInterface, logger } }) {
   await queryInterface.sequelize.query('REINDEX NOCASE;')
 
   // Check if the unique index already exists
-  const seriesIndexes = await queryInterface.showIndex('Series')
+  const seriesIndexes = (await queryInterface.showIndex('Series')) as MigrationIndex[]
   if (seriesIndexes.some((index) => index.name === 'unique_series_name_per_library')) {
     logger.info('[2.15.0 migration] Unique index on Series.name and Series.libraryId already exists')
     logger.info('[2.15.0 migration] UPGRADE END: 2.15.0-series-column-unique ')
@@ -39,12 +33,13 @@ async function up({ context: { queryInterface, logger } }) {
   // 4. Delete the older series.
 
   // Use the queryInterface to get the series table and find duplicates in the `name` and `libraryId` column
-  const [duplicates] = await queryInterface.sequelize.query(`
+  const [duplicatesRows] = await queryInterface.sequelize.query(`
     SELECT name, libraryId
     FROM Series
     GROUP BY name, libraryId
     HAVING COUNT(name) > 1
   `)
+  const duplicates = duplicatesRows as { name: string; libraryId: string }[]
 
   // Print out how many duplicates were found
   logger.info(`[2.15.0 migration] Found ${duplicates.length} duplicate series`)
@@ -55,7 +50,7 @@ async function up({ context: { queryInterface, logger } }) {
     logger.info(`[2.15.0 migration] Deduplicating series "${duplicate.name}" in library ${duplicate.libraryId}`)
 
     // Determine any duplicate book IDs in the `bookSeries` table for the same series
-    const [duplicateBookIds] = await queryInterface.sequelize.query(
+    const [duplicateBookIdsRows] = await queryInterface.sequelize.query(
       `
         SELECT bookId
         FROM BookSeries
@@ -74,12 +69,13 @@ async function up({ context: { queryInterface, logger } }) {
         }
       }
     )
+    const duplicateBookIds = duplicateBookIdsRows as { bookId: string }[]
 
     // Iterate over the duplicate book IDs if there is at least one and only keep the first row that has this bookId and seriesId
     for (const { bookId } of duplicateBookIds) {
       logger.info(`[2.15.0 migration] Deduplicating bookId ${bookId} in series "${duplicate.name}" of library ${duplicate.libraryId}`)
       // Get all rows of `BookSeries` table that have the same `bookId` and `seriesId`. Sort by `sequence` with nulls sorted last
-      const [duplicateBookSeries] = await queryInterface.sequelize.query(
+      const [duplicateBookSeriesRows] = await queryInterface.sequelize.query(
         `
             SELECT id
             FROM BookSeries
@@ -99,13 +95,14 @@ async function up({ context: { queryInterface, logger } }) {
           }
         }
       )
+      const duplicateBookSeries = duplicateBookSeriesRows as { id: string }[]
 
       // remove the first element from the array
       duplicateBookSeries.shift()
 
       // Delete the remaining duplicate rows
       if (duplicateBookSeries.length > 0) {
-        const [deletedBookSeries] = await queryInterface.sequelize.query(
+        await queryInterface.sequelize.query(
           `
               DELETE FROM BookSeries
               WHERE id IN (:ids)
@@ -121,7 +118,7 @@ async function up({ context: { queryInterface, logger } }) {
     }
 
     // Get all the most recent series which matches the `name` and `libraryId`
-    const [mostRecentSeries] = await queryInterface.sequelize.query(
+    const [mostRecentSeries] = await queryInterface.sequelize.query<{ id: string }>(
       `
         SELECT id
         FROM Series
@@ -134,13 +131,13 @@ async function up({ context: { queryInterface, logger } }) {
           name: duplicate.name,
           libraryId: duplicate.libraryId
         },
-        type: queryInterface.sequelize.QueryTypes.SELECT
+        type: QueryTypes.SELECT
       }
     )
 
     if (mostRecentSeries) {
       // Update all BookSeries records for this series to point to the most recent series
-      const [seriesUpdated] = await queryInterface.sequelize.query(
+      await queryInterface.sequelize.query(
         `
           UPDATE BookSeries
           SET seriesId = :mostRecentSeriesId
@@ -161,7 +158,7 @@ async function up({ context: { queryInterface, logger } }) {
       )
 
       // Delete the older series
-      const seriesDeleted = await queryInterface.sequelize.query(
+      await queryInterface.sequelize.query(
         `
           DELETE FROM Series
           WHERE name = :name AND libraryId = :libraryId
@@ -196,7 +193,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   // Downward migration script
   logger.info('[2.15.0 migration] DOWNGRADE BEGIN: 2.15.0-series-column-unique ')
 
@@ -207,4 +204,4 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info('[2.15.0 migration] DOWNGRADE END: 2.15.0-series-column-unique ')
 }
 
-module.exports = { up, down }
+export = { up, down }
