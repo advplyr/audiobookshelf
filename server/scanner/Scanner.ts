@@ -1,86 +1,112 @@
-const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
-const Database = require('../Database')
-const { getTitleIgnorePrefix } = require('../utils/index')
+import Logger from '../Logger'
+import SocketAuthority from '../SocketAuthority'
+import Database from '../Database'
+import { getTitleIgnorePrefix } from '../utils'
 
-// Utils
-const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
+import { findMatchingEpisodesInFeed, getPodcastFeed } from '../utils/podcastUtils'
+import type { RssPodcastEpisode } from '../utils/podcastUtils'
 
-const BookFinder = require('../finders/BookFinder')
-const PodcastFinder = require('../finders/PodcastFinder')
-const LibraryScan = require('./LibraryScan')
-const LibraryScanner = require('./LibraryScanner')
-const CoverManager = require('../managers/CoverManager')
-const TaskManager = require('../managers/TaskManager')
+import BookFinder from '../finders/BookFinder'
+import PodcastFinder from '../finders/PodcastFinder'
+import LibraryScan from './LibraryScan'
+import LibraryScanner from './LibraryScanner'
+import CoverManager from '../managers/CoverManager'
+import TaskManager from '../managers/TaskManager'
+import type Book from '../models/Book'
+import type Library from '../models/Library'
+import type LibraryItem from '../models/LibraryItem'
+import type Podcast from '../models/Podcast'
+import type PodcastEpisode from '../models/PodcastEpisode'
 
-/**
- * @typedef QuickMatchOptions
- * @property {string} [provider]
- * @property {string} [title]
- * @property {string} [author]
- * @property {string} [isbn] - This override is currently unused in Abs clients
- * @property {string} [asin] - This override is currently unused in Abs clients
- * @property {boolean} [overrideCover]
- * @property {boolean} [overrideDetails]
- */
+type QuickMatchOptions = {
+  provider?: string | null
+  title?: string
+  author?: string
+  isbn?: string
+  asin?: string
+  overrideCover?: boolean
+  overrideDetails?: boolean
+}
+type MatchRouter = {
+  checkRemoveAuthorsWithNoBooks(authorIds: string[]): Promise<void>
+  checkRemoveEmptySeries(seriesIds: string[]): Promise<void>
+}
+type BookItem = LibraryItem & { media: Book.BookExpanded }
+type PodcastItem = LibraryItem & { media: Podcast.PodcastExpanded }
+type QuickMatchResult = { warning: string; updated?: never } | {
+  updated: boolean
+  libraryItem: ReturnType<LibraryItem['toOldJSONExpanded']>
+  warning?: never
+}
+type BookFinderResult = NonNullable<Awaited<ReturnType<typeof BookFinder.search>>[number]>
+type PodcastFinderResult = NonNullable<Awaited<ReturnType<typeof PodcastFinder.search>>>[number]
+type BookMatchSeries = { series: string; sequence?: string | null }
+// Some metadata sources still supply these fields as strings.
+type BookMatchData = Omit<BookFinderResult, 'author' | 'series' | 'genres' | 'tags'> & {
+  author?: string | string[] | null
+  series?: string | BookMatchSeries[] | null
+  sequence?: string | null
+  genres?: string | string[] | null
+  tags?: string | string[] | null
+}
+type PodcastMatchData = Omit<PodcastFinderResult, 'genres'> & { genres?: string | string[] | null }
+type MatchPayload = Record<string, string | number | boolean | string[]>
 
 class Scanner {
   constructor() {}
 
-  /**
-   *
-   * @param {import('../routers/ApiRouter')} apiRouterCtx
-   * @param {import('../models/LibraryItem')} libraryItem
-   * @param {QuickMatchOptions} options
-   * @returns {Promise<{updated: boolean, libraryItem: Object}>}
-   */
-  async quickMatchLibraryItem(apiRouterCtx, libraryItem, options = {}) {
+  async quickMatchLibraryItem(apiRouterCtx: MatchRouter, libraryItem: LibraryItem.LibraryItemExpanded, options: QuickMatchOptions = {}): Promise<QuickMatchResult> {
     const provider = options.provider || 'google'
     const searchTitle = options.title || libraryItem.media.title
-    const searchAuthor = options.author || libraryItem.media.authorName
+    const searchAuthor = options.author || (libraryItem.media as Book.BookExpanded | (Podcast.PodcastExpanded & { authorName?: string })).authorName
 
     // If overrideCover and overrideDetails is not sent in options than use the server setting to determine if we should override
-    if (options.overrideCover === undefined && options.overrideDetails === undefined && Database.serverSettings.scannerPreferMatchedMetadata) {
+    if (options.overrideCover === undefined && options.overrideDetails === undefined && Database.serverSettings!.scannerPreferMatchedMetadata) {
       options.overrideCover = true
       options.overrideDetails = true
     }
 
-    let updatePayload = {}
+    let updatePayload: MatchPayload = {}
     let hasUpdated = false
 
     if (libraryItem.isBook) {
-      const searchISBN = options.isbn || libraryItem.media.isbn
-      const searchASIN = options.asin || libraryItem.media.asin
+      // isBook is derived from the same discriminator used to load media.
+      const bookItem = libraryItem as BookItem
+      const bookMedia: Book = bookItem.media
+      const searchISBN = options.isbn || bookMedia.isbn
+      const searchASIN = options.asin || bookMedia.asin
 
-      const results = await BookFinder.search(libraryItem, provider, searchTitle, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
+      const results = await BookFinder.search(bookItem, provider, searchTitle!, searchAuthor, searchISBN, searchASIN, { maxFuzzySearches: 2 })
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
         }
       }
-      const matchData = results[0]
+      const matchData = results[0]!
 
       // Update cover if not set OR overrideCover flag
-      if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
+      if (matchData.cover && (!bookMedia.coverPath || options.overrideCover)) {
         Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
         const coverResult = await CoverManager.downloadCoverFromUrlNew(matchData.cover, libraryItem.id, libraryItem.isFile ? null : libraryItem.path)
         if (coverResult.error) {
           Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult.error}`)
         } else {
-          libraryItem.media.coverPath = coverResult.cover
-          libraryItem.media.changed('coverPath', true) // Cover path may be the same but this forces the update
+          bookMedia.coverPath = coverResult.cover!
+          bookMedia.changed('coverPath', true) // Cover path may be the same but this forces the update
           hasUpdated = true
         }
       }
 
-      const bookBuildUpdateData = await this.quickMatchBookBuildUpdatePayload(apiRouterCtx, libraryItem, matchData, options)
+      const bookBuildUpdateData = await this.quickMatchBookBuildUpdatePayload(apiRouterCtx, bookItem, matchData, options)
       updatePayload = bookBuildUpdateData.updatePayload
       if (bookBuildUpdateData.hasSeriesUpdates || bookBuildUpdateData.hasAuthorUpdates) {
         hasUpdated = true
       }
     } else if (libraryItem.isPodcast) {
       // Podcast quick match
-      const results = await PodcastFinder.search(searchTitle)
+      const podcastItem = libraryItem as PodcastItem
+      const podcastMedia: Podcast = podcastItem.media
+      const results = (await PodcastFinder.search(searchTitle!))!
       if (!results.length) {
         return {
           warning: `No ${provider} match found`
@@ -89,37 +115,42 @@ class Scanner {
       const matchData = results[0]
 
       // Update cover if not set OR overrideCover flag
-      if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
+      if (matchData.cover && (!podcastMedia.coverPath || options.overrideCover)) {
         Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
         const coverResult = await CoverManager.downloadCoverFromUrlNew(matchData.cover, libraryItem.id, libraryItem.path)
         if (coverResult.error) {
           Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult.error}`)
         } else {
-          libraryItem.media.coverPath = coverResult.cover
-          libraryItem.media.changed('coverPath', true) // Cover path may be the same but this forces the update
+          podcastMedia.coverPath = coverResult.cover!
+          podcastMedia.changed('coverPath', true) // Cover path may be the same but this forces the update
           hasUpdated = true
         }
       }
 
-      updatePayload = this.quickMatchPodcastBuildUpdatePayload(libraryItem, matchData, options)
+      updatePayload = this.quickMatchPodcastBuildUpdatePayload(podcastItem, matchData, options)
     }
 
+    // Both media models support the object form of Sequelize's setter.
+    const media: { set(values: MatchPayload): unknown; changed(): string[] | false; save(): Promise<unknown> } = libraryItem.media
     if (Object.keys(updatePayload).length) {
       Logger.debug('[Scanner] Updating details with payload', updatePayload)
-      libraryItem.media.set(updatePayload)
-      if (libraryItem.media.changed()) {
-        Logger.debug(`[Scanner] Updating library item "${libraryItem.media.title}" keys`, libraryItem.media.changed())
+      media.set(updatePayload)
+      if (media.changed()) {
+        Logger.debug(`[Scanner] Updating library item "${libraryItem.media.title}" keys`, media.changed())
         hasUpdated = true
       }
     }
 
     if (hasUpdated) {
-      if (libraryItem.isPodcast && libraryItem.media.feedURL) {
-        // Quick match all unmatched podcast episodes
-        await this.quickMatchPodcastEpisodes(libraryItem, options)
+      if (libraryItem.isPodcast) {
+        const podcastItem = libraryItem as PodcastItem
+        if (podcastItem.media.feedURL) {
+          // Quick match all unmatched podcast episodes
+          await this.quickMatchPodcastEpisodes(podcastItem, options)
+        }
       }
 
-      await libraryItem.media.save()
+      await media.save()
 
       libraryItem.changed('updatedAt', true)
       await libraryItem.save()
@@ -135,15 +166,8 @@ class Scanner {
     }
   }
 
-  /**
-   *
-   * @param {import('../models/LibraryItem')} libraryItem
-   * @param {*} matchData
-   * @param {QuickMatchOptions} options
-   * @returns {Map<string, any>} - Update payload
-   */
-  quickMatchPodcastBuildUpdatePayload(libraryItem, matchData, options) {
-    const updatePayload = {}
+  quickMatchPodcastBuildUpdatePayload(libraryItem: PodcastItem, matchData: PodcastMatchData, options: QuickMatchOptions) {
+    const updatePayload: MatchPayload = {}
 
     const matchDataTransformed = {
       title: matchData.title || null,
@@ -158,11 +182,13 @@ class Scanner {
       description: matchData.descriptionPlain || null
     }
 
-    for (const key in matchDataTransformed) {
-      if (matchDataTransformed[key]) {
+    for (const matchKey in matchDataTransformed) {
+      const key = matchKey as keyof typeof matchDataTransformed
+      const value = matchDataTransformed[key]
+      if (value) {
         if (key === 'genres') {
-          if (!libraryItem.media.genres.length || options.overrideDetails) {
-            var genresArray = []
+          if (!libraryItem.media.genres!.length || options.overrideDetails) {
+            let genresArray: string[]
             if (Array.isArray(matchDataTransformed[key])) genresArray = [...matchDataTransformed[key]]
             else {
               // Genres should always be passed in as an array but just incase handle a string
@@ -174,8 +200,12 @@ class Scanner {
             }
             updatePayload[key] = genresArray
           }
-        } else if (libraryItem.media[key] !== matchDataTransformed[key] && (!libraryItem.media[key] || options.overrideDetails)) {
-          updatePayload[key] = matchDataTransformed[key]
+        } else {
+          // Legacy payload keys such as feedUrl differ from the Sequelize attribute names.
+          const media = libraryItem.media as Podcast.PodcastExpanded & Partial<Record<'itunesPageUrl' | 'imageUrl' | 'feedUrl' | 'itunesArtistId' | 'itunesId', string | number>>
+          if (media[key] !== value && (!media[key] || options.overrideDetails)) {
+            updatePayload[key] = value
+          }
         }
       }
     }
@@ -183,20 +213,13 @@ class Scanner {
     return updatePayload
   }
 
-  /**
-   *
-   * @param {import('../routers/ApiRouter')} apiRouterCtx
-   * @param {import('../models/LibraryItem')} libraryItem
-   * @param {*} matchData
-   * @param {QuickMatchOptions} options
-   * @returns {Promise<{updatePayload: Map<string, any>, seriesIdsRemoved: string[], hasSeriesUpdates: boolean, authorIdsRemoved: string[], hasAuthorUpdates: boolean}>}
-   */
-  async quickMatchBookBuildUpdatePayload(apiRouterCtx, libraryItem, matchData, options) {
+  async quickMatchBookBuildUpdatePayload(apiRouterCtx: MatchRouter, libraryItem: BookItem, matchData: BookMatchData, options: QuickMatchOptions) {
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn']
-    const updatePayload = {}
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn'] as const
+    const updatePayload: MatchPayload = {}
 
-    for (const key in matchData) {
+    for (const detailKey in matchData) {
+      const key = detailKey as (typeof detailKeysToUpdate)[number]
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
           if (!libraryItem.media.narrators?.length || options.overrideDetails) {
@@ -206,8 +229,8 @@ class Scanner {
               .filter((v) => !!v)
           }
         } else if (key === 'genres') {
-          if (!libraryItem.media.genres.length || options.overrideDetails) {
-            let genresArray = []
+          if (!libraryItem.media.genres!.length || options.overrideDetails) {
+            let genresArray: string[]
             if (Array.isArray(matchData[key])) genresArray = [...matchData[key]]
             else {
               // Genres should always be passed in as an array but just incase handle a string
@@ -220,8 +243,8 @@ class Scanner {
             updatePayload[key] = genresArray
           }
         } else if (key === 'tags') {
-          if (!libraryItem.media.tags.length || options.overrideDetails) {
-            let tagsArray = []
+          if (!libraryItem.media.tags!.length || options.overrideDetails) {
+            let tagsArray: string[]
             if (Array.isArray(matchData[key])) tagsArray = [...matchData[key]]
             else
               tagsArray = matchData[key]
@@ -245,11 +268,12 @@ class Scanner {
           .map((au) => au.trim())
           .filter((au) => !!au)
       }
-      const authorIdsRemoved = []
-      for (const authorName of matchData.author) {
-        const existingAuthor = libraryItem.media.authors.find((a) => a.name.toLowerCase() === authorName.toLowerCase())
+      const authorIdsRemoved: string[] = []
+      const matchedAuthors = matchData.author
+      for (const authorName of matchedAuthors) {
+        const existingAuthor = libraryItem.media.authors.find((a) => a.name!.toLowerCase() === authorName.toLowerCase())
         if (!existingAuthor) {
-          let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryItem.libraryId)
+          let author = await Database.authorModel.getByNameAndLibrary(authorName, libraryItem.libraryId!)
           if (!author) {
             author = await Database.authorModel.create({
               name: authorName,
@@ -258,7 +282,7 @@ class Scanner {
             })
             SocketAuthority.emitter('author_added', author.toOldJSON())
             // Update filter data
-            Database.addAuthorToFilterData(libraryItem.libraryId, author.name, author.id)
+            Database.addAuthorToFilterData(libraryItem.libraryId!, author.name, author.id)
           }
           await Database.bookAuthorModel
             .create({
@@ -271,7 +295,7 @@ class Scanner {
               hasAuthorUpdates = true
             })
         }
-        const authorsRemoved = libraryItem.media.authors.filter((a) => !matchData.author.find((ma) => ma.toLowerCase() === a.name.toLowerCase()))
+        const authorsRemoved = libraryItem.media.authors.filter((a) => !matchedAuthors.find((ma) => ma.toLowerCase() === a.name!.toLowerCase()))
         if (authorsRemoved.length) {
           for (const author of authorsRemoved) {
             await Database.bookAuthorModel.destroy({ where: { authorId: author.id, bookId: libraryItem.media.id } })
@@ -293,18 +317,19 @@ class Scanner {
     let hasSeriesUpdates = false
     if (matchData.series && (!libraryItem.media.seriesName || options.overrideDetails)) {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
-      const seriesIdsRemoved = []
-      for (const seriesMatchItem of matchData.series) {
-        const existingSeries = libraryItem.media.series.find((s) => s.name.toLowerCase() === seriesMatchItem.series.toLowerCase())
+      const seriesIdsRemoved: string[] = []
+      const matchedSeries = matchData.series
+      for (const seriesMatchItem of matchedSeries) {
+        const existingSeries = libraryItem.media.series.find((s) => s.name!.toLowerCase() === seriesMatchItem.series.toLowerCase())
         if (existingSeries) {
-          if (existingSeries.bookSeries.sequence !== seriesMatchItem.sequence) {
-            existingSeries.bookSeries.sequence = seriesMatchItem.sequence
-            await existingSeries.bookSeries.save()
+          if (existingSeries.bookSeries!.sequence !== seriesMatchItem.sequence) {
+            Object.assign(existingSeries.bookSeries!, { sequence: seriesMatchItem.sequence })
+            await existingSeries.bookSeries!.save()
             Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Updated series sequence for "${existingSeries.name}" to ${seriesMatchItem.sequence} in "${libraryItem.media.title}"`)
             hasSeriesUpdates = true
           }
         } else {
-          let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId)
+          let seriesItem = await Database.seriesModel.getByNameAndLibrary(seriesMatchItem.series, libraryItem.libraryId!)
           if (!seriesItem) {
             seriesItem = await Database.seriesModel.create({
               name: seriesMatchItem.series,
@@ -312,7 +337,7 @@ class Scanner {
               libraryId: libraryItem.libraryId
             })
             // Update filter data
-            Database.addSeriesToFilterData(libraryItem.libraryId, seriesItem.name, seriesItem.id)
+            Database.addSeriesToFilterData(libraryItem.libraryId!, seriesItem.name!, seriesItem.id)
             SocketAuthority.emitter('series_added', seriesItem.toOldJSON())
           }
           const bookSeries = await Database.bookSeriesModel.create({
@@ -320,15 +345,14 @@ class Scanner {
             bookId: libraryItem.media.id,
             sequence: seriesMatchItem.sequence
           })
-          seriesItem.bookSeries = bookSeries
-          libraryItem.media.series.push(seriesItem)
+          libraryItem.media.series.push(Object.assign(seriesItem, { bookSeries }))
           Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Added series "${seriesItem.name}" to "${libraryItem.media.title}"`)
           hasSeriesUpdates = true
         }
-        const seriesRemoved = libraryItem.media.series.filter((s) => !matchData.series.find((ms) => ms.series.toLowerCase() === s.name.toLowerCase()))
+        const seriesRemoved = libraryItem.media.series.filter((s) => !matchedSeries.find((ms) => ms.series.toLowerCase() === s.name!.toLowerCase()))
         if (seriesRemoved.length) {
           for (const series of seriesRemoved) {
-            await series.bookSeries.destroy()
+            await series.bookSeries!.destroy()
             libraryItem.media.series = libraryItem.media.series.filter((s) => s.id !== series.id)
             seriesIdsRemoved.push(series.id)
             Logger.info(`[Scanner] quickMatchBookBuildUpdatePayload: Removed series "${series.name}" from "${libraryItem.media.title}"`)
@@ -350,18 +374,11 @@ class Scanner {
     }
   }
 
-  /**
-   *
-   * @param {import('../models/LibraryItem')} libraryItem
-   * @param {QuickMatchOptions} options
-   * @returns {Promise<number>} - Number of episodes updated
-   */
-  async quickMatchPodcastEpisodes(libraryItem, options = {}) {
-    /** @type {import('../models/PodcastEpisode')[]} */
+  async quickMatchPodcastEpisodes(libraryItem: PodcastItem, options: QuickMatchOptions = {}) {
     const episodesToQuickMatch = libraryItem.media.podcastEpisodes.filter((ep) => !ep.enclosureURL) // Only quick match episodes that are not already matched
     if (!episodesToQuickMatch.length) return 0
 
-    const feed = await getPodcastFeed(libraryItem.media.feedURL)
+    const feed = await getPodcastFeed(libraryItem.media.feedURL!)
     if (!feed) {
       Logger.error(`[Scanner] quickMatchPodcastEpisodes: Unable to quick match episodes feed not found for "${libraryItem.media.feedURL}"`)
       return 0
@@ -369,7 +386,7 @@ class Scanner {
 
     let numEpisodesUpdated = 0
     for (const episode of episodesToQuickMatch) {
-      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title, 0.1)
+      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title!, 0.1)
       if (episodeMatches?.length) {
         const wasUpdated = await this.updateEpisodeWithMatch(episode, episodeMatches[0].episode, options)
         if (wasUpdated) numEpisodesUpdated++
@@ -381,14 +398,7 @@ class Scanner {
     return numEpisodesUpdated
   }
 
-  /**
-   *
-   * @param {import('../models/PodcastEpisode')} episode
-   * @param {import('../utils/podcastUtils').RssPodcastEpisode} episodeToMatch
-   * @param {QuickMatchOptions} options
-   * @returns {Promise<boolean>} - true if episode was updated
-   */
-  async updateEpisodeWithMatch(episode, episodeToMatch, options = {}) {
+  async updateEpisodeWithMatch(episode: PodcastEpisode, episodeToMatch: RssPodcastEpisode, options: QuickMatchOptions = {}) {
     Logger.debug(`[Scanner] quickMatchPodcastEpisodes: Found episode match for "${episode.title}" => ${episodeToMatch.title}`)
     const matchDataTransformed = {
       title: episodeToMatch.title || '',
@@ -403,11 +413,13 @@ class Scanner {
       pubDate: episodeToMatch.pubDate || '',
       publishedAt: episodeToMatch.publishedAt
     }
-    const updatePayload = {}
-    for (const key in matchDataTransformed) {
-      if (matchDataTransformed[key]) {
-        if (episode[key] !== matchDataTransformed[key] && (!episode[key] || options.overrideDetails)) {
-          updatePayload[key] = matchDataTransformed[key]
+    const updatePayload: MatchPayload = {}
+    for (const matchKey in matchDataTransformed) {
+      const key = matchKey as keyof typeof matchDataTransformed
+      const value = matchDataTransformed[key]
+      if (value) {
+        if (episode[key] !== value && (!episode[key] || options.overrideDetails)) {
+          updatePayload[key] = value
         }
       }
     }
@@ -426,22 +438,17 @@ class Scanner {
   /**
    * Quick match library items
    *
-   * @param {import('../routers/ApiRouter')} apiRouterCtx
-   * @param {import('../models/Library')} library
-   * @param {import('../models/LibraryItem')[]} libraryItems
-   * @param {LibraryScan} libraryScan
-   * @returns {Promise<boolean>} false if scan canceled
    */
-  async matchLibraryItemsChunk(apiRouterCtx, library, libraryItems, libraryScan) {
+  async matchLibraryItemsChunk(apiRouterCtx: MatchRouter, library: Library, libraryItems: BookItem[], libraryScan: LibraryScan) {
     for (let i = 0; i < libraryItems.length; i++) {
       const libraryItem = libraryItems[i]
 
-      if (libraryItem.media.asin && library.settings.skipMatchingMediaWithAsin) {
+      if (libraryItem.media.asin && library.settings!.skipMatchingMediaWithAsin) {
         Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.title}" because it already has an ASIN (${i + 1} of ${libraryItems.length})`)
         continue
       }
 
-      if (libraryItem.media.isbn && library.settings.skipMatchingMediaWithIsbn) {
+      if (libraryItem.media.isbn && library.settings!.skipMatchingMediaWithIsbn) {
         Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.title}" because it already has an ISBN (${i + 1} of ${libraryItems.length})`)
         continue
       }
@@ -466,10 +473,8 @@ class Scanner {
   /**
    * Quick match all library items for library
    *
-   * @param {import('../routers/ApiRouter')} apiRouterCtx
-   * @param {import('../models/Library')} library
    */
-  async matchLibraryItems(apiRouterCtx, library) {
+  async matchLibraryItems(apiRouterCtx: MatchRouter, library: Library) {
     if (library.mediaType === 'podcast') {
       Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
       return
@@ -500,7 +505,8 @@ class Scanner {
     let hasMoreChunks = true
     let isCanceled = false
     while (hasMoreChunks) {
-      const libraryItems = await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })
+      // The batch query includes books, authors and series and sets the media association.
+      const libraryItems = (await Database.libraryItemModel.getLibraryItemsIncrement(offset, limit, { libraryId: library.id })) as BookItem[]
       if (!libraryItems.length) {
         break
       }
@@ -526,7 +532,7 @@ class Scanner {
     } else {
       libraryScan.setComplete()
 
-      task.data.scanResults = libraryScan.scanResults
+      task.data!.scanResults = libraryScan.scanResults
       if (isCanceled) {
         const taskFinishedString = {
           text: 'Task canceled by user',
@@ -543,4 +549,4 @@ class Scanner {
     TaskManager.taskFinished(task)
   }
 }
-module.exports = new Scanner()
+export = new Scanner()
