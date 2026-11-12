@@ -446,7 +446,7 @@ class CollectionController {
     if (req.method == 'DELETE' && !req.params.bookId && !req.user.canDelete) {
       Logger.warn(`[CollectionController] User "${req.user.username}" attempted to delete without permission`)
       return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+    } else if ((req.method == 'PATCH' || req.method == 'POST' || (req.method == 'DELETE' && req.params.bookId)) && !req.user.canUpdate) {
       Logger.warn(`[CollectionController] User "${req.user.username}" attempted to update without permission`)
       return res.sendStatus(403)
     }
