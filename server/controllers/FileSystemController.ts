@@ -1,27 +1,18 @@
-const { Request, Response } = require('express')
-const Path = require('path')
-const Logger = require('../Logger')
-const fs = require('../libs/fsExtra')
-const { toNumber } = require('../utils/index')
-const fileUtils = require('../utils/fileUtils')
-const Database = require('../Database')
+import type { Request, Response } from 'express'
+import type User from '../models/User'
+import Path from 'path'
+import Logger from '../Logger'
+import fs from '../libs/fsExtra'
+import { toNumber } from '../utils/index'
+import fileUtils from '../utils/fileUtils'
+import Database from '../Database'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type FileSystemRequest = Request<Record<string, string>, unknown, { directory?: string; folderPath?: string }, { path?: string; level?: string }> & { user: User }
 
 class FileSystemController {
   constructor() {}
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   */
-  async getPaths(req, res) {
+  async getPaths(req: FileSystemRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[FileSystemController] Non-admin user "${req.user.username}" attempting to get filesystem paths`)
       return res.sendStatus(403)
@@ -37,7 +28,7 @@ class FileSystemController {
     }
     Logger.debug(`[FileSystemController] Getting file paths at ${relpath || 'root'} (${level})`)
 
-    let directories = []
+    let directories: Awaited<ReturnType<typeof fileUtils.getDirectoriesInPath>> = []
 
     // Windows returns drives first
     if (global.isWin) {
@@ -78,11 +69,8 @@ class FileSystemController {
 
   /**
    * POST: /api/filesystem/pathexists
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async checkPathExists(req, res) {
+  async checkPathExists(req: FileSystemRequest, res: Response) {
     if (!req.user.canUpload) {
       Logger.error(`[FileSystemController] User "${req.user.username}" without upload permissions attempting to check path exists`)
       return res.sendStatus(403)
@@ -113,11 +101,11 @@ class FileSystemController {
       return res.sendStatus(403)
     }
 
-    let filepath = Path.join(libraryFolder.path, directory)
+    let filepath = Path.join(libraryFolder.path!, directory)
     filepath = fileUtils.filePathToPOSIX(filepath)
 
     // Ensure filepath is inside library folder (prevents directory traversal)
-    if (!fileUtils.isSameOrSubPath(libraryFolder.path, filepath)) {
+    if (!fileUtils.isSameOrSubPath(libraryFolder.path!, filepath)) {
       Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
       return res.sendStatus(400)
     }
@@ -159,4 +147,4 @@ class FileSystemController {
     })
   }
 }
-module.exports = new FileSystemController()
+export = new FileSystemController()

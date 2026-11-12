@@ -1,6 +1,10 @@
 import type ServerSettings from '../objects/settings/ServerSettings'
 
 declare global {
+  // Set by the entry point before the server starts handling requests.
+  var appRoot: string
+  var XAccel: string | undefined
+
   // Server startup sets the configuration directory before Database.init.
   var ConfigPath: string | undefined
 
