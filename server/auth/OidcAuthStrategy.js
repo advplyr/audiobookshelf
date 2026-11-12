@@ -393,7 +393,15 @@ class OidcAuthStrategy {
    * @returns {string|null}
    */
   getEndSessionUrl(req, idToken, authMethod) {
-    const client = this.getClient()
+    // Logout trusts the auth_method cookie. getClient() throws when OpenID is not
+    // configured, and that throw is outside the request promise, so it exits the process.
+    let client
+    try {
+      client = this.getClient()
+    } catch (error) {
+      Logger.error(`[OidcAuth] Cannot build end session URL - ${error.message}`)
+      return null
+    }
 
     if (client.issuer.end_session_endpoint && client.issuer.end_session_endpoint.length > 0) {
       let postLogoutRedirectUri = null
