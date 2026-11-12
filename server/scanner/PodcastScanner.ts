@@ -28,7 +28,7 @@ type PodcastScanMetadata = Partial<Pick<PodcastWithMetadata, 'titleIgnorePrefix'
 class PodcastScanner {
   constructor() {}
 
-  async rescanExistingPodcastLibraryItem(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
+  async rescanExistingPodcastLibraryItem(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: Pick<LibraryScan, 'addLog'>) {
     // The item scanner dispatches podcast items here and the query includes their episodes.
     const media = (await existingLibraryItem.getMedia({
       include: [
@@ -253,7 +253,7 @@ class PodcastScanner {
     }
   }
 
-  async scanNewPodcastLibraryItem(libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
+  async scanNewPodcastLibraryItem(libraryItemData: LibraryItemScanData, _librarySettings: Library.LibrarySettingsObject, libraryScan: Pick<LibraryScan, 'addLog'>) {
     // Scan audio files found
     const scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryItemData.mediaType, libraryItemData, libraryItemData.audioLibraryFiles)
 
@@ -355,7 +355,7 @@ class PodcastScanner {
     return libraryItem
   }
 
-  async getPodcastMetadataFromScanData(podcastEpisodes: Pick<PodcastEpisode, 'audioFile'>[], libraryItemData: LibraryItemScanData, libraryScan: LibraryScan, existingLibraryItemId: string | null = null) {
+  async getPodcastMetadataFromScanData(podcastEpisodes: Pick<PodcastEpisode, 'audioFile'>[], libraryItemData: LibraryItemScanData, libraryScan: Pick<LibraryScan, 'addLog'>, existingLibraryItemId: string | null = null) {
     const podcastMetadata: PodcastScanMetadata = {
       title: libraryItemData.mediaMetadata.title,
       titleIgnorePrefix: undefined,
@@ -391,7 +391,7 @@ class PodcastScanner {
     return podcastMetadata
   }
 
-  async saveMetadataFile(libraryItem: LibraryItem, libraryScan: LibraryScan) {
+  async saveMetadataFile(libraryItem: LibraryItem, libraryScan: Pick<LibraryScan, 'addLog'>) {
     let metadataPath = Path.join(global.MetadataPath!, 'items', libraryItem.id)
     let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
     if (storeMetadataWithItem) {

@@ -33,6 +33,7 @@ import type Library from '../models/Library'
 import type LibraryItem from '../models/LibraryItem'
 import type LibraryItemScanData from './LibraryItemScanData'
 import type LibraryScan from './LibraryScan'
+import type ScanLogger from './ScanLogger'
 import type { OpfMetadataResult } from '../utils/parsers/parseOpfMetadata'
 
 type BookScanMetadata = Partial<Pick<Book, 'titleIgnorePrefix' | 'subtitle' | 'publishedYear' | 'publishedDate' | 'publisher' | 'description' | 'isbn' | 'asin' | 'language' | 'explicit' | 'abridged' | 'coverPath'>> & {
@@ -54,7 +55,7 @@ type CreatedBook = Book & {
 class BookScanner {
   constructor() {}
 
-  async rescanExistingBookLibraryItem(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
+  async rescanExistingBookLibraryItem(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan | ScanLogger) {
     // The item scanner dispatches book items here, and the query loads author and series associations.
     const media = (await existingLibraryItem.getMedia({
       include: [
@@ -434,7 +435,7 @@ class BookScanner {
     }
   }
 
-  async scanNewBookLibraryItem(libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan) {
+  async scanNewBookLibraryItem(libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: LibraryScan | ScanLogger) {
     // Scan audio files found
     let scannedAudioFiles = await AudioFileScanner.executeMediaFileScans(libraryItemData.mediaType, libraryItemData, libraryItemData.audioLibraryFiles)
     scannedAudioFiles = AudioFileScanner.runSmartTrackOrder(libraryItemData.relPath, scannedAudioFiles)
@@ -639,7 +640,7 @@ class BookScanner {
     return libraryItem
   }
 
-  async getBookMetadataFromScanData(audioFiles: Book.AudioFileObject[], ebookFileScanData: parseEbookMetadata.EBookFileScanData | null, libraryItemData: LibraryItemScanData, libraryScan: LibraryScan, librarySettings: Library.LibrarySettingsObject, existingLibraryItemId: string | null = null) {
+  async getBookMetadataFromScanData(audioFiles: Book.AudioFileObject[], ebookFileScanData: parseEbookMetadata.EBookFileScanData | null, libraryItemData: LibraryItemScanData, libraryScan: LibraryScan | ScanLogger, librarySettings: Library.LibrarySettingsObject, existingLibraryItemId: string | null = null) {
     // First set book metadata from folder/file names
     const bookMetadata: BookScanMetadata = {
       title: libraryItemData.mediaMetadata.title, // required
@@ -694,10 +695,10 @@ class BookScanner {
     declare audioFiles: Book.AudioFileObject[]
     declare ebookFileScanData: parseEbookMetadata.EBookFileScanData | null
     declare libraryItemData: LibraryItemScanData
-    declare libraryScan: LibraryScan
+    declare libraryScan: LibraryScan | ScanLogger
     declare existingLibraryItemId: string | null
 
-    constructor(bookMetadata: BookScanMetadata, audioFiles: Book.AudioFileObject[], ebookFileScanData: parseEbookMetadata.EBookFileScanData | null, libraryItemData: LibraryItemScanData, libraryScan: LibraryScan, existingLibraryItemId: string | null) {
+    constructor(bookMetadata: BookScanMetadata, audioFiles: Book.AudioFileObject[], ebookFileScanData: parseEbookMetadata.EBookFileScanData | null, libraryItemData: LibraryItemScanData, libraryScan: LibraryScan | ScanLogger, existingLibraryItemId: string | null) {
       this.bookMetadata = bookMetadata
       this.audioFiles = audioFiles
       this.ebookFileScanData = ebookFileScanData
@@ -798,7 +799,7 @@ class BookScanner {
     }
   }
 
-  async saveMetadataFile(libraryItem: LibraryItem, libraryScan: LibraryScan) {
+  async saveMetadataFile(libraryItem: LibraryItem, libraryScan: LibraryScan | ScanLogger) {
     let metadataPath = Path.join(global.MetadataPath!, 'items', libraryItem.id)
     let storeMetadataWithItem = global.ServerSettings.storeMetadataWithItem
     if (storeMetadataWithItem && !libraryItem.isFile) {
@@ -980,7 +981,7 @@ class BookScanner {
   /**
    * Search cover provider for matching cover
    */
-  async searchForCover(libraryItemId: string, libraryItemPath: string | null, title: string | null, author: string, libraryScan: LibraryScan) {
+  async searchForCover(libraryItemId: string, libraryItemPath: string | null, title: string | null, author: string, libraryScan: LibraryScan | ScanLogger) {
     const options = {
       titleDistance: 2,
       authorDistance: 2

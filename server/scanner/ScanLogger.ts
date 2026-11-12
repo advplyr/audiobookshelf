@@ -35,7 +35,7 @@ class ScanLogger {
     }
   }
 
-  setData(type: string, name: string) {
+  setData(type: string, name: string | null) {
     this.id = uuidv4()
     this.type = type
     this.name = name

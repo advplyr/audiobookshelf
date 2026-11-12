@@ -12,7 +12,7 @@ import type { BookFilenameMetadata, LibraryItemFilenameMetadata } from '../types
 type StoredLibraryFile = NonNullable<LibraryItem['libraryFiles']>[number]
 
 /** A library file found by the scanner. Its metadata is always filled in from the file path */
-type ScannedFileMetadata = FileMetadata & { filename: string; ext: string; path: string; relPath: string; size: number }
+type ScannedFileMetadata = FileMetadata & { filename: string; ext: string; path: string; relPath: string }
 type ScannedLibraryFile = LibraryFile & { metadata: ScannedFileMetadata }
 
 interface LibraryFileModifiedObject {
@@ -23,8 +23,8 @@ interface LibraryFileModifiedObject {
 interface LibraryItemScanDataInput {
   libraryFolderId: string
   libraryId: string
-  mediaType: string
-  ino: string
+  mediaType: string | null
+  ino: string | undefined
   mtimeMs: number
   ctimeMs: number
   birthtimeMs: number
@@ -38,8 +38,8 @@ interface LibraryItemScanDataInput {
 class LibraryItemScanData {
   libraryFolderId: string
   libraryId: string
-  mediaType: string
-  ino: string
+  mediaType: string | null
+  ino: string | undefined
   mtimeMs: number
   ctimeMs: number
   birthtimeMs: number
@@ -181,7 +181,7 @@ class LibraryItemScanData {
   /**
    * @returns true if changes found
    */
-  async checkLibraryItemData(existingLibraryItem: LibraryItem, libraryScan: LibraryScan): Promise<boolean> {
+  async checkLibraryItemData(existingLibraryItem: LibraryItem, libraryScan: Pick<LibraryScan, 'addLog'>): Promise<boolean> {
     const keysToCompare = ['libraryFolderId', 'ino', 'path', 'relPath', 'isFile'] as const
     this.hasChanges = false
     this.hasPathChange = false
@@ -289,7 +289,7 @@ class LibraryItemScanData {
    *
    * @returns false if no changes
    */
-  compareUpdateLibraryFile(libraryItemPath: string | null, existingLibraryFile: StoredLibraryFile, scannedLibraryFile: ScannedLibraryFile, libraryScan: LibraryScan): boolean {
+  compareUpdateLibraryFile(libraryItemPath: string | null, existingLibraryFile: StoredLibraryFile, scannedLibraryFile: ScannedLibraryFile, libraryScan: Pick<LibraryScan, 'addLog'>): boolean {
     let hasChanges = false
 
     if (existingLibraryFile.ino !== scannedLibraryFile.ino) {

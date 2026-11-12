@@ -215,7 +215,7 @@ class AudioFileScanner {
    * Set book metadata & chapters from audio file meta tags
    *
    */
-  setBookMetadataFromAudioMetaTags(bookTitle: string, audioFiles: ScannedAudioFile[], bookMetadata: BookMetadata, libraryScan: LibraryScan) {
+  setBookMetadataFromAudioMetaTags(bookTitle: string, audioFiles: ScannedAudioFile[], bookMetadata: BookMetadata, libraryScan: Pick<LibraryScan, 'addLog'>) {
     const MetadataMapArray: { tag: Tag; altTag?: Tag; key: Exclude<keyof BookMetadata, 'chapters'> }[] = [
       {
         tag: 'tagComposer',
@@ -352,7 +352,7 @@ class AudioFileScanner {
    * Set podcast metadata from first audio file
    *
    */
-  setPodcastMetadataFromAudioMetaTags(audioFile: ScannedAudioFile, podcastMetadata: PodcastMetadata, libraryScan: LibraryScan) {
+  setPodcastMetadataFromAudioMetaTags(audioFile: ScannedAudioFile, podcastMetadata: PodcastMetadata, libraryScan: Pick<LibraryScan, 'addLog'>) {
     const audioFileMetaTags = audioFile.metaTags!
 
     const MetadataMapArray: { tag: Tag; altTag?: Tag; key: keyof PodcastMetadata }[] = [
@@ -476,7 +476,7 @@ class AudioFileScanner {
     })
   }
 
-  getBookChaptersFromAudioFiles(bookTitle: string, audioFiles: ScannedAudioFile[], libraryScan: LibraryScan): Book.ChapterObject[] {
+  getBookChaptersFromAudioFiles(bookTitle: string, audioFiles: ScannedAudioFile[], libraryScan: Pick<LibraryScan, 'addLog'>): Book.ChapterObject[] {
     // If overdrive media markers are present then use those instead
     const overdriveChapters = parseOverdriveMediaMarkersAsChapters(audioFiles)
     if (overdriveChapters?.length) {

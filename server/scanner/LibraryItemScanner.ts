@@ -1,20 +1,25 @@
-const Path = require('path')
-const { LogLevel, ScanResult } = require('../utils/constants')
+import Path from 'path'
+import { LogLevel, ScanResult } from '../utils/constants'
 
-const fileUtils = require('../utils/fileUtils')
-const scanUtils = require('../utils/scandir')
-const libraryFilters = require('../utils/queries/libraryFilters')
-const Logger = require('../Logger')
-const Database = require('../Database')
-const Watcher = require('../Watcher')
-const LibraryScan = require('./LibraryScan')
-const LibraryItemScanData = require('./LibraryItemScanData')
-const BookScanner = require('./BookScanner')
-const PodcastScanner = require('./PodcastScanner')
-const ScanLogger = require('./ScanLogger')
-const LibraryItem = require('../models/LibraryItem')
-const LibraryFile = require('../objects/files/LibraryFile')
-const SocketAuthority = require('../SocketAuthority')
+import fileUtils from '../utils/fileUtils'
+import scanUtils from '../utils/scandir'
+import libraryFilters from '../utils/queries/libraryFilters'
+import Logger from '../Logger'
+import Database from '../Database'
+import Watcher from '../Watcher'
+import LibraryItemScanData from './LibraryItemScanData'
+import BookScanner from './BookScanner'
+import PodcastScanner from './PodcastScanner'
+import ScanLogger from './ScanLogger'
+import LibraryFile from '../objects/files/LibraryFile'
+import SocketAuthority from '../SocketAuthority'
+import type Library from '../models/Library'
+import type LibraryFolder from '../models/LibraryFolder'
+import type LibraryItem from '../models/LibraryItem'
+import type LibraryScan from './LibraryScan'
+
+type UpdatedLibraryItemDetails = { path?: string; relPath?: string; libraryFolderId?: string; isFile?: boolean }
+type ScannedLibraryFile = LibraryItemScanData['libraryFiles'][number]
 
 class LibraryItemScanner {
   constructor() {}
@@ -22,11 +27,8 @@ class LibraryItemScanner {
   /**
    * Scan single library item
    *
-   * @param {string} libraryItemId
-   * @param {{relPath:string, path:string}} [updateLibraryItemDetails] used by watcher when item folder was renamed
-   * @returns {number} ScanResult
    */
-  async scanLibraryItem(libraryItemId, updateLibraryItemDetails = null) {
+  async scanLibraryItem(libraryItemId: string, updateLibraryItemDetails: UpdatedLibraryItemDetails | null = null) {
     // TODO: Add task manager
     const libraryItem = await Database.libraryItemModel.findByPk(libraryItemId)
     if (!libraryItem) {
@@ -35,7 +37,7 @@ class LibraryItemScanner {
     }
 
     const libraryFolderId = updateLibraryItemDetails?.libraryFolderId || libraryItem.libraryFolderId
-    const library = await Database.libraryModel.findByPk(libraryItem.libraryId, {
+    const library = await Database.libraryModel.findByPk(libraryItem.libraryId!, {
       include: {
         model: Database.libraryFolderModel,
         where: {
@@ -50,19 +52,19 @@ class LibraryItemScanner {
 
     // Make sure library filter data is set
     //   this is used to check for existing authors & series
-    await libraryFilters.getFilterData(library.mediaType, library.id)
+    await libraryFilters.getFilterData(library.mediaType!, library.id)
 
     const scanLogger = new ScanLogger()
     scanLogger.verbose = true
     scanLogger.setData('libraryItem', updateLibraryItemDetails?.relPath || libraryItem.relPath)
 
-    const libraryItemPath = updateLibraryItemDetails?.path || fileUtils.filePathToPOSIX(libraryItem.path)
-    const folder = library.libraryFolders[0]
+    const libraryItemPath = updateLibraryItemDetails?.path || fileUtils.filePathToPOSIX(libraryItem.path!)
+    const folder = library.libraryFolders![0]
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, updateLibraryItemDetails?.isFile || false)
 
-    let libraryItemDataUpdated = await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)
+    const libraryItemDataUpdated = await libraryItemScanData.checkLibraryItemData(libraryItem, scanLogger)
 
-    const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings, scanLogger)
+    const { libraryItem: expandedLibraryItem, wasUpdated } = await this.rescanLibraryItemMedia(libraryItem, libraryItemScanData, library.settings!, scanLogger)
     if (libraryItemDataUpdated || wasUpdated) {
       SocketAuthority.libraryItemEmitter('item_updated', expandedLibraryItem)
 
@@ -77,11 +79,8 @@ class LibraryItemScanner {
 
   /**
    * Emit author book count updates, then remove empty authors/series left after the scan
-   * @param {string} libraryId
-   * @param {ScanLogger} scanLogger
-   * @returns {Promise}
    */
-  async finalizeAuthorsAndSeriesFromScan(libraryId, scanLogger) {
+  async finalizeAuthorsAndSeriesFromScan(libraryId: string, scanLogger: ScanLogger | LibraryScan) {
     await BookScanner.emitAuthorsNumBooksUpdated(libraryId, scanLogger)
     if (scanLogger.authorsRemovedFromBooks.length) {
       await BookScanner.checkAuthorsRemovedFromBooks(libraryId, scanLogger)
@@ -91,21 +90,13 @@ class LibraryItemScanner {
     }
   }
 
-  /**
-   *
-   * @param {string} libraryItemPath
-   * @param {import('../models/Library')} library
-   * @param {import('../models/LibraryFolder')} folder
-   * @param {boolean} isSingleMediaItem
-   * @returns {Promise<LibraryItemScanData>}
-   */
-  async getLibraryItemScanData(libraryItemPath, library, folder, isSingleMediaItem) {
-    const libraryFolderPath = fileUtils.filePathToPOSIX(folder.path)
+  async getLibraryItemScanData(libraryItemPath: string, library: Library, folder: LibraryFolder, isSingleMediaItem: boolean) {
+    const libraryFolderPath = fileUtils.filePathToPOSIX(folder.path!)
     const libraryItemDir = libraryItemPath.replace(libraryFolderPath, '').slice(1)
 
-    let libraryItemData = {}
+    let libraryItemData: ReturnType<typeof scanUtils.getDataFromMediaDir>
 
-    let fileItems = []
+    let fileItems: Pick<Awaited<ReturnType<typeof fileUtils.recurseFiles>>[number], 'fullpath' | 'path'>[]
 
     if (isSingleMediaItem) {
       // Single media item in root of folder
@@ -124,10 +115,10 @@ class LibraryItemScanner {
       }
     } else {
       fileItems = await fileUtils.recurseFiles(libraryItemPath)
-      libraryItemData = scanUtils.getDataFromMediaDir(library.mediaType, libraryFolderPath, libraryItemDir)
+      libraryItemData = scanUtils.getDataFromMediaDir(library.mediaType!, libraryFolderPath, libraryItemDir)
     }
 
-    const libraryFiles = []
+    const libraryFiles: ScannedLibraryFile[] = []
     for (let i = 0; i < fileItems.length; i++) {
       const fileItem = fileItems[i]
 
@@ -140,7 +131,8 @@ class LibraryItemScanner {
       const newLibraryFile = new LibraryFile()
       // fileItem.path is the relative path
       await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
-      libraryFiles.push(newLibraryFile)
+      // setDataFromPath always fills the path fields, even if the stat fails.
+      libraryFiles.push(newLibraryFile as ScannedLibraryFile)
     }
 
     const libraryItemStats = await fileUtils.getFileTimestampsWithIno(libraryItemData.path)
@@ -148,27 +140,19 @@ class LibraryItemScanner {
       libraryFolderId: folder.id,
       libraryId: library.id,
       mediaType: library.mediaType,
-      ino: libraryItemStats.ino,
-      mtimeMs: libraryItemStats.mtimeMs || 0,
-      ctimeMs: libraryItemStats.ctimeMs || 0,
-      birthtimeMs: libraryItemStats.birthtimeMs || 0,
+      ino: libraryItemStats ? libraryItemStats.ino : undefined,
+      mtimeMs: (libraryItemStats && libraryItemStats.mtimeMs) || 0,
+      ctimeMs: (libraryItemStats && libraryItemStats.ctimeMs) || 0,
+      birthtimeMs: (libraryItemStats && libraryItemStats.birthtimeMs) || 0,
       path: libraryItemData.path,
       relPath: libraryItemData.relPath,
       isFile: isSingleMediaItem,
-      mediaMetadata: libraryItemData.mediaMetadata || null,
+      mediaMetadata: libraryItemData.mediaMetadata,
       libraryFiles
     })
   }
 
-  /**
-   *
-   * @param {import('../models/LibraryItem')} existingLibraryItem
-   * @param {LibraryItemScanData} libraryItemData
-   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {LibraryScan} libraryScan
-   * @returns {Promise<{libraryItem:LibraryItem, wasUpdated:boolean}>}
-   */
-  rescanLibraryItemMedia(existingLibraryItem, libraryItemData, librarySettings, libraryScan) {
+  rescanLibraryItemMedia(existingLibraryItem: LibraryItem, libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: ScanLogger | LibraryScan) {
     if (existingLibraryItem.mediaType === 'book') {
       return BookScanner.rescanExistingBookLibraryItem(existingLibraryItem, libraryItemData, librarySettings, libraryScan)
     } else {
@@ -176,14 +160,7 @@ class LibraryItemScanner {
     }
   }
 
-  /**
-   *
-   * @param {LibraryItemScanData} libraryItemData
-   * @param {import('../models/Library').LibrarySettingsObject} librarySettings
-   * @param {LibraryScan} libraryScan
-   * @returns {Promise<LibraryItem>}
-   */
-  async scanNewLibraryItem(libraryItemData, librarySettings, libraryScan) {
+  async scanNewLibraryItem(libraryItemData: LibraryItemScanData, librarySettings: Library.LibrarySettingsObject, libraryScan: ScanLogger | LibraryScan) {
     let newLibraryItem = null
     if (libraryItemData.mediaType === 'book') {
       newLibraryItem = await BookScanner.scanNewBookLibraryItem(libraryItemData, librarySettings, libraryScan)
@@ -198,13 +175,8 @@ class LibraryItemScanner {
 
   /**
    * Scan library item folder coming from Watcher
-   * @param {string} libraryItemPath
-   * @param {import('../models/Library')} library
-   * @param {import('../models/LibraryFolder')} folder
-   * @param {boolean} isSingleMediaItem
-   * @returns {Promise<LibraryItem>} ScanResult
    */
-  async scanPotentialNewLibraryItem(libraryItemPath, library, folder, isSingleMediaItem) {
+  async scanPotentialNewLibraryItem(libraryItemPath: string, library: Library, folder: LibraryFolder, isSingleMediaItem: boolean) {
     const libraryItemScanData = await this.getLibraryItemScanData(libraryItemPath, library, folder, isSingleMediaItem)
 
     if (!libraryItemScanData.libraryFiles.length) {
@@ -216,10 +188,10 @@ class LibraryItemScanner {
     scanLogger.verbose = true
     scanLogger.setData('libraryItem', libraryItemScanData.relPath)
 
-    const newLibraryItem = await this.scanNewLibraryItem(libraryItemScanData, library.settings, scanLogger)
+    const newLibraryItem = await this.scanNewLibraryItem(libraryItemScanData, library.settings!, scanLogger)
     // Watcher path does not go through full-library scan cleanup — emit author book count updates here
     await BookScanner.emitAuthorsNumBooksUpdated(library.id, scanLogger)
     return newLibraryItem
   }
 }
-module.exports = new LibraryItemScanner()
+export = new LibraryItemScanner()

@@ -15,7 +15,7 @@ class AbsMetadataFileScanner {
   /**
    * Check for metadata.json file and set book metadata
    */
-  async scanBookMetadataFile(libraryScan: LibraryScan, libraryItemData: LibraryItemScanData, bookMetadata: Record<string, unknown>, existingLibraryItemId: string | null = null) {
+  async scanBookMetadataFile(libraryScan: Pick<LibraryScan, 'addLog'>, libraryItemData: LibraryItemScanData, bookMetadata: Record<string, unknown>, existingLibraryItemId: string | null = null) {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
     let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     let metadataFilePath = metadataLibraryFile?.metadata.path
@@ -50,7 +50,7 @@ class AbsMetadataFileScanner {
   /**
    * Check for metadata.json file and set podcast metadata
    */
-  async scanPodcastMetadataFile(libraryScan: LibraryScan, libraryItemData: LibraryItemScanData, podcastMetadata: Record<string, unknown>, existingLibraryItemId: string | null = null) {
+  async scanPodcastMetadataFile(libraryScan: Pick<LibraryScan, 'addLog'>, libraryItemData: LibraryItemScanData, podcastMetadata: Record<string, unknown>, existingLibraryItemId: string | null = null) {
     const metadataLibraryFile = libraryItemData.metadataJsonLibraryFile
     let metadataText = metadataLibraryFile ? await readTextFile(metadataLibraryFile.metadata.path) : null
     let metadataFilePath = metadataLibraryFile?.metadata.path
