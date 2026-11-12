@@ -387,7 +387,7 @@ class PlaylistController {
     for (const item of req.body.items) {
       const libraryItem = libraryItems.find((li) => li.id === item.libraryItemId)
 
-      const mediaItemId = item.episodeId || libraryItem!.media!.id
+      const mediaItemId = item.episodeId || libraryItem!.media.id
       if (req.playlist.playlistMediaItems.some((pmi) => pmi.mediaItemId === mediaItemId)) {
         // Already exists in playlist
         continue
