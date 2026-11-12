@@ -1,25 +1,21 @@
-const { Request, Response, NextFunction } = require('express')
-const uuidv4 = require('uuid').v4
-const Logger = require('../Logger')
-const Database = require('../Database')
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type Auth from '../Auth'
+import { v4 as uuidv4 } from 'uuid'
+import Logger from '../Logger'
+import Database from '../Database'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type RequestWithUser = Request & { user: User }
+type ApiKeyRequest = Request<Record<string, string>, unknown, { name?: string; expiresIn?: number; userId?: string | number | boolean | null; isActive?: boolean }> & { user: User }
+type ApiKeyContext = { auth: Auth }
 
 class ApiKeyController {
   constructor() {}
 
   /**
    * GET: /api/api-keys
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAll(req, res) {
+  async getAll(_req: RequestWithUser, res: Response) {
     const apiKeys = await Database.apiKeyModel.findAll({
       include: [
         {
@@ -41,13 +37,8 @@ class ApiKeyController {
 
   /**
    * POST: /api/api-keys
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async create(req, res) {
+  async create(this: ApiKeyContext, req: ApiKeyRequest, res: Response) {
     if (!req.body.name || typeof req.body.name !== 'string') {
       Logger.warn(`[ApiKeyController] create: Invalid name: ${req.body.name}`)
       return res.sendStatus(400)
@@ -71,7 +62,7 @@ class ApiKeyController {
     }
 
     const keyId = uuidv4() // Generate key id ahead of time to use in JWT
-    const apiKey = await Database.apiKeyModel.generateApiKey(this.auth.tokenManager.TokenSecret, keyId, req.body.name, req.body.expiresIn)
+    const apiKey = await Database.apiKeyModel.generateApiKey(this.auth.tokenManager.TokenSecret!, keyId, req.body.name, req.body.expiresIn)
 
     if (!apiKey) {
       Logger.error(`[ApiKeyController] create: Error generating API key`)
@@ -89,9 +80,7 @@ class ApiKeyController {
       isActive: !!req.body.isActive,
       createdByUserId: req.user.id
     })
-    apiKeyInstance.dataValues.user = await apiKeyInstance.getUser({
-      attributes: ['id', 'username', 'type']
-    })
+    Object.assign(apiKeyInstance.dataValues, { user: await apiKeyInstance.getUser({ attributes: ['id', 'username', 'type'] }) })
 
     Logger.info(`[ApiKeyController] Created API key "${apiKeyInstance.name}"`)
     return res.json({
@@ -105,11 +94,8 @@ class ApiKeyController {
   /**
    * PATCH: /api/api-keys/:id
    * Only isActive and userId can be updated because name and expiresIn are in the JWT
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async update(req, res) {
+  async update(req: ApiKeyRequest, res: Response) {
     const apiKey = await Database.apiKeyModel.findByPk(req.params.id, {
       include: {
         model: Database.userModel
@@ -119,7 +105,7 @@ class ApiKeyController {
       return res.sendStatus(404)
     }
     // Only root user can update root user API keys
-    if (apiKey.user.type === 'root' && !req.user.isRoot) {
+    if (apiKey.user!.type === 'root' && !req.user.isRoot) {
       Logger.warn(`[ApiKeyController] update: Root user API key cannot be updated by non-root user`)
       return res.sendStatus(403)
     }
@@ -157,9 +143,7 @@ class ApiKeyController {
 
     if (hasUpdates) {
       await apiKey.save()
-      apiKey.dataValues.user = await apiKey.getUser({
-        attributes: ['id', 'username', 'type']
-      })
+      Object.assign(apiKey.dataValues, { user: await apiKey.getUser({ attributes: ['id', 'username', 'type'] }) })
       Logger.info(`[ApiKeyController] Updated API key "${apiKey.name}"`)
     } else {
       Logger.info(`[ApiKeyController] No updates needed to API key "${apiKey.name}"`)
@@ -172,11 +156,8 @@ class ApiKeyController {
 
   /**
    * DELETE: /api/api-keys/:id
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async delete(req, res) {
+  async delete(req: RequestWithUser, res: Response) {
     const apiKey = await Database.apiKeyModel.findByPk(req.params.id)
     if (!apiKey) {
       return res.sendStatus(404)
@@ -188,13 +169,7 @@ class ApiKeyController {
     return res.sendStatus(200)
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  middleware(req, res, next) {
+  middleware(req: RequestWithUser, res: Response, next: NextFunction) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[ApiKeyController] Non-admin user "${req.user.username}" attempting to access api keys`)
       return res.sendStatus(403)
@@ -204,4 +179,4 @@ class ApiKeyController {
   }
 }
 
-module.exports = new ApiKeyController()
+export = new ApiKeyController()

@@ -1,5 +1,5 @@
 import { DataTypes, Model, Op } from 'sequelize'
-import type { Attributes, BuildOptions, InitOptions, InstanceDestroyOptions, InstanceUpdateOptions, ModelAttributes, ModelStatic, Optional, SaveOptions, Sequelize } from 'sequelize'
+import type { Attributes, BelongsToGetAssociationMixin, BuildOptions, InitOptions, InstanceDestroyOptions, InstanceUpdateOptions, ModelAttributes, ModelStatic, Optional, SaveOptions, Sequelize } from 'sequelize'
 import type User from './User'
 import type { Col, Fn, Literal } from 'sequelize/types/utils'
 import jwt from 'jsonwebtoken'
@@ -81,6 +81,7 @@ class ApiKey extends Model<ApiKeyAttributes, ApiKeyCreation> {
   declare userId: string | null
   declare createdByUserId: string | null
   declare user?: User
+  declare getUser: BelongsToGetAssociationMixin<User>
   declare fromCache?: boolean
 
   constructor(values?: ApiKeyCreation, options?: BuildOptions) {

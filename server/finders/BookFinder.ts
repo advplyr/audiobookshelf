@@ -7,6 +7,7 @@ import FantLab from '../providers/FantLab'
 import AudiobookCovers from '../providers/AudiobookCovers'
 import CustomProviderAdapter from '../providers/CustomProviderAdapter'
 import Logger from '../Logger'
+import type Podcast from '../models/Podcast'
 import { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } from '../utils/index'
 import htmlSanitizer from '../utils/htmlSanitizer'
 
@@ -406,7 +407,7 @@ class BookFinder {
    * @param {{titleDistance:number, authorDistance:number, maxFuzzySearches:number}} options
    * @returns {Promise<Object[]>}
    */
-  async search(libraryItem: { media?: { duration?: number | null } } | null, provider: string, title: string, author: string | null | undefined, isbn?: string | SearchOptions | null, asin?: string | null, options: SearchOptions = {}): Promise<BookResults> {
+  async search(libraryItem: { media?: { duration?: number | null } | (Podcast & { duration?: never }) } | null, provider: string, title: string, author: string | null | undefined, isbn?: string | SearchOptions | null, asin?: string | null, options: SearchOptions = {}): Promise<BookResults> {
     let books: BookResults = []
     const maxTitleDistance = !isNaN(options.titleDistance as number) ? Number(options.titleDistance) : 4
     const maxAuthorDistance = !isNaN(options.authorDistance as number) ? Number(options.authorDistance) : 4
