@@ -4,8 +4,7 @@ const exec = promisify(child_process.exec)
 import os from 'os'
 import axios from 'axios'
 import path from 'path'
-import whichModule from '../libs/which'
-const which = whichModule as { sync(command: string, options: { nothrow: true }): string | null }
+import which from '../libs/which'
 import fsExtra from '../libs/fsExtra'
 import type { chmod } from 'fs/promises'
 import type { Readable } from 'stream'

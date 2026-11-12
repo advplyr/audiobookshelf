@@ -3,18 +3,29 @@
 // SOURCE: https://github.com/isaacs/isexe
 //
 
+import path from 'node:path'
+import isexe from '../isexe'
+
+interface Options {
+  colon?: string
+  path?: string
+  pathExt?: string
+  all?: boolean
+  nothrow?: boolean
+}
+
+type Callback<Result> = (error: NodeJS.ErrnoException | null, result?: Result) => void
+
 const isWindows = process.platform === 'win32' ||
   process.env.OSTYPE === 'cygwin' ||
   process.env.OSTYPE === 'msys'
 
-const path = require('path')
 const COLON = isWindows ? ';' : ':'
-const isexe = require('../isexe')
 
-const getNotFoundError = (cmd) =>
+const getNotFoundError = (cmd: string) =>
   Object.assign(new Error(`not found: ${cmd}`), { code: 'ENOENT' })
 
-const getPathInfo = (cmd, opt) => {
+const getPathInfo = (cmd: string, opt: Options) => {
   const colon = opt.colon || COLON
 
   // If it has a slash, then we don't bother searching the pathenv.
@@ -45,20 +56,26 @@ const getPathInfo = (cmd, opt) => {
   }
 }
 
-const which = (cmd, opt, cb) => {
+function which(cmd: string, opt: Options & { all: true }): Promise<string[]>
+function which(cmd: string, opt?: Options & { all?: false }): Promise<string>
+function which(cmd: string, opt?: Options): Promise<string | string[]>
+function which(cmd: string, cb: Callback<string>): Promise<void>
+function which(cmd: string, opt: Options & { all: true }, cb: Callback<string[]>): Promise<void>
+function which(cmd: string, opt: Options & { all?: false }, cb: Callback<string>): Promise<void>
+function which(cmd: string, opt: Options, cb: Callback<string | string[]>): Promise<void>
+function which(cmd: string, opt?: Options | Callback<string>, cb?: Callback<string> | Callback<string[]> | Callback<string | string[]>): Promise<string | string[] | void> {
   if (typeof opt === 'function') {
     cb = opt
     opt = {}
   }
-  if (!opt)
-    opt = {}
+  const options = opt || {}
 
-  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
-  const found = []
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, options)
+  const found: string[] = []
 
-  const step = i => new Promise((resolve, reject) => {
+  const step = (i: number): Promise<string | string[]> => new Promise((resolve, reject) => {
     if (i === pathEnv.length)
-      return opt.all && found.length ? resolve(found)
+      return options.all && found.length ? resolve(found)
         : reject(getNotFoundError(cmd))
 
     const ppRaw = pathEnv[i]
@@ -71,13 +88,13 @@ const which = (cmd, opt, cb) => {
     resolve(subStep(p, i, 0))
   })
 
-  const subStep = (p, i, ii) => new Promise((resolve, reject) => {
+  const subStep = (p: string, i: number, ii: number): Promise<string | string[]> => new Promise((resolve) => {
     if (ii === pathExt.length)
       return resolve(step(i + 1))
     const ext = pathExt[ii]
     isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
       if (!er && is) {
-        if (opt.all)
+        if (options.all)
           found.push(p + ext)
         else
           return resolve(p + ext)
@@ -86,14 +103,21 @@ const which = (cmd, opt, cb) => {
     })
   })
 
-  return cb ? step(0).then(res => cb(null, res), cb) : step(0)
+  // The callback overload matches the result selected by options.all.
+  const callback = cb as Callback<string | string[]> | undefined
+  return callback ? step(0).then(res => callback(null, res), (error: NodeJS.ErrnoException) => callback(error)) : step(0)
 }
 
-const whichSync = (cmd, opt) => {
+function whichSync(cmd: string, opt: Options & { all: true; nothrow: true }): string[] | null
+function whichSync(cmd: string, opt: Options & { all: true; nothrow?: false }): string[]
+function whichSync(cmd: string, opt: Options & { all?: false; nothrow: true }): string | null
+function whichSync(cmd: string, opt?: Options & { all?: false; nothrow?: false }): string
+function whichSync(cmd: string, opt?: Options): string | string[] | null
+function whichSync(cmd: string, opt?: Options): string | string[] | null {
   opt = opt || {}
 
   const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
-  const found = []
+  const found: string[] = []
 
   for (let i = 0; i < pathEnv.length; i++) {
     const ppRaw = pathEnv[i]
@@ -113,7 +137,9 @@ const whichSync = (cmd, opt) => {
           else
             return cur
         }
-      } catch (ex) { }
+      } catch {
+        // Continue searching when the candidate cannot be accessed.
+      }
     }
   }
 
@@ -126,5 +152,4 @@ const whichSync = (cmd, opt) => {
   throw getNotFoundError(cmd)
 }
 
-module.exports = which
-which.sync = whichSync
+export = Object.assign(which, { sync: whichSync })

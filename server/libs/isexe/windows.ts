@@ -1,10 +1,9 @@
-module.exports = isexe
-isexe.sync = sync
+import fs from 'node:fs'
+import type { Stats } from 'node:fs'
+import type { Callback, Options } from './types'
 
-var fs = require('fs')
-
-function checkPathExt(path, options) {
-  var pathext = options.pathExt !== undefined ?
+function checkPathExt(path: string, options: Options) {
+  var pathext: string | string[] | undefined = options.pathExt !== undefined ?
     options.pathExt : process.env.PATHEXT
 
   if (!pathext) {
@@ -24,19 +23,20 @@ function checkPathExt(path, options) {
   return false
 }
 
-function checkStat(stat, path, options) {
+function checkStat(stat: Stats, path: string, options: Options) {
   if (!stat.isSymbolicLink() && !stat.isFile()) {
     return false
   }
   return checkPathExt(path, options)
 }
 
-function isexe(path, options, cb) {
+function isexe(path: string, options: Options, cb: Callback) {
   fs.stat(path, function (er, stat) {
     cb(er, er ? false : checkStat(stat, path, options))
   })
 }
 
-function sync(path, options) {
+function sync(path: string, options: Options) {
   return checkStat(fs.statSync(path), path, options)
 }
+export = Object.assign(isexe, { sync })
