@@ -161,7 +161,9 @@ const copyValue = (val: unknown): unknown => {
   }
 }
 
-const toNumber = (val: unknown, fallback = 0): number => {
+function toNumber(val: unknown, fallback: null): number | null
+function toNumber(val: unknown, fallback?: number): number
+function toNumber(val: unknown, fallback: number | null = 0): number | null {
   if (Reflect.apply(isNaN, undefined, [val]) === true || val === null) return fallback
   return Number(val)
 }

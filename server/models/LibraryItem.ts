@@ -78,6 +78,7 @@ class LibraryItem extends Model<LibraryItemAttributes, LibraryItemCreation> {
   declare libraryFiles: StoredLibraryFile[] | null
   declare extraData: LibraryItemAttributes['extraData']
   declare libraryId: string | null
+  declare library?: Library
   declare libraryFolderId: string | null
   declare createdAt: Date
   declare updatedAt: Date

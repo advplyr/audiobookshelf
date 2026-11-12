@@ -3,6 +3,7 @@ import type { Attributes, BelongsToGetAssociationMixin, BuildOptions, FindOption
 import type Book from './Book'
 import type PodcastEpisode from './PodcastEpisode'
 import type Device from './Device'
+import type User from './User'
 import type DeviceInfo from '../objects/DeviceInfo'
 
 import oldPlaybackSession from '../objects/PlaybackSession'
@@ -88,6 +89,7 @@ class PlaybackSession extends Model<PlaybackSessionAttributes, PlaybackSessionCr
   declare dayOfWeek: string | null
   declare extraData: { libraryItemId?: string | null } | null
   declare userId: string | null
+  declare user?: User | null
   declare deviceId: string | null
   declare libraryId: string | null
   declare updatedAt: Date

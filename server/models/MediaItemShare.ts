@@ -25,7 +25,7 @@ type ShareAttributes = {
   mediaItem?: Book | PodcastEpisode | null
 }
 
-type ShareCreation = Optional<ShareAttributes, 'id' | 'mediaItemId' | 'mediaItemType' | 'slug' | 'pash' | 'userId' | 'expiresAt' | 'extraData' | 'createdAt' | 'updatedAt' | 'isDownloadable'>
+type ShareCreation = Optional<Omit<ShareAttributes, 'expiresAt'> & { expiresAt: Date | number | null }, 'id' | 'mediaItemId' | 'mediaItemType' | 'slug' | 'pash' | 'userId' | 'expiresAt' | 'extraData' | 'createdAt' | 'updatedAt' | 'isDownloadable'>
 
 class MediaItemShare extends Model<ShareAttributes, ShareCreation> {
   // Query methods are used after Database.buildModels initializes the model.

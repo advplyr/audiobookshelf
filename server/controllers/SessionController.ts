@@ -1,38 +1,34 @@
-const Path = require('path')
-const { Request, Response, NextFunction } = require('express')
-const Logger = require('../Logger')
-const Database = require('../Database')
-const { toNumber, isUUID } = require('../utils/index')
-const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUtils')
-const { PlayMethod } = require('../utils/constants')
+import Path from 'path'
+import type { Request, Response, NextFunction } from 'express'
+import type User from '../models/User'
+import type PlaybackSessionManager from '../managers/PlaybackSessionManager'
+import type PlaybackSession from '../objects/PlaybackSession'
+import Logger from '../Logger'
+import Database from '../Database'
+import { toNumber, isUUID } from '../utils/index'
+import { getAudioMimeTypeFromExtname, encodeUriPath } from '../utils/fileUtils'
+import { PlayMethod } from '../utils/constants'
 
-const ShareManager = require('../managers/ShareManager')
+import ShareManager from '../managers/ShareManager'
 
-/**
- * @typedef RequestUserObject
- * @property {import('../models/User')} user
- *
- * @typedef {Request & RequestUserObject} RequestWithUser
- */
+type RequestWithUser<Body = unknown> = Request<Record<string, string>, unknown, Body> & { user: User }
+type RequestWithSession<Body = unknown> = RequestWithUser<Body> & { playbackSession: PlaybackSession }
+type SessionListRequest = Request<Record<string, string>, unknown, unknown, { user?: string; sort?: string; desc?: string; itemsPerPage?: string; page?: string }> & { user: User }
+type SessionContext = { playbackSessionManager: PlaybackSessionManager }
 
 class SessionController {
   constructor() {}
 
   /**
    * GET: /api/sessions
-   *
-   * @this import('../routers/ApiRouter')
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getAllWithUserData(req, res) {
+  async getAllWithUserData(req: SessionListRequest, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[SessionController] getAllWithUserData: Non-admin user "${req.user.username}" requested all session data`)
       return res.sendStatus(404)
     }
     // Validate "user" query
-    let userId = req.query.user
+    let userId: string | null | undefined = req.query.user
     if (userId && !isUUID(userId)) {
       Logger.warn(`[SessionController] Invalid "user" query string "${userId}"`)
       userId = null
@@ -57,7 +53,7 @@ class SessionController {
       page = 0
     }
 
-    let where = null
+    let where: { userId: string } | null = null
 
     if (userId) {
       where = {
@@ -66,7 +62,7 @@ class SessionController {
     }
 
     const { rows, count } = await Database.playbackSessionModel.findAndCountAll({
-      where,
+      where: where!,
       include: [
         {
           model: Database.deviceModel
@@ -97,7 +93,7 @@ class SessionController {
       }
     })
 
-    const payload = {
+    const payload: { total: number; numPages: number; page: number; itemsPerPage: number; sessions: typeof sessions; userId?: string } = {
       total: count,
       numPages: Math.ceil(count / itemsPerPage),
       page,
@@ -113,13 +109,8 @@ class SessionController {
 
   /**
    * GET: /api/sessions/open
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getOpenSessions(req, res) {
+  async getOpenSessions(this: SessionContext, req: RequestWithUser, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[SessionController] getOpenSessions: Non-admin user "${req.user.username}" requested open session data`)
       return res.sendStatus(404)
@@ -143,13 +134,8 @@ class SessionController {
 
   /**
    * GET: /api/session/:id
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async getOpenSession(req, res) {
+  async getOpenSession(req: RequestWithSession, res: Response) {
     const libraryItem = await Database.libraryItemModel.getExpandedById(req.playbackSession.libraryItemId)
     const sessionForClient = req.playbackSession.toJSONForClient(libraryItem)
     res.json(sessionForClient)
@@ -157,60 +143,38 @@ class SessionController {
 
   /**
    * POST: /api/session/:id/sync
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  sync(req, res) {
-    this.playbackSessionManager.syncSessionRequest(req.user, req.playbackSession, req.body, res)
+  sync(this: SessionContext, req: RequestWithSession<Parameters<PlaybackSessionManager['syncSessionRequest']>[2]>, res: Response) {
+    void this.playbackSessionManager.syncSessionRequest(req.user, req.playbackSession, req.body, res)
   }
 
   /**
    * POST: /api/session/:id/close
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  close(req, res) {
+  close(this: SessionContext, req: RequestWithSession<Parameters<PlaybackSessionManager['closeSessionRequest']>[2]>, res: Response) {
     let syncData = req.body
     if (syncData && !Object.keys(syncData).length) syncData = null
-    this.playbackSessionManager.closeSessionRequest(req.user, req.playbackSession, syncData, res)
+    void this.playbackSessionManager.closeSessionRequest(req.user, req.playbackSession, syncData, res)
   }
 
   /**
    * DELETE: /api/session/:id
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  async delete(req, res) {
+  async delete(this: SessionContext, req: RequestWithSession, res: Response) {
     // if session is open then remove it
-    const openSession = this.playbackSessionManager.getSession(req.playbackSession.id)
+    const openSession = this.playbackSessionManager.getSession(req.playbackSession.id!)
     if (openSession) {
       await this.playbackSessionManager.removeSession(req.playbackSession.id)
     }
 
-    await Database.removePlaybackSession(req.playbackSession.id)
+    await Database.removePlaybackSession(req.playbackSession.id!)
     res.sendStatus(200)
   }
 
   /**
    * POST: /api/sessions/batch/delete
-   * @this import('../routers/ApiRouter')
-   *
-   * @typedef batchDeleteReqBody
-   * @property {string[]} sessions
-   *
-   * @param {Request<{}, {}, batchDeleteReqBody, {}> & RequestUserObject} req
-   * @param {Response} res
    */
-  async batchDelete(req, res) {
+  async batchDelete(this: SessionContext, req: RequestWithUser<{ sessions?: string[] }>, res: Response) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[SessionController] Non-admin user "${req.user.username}" attempted to batch delete sessions`)
       return res.sendStatus(403)
@@ -245,38 +209,23 @@ class SessionController {
 
   /**
    * POST: /api/session/local
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  syncLocal(req, res) {
-    this.playbackSessionManager.syncLocalSessionRequest(req, res)
+  syncLocal(this: SessionContext, req: Parameters<PlaybackSessionManager['syncLocalSessionRequest']>[0], res: Response) {
+    void this.playbackSessionManager.syncLocalSessionRequest(req, res)
   }
 
   /**
    * POST: /api/session/local-all
-   *
-   * @this {import('../routers/ApiRouter')}
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
    */
-  syncLocalSessions(req, res) {
-    this.playbackSessionManager.syncLocalSessionsRequest(req, res)
+  syncLocalSessions(this: SessionContext, req: Parameters<PlaybackSessionManager['syncLocalSessionsRequest']>[0], res: Response) {
+    void this.playbackSessionManager.syncLocalSessionsRequest(req, res)
   }
 
   /**
    * GET: /public/session/:id/track/:index
    * While a session is open, this endpoint can be used to stream the audio track
-   *
-   * @this {import('../routers/PublicRouter')}
-   *
-   * @param {Request} req
-   * @param {Response} res
    */
-  async getTrack(req, res) {
+  async getTrack(this: SessionContext, req: Request, res: Response) {
     const audioTrackIndex = toNumber(req.params.index, null)
     if (audioTrackIndex === null) {
       Logger.error(`[SessionController] Invalid audio track index "${req.params.index}"`)
@@ -313,7 +262,7 @@ class SessionController {
     }
 
     const user = await Database.userModel.getUserById(playbackSession.userId)
-    Logger.debug(`[SessionController] Serving audio track ${audioTrack.index} for session "${req.params.id}" belonging to user "${user.username}"`)
+    Logger.debug(`[SessionController] Serving audio track ${audioTrack.index} for session "${req.params.id}" belonging to user "${user!.username}"`)
 
     if (global.XAccel) {
       const encodedURI = encodeUriPath(global.XAccel + audioTrack.metadata.path)
@@ -329,13 +278,7 @@ class SessionController {
     res.sendFile(audioTrack.metadata.path)
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  openSessionMiddleware(req, res, next) {
+  openSessionMiddleware(this: SessionContext, req: RequestWithUser & { playbackSession?: PlaybackSession }, res: Response, next: NextFunction) {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)
 
@@ -348,13 +291,7 @@ class SessionController {
     next()
   }
 
-  /**
-   *
-   * @param {RequestWithUser} req
-   * @param {Response} res
-   * @param {NextFunction} next
-   */
-  async middleware(req, res, next) {
+  async middleware(req: RequestWithUser & { playbackSession?: PlaybackSession }, res: Response, next: NextFunction) {
     const playbackSession = await Database.getPlaybackSession(req.params.id)
     if (!playbackSession) {
       Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
@@ -373,4 +310,4 @@ class SessionController {
     next()
   }
 }
-module.exports = new SessionController()
+export = new SessionController()

@@ -49,7 +49,7 @@ class PlaybackSession {
   declare stream: Stream | null
   declare shareSessionId: string | null
   declare mediaItemShareId: string | null
-  declare coverAspectRatio: number | null
+  declare coverAspectRatio: number | null | undefined
 
   constructor(session?: SessionData | null) {
     this.id = null
@@ -253,7 +253,7 @@ class PlaybackSession {
    * @param {*} startTime
    * @param {*} episodeId
    */
-  setData(libraryItem: PlaybackItem, userId: string, mediaPlayer: string | null, deviceInfo: DeviceInfo | null, startTime: number, episodeId: string | null = null) {
+  setData(libraryItem: PlaybackItem, userId: string | null, mediaPlayer: string | null, deviceInfo: DeviceInfo | null, startTime: number, episodeId: string | null = null) {
     this.id = uuidv4()
     this.userId = userId
     this.libraryId = libraryItem.libraryId
