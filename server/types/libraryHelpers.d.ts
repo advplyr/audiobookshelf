@@ -31,6 +31,8 @@ export interface LibraryItemJSON {
 }
 
 export interface ExpandedBook {
+  tags: string[] | null
+  explicit?: boolean | null
   series: BookSeries[]
   title: string | null
   titleIgnorePrefix: string | null
@@ -39,6 +41,7 @@ export interface ExpandedBook {
 
 export interface ExpandedLibraryItem {
   id: string
+  libraryId: string | null
   mediaType: string
   media: ExpandedBook
   authorNamesFirstLast?: string | null
@@ -70,7 +73,7 @@ export interface CollapseUser {
 }
 
 export interface CollapseLibrary {
-  settings: { hideSingleBookSeries: boolean }
+  settings: { hideSingleBookSeries?: boolean } | null
 }
 
 export interface SeriesWithBooks {

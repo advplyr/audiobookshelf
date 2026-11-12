@@ -289,7 +289,7 @@ const libraryItemsBookFilters = {
    * @param {boolean} collapseseries
    * @returns {Sequelize.order}
    */
-  getOrder(sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean): OrderItem[] {
+  getOrder(sortBy: string | null | undefined, sortDesc: boolean | null, collapseseries: boolean): OrderItem[] {
     const dir = sortDesc ? 'DESC' : 'ASC'
 
     const getTitleOrder = (): OrderItem => {
@@ -437,7 +437,7 @@ const libraryItemsBookFilters = {
    * @param {boolean} isHomePage for home page shelves
    * @returns {{ libraryItems: import('../../models/LibraryItem')[], count: number }}
    */
-  async getFilteredLibraryItems(libraryId: string | null, user: User | null | undefined, filterGroup: string | null, filterValue: string | null, sortBy: string | null, sortDesc: boolean | null, collapseseries: boolean, include: string[], limit: number | null | undefined, offset: number | null | undefined, isHomePage = false) {
+  async getFilteredLibraryItems(libraryId: string | null, user: User | null | undefined, filterGroup: string | null, filterValue: string | null, sortBy: string | null | undefined, sortDesc: boolean | null, collapseseries: boolean, include: string | string[], limit: number | null | undefined, offset: number | null | undefined, isHomePage = false) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false

@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize'
-import type { Attributes, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
+import type { Attributes, HasManyGetAssociationsMixin, BuildOptions, InitOptions, ModelAttributes, ModelStatic, Optional, Sequelize } from 'sequelize'
 import type LibraryFolder from './LibraryFolder'
 import Logger from '../Logger'
 
@@ -9,13 +9,13 @@ type LibrarySettings = {
   skipMatchingMediaWithAsin?: boolean
   skipMatchingMediaWithIsbn?: boolean
   autoScanCronExpression?: string | null
-  podcastSearchRegion?: string
+  podcastSearchRegion?: string | null
   audiobooksOnly?: boolean
   epubsAllowScriptedContent?: boolean
   hideSingleBookSeries?: boolean
   onlyShowLaterBooksInContinueSeries?: boolean
   metadataPrecedence?: string[]
-  markAsFinishedTimeRemaining?: number
+  markAsFinishedTimeRemaining?: number | null
   markAsFinishedPercentComplete?: number | null
 }
 
@@ -52,6 +52,7 @@ class Library extends Model<LibraryAttributes, LibraryCreation> {
   declare createdAt: Date
   declare updatedAt: Date
   declare libraryFolders?: LibraryFolder[]
+  declare getLibraryFolders: HasManyGetAssociationsMixin<LibraryFolder>
 
 
   constructor(values?: LibraryCreation, options?: BuildOptions) {

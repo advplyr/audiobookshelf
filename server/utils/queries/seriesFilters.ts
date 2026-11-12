@@ -37,7 +37,7 @@ const seriesFilters = {
    * @param {number} offset
    * @returns {Promise<{ series:object[], count:number }>}
    */
-  async getFilteredSeries(library: Library, user: User, filterBy: string, sortBy: string, sortDesc: boolean, include: string[], limit: number, offset: number) {
+  async getFilteredSeries(library: Library, user: User, filterBy: string | undefined, sortBy: string | undefined, sortDesc: boolean, include: string[], limit: number, offset: number) {
     const permissions = user.permissions
     let filterValue = null
     let filterGroup = null

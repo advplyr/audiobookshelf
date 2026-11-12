@@ -13,7 +13,7 @@ import type Author from '../../models/Author'
 import type Feed from '../../models/Feed'
 import type { MediaItemShareForClient } from '../../models/MediaItemShare'
 
-type FilterOptions = { filterBy?: string | null; sortBy: string; sortDesc: boolean; limit: number; offset: number; collapseseries: boolean; include: string[]; mediaType: string }
+type FilterOptions = { filterBy?: string | null; sortBy?: string; sortDesc: boolean; limit: number; offset: number; collapseseries: boolean; include: string | string[]; mediaType: string | null }
 type SeriesDetails = { id: string; name: string | null; sequence: string | null }
 type BookMinified = ReturnType<Book['toOldJSONMinified']>
 type ShelfBookMedia = BookMinified & { metadata: { series?: SeriesDetails } }

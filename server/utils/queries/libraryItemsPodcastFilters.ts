@@ -97,7 +97,7 @@ const libraryItemsPodcastFilters = {
    * @param {boolean} sortDesc
    * @returns {Sequelize.order}
    */
-  getOrder(sortBy: string, sortDesc: boolean): Order {
+  getOrder(sortBy: string | undefined, sortDesc: boolean): Order {
     const dir = sortDesc ? 'DESC' : 'ASC'
     if (sortBy === 'addedAt') {
       return [[Sequelize.literal('libraryItem.createdAt'), dir]]
@@ -167,7 +167,7 @@ const libraryItemsPodcastFilters = {
    * @param {number} offset
    * @returns {Promise<{ libraryItems: import('../../models/LibraryItem')[], count: number }>}
    */
-  async getFilteredLibraryItems(libraryId: string, user: User, filterGroup: string | null, filterValue: string | null, sortBy: string, sortDesc: boolean, include: string[], limit: number, offset: number) {
+  async getFilteredLibraryItems(libraryId: string, user: User, filterGroup: string | null, filterValue: string | null, sortBy: string | undefined, sortDesc: boolean, include: string | string[], limit: number, offset: number) {
     const includeRSSFeed = include.includes('rssfeed')
     const includeNumEpisodesIncomplete = include.includes('numepisodesincomplete')
 

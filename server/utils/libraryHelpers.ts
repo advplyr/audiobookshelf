@@ -18,7 +18,7 @@ const libraryHelpers = {
    * @param {*} hideSingleBookSeries
    * @returns
    */
-  getSeriesFromBooks(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean): SeriesGroup[] {
+  getSeriesFromBooks(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean | undefined): SeriesGroup[] {
     const _series: Record<string, SeriesGroup> = {}
     const seriesToFilterOut: Record<string, boolean> = {}
     libraryItems.forEach((libraryItem) => {
@@ -71,7 +71,7 @@ const libraryHelpers = {
    * @param {boolean} hideSingleBookSeries
    * @returns
    */
-  collapseBookSeries(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean): ExpandedLibraryItem[] {
+  collapseBookSeries(libraryItems: ExpandedLibraryItem[], filterSeries: string | null | undefined, hideSingleBookSeries: boolean | undefined): ExpandedLibraryItem[] {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
     const seriesObjects = this.getSeriesFromBooks(libraryItems, filterSeries, hideSingleBookSeries).filter((s) => s.id != filterSeries)
@@ -159,7 +159,7 @@ const libraryHelpers = {
         return user.checkCanAccessLibraryItem(li)
       })
 
-    const collapsedItems = this.collapseBookSeries(libraryItems, seriesId, library.settings.hideSingleBookSeries)
+    const collapsedItems = this.collapseBookSeries(libraryItems, seriesId, library.settings!.hideSingleBookSeries)
     if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
       libraryItems = collapsedItems
       payload.total = libraryItems.length
