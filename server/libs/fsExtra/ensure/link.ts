@@ -1,14 +1,16 @@
-'use strict'
+import path from 'node:path'
+import fs from 'graceful-fs'
+import universalify from '../../universalify'
+import mkdir from '../mkdirs'
+import pathExistence from '../path-exists'
+import stat from '../util/stat'
 
-const u = require('../../universalify').fromCallback
-const path = require('path')
-const fs = require('graceful-fs')
-const mkdir = require('../mkdirs')
-const pathExists = require('../path-exists').pathExists
-const { areIdentical } = require('../util/stat')
+const { pathExists } = pathExistence
+const { areIdentical } = stat
+type Done = (error?: unknown) => void
 
-function createLink(srcpath, dstpath, callback) {
-  function makeLink(srcpath, dstpath) {
+function createLink(srcpath: string, dstpath: string, callback: Done) {
+  function makeLink(srcpath: string, dstpath: string) {
     fs.link(srcpath, dstpath, err => {
       if (err) return callback(err)
       callback(null)
@@ -27,7 +29,7 @@ function createLink(srcpath, dstpath, callback) {
       pathExists(dir, (err, dirExists) => {
         if (err) return callback(err)
         if (dirExists) return makeLink(srcpath, dstpath)
-        mkdir.mkdirs(dir, err => {
+        mkdir.mkdirs(dir, undefined, err => {
           if (err) return callback(err)
           makeLink(srcpath, dstpath)
         })
@@ -36,17 +38,19 @@ function createLink(srcpath, dstpath, callback) {
   })
 }
 
-function createLinkSync(srcpath, dstpath) {
+function createLinkSync(srcpath: string, dstpath: string) {
   let dstStat
   try {
     dstStat = fs.lstatSync(dstpath)
-  } catch { }
+  } catch {
+    // A missing destination can be linked below.
+  }
 
   try {
     const srcStat = fs.lstatSync(srcpath)
     if (dstStat && areIdentical(srcStat, dstStat)) return
   } catch (err) {
-    err.message = err.message.replace('lstat', 'ensureLink')
+    if (err instanceof Error) err.message = err.message.replace('lstat', 'ensureLink')
     throw err
   }
 
@@ -58,7 +62,7 @@ function createLinkSync(srcpath, dstpath) {
   return fs.linkSync(srcpath, dstpath)
 }
 
-module.exports = {
-  createLink: u(createLink),
+export = {
+  createLink: universalify.fromCallback<unknown, [string, string], void>(createLink),
   createLinkSync
 }

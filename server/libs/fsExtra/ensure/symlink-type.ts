@@ -1,7 +1,7 @@
 import fs from 'graceful-fs'
 import type { PathLike } from 'node:fs'
 
-type LinkType = string
+type LinkType = 'file' | 'dir' | 'junction'
 type TypeCallback = (error: null, type: LinkType) => void
 
 function symlinkType (srcpath: PathLike, callback: TypeCallback): void
@@ -17,7 +17,7 @@ function symlinkType (srcpath: PathLike, type: LinkType | false | null | undefin
   })
 }
 
-function symlinkTypeSync (srcpath: PathLike, type?: LinkType | false | null) {
+function symlinkTypeSync (srcpath: PathLike, type?: LinkType | false | null): LinkType {
   let stats
 
   if (type) return type
