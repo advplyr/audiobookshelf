@@ -1386,7 +1386,7 @@ class LibraryController {
    * @param {Response} res
    */
   async getPodcastTitles(req, res) {
-    if (!req.user.isAdminOrUp) {
+    if (!req.user.canAddPodcasts) {
       Logger.error(`[LibraryController] Non-admin user "${req.user.username}" attempted to get podcast titles`)
       return res.sendStatus(403)
     }
