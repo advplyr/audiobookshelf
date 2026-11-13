@@ -162,6 +162,7 @@ class LibraryItemController {
   /**
    * GET: /api/items/:id/download
    * Download library item. Zip file if multiple files.
+   * Pass the inos query parameter to only download the selected library files, zipped.
    *
    * @param {LibraryItemControllerRequest} req
    * @param {Response} res
@@ -174,11 +175,30 @@ class LibraryItemController {
     const libraryItemPath = req.libraryItem.path
     const itemTitle = req.libraryItem.media.title
 
+    let selectedFiles = null
+    if (req.query.inos && typeof req.query.inos === 'string') {
+      selectedFiles = []
+      for (const ino of new Set(req.query.inos.split(','))) {
+        const libraryFile = req.libraryItem.getLibraryFileWithIno(ino)
+        if (!libraryFile) {
+          Logger.warn(`[LibraryItemController] User "${req.user.username}" requested download for file ino "${ino}" not in item "${itemTitle}"`)
+          return res.status(404).send('Library file not found')
+        }
+        if (!(await fs.pathExists(libraryFile.metadata.path))) {
+          Logger.warn(`[LibraryItemController] User "${req.user.username}" requested download for file ino "${ino}" missing at "${libraryFile.metadata.path}"`)
+          return res.status(404).send('File not found')
+        }
+        selectedFiles.push({ path: libraryFile.metadata.path, name: libraryFile.metadata.relPath })
+      }
+    }
+
     Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
 
     try {
-      // If library item is a single file in root dir then no need to zip
-      if (req.libraryItem.isFile) {
+      if (selectedFiles) {
+        await zipHelpers.zipFilesPipe(selectedFiles, `${itemTitle}.zip`, res)
+      } else if (req.libraryItem.isFile) {
+        // If library item is a single file in root dir then no need to zip
         // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
         const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(libraryItemPath))
         if (audioMimeType) {
