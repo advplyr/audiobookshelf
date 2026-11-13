@@ -57,7 +57,7 @@
     "semver": "^7.6.3",
     "sequelize": "^6.35.2",
     "socket.io": "^4.5.4",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "ssrf-req-filter": "^1.1.0",
     "xml2js": "^0.5.0"
   },
@@ -72,6 +72,6 @@
     "typescript": "^5.7.3"
   },
   "allowScripts": {
-    "sqlite3@5.1.7": true
+    "sqlite3@6.0.1": true
   }
 }
