@@ -1,15 +1,14 @@
-'use strict';
 
-module.exports = (() => {
-    function convertSteps(expressions){
+const convert = (() => {
+    function convertSteps(expressions: string[]){
         var stepValuePattern = /^(.+)\/(\w+)$/;
         for(var i = 0; i < expressions.length; i++){
             var match = stepValuePattern.exec(expressions[i]);
             var isStepValue = match !== null && match.length > 0;
-            if(isStepValue){
+            if(isStepValue && match){
                 var baseDivider = match[2];
-                if(isNaN(baseDivider)){
-                    throw baseDivider + ' is not a valid step value';
+                if(isNaN(Number(baseDivider))){
+                    throw new Error(baseDivider + ' is not a valid step value');
                 }
                 var values = match[1].split(',');
                 var stepValues = [];
@@ -28,3 +27,5 @@ module.exports = (() => {
 
     return convertSteps;
 })();
+
+export = convert;

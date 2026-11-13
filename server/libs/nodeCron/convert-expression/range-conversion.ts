@@ -1,6 +1,5 @@
-'use strict';
-module.exports = ( () => {
-    function replaceWithRange(expression, text, init, end) {
+const convert = ( () => {
+    function replaceWithRange(expression: string, text: string, init: string, end: string) {
 
         const numbers = [];
         let last = parseInt(end);
@@ -18,7 +17,7 @@ module.exports = ( () => {
         return expression.replace(new RegExp(text, 'i'), numbers.join());
     }
 
-    function convertRange(expression){
+    function convertRange(expression: string){
         const rangeRegEx = /(\d+)-(\d+)/;
         let match = rangeRegEx.exec(expression);
         while(match !== null && match.length > 0){
@@ -28,7 +27,7 @@ module.exports = ( () => {
         return expression;
     }
 
-    function convertAllRanges(expressions){
+    function convertAllRanges(expressions: string[]){
         for(let i = 0; i < expressions.length; i++){
             expressions[i] = convertRange(expressions[i]);
         }
@@ -37,3 +36,5 @@ module.exports = ( () => {
 
     return convertAllRanges;
 })();
+
+export = convert;
