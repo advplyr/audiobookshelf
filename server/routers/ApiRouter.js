@@ -16,6 +16,7 @@ const { fileUploadParser, requireUploadPermission } = require('../utils/fileUplo
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
 const CollectionController = require('../controllers/CollectionController')
+const CollectionV2Controller = require('../controllers/CollectionV2Controller')
 const PlaylistController = require('../controllers/PlaylistController')
 const MeController = require('../controllers/MeController')
 const BackupController = require('../controllers/BackupController')
@@ -79,6 +80,13 @@ class ApiRouter {
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:seriesId', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
+    this.router.get(
+      '/v2/libraries/:id/collections',
+      CollectionV2Controller.captureQuery.bind(this),
+      LibraryController.middleware.bind(this),
+      CollectionV2Controller.validateQuery.bind(this),
+      CollectionV2Controller.findAll.bind(this)
+    )
     this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
     this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getUserPersonalizedShelves.bind(this))
     this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))

@@ -174,7 +174,13 @@ class Collection extends Model {
       },
       {
         sequelize,
-        modelName: 'collection'
+        modelName: 'collection',
+        indexes: [
+          {
+            name: 'collections_library_id_name_nocase_id',
+            fields: ['libraryId', { name: 'name', collate: 'NOCASE' }, 'id']
+          }
+        ]
       }
     )
 
