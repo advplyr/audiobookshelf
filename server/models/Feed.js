@@ -626,7 +626,7 @@ class Feed extends Model {
 
     const rssfeed = new RSS(rssData)
     this.feedEpisodes.forEach((ep) => {
-      rssfeed.item(ep.getRSSData(hostPrefix))
+      rssfeed.item(ep.getRSSData(hostPrefix, this.slug))
     })
     return rssfeed.xml()
   }

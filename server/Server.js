@@ -274,14 +274,14 @@ class Server {
        * @temporary
        * This is necessary for the ebook & cover API endpoint in the mobile apps
        * The mobile app ereader is using fetch api in Capacitor that is currently difficult to switch to native requests
-       * so we have to allow cors for specific origins to the /api/items/:id/ebook endpoint
+       * so we have to allow cors for specific origins to the ebook, item cover and podcast episode cover endpoints
        * The cover image is fetched with XMLHttpRequest in the mobile apps to load into a canvas and extract colors
        * @see https://ionicframework.com/docs/troubleshooting/cors
        *
        * Running in development allows cors to allow testing the mobile apps in the browser
        * or env variable ALLOW_CORS = '1'
        */
-      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) || global.ServerSettings.allowedOrigins?.length) {
+      if (global.AllowCors || Logger.isDev || req.path.match(/\/api\/podcasts\/[a-z0-9-]{36}\/episode\/[a-z0-9-]{36}\/cover$/) || req.path.match(/\/api\/items\/([a-z0-9-]{36})\/(ebook|cover)(\/[0-9]+)?/) || global.ServerSettings.allowedOrigins?.length) {
         const allowedOrigins = ['capacitor://localhost', 'http://localhost', ...(global.ServerSettings.allowedOrigins ? global.ServerSettings.allowedOrigins : [])]
         if (global.AllowCors || Logger.isDev || allowedOrigins.some((o) => o === req.get('origin'))) {
           res.header('Access-Control-Allow-Origin', req.get('origin'))
@@ -356,6 +356,9 @@ class Server {
     })
     router.get('/feed/:slug/cover*', (req, res) => {
       RssFeedManager.getFeedCover(req, res)
+    })
+    router.get('/feed/:slug/item/:episodeId/cover*', (req, res) => {
+      RssFeedManager.getFeedItemCover(req, res)
     })
     router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
