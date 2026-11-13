@@ -1,3 +1,5 @@
+export { JSONStorage } from './umzug/storage/json'
+export { MongoDBStorage } from './umzug/storage/mongodb'
 export { memoryStorage } from './umzug/storage/memory'
 export { RerunBehavior } from './umzug/types'
 
