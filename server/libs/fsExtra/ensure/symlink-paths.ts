@@ -1,8 +1,10 @@
-'use strict'
+import path from 'node:path'
+import fs from 'graceful-fs'
+import pathExistence from '../path-exists'
 
-const path = require('path')
-const fs = require('graceful-fs')
-const pathExists = require('../path-exists').pathExists
+const { pathExists } = pathExistence
+type Paths = { toCwd: string; toDst: string }
+type PathsCallback = (error: unknown, paths?: Paths) => void
 
 /**
  * Function that returns two types of paths, one relative to symlink, and one
@@ -26,7 +28,7 @@ const pathExists = require('../path-exists').pathExists
  * the ability to pass in `relative to current working direcotry` paths.
  */
 
-function symlinkPaths (srcpath, dstpath, callback) {
+function symlinkPaths (srcpath: string, dstpath: string, callback: PathsCallback) {
   if (path.isAbsolute(srcpath)) {
     return fs.lstat(srcpath, (err) => {
       if (err) {
@@ -64,7 +66,7 @@ function symlinkPaths (srcpath, dstpath, callback) {
   }
 }
 
-function symlinkPathsSync (srcpath, dstpath) {
+function symlinkPathsSync (srcpath: string, dstpath: string) {
   let exists
   if (path.isAbsolute(srcpath)) {
     exists = fs.existsSync(srcpath)
@@ -93,7 +95,7 @@ function symlinkPathsSync (srcpath, dstpath) {
   }
 }
 
-module.exports = {
+export = {
   symlinkPaths,
   symlinkPathsSync
 }
