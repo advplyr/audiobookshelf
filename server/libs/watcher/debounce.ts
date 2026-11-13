@@ -12,37 +12,41 @@
  * @param {Boolean} whether to execute at the beginning (`false`)
  * @api public
  */
-function debounce(func, wait, immediate) {
-  var timeout, args, context, timestamp, result;
-  if (null == wait) wait = 100;
+function debounce<Receiver, Args extends unknown[], Result>(func: (this: Receiver, ...args: Args) => Result, wait?: number | null, immediate?: boolean) {
+  let timeout: NodeJS.Timeout | null | undefined;
+  let args: Args | null;
+  const state: { context: Receiver | null } = { context: null };
+  let timestamp: number;
+  let result: Result | undefined;
+  const delay = wait ?? 100;
 
   function later() {
     var last = Date.now() - timestamp;
 
-    if (last < wait && last >= 0) {
-      timeout = setTimeout(later, wait - last);
+    if (last < delay && last >= 0) {
+      timeout = setTimeout(later, delay - last);
     } else {
       timeout = null;
       if (!immediate) {
-        result = func.apply(context, args);
-        context = args = null;
+        result = func.apply(state.context as Receiver, args as Args);
+        state.context = args = null;
       }
     }
   };
 
-  var debounced = function () {
-    context = this;
-    args = arguments;
+  function debounced(this: Receiver, ...callArgs: Args) {
+    state.context = this;
+    args = callArgs;
     timestamp = Date.now();
     var callNow = immediate && !timeout;
-    if (!timeout) timeout = setTimeout(later, wait);
+    if (!timeout) timeout = setTimeout(later, delay);
     if (callNow) {
-      result = func.apply(context, args);
-      context = args = null;
+      result = func.apply(this, callArgs);
+      state.context = args = null;
     }
 
     return result;
-  };
+  }
 
   debounced.clear = function () {
     if (timeout) {
@@ -51,10 +55,11 @@ function debounce(func, wait, immediate) {
     }
   };
 
+  // After a leading call, apply receives null arguments if flushed before the timer expires.
   debounced.flush = function () {
     if (timeout) {
-      result = func.apply(context, args);
-      context = args = null;
+      result = func.apply(state.context as Receiver, args as Args);
+      state.context = args = null;
 
       clearTimeout(timeout);
       timeout = null;
@@ -67,4 +72,4 @@ function debounce(func, wait, immediate) {
 // Adds compatibility for ES modules
 debounce.debounce = debounce;
 
-module.exports = debounce;
+export = debounce;
