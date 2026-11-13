@@ -1,8 +1,7 @@
-'use strict'
+import fs from 'graceful-fs'
+import type { PathLike, TimeLike, NoParamCallback } from 'node:fs'
 
-const fs = require('graceful-fs')
-
-function utimesMillis (path, atime, mtime, callback) {
+function utimesMillis (path: PathLike, atime: TimeLike, mtime: TimeLike, callback: NoParamCallback) {
   // if (!HAS_MILLIS_RES) return fs.utimes(path, atime, mtime, callback)
   fs.open(path, 'r+', (err, fd) => {
     if (err) return callback(err)
@@ -14,13 +13,13 @@ function utimesMillis (path, atime, mtime, callback) {
   })
 }
 
-function utimesMillisSync (path, atime, mtime) {
+function utimesMillisSync (path: PathLike, atime: TimeLike, mtime: TimeLike) {
   const fd = fs.openSync(path, 'r+')
   fs.futimesSync(fd, atime, mtime)
   return fs.closeSync(fd)
 }
 
-module.exports = {
+export = {
   utimesMillis,
   utimesMillisSync
 }
