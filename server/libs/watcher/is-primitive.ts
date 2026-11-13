@@ -5,11 +5,13 @@
  * Released under the MIT License.
  */
 
-'use strict';
+type Primitive = null | undefined | string | number | boolean | bigint | symbol;
 
-module.exports = function isPrimitive(val) {
+function isPrimitive(val: unknown): val is Primitive {
   if (typeof val === 'object') {
     return val === null;
   }
   return typeof val !== 'function';
-};
+}
+
+export = isPrimitive;
