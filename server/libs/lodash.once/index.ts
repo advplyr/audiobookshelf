@@ -45,7 +45,7 @@ var objectProto = Object.prototype;
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString = objectProto.toString;
+var objectToString = (value: unknown) => objectProto.toString.call(value);
 
 /**
  * Creates a function that invokes `func`, with the `this` binding and arguments
@@ -64,15 +64,15 @@ var objectToString = objectProto.toString;
  * jQuery(element).on('click', _.before(5, addContactToList));
  * // => Allows adding up to 4 contacts to the list.
  */
-function before(n, func) {
-  var result;
+function before<Receiver, Args extends unknown[], Result>(n: number, func: ((this: Receiver, ...args: Args) => Result) | undefined) {
+  var result: Result | undefined;
   if (typeof func != 'function') {
     throw new TypeError(FUNC_ERROR_TEXT);
   }
   n = toInteger(n);
-  return function () {
-    if (--n > 0) {
-      result = func.apply(this, arguments);
+  return function (this: Receiver, ...args: Args) {
+    if (--n > 0 && func) {
+      result = func.apply(this, args);
     }
     if (n <= 1) {
       func = undefined;
@@ -99,7 +99,7 @@ function before(n, func) {
  * initialize();
  * // => `createApplication` is invoked once
  */
-function once(func) {
+function once<Receiver, Args extends unknown[], Result>(func: (this: Receiver, ...args: Args) => Result) {
   return before(2, func);
 }
 
@@ -128,7 +128,7 @@ function once(func) {
  * _.isObject(null);
  * // => false
  */
-function isObject(value) {
+function isObject(value: unknown): value is object {
   var type = typeof value;
   return !!value && (type == 'object' || type == 'function');
 }
@@ -157,7 +157,7 @@ function isObject(value) {
  * _.isObjectLike(null);
  * // => false
  */
-function isObjectLike(value) {
+function isObjectLike(value: unknown) {
   return !!value && typeof value == 'object';
 }
 
@@ -178,9 +178,9 @@ function isObjectLike(value) {
  * _.isSymbol('abc');
  * // => false
  */
-function isSymbol(value) {
+function isSymbol(value: unknown) {
   return typeof value == 'symbol' ||
-    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+    (isObjectLike(value) && objectToString(value) == symbolTag);
 }
 
 /**
@@ -206,16 +206,16 @@ function isSymbol(value) {
  * _.toFinite('3.2');
  * // => 3.2
  */
-function toFinite(value) {
+function toFinite(value: unknown): number {
   if (!value) {
     return value === 0 ? value : 0;
   }
-  value = toNumber(value);
-  if (value === INFINITY || value === -INFINITY) {
-    var sign = (value < 0 ? -1 : 1);
+  const number = toNumber(value);
+  if (number === INFINITY || number === -INFINITY) {
+    var sign = (number < 0 ? -1 : 1);
     return sign * MAX_INTEGER;
   }
-  return value === value ? value : 0;
+  return number === number ? number : 0;
 }
 
 /**
@@ -244,7 +244,7 @@ function toFinite(value) {
  * _.toInteger('3.2');
  * // => 3
  */
-function toInteger(value) {
+function toInteger(value: unknown) {
   var result = toFinite(value),
     remainder = result % 1;
 
@@ -274,7 +274,7 @@ function toInteger(value) {
  * _.toNumber('3.2');
  * // => 3.2
  */
-function toNumber(value) {
+function toNumber(value: unknown): number {
   if (typeof value == 'number') {
     return value;
   }
@@ -282,17 +282,19 @@ function toNumber(value) {
     return NAN;
   }
   if (isObject(value)) {
-    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    const other: unknown = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    // Concatenation preserves the default coercion hint for objects.
     value = isObject(other) ? (other + '') : other;
   }
   if (typeof value != 'string') {
-    return value === 0 ? value : +value;
+    // Unary plus preserves native conversion errors for unsupported values.
+    return value === 0 ? value : +(value as number);
   }
-  value = value.replace(reTrim, '');
-  var isBinary = reIsBinary.test(value);
-  return (isBinary || reIsOctal.test(value))
-    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-    : (reIsBadHex.test(value) ? NAN : +value);
+  const trimmed = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(trimmed);
+  return (isBinary || reIsOctal.test(trimmed))
+    ? freeParseInt(trimmed.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(trimmed) ? NAN : +trimmed);
 }
 
-module.exports = once;
+export = once;
