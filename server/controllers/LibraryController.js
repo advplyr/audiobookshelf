@@ -188,8 +188,10 @@ class LibraryController {
   async findAll(req, res) {
     let libraries = await Database.libraryModel.getAllWithFolders()
 
-    const librariesAccessible = req.user.permissions?.librariesAccessible || []
-    if (librariesAccessible.length) {
+    // accessAllLibraries is stored with an empty librariesAccessible list. An empty list
+    // with access to all libraries turned off means the user can see no libraries.
+    if (!req.user.permissions?.accessAllLibraries) {
+      const librariesAccessible = req.user.permissions?.librariesAccessible || []
       libraries = libraries.filter((lib) => librariesAccessible.includes(lib.id))
     }
 
