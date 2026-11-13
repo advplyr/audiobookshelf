@@ -1,11 +1,11 @@
 const axios = require('axios')
 const Path = require('path')
-const ssrfFilter = require('ssrf-req-filter')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
 const rra = require('../libs/recursiveReaddirAsync')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
+const { getSsrfRequestFilterAgents } = require('./ssrfUtils')
 
 /**
  * Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
@@ -298,6 +298,7 @@ module.exports.getFilePathItemFromFileUpdate = (fileUpdate) => {
 module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
   return new Promise(async (resolve, reject) => {
     Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+    const ssrfRequestFilterAgents = getSsrfRequestFilterAgents(url)
     axios({
       url,
       method: 'GET',
@@ -306,8 +307,8 @@ module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
         'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
       },
       timeout: 30000,
-      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url),
-      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
+      httpAgent: ssrfRequestFilterAgents.httpAgent,
+      httpsAgent: ssrfRequestFilterAgents.httpsAgent
     })
       .then((response) => {
         // Validate content type
