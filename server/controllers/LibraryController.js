@@ -829,16 +829,11 @@ class LibraryController {
       include: include.join(',')
     }
 
-    // TODO: Create paginated queries
-    let collections = await Database.collectionModel.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
+    const limit = Number(payload.limit) || 0
+    const page = Number(payload.page) || 0
+    const { collections, total } = await Database.collectionModel.getOldCollectionsJsonExpandedPage(req.user, req.library.id, include, limit, page)
 
-    payload.total = collections.length
-
-    if (payload.limit) {
-      const startIndex = payload.page * payload.limit
-      collections = collections.slice(startIndex, startIndex + payload.limit)
-    }
-
+    payload.total = total
     payload.results = collections
     res.json(payload)
   }

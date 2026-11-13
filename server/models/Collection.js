@@ -24,20 +24,64 @@ class Collection extends Model {
   }
 
   /**
-   * Get all toOldJSONExpanded, items filtered for user permissions
+   * Whether the user is allowed to see a book inside a collection
    *
-   * @param {import('./User')} user
-   * @param {string} [libraryId]
-   * @param {string[]} [include]
-   * @async
+   * @param {import('./User')|null} user
+   * @param {{ tags?: string[], explicit?: boolean }} book
+   * @returns {boolean}
    */
-  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
-    let collectionWhere = null
-    if (libraryId) {
-      collectionWhere = {
-        libraryId
-      }
+  static canUserAccessBook(user, book) {
+    if (!user) return true
+    if (book.tags?.length && !user.checkCanAccessLibraryItemWithTags(book.tags)) return false
+    if (book.explicit === true && !user.canAccessExplicitContent) return false
+    return true
+  }
+
+  /**
+   * Find the collections the user can see, along with the ids of the books they can see in each.
+   * Only loads the columns needed for the permission checks, so this stays cheap for large libraries.
+   * Collections whose books are all hidden from the user are left out.
+   *
+   * @param {import('./User')|null} user
+   * @param {string} [libraryId]
+   * @returns {Promise<{ id: string, bookIds: Set<string> }[]>}
+   */
+  static async getAccessibleCollectionBookIds(user, libraryId) {
+    const collections = await this.findAll({
+      attributes: ['id'],
+      where: libraryId ? { libraryId } : null,
+      include: [
+        {
+          model: this.sequelize.models.book,
+          attributes: ['id', 'tags', 'explicit'],
+          through: { attributes: [] }
+        }
+      ],
+      order: [['createdAt', 'ASC']]
+    })
+
+    const accessible = []
+    for (const collection of collections) {
+      const allBooks = collection.books || []
+      const bookIds = new Set(allBooks.filter((b) => this.canUserAccessBook(user, b)).map((b) => b.id))
+
+      // Users with restricted permissions will not see this collection
+      if (!bookIds.size && allBooks.length) continue
+
+      accessible.push({ id: collection.id, bookIds })
     }
+    return accessible
+  }
+
+  /**
+   * Get toOldJSONExpanded for the given collections, with books filtered to the ones the user can access
+   *
+   * @param {{ id: string, bookIds: Set<string> }[]} accessible
+   * @param {string[]} [include]
+   * @returns {Promise<Object[]>}
+   */
+  static async expandAccessibleCollections(accessible, include) {
+    if (!accessible.length) return []
 
     // Optionally include rssfeed for collection
     const collectionIncludes = []
@@ -48,7 +92,7 @@ class Collection extends Model {
     }
 
     const collections = await this.findAll({
-      where: collectionWhere,
+      where: { id: accessible.map((a) => a.id) },
       include: [
         {
           model: this.sequelize.models.book,
@@ -72,42 +116,62 @@ class Collection extends Model {
         },
         ...collectionIncludes
       ],
-      order: [[this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']]
+      order: [
+        ['createdAt', 'ASC'],
+        [this.sequelize.models.book, this.sequelize.models.collectionBook, 'order', 'ASC']
+      ]
     })
-    // TODO: Handle user permission restrictions on initial query
-    return collections
-      .map((c) => {
-        // Filter books using user permissions
-        const books =
-          c.books?.filter((b) => {
-            if (user) {
-              if (b.tags?.length && !user.checkCanAccessLibraryItemWithTags(b.tags)) {
-                return false
-              }
-              if (b.explicit === true && !user.canAccessExplicitContent) {
-                return false
-              }
-            }
-            return true
-          }) || []
 
-        // Users with restricted permissions will not see this collection
-        if (!books.length && c.books.length) {
-          return null
-        }
+    const bookIdsByCollectionId = new Map(accessible.map((a) => [a.id, a.bookIds]))
+    return collections.map((c) => {
+      const bookIds = bookIdsByCollectionId.get(c.id)
+      c.books = (c.books || []).filter((b) => bookIds.has(b.id))
 
-        this.books = books
+      const collectionExpanded = c.toOldJSONExpanded()
 
-        const collectionExpanded = c.toOldJSONExpanded()
+      // Map feed if found
+      if (c.feeds?.length) {
+        collectionExpanded.rssFeed = c.feeds[0].toOldJSON()
+      }
 
-        // Map feed if found
-        if (c.feeds?.length) {
-          collectionExpanded.rssFeed = c.feeds[0].toOldJSON()
-        }
+      return collectionExpanded
+    })
+  }
 
-        return collectionExpanded
-      })
-      .filter((c) => c)
+  /**
+   * Get all toOldJSONExpanded, items filtered for user permissions
+   *
+   * @param {import('./User')} user
+   * @param {string} [libraryId]
+   * @param {string[]} [include]
+   * @async
+   */
+  static async getOldCollectionsJsonExpanded(user, libraryId, include) {
+    const accessible = await this.getAccessibleCollectionBookIds(user, libraryId)
+    return this.expandAccessibleCollections(accessible, include)
+  }
+
+  /**
+   * Get one page of toOldJSONExpanded collections, items filtered for user permissions.
+   * Only the collections on the requested page are loaded in full.
+   *
+   * @param {import('./User')} user
+   * @param {string} libraryId
+   * @param {string[]} include
+   * @param {number} limit - 0 returns every collection
+   * @param {number} page
+   * @returns {Promise<{ collections: Object[], total: number }>}
+   */
+  static async getOldCollectionsJsonExpandedPage(user, libraryId, include, limit, page) {
+    let accessible = await this.getAccessibleCollectionBookIds(user, libraryId)
+    const total = accessible.length
+
+    if (limit > 0) {
+      const startIndex = page * limit
+      accessible = accessible.slice(startIndex, startIndex + limit)
+    }
+
+    return { collections: await this.expandAccessibleCollections(accessible, include), total }
   }
 
   /**
