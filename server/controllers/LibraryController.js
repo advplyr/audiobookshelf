@@ -9,6 +9,7 @@ const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilter
 const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const seriesFilters = require('../utils/queries/seriesFilters')
 const fileUtils = require('../utils/fileUtils')
+const { toNumber } = require('../utils/index')
 const { createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -1289,8 +1290,8 @@ class LibraryController {
 
     const payload = {
       episodes: [],
-      limit: req.query.limit || 0,
-      page: req.query.page || 0
+      limit: Math.max(0, toNumber(req.query.limit, 0)),
+      page: Math.max(0, toNumber(req.query.page, 0))
     }
 
     const offset = payload.page * payload.limit
