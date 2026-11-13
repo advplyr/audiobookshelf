@@ -62,6 +62,8 @@ const SocketAuthority = require('../SocketAuthority')
  * @property {string} timeBase
  * @property {number} channels
  * @property {string} channelLayout
+ * @property {number} sampleRate
+ * @property {string} profile
  * @property {ChapterObject[]} chapters
  * @property {Object} metaTags
  * @property {string} mimeType
