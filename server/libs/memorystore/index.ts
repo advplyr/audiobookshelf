@@ -8,9 +8,14 @@
 // SOURCE: https://github.com/roccomuso/memorystore
 //
 
-const debug = require('debug')('memorystore')
-const { LRUCache } = require('lru-cache')
-const { Store } = require('express-session')
+import { createRequire } from 'node:module'
+import { LRUCache } from 'lru-cache'
+import { Store } from 'express-session'
+
+type DebugFactory = (namespace: string) => (format: string, ...values: unknown[]) => void
+const debug = (createRequire(__filename)('debug') as DebugFactory)('memorystore')
+
+type SessionCallback = (error: unknown, session?: unknown) => void
 
 /**
  * An alternative memory store implementation for express session that prunes stale entries.
@@ -19,15 +24,17 @@ const { Store } = require('express-session')
  * @param {number} ttl entry time to live in ms
  * @param {number} max LRU cache max entries
  */
-module.exports = class MemoryStore extends Store {
-  constructor(checkPeriod, ttl, max) {
+class MemoryStore extends Store {
+  store: LRUCache<string, string>
+
+  constructor(checkPeriod: number, ttl: number, max: number) {
     if (typeof checkPeriod !== 'number' || typeof ttl !== 'number' || typeof max !== 'number') {
       throw Error('All arguments must be provided')
     }
     super()
-    this.store = new LRUCache({ ttl, max })
-    let prune = () => {
-      let sizeBefore = this.store.size
+    this.store = new LRUCache<string, string>({ ttl, max })
+    const prune = () => {
+      const sizeBefore = this.store.size
       this.store.purgeStale()
       debug('PRUNE size changed by %i entries', sizeBefore - this.store.size)
     }
@@ -42,9 +49,9 @@ module.exports = class MemoryStore extends Store {
    * @param {Function} fn
    * @api public
    */
-  get(sid, fn) {
-    let err = null
-    let res = null
+  get(sid: string, fn?: SessionCallback) {
+    let err: unknown = null
+    let res: unknown = null
     const data = this.store.get(sid)
     debug('GET %s: %s', sid, data)
     if (data) {
@@ -54,7 +61,7 @@ module.exports = class MemoryStore extends Store {
         err = e
       }
     }
-    fn && setImmediate(fn, err, res)
+    if (fn) setImmediate(fn, err, res)
   }
 
   /**
@@ -65,16 +72,16 @@ module.exports = class MemoryStore extends Store {
    * @param {Function} fn
    * @api public
    */
-  set(sid, sess, fn) {
-    let err = null
+  set(sid: string, sess: unknown, fn?: SessionCallback) {
+    let err: unknown = null
     try {
-      let jsess = JSON.stringify(sess)
+      const jsess = JSON.stringify(sess)
       debug('SET %s: %s', sid, jsess)
       this.store.set(sid, jsess)
     } catch (e) {
       err = e
     }
-    fn && setImmediate(fn, err)
+    if (fn) setImmediate(fn, err)
   }
 
   /**
@@ -84,15 +91,15 @@ module.exports = class MemoryStore extends Store {
    * @param {Function} fn
    * @api public
    */
-  destroy(sid, fn) {
+  destroy(sid: string, fn?: SessionCallback) {
     debug('DESTROY %s', sid)
-    let err = null
+    let err: unknown = null
     try {
       this.store.delete(sid)
     } catch (e) {
       err = e
     }
-    fn && setImmediate(fn, err)
+    if (fn) setImmediate(fn, err)
   }
 
   /**
@@ -105,14 +112,16 @@ module.exports = class MemoryStore extends Store {
    * @api public
    */
 
-  touch(sid, sess, fn) {
+  touch(sid: string, _sess: unknown, fn?: SessionCallback) {
     debug('TOUCH %s', sid)
-    let err = null
+    let err: unknown = null
     try {
       this.store.has(sid, { updateAgeOnHas: true })
     } catch (e) {
       err = e
     }
-    fn && setImmediate(fn, err)
+    if (fn) setImmediate(fn, err)
   }
 }
+
+export = MemoryStore
