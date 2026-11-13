@@ -4,9 +4,8 @@ import Logger from '../Logger'
 import SocketAuthority from '../SocketAuthority'
 import Database from '../Database'
 
-import cronModule from '../libs/nodeCron'
+import cron from '../libs/nodeCron'
 type ScheduledTask = { stop?: () => void }
-const cron = cronModule as { schedule(expression: string, callback: () => Promise<boolean>): ScheduledTask }
 
 import fs from '../libs/fsExtra'
 import archiver from '../libs/archiver'
@@ -123,7 +122,7 @@ class BackupManager {
       return res.status(500).send('Invalid backup file')
     }
 
-    const tempPath = Path.join(this.backupPath, fileUtils.sanitizeFilename(backupFile.name) as string)
+    const tempPath = Path.join(this.backupPath, fileUtils.sanitizeFilename(backupFile.name))
     const success = await backupFile
       .mv(tempPath)
       .then(() => true)

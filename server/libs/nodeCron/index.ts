@@ -1,9 +1,9 @@
-'use strict';
-
-const ScheduledTask = require('./scheduled-task');
-const BackgroundScheduledTask = require('./background-scheduled-task');
-const validation = require('./pattern-validation');
-const storage = require('./storage');
+import ScheduledTask from './scheduled-task';
+import BackgroundScheduledTask from './background-scheduled-task';
+import validation from './pattern-validation';
+import storage from './storage';
+import type Task from './task';
+import type { CronOptions } from './options';
 
 /**
  * @typedef {Object} CronScheduleOptions
@@ -21,7 +21,9 @@ const storage = require('./storage');
  * @param {CronScheduleOptions} [options] A set of options for the scheduled task.
  * @returns {ScheduledTask} The scheduled task.
  */
-function schedule(expression, func, options) {
+function schedule(expression: string, func: Task.Execution, options?: CronOptions): ScheduledTask;
+function schedule(expression: string, func: string, options?: CronOptions): BackgroundScheduledTask;
+function schedule(expression: string, func: string | Task.Execution, options?: CronOptions): ScheduledTask | BackgroundScheduledTask {
     const task = createTask(expression, func, options);
 
     storage.save(task);
@@ -29,7 +31,7 @@ function schedule(expression, func, options) {
     return task;
 }
 
-function createTask(expression, func, options) {
+function createTask(expression: string, func: string | Task.Execution, options?: CronOptions) {
     if (typeof func === 'string')
         return new BackgroundScheduledTask(expression, func, options);
 
@@ -42,12 +44,12 @@ function createTask(expression, func, options) {
  * @param {string} expression The cron expression.
  * @returns {boolean} Whether the expression is valid or not.
  */
-function validate(expression) {
+function validate(expression: unknown) {
     try {
         validation(expression);
 
         return true;
-    } catch (_) {
+    } catch {
         return false;
     }
 }
@@ -57,8 +59,8 @@ function validate(expression) {
  *
  * @returns {ScheduledTask[]} The scheduled tasks.
  */
-function getTasks() {
+function getTasks(): Map<string | undefined, ScheduledTask | BackgroundScheduledTask> {
     return storage.getTasks();
 }
 
-module.exports = { schedule, validate, getTasks };
+export = { schedule, validate, getTasks };

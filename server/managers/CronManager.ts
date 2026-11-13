@@ -1,5 +1,5 @@
 import { Op } from 'sequelize'
-import cronModule from '../libs/nodeCron'
+import cron from '../libs/nodeCron'
 import Logger from '../Logger'
 import Database from '../Database'
 import LibraryScanner from '../scanner/LibraryScanner'
@@ -10,11 +10,6 @@ import type PodcastManager from './PodcastManager'
 import type PlaybackSessionManager from './PlaybackSessionManager'
 
 type ScheduledTask = { stop(): void }
-// The embedded scheduler accepts both synchronous and asynchronous callbacks without options.
-const cron = cronModule as {
-  schedule(expression: string, callback: () => void | Promise<void>): ScheduledTask
-  validate(expression: string): boolean
-}
 
 type LibraryScanCron = { libraryId: string; expression: string; task: ScheduledTask }
 type PodcastSchedule = { libraryItemIds: string[]; expression: string }
