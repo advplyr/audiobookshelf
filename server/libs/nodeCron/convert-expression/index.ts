@@ -1,35 +1,33 @@
-'use strict';
-
 // SOURCE: https://github.com/node-cron/node-cron
 // LICENSE: https://github.com/node-cron/node-cron/blob/master/LICENSE.md
 
-const monthNamesConversion = require('./month-names-conversion');
-const weekDayNamesConversion = require('./week-day-names-conversion');
-const convertAsterisksToRanges = require('./asterisk-to-range-conversion');
-const convertRanges = require('./range-conversion');
-const convertSteps = require('./step-values-conversion');
+import monthNamesConversion from './month-names-conversion';
+import weekDayNamesConversion from './week-day-names-conversion';
+import convertAsterisksToRanges from './asterisk-to-range-conversion';
+import convertRanges from './range-conversion';
+import convertSteps from './step-values-conversion';
 
-module.exports = (() => {
+const convert = (() => {
 
-    function appendSeccondExpression(expressions) {
+    function appendSeccondExpression(expressions: string[]) {
         if (expressions.length === 5) {
             return ['0'].concat(expressions);
         }
         return expressions;
     }
 
-    function removeSpaces(str) {
+    function removeSpaces(str: string) {
         return str.replace(/\s{2,}/g, ' ').trim();
     }
 
     // Function that takes care of normalization.
-    function normalizeIntegers(expressions) {
+    function normalizeIntegers(expressions: string[]) {
         for (let i = 0; i < expressions.length; i++) {
             const numbers = expressions[i].split(',');
             for (let j = 0; j < numbers.length; j++) {
-                numbers[j] = parseInt(numbers[j]);
+                numbers[j] = String(parseInt(numbers[j]));
             }
-            expressions[i] = numbers;
+            expressions[i] = numbers.join();
         }
         return expressions;
     }
@@ -51,7 +49,7 @@ module.exports = (() => {
    *  - expression 1-5 * * * *
    *  - Will be translated to 1,2,3,4,5 * * * *
    */
-    function interprete(expression) {
+    function interprete(expression: string) {
         let expressions = removeSpaces(expression).split(' ');
         expressions = appendSeccondExpression(expressions);
         expressions[4] = monthNamesConversion(expressions[4]);
@@ -67,3 +65,5 @@ module.exports = (() => {
 
     return interprete;
 })();
+
+export = convert;

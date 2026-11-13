@@ -1,6 +1,4 @@
-'use strict';
-
-const convertExpression = require('./convert-expression');
+import convertExpression from './convert-expression';
 
 const validationRegex = /^(?:\d+|\*|\*\/\d+)$/;
 
@@ -10,7 +8,7 @@ const validationRegex = /^(?:\d+|\*|\*\/\d+)$/;
  * @param {number} max The maximum value.
  * @returns {boolean}
  */
-function isValidExpression(expression, min, max) {
+function isValidExpression(expression: string, min: number, max: number) {
     const options = expression.split(',');
 
     for (const option of options) {
@@ -31,7 +29,7 @@ function isValidExpression(expression, min, max) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidSecond(expression) {
+function isInvalidSecond(expression: string) {
     return !isValidExpression(expression, 0, 59);
 }
 
@@ -39,7 +37,7 @@ function isInvalidSecond(expression) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidMinute(expression) {
+function isInvalidMinute(expression: string) {
     return !isValidExpression(expression, 0, 59);
 }
 
@@ -47,7 +45,7 @@ function isInvalidMinute(expression) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidHour(expression) {
+function isInvalidHour(expression: string) {
     return !isValidExpression(expression, 0, 23);
 }
 
@@ -55,7 +53,7 @@ function isInvalidHour(expression) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidDayOfMonth(expression) {
+function isInvalidDayOfMonth(expression: string) {
     return !isValidExpression(expression, 1, 31);
 }
 
@@ -63,7 +61,7 @@ function isInvalidDayOfMonth(expression) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidMonth(expression) {
+function isInvalidMonth(expression: string) {
     return !isValidExpression(expression, 1, 12);
 }
 
@@ -71,7 +69,7 @@ function isInvalidMonth(expression) {
  * @param {string} expression The Cron-Job expression.
  * @returns {boolean}
  */
-function isInvalidWeekDay(expression) {
+function isInvalidWeekDay(expression: string) {
     return !isValidExpression(expression, 0, 7);
 }
 
@@ -81,7 +79,7 @@ function isInvalidWeekDay(expression) {
  * patterns.
  * @returns {void}
  */
-function validateFields(patterns, executablePatterns) {
+function validateFields(patterns: string[], executablePatterns: string[]) {
     if (isInvalidSecond(executablePatterns[0]))
         throw new Error(`${patterns[0]} is a invalid expression for second`);
 
@@ -109,7 +107,7 @@ function validateFields(patterns, executablePatterns) {
  * @param {string} pattern The Cron-Job expression pattern.
  * @returns {void}
  */
-function validate(pattern) {
+function validate(pattern: unknown) {
     if (typeof pattern !== 'string')
         throw new TypeError('pattern must be a string!');
 
@@ -121,4 +119,4 @@ function validate(pattern) {
     validateFields(patterns, executablePatterns);
 }
 
-module.exports = validate;
+export = validate;
