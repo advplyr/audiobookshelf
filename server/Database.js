@@ -993,10 +993,13 @@ WHERE EXISTS (
      * @returns {string}
      */
     matchExpression(column) {
-      const pattern = this.sequelize.escape(`%${this.query}%`)
-      if (!this.supportsUnaccent) return `${column} LIKE ${pattern}`
+      // Escape LIKE wildcards so '_', '%' and '\' in the query match
+      // literally instead of acting as wildcards.
+      const escapedQuery = this.query.replace(/[\\%_]/g, (c) => `\\${c}`)
+      const pattern = this.sequelize.escape(`%${escapedQuery}%`)
+      if (!this.supportsUnaccent) return `${column} LIKE ${pattern} ESCAPE '\\'`
       const normalizedColumn = this.hasAccents ? column : this.normalize(column)
-      return `${normalizedColumn} LIKE ${pattern}`
+      return `${normalizedColumn} LIKE ${pattern} ESCAPE '\\'`
     }
   }
 }

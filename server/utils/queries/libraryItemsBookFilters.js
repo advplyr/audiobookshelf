@@ -1108,16 +1108,8 @@ module.exports = {
           [Sequelize.Op.or]: [
             Sequelize.literal(matchTitle),
             Sequelize.literal(matchSubtitle),
-            {
-              asin: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              isbn: {
-                [Sequelize.Op.substring]: query
-              }
-            }
+            Sequelize.literal(textSearchQuery.matchExpression('asin')),
+            Sequelize.literal(textSearchQuery.matchExpression('isbn'))
           ]
         },
         ...userPermissionBookWhere.bookWhere
