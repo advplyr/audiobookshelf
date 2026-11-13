@@ -1,33 +1,35 @@
 // SOURCE: https://github.com/snovakovic/fast-sort
 // LICENSE: https://github.com/snovakovic/fast-sort/blob/master/LICENSE
 
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-        typeof define === 'function' && define.amd ? define(['exports'], factory) :
-            (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global['fast-sort'] = {}));
-}(this, (function (exports) {
-    'use strict';
+type Selector<Item> = Extract<keyof Item, string> | ((item: Item) => unknown)
+type Order = 1 | -1
+type Compare<Left = unknown> = (left: Left, right: Left, order: Order) => number
+export type SortDirection<Item> = { asc?: Selector<Item>; desc?: Selector<Item>; comparer?: Compare<never> }
+type SortBy<Item> = Selector<Item> | SortDirection<Item>
+type SortConfig<Item> = SortBy<Item> | SortBy<Item>[] | true
 
-    // >>> INTERFACES <<<
-    // >>> HELPERS <<<
-    var castComparer = function (comparer) { return function (a, b, order) { return comparer(a, b, order) * order; }; };
-    var throwInvalidConfigErrorIfTrue = function (condition, context) {
+// >>> INTERFACES <<<
+// >>> HELPERS <<<
+const api = (function () {
+    // Custom comparers receive keys selected by the caller.
+    var castComparer = function (comparer: Compare<never>): Compare { return function (a, b, order) { return (comparer as Compare)(a, b, order) * order; }; };
+    var throwInvalidConfigErrorIfTrue = function (condition: unknown, context: string) {
         if (condition)
             throw Error("Invalid sort config: " + context);
     };
-    var unpackObjectSorter = function (sortByObj) {
+    var unpackObjectSorter = function <Item>(sortByObj: SortDirection<Item>) {
         var _a = sortByObj || {}, asc = _a.asc, desc = _a.desc;
-        var order = asc ? 1 : -1;
+        var order: Order = asc ? 1 : -1;
         var sortBy = (asc || desc);
         // Validate object config
-        throwInvalidConfigErrorIfTrue(!sortBy, 'Expected `asc` or `desc` property');
+        if (!sortBy) throw Error('Invalid sort config: Expected `asc` or `desc` property');
         throwInvalidConfigErrorIfTrue(asc && desc, 'Ambiguous object with `asc` and `desc` config properties');
         var comparer = sortByObj.comparer && castComparer(sortByObj.comparer);
         return { order: order, sortBy: sortBy, comparer: comparer };
     };
     // >>> SORTERS <<<
-    var multiPropertySorterProvider = function (defaultComparer) {
-        return function multiPropertySorter(sortBy, sortByArr, depth, order, comparer, a, b) {
+    var multiPropertySorterProvider = function <Item>(defaultComparer: Compare) {
+        return function multiPropertySorter(sortBy: SortBy<Item>, sortByArr: SortBy<Item>[], depth: number, order: Order, comparer: Compare, a: Item, b: Item): number {
             var valA;
             var valB;
             if (typeof sortBy === 'string') {
@@ -50,7 +52,7 @@
             return equality;
         };
     };
-    function getSortStrategy(sortBy, comparer, order) {
+    function getSortStrategy<Item>(sortBy: SortConfig<Item> | undefined, comparer: Compare, order: Order): (a: Item, b: Item) => number {
         // Flat array sorter
         if (sortBy === undefined || sortBy === true) {
             return function (a, b) { return comparer(a, b, order); };
@@ -66,66 +68,63 @@
         }
         // Sort by multiple properties
         if (Array.isArray(sortBy)) {
-            var multiPropSorter_1 = multiPropertySorterProvider(comparer);
+            var multiPropSorter_1 = multiPropertySorterProvider<Item>(comparer);
             return function (a, b) { return multiPropSorter_1(sortBy[0], sortBy, 1, order, comparer, a, b); };
         }
         // Unpack object config to get actual sorter strategy
         var objectSorterConfig = unpackObjectSorter(sortBy);
         return getSortStrategy(objectSorterConfig.sortBy, objectSorterConfig.comparer || comparer, objectSorterConfig.order);
     }
-    var sortArray = function (order, ctx, sortBy, comparer) {
-        var _a;
+    var sortArray = function <Item>(order: Order, ctx: Item[], sortBy: SortConfig<Item> | undefined, comparer: Compare) {
         if (!Array.isArray(ctx)) {
             return ctx;
         }
         // Unwrap sortBy if array with only 1 value to get faster sort strategy
         if (Array.isArray(sortBy) && sortBy.length < 2) {
-            _a = sortBy, sortBy = _a[0];
+            sortBy = sortBy[0];
         }
         return ctx.sort(getSortStrategy(sortBy, comparer, order));
     };
-    function createNewSortInstance(opts) {
+    function createNewSortInstance(opts: { comparer: Compare<never>; inPlaceSorting?: boolean }) {
         var comparer = castComparer(opts.comparer);
-        return function (_ctx) {
+        return function <Item>(_ctx: Item[]) {
             var ctx = Array.isArray(_ctx) && !opts.inPlaceSorting
                 ? _ctx.slice()
                 : _ctx;
             return {
-                asc: function (sortBy) {
+                asc: function (sortBy?: SortConfig<Item>) {
                     return sortArray(1, ctx, sortBy, comparer);
                 },
-                desc: function (sortBy) {
+                desc: function (sortBy?: SortConfig<Item>) {
                     return sortArray(-1, ctx, sortBy, comparer);
                 },
-                by: function (sortBy) {
+                by: function (sortBy?: SortConfig<Item>) {
                     return sortArray(1, ctx, sortBy, comparer);
                 },
             };
         };
     }
-    var defaultComparer = function (a, b, order) {
+    // Relational operators apply JavaScript coercion to non-null comparison keys.
+    var defaultComparer: Compare = function (a, b, order) {
         if (a == null)
             return order;
         if (b == null)
             return -order;
-        if (a < b)
+        if ((a as number) < (b as number))
             return -1;
-        if (a > b)
+        if ((a as number) > (b as number))
             return 1;
         return 0;
     };
-    var sort = createNewSortInstance({
+    const sort = createNewSortInstance({
         comparer: defaultComparer,
     });
-    var inPlaceSort = createNewSortInstance({
+    const inPlaceSort = createNewSortInstance({
         comparer: defaultComparer,
         inPlaceSorting: true,
     });
 
-    exports.createNewSortInstance = createNewSortInstance;
-    exports.inPlaceSort = inPlaceSort;
-    exports.sort = sort;
+    return { createNewSortInstance, inPlaceSort, sort };
+})();
 
-    Object.defineProperty(exports, '__esModule', { value: true });
-
-})));
+export const { createNewSortInstance, inPlaceSort, sort } = api;
