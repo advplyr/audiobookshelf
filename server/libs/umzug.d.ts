@@ -3,7 +3,7 @@ export { MongoDBStorage } from './umzug/storage/mongodb'
 export { memoryStorage } from './umzug/storage/memory'
 export { RerunBehavior } from './umzug/types'
 
-import type { Sequelize } from 'sequelize'
+export { SequelizeStorage } from './umzug/storage/sequelize'
 
 interface MigrationMeta {
   name: string
@@ -23,13 +23,6 @@ export interface MigrationStorage<Context> {
   executed(params: { context: Context }): Promise<string[]>
   logMigration(params: MigrationParams<Context>): Promise<void>
   unlogMigration(params: MigrationParams<Context>): Promise<void>
-}
-
-export class SequelizeStorage implements MigrationStorage<unknown> {
-  constructor(options: { sequelize: Sequelize })
-  executed(): Promise<string[]>
-  logMigration(params: MigrationMeta): Promise<void>
-  unlogMigration(params: MigrationMeta): Promise<void>
 }
 
 interface UmzugOptions<Context> {
