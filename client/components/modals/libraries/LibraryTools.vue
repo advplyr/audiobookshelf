@@ -9,7 +9,6 @@
         <div class="grow" />
         <div>
           <ui-btn class="mb-4 block" @click.stop="removeAllMetadataClick('json')">{{ $strings.LabelRemoveAllMetadataJson }}</ui-btn>
-          <ui-btn @click.stop="removeAllMetadataClick('abs')">{{ $strings.LabelRemoveAllMetadataAbs }}</ui-btn>
         </div>
       </div>
     </div>
