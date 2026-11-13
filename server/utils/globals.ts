@@ -6,4 +6,4 @@ const globals = {
   MetadataFileTypes: ['opf', 'abs', 'xml', 'json']
 }
 
-module.exports = globals
+export = globals

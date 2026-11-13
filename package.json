@@ -5,6 +5,8 @@
   "description": "Self-hosted audiobook and podcast server",
   "main": "dist-server/index.js",
   "scripts": {
+    "clean:server": "node -e \"require('node:fs').rmSync('dist-server', { recursive: true, force: true })\"",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit --incremental false",
     "build:server": "tsc -p tsconfig.server.json",
     "dev": "nodemon --watch server --watch index.js --watch test --watch dev.js --ext js,ts --exec \"npm run build:server && node dist-server/index.js\" -- --dev",
     "start": "node dist-server/index.js",
@@ -62,7 +64,10 @@
     "xml2js": "^0.5.0"
   },
   "devDependencies": {
+    "@types/express": "4.17.25",
     "@types/node": "^24.13.6",
+    "@typescript-eslint/eslint-plugin": "8.71.0",
+    "@typescript-eslint/parser": "8.71.0",
     "chai": "^4.3.10",
     "eslint": "^10.11.0",
     "mocha": "^10.2.0",

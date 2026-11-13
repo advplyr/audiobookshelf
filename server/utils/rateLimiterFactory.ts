@@ -1,6 +1,8 @@
-const { rateLimit, RateLimitRequestHandler } = require('express-rate-limit')
-const Logger = require('../Logger')
-const requestIp = require('../libs/requestIp')
+import { rateLimit } from 'express-rate-limit'
+import type { RateLimitRequestHandler } from 'express-rate-limit'
+import type { RequestHandler } from 'express'
+import Logger from '../Logger'
+import requestIp from '../libs/requestIp'
 
 /**
  * Factory for creating authentication rate limiters
@@ -9,15 +11,17 @@ class RateLimiterFactory {
   static DEFAULT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
   static DEFAULT_MAX = 40 // 40 attempts
 
+  authRateLimiter: RateLimitRequestHandler | RequestHandler | null
+
   constructor() {
     this.authRateLimiter = null
   }
 
   /**
    * Get the authentication rate limiter
-   * @returns {RateLimitRequestHandler}
+   * The disabled limiter is plain middleware without rate-limit store methods.
    */
-  getAuthRateLimiter() {
+  getAuthRateLimiter(): RateLimitRequestHandler | RequestHandler {
     if (this.authRateLimiter) {
       return this.authRateLimiter
     }
@@ -30,16 +34,16 @@ class RateLimiterFactory {
     }
 
     let windowMs = RateLimiterFactory.DEFAULT_WINDOW_MS
-    if (parseInt(process.env.RATE_LIMIT_AUTH_WINDOW) > 0) {
-      windowMs = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW)
+    if (parseInt(process.env.RATE_LIMIT_AUTH_WINDOW ?? '') > 0) {
+      windowMs = parseInt(process.env.RATE_LIMIT_AUTH_WINDOW ?? '')
       if (windowMs !== RateLimiterFactory.DEFAULT_WINDOW_MS) {
         Logger.info(`[RateLimiterFactory] Authentication rate limiting window set to ${windowMs}ms by ENV variable`)
       }
     }
 
     let max = RateLimiterFactory.DEFAULT_MAX
-    if (parseInt(process.env.RATE_LIMIT_AUTH_MAX) > 0) {
-      max = parseInt(process.env.RATE_LIMIT_AUTH_MAX)
+    if (parseInt(process.env.RATE_LIMIT_AUTH_MAX ?? '') > 0) {
+      max = parseInt(process.env.RATE_LIMIT_AUTH_MAX ?? '')
       if (max !== RateLimiterFactory.DEFAULT_MAX) {
         Logger.info(`[RateLimiterFactory] Authentication rate limiting max set to ${max} by ENV variable`)
       }
@@ -57,7 +61,8 @@ class RateLimiterFactory {
       legacyHeaders: false,
       keyGenerator: (req) => {
         // Override keyGenerator to handle proxy IPs
-        return requestIp.getClientIp(req) || req.ip
+        // Normal HTTP requests have an Express IP; keep the existing fallback unchanged.
+        return requestIp.getClientIp(req) || req.ip!
       },
       handler: (req, res) => {
         const userAgent = req.get('User-Agent') || 'Unknown'
@@ -79,4 +84,5 @@ class RateLimiterFactory {
   }
 }
 
-module.exports = new RateLimiterFactory()
+const rateLimiterFactory = new RateLimiterFactory()
+export = rateLimiterFactory
