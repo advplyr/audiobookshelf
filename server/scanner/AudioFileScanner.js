@@ -545,10 +545,9 @@ class AudioFileScanner {
     } else if (audioFiles.length > 1) {
       // In some cases the ID3 title tag for each file is the chapter title, the criteria to determine if this will be used
       // 1. Every audio file has an ID3 title tag set
-      // 2. None of the title tags are the same as the book title
-      // 3. Every ID3 title tag is unique
-      const metaTagTitlesFound = [...new Set(audioFiles.map((af) => af.metaTags?.tagTitle).filter((tagTitle) => !!tagTitle && tagTitle !== bookTitle))]
-      const useMetaTagAsTitle = metaTagTitlesFound.length === audioFiles.length
+      // 2. Every ID3 title tag is unique
+      const allTagTitles = audioFiles.map((af) => af.metaTags?.tagTitle)
+      const useMetaTagAsTitle = allTagTitles.every((t) => !!t) && new Set(allTagTitles).size === audioFiles.length
 
       // Build chapters from audio files
       let currChapterId = 0
