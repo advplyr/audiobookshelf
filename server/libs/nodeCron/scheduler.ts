@@ -1,10 +1,12 @@
-'use strict';
+import { EventEmitter } from 'node:events';
+import TimeMatcher from './time-matcher';
 
-const EventEmitter = require('events');
-const TimeMatcher = require('./time-matcher');
+class Scheduler extends EventEmitter<{ 'scheduled-time-matched': [Date] }> {
+    timeMatcher: TimeMatcher;
+    autorecover: boolean | undefined;
+    declare timeout: NodeJS.Timeout | null | undefined;
 
-class Scheduler extends EventEmitter {
-    constructor(pattern, timezone, autorecover) {
+    constructor(pattern: string, timezone?: string, autorecover?: boolean) {
         super();
         this.timeMatcher = new TimeMatcher(pattern, timezone);
         this.autorecover = autorecover;
@@ -25,7 +27,7 @@ class Scheduler extends EventEmitter {
 
             for (let i = missedExecutions; i >= 0; i--) {
                 const date = new Date(new Date().getTime() - i * 1000);
-                let date_tmp = this.timeMatcher.apply(date);
+                const date_tmp = this.timeMatcher.apply(date);
                 if (lastExecution.getTime() < date_tmp.getTime() && (i === 0 || this.autorecover) && this.timeMatcher.match(date)) {
                     this.emit('scheduled-time-matched', date_tmp);
                     date_tmp.setMilliseconds(0);
@@ -46,4 +48,4 @@ class Scheduler extends EventEmitter {
     }
 }
 
-module.exports = Scheduler;
+export = Scheduler;

@@ -1,7 +1,7 @@
-const validatePattern = require('./pattern-validation');
-const convertExpression = require('./convert-expression');
+import validatePattern from './pattern-validation';
+import convertExpression from './convert-expression';
 
-function matchPattern(pattern, value){
+function matchPattern(pattern: string, value: number){
     if( pattern.indexOf(',') !== -1 ){
         const patterns = pattern.split(',');
         return patterns.indexOf(value.toString()) !== -1;
@@ -10,14 +10,18 @@ function matchPattern(pattern, value){
 }
 
 class TimeMatcher{
-    constructor(pattern, timezone){
+    pattern: string;
+    timezone: string | undefined;
+    expressions: string[];
+
+    constructor(pattern: string, timezone?: string){
         validatePattern(pattern);
         this.pattern = convertExpression(pattern);
         this.timezone = timezone;
         this.expressions = this.pattern.split(' ');
     }
 
-    match(date){
+    match(date: Date){
         date = this.apply(date);
 
         const runOnSecond = matchPattern(this.expressions[0], date.getSeconds());
@@ -30,7 +34,7 @@ class TimeMatcher{
         return runOnSecond && runOnMinute && runOnHour && runOnDay && runOnMonth && runOnWeekDay;
     }
 
-    apply(date){
+    apply(date: Date){
         if(this.timezone){
             const dtf = new Intl.DateTimeFormat('en-US', {
                 year: 'numeric',
@@ -51,4 +55,4 @@ class TimeMatcher{
     }
 }
 
-module.exports = TimeMatcher;
+export = TimeMatcher;
