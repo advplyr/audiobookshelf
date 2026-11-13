@@ -102,7 +102,9 @@ module.exports = {
       if (!user.canAccessExplicitContent) {
         attrQuery += ' AND b.explicit = 0'
       }
-      if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+      if (!user.permissions?.accessAllTags && !user.permissions?.selectedTagsNotAccessible && !user.permissions?.itemTagsSelected?.length) {
+        attrQuery += ' AND 0'
+      } else if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
         if (user.permissions.selectedTagsNotAccessible) {
           attrQuery += ' AND (SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected)) = 0'
         } else {

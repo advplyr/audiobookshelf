@@ -24,7 +24,10 @@ module.exports = {
         explicit: false
       })
     }
-    if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
+    if (!user.permissions?.accessAllTags && !user.permissions?.selectedTagsNotAccessible && !user.permissions?.itemTagsSelected?.length) {
+      // Empty allow-list: the per-item check denies every item. An empty block-list denies nothing.
+      bookWhere.push(Sequelize.where(Sequelize.literal('1'), 0))
+    } else if (!user.permissions?.accessAllTags && user.permissions?.itemTagsSelected?.length) {
       replacements['userTagsSelected'] = user.permissions.itemTagsSelected
       if (user.permissions.selectedTagsNotAccessible) {
         bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
