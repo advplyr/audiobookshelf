@@ -1,13 +1,16 @@
-'use strict'
+import fs from 'graceful-fs'
+import path from 'node:path'
+import copyModule from '../copy'
+import removeModule from '../remove'
+import mkdir from '../mkdirs'
+import stat from '../util/stat'
+import type { MoveOptions } from './types'
 
-const fs = require('graceful-fs')
-const path = require('path')
-const copySync = require('../copy').copySync
-const removeSync = require('../remove').removeSync
-const mkdirpSync = require('../mkdirs').mkdirpSync
-const stat = require('../util/stat')
+const { copySync } = copyModule
+const { removeSync } = removeModule
+const { mkdirpSync } = mkdir
 
-function moveSync (src, dest, opts) {
+function moveSync (src: string, dest: string, opts?: MoveOptions | null) {
   opts = opts || {}
   const overwrite = opts.overwrite || opts.clobber || false
 
@@ -17,13 +20,13 @@ function moveSync (src, dest, opts) {
   return doRename(src, dest, overwrite, isChangingCase)
 }
 
-function isParentRoot (dest) {
+function isParentRoot (dest: string) {
   const parent = path.dirname(dest)
   const parsedPath = path.parse(parent)
   return parsedPath.root === parent
 }
 
-function doRename (src, dest, overwrite, isChangingCase) {
+function doRename (src: string, dest: string, overwrite: boolean, isChangingCase: boolean) {
   if (isChangingCase) return rename(src, dest, overwrite)
   if (overwrite) {
     removeSync(dest)
@@ -33,16 +36,16 @@ function doRename (src, dest, overwrite, isChangingCase) {
   return rename(src, dest, overwrite)
 }
 
-function rename (src, dest, overwrite) {
+function rename (src: string, dest: string, overwrite: boolean) {
   try {
     fs.renameSync(src, dest)
   } catch (err) {
-    if (err.code !== 'EXDEV') throw err
+    if (!err || typeof err !== 'object' || !('code' in err) || err.code !== 'EXDEV') throw err
     return moveAcrossDevice(src, dest, overwrite)
   }
 }
 
-function moveAcrossDevice (src, dest, overwrite) {
+function moveAcrossDevice (src: string, dest: string, overwrite: boolean) {
   const opts = {
     overwrite,
     errorOnExist: true
@@ -51,4 +54,4 @@ function moveAcrossDevice (src, dest, overwrite) {
   return removeSync(src)
 }
 
-module.exports = moveSync
+export = moveSync
