@@ -1,11 +1,11 @@
-'use strict'
+import universalify from '../../universalify'
+import path from 'node:path'
+import fs from 'graceful-fs'
+import mkdir from '../mkdirs'
 
-const u = require('../../universalify').fromCallback
-const path = require('path')
-const fs = require('graceful-fs')
-const mkdir = require('../mkdirs')
+type Done = (error?: unknown) => void
 
-function createFile(file, callback) {
+function createFile(file: string, callback: Done) {
   function makeFile() {
     fs.writeFile(file, '', err => {
       if (err) return callback(err)
@@ -13,14 +13,14 @@ function createFile(file, callback) {
     })
   }
 
-  fs.stat(file, (err, stats) => { // eslint-disable-line handle-callback-err
+  fs.stat(file, (err, stats) => {
     if (!err && stats.isFile()) return callback()
     const dir = path.dirname(file)
     fs.stat(dir, (err, stats) => {
       if (err) {
         // if the directory doesn't exist, make it
         if (err.code === 'ENOENT') {
-          return mkdir.mkdirs(dir, err => {
+          return mkdir.mkdirs(dir, undefined, err => {
             if (err) return callback(err)
             makeFile()
           })
@@ -40,11 +40,13 @@ function createFile(file, callback) {
   })
 }
 
-function createFileSync(file) {
+function createFileSync(file: string) {
   let stats
   try {
     stats = fs.statSync(file)
-  } catch { }
+  } catch {
+    // A missing file will be created below.
+  }
   if (stats && stats.isFile()) return
 
   const dir = path.dirname(file)
@@ -56,14 +58,14 @@ function createFileSync(file) {
     }
   } catch (err) {
     // If the stat call above failed because the directory doesn't exist, create it
-    if (err && err.code === 'ENOENT') mkdir.mkdirsSync(dir)
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') mkdir.mkdirsSync(dir)
     else throw err
   }
 
   fs.writeFileSync(file, '')
 }
 
-module.exports = {
-  createFile: u(createFile),
+export = {
+  createFile: universalify.fromCallback<unknown, [string], void>(createFile),
   createFileSync
 }
