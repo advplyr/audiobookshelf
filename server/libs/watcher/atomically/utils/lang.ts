@@ -1,16 +1,14 @@
-"use strict";
 /* LANG */
-Object.defineProperty(exports, "__esModule", { value: true });
 const Lang = {
-    isFunction: (x) => {
+    isFunction: (x: unknown) => {
         return typeof x === 'function';
     },
-    isString: (x) => {
+    isString: (x: unknown) => {
         return typeof x === 'string';
     },
-    isUndefined: (x) => {
+    isUndefined: (x: unknown) => {
         return typeof x === 'undefined';
     }
 };
 /* EXPORT */
-exports.default = Lang;
+export default Lang;
