@@ -1,3 +1,6 @@
+export { memoryStorage } from './umzug/storage/memory'
+export { RerunBehavior } from './umzug/types'
+
 import type { Sequelize } from 'sequelize'
 
 interface MigrationMeta {
