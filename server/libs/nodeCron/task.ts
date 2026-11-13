@@ -1,17 +1,19 @@
-'use strict';
+import { EventEmitter } from 'node:events';
 
-const EventEmitter = require('events');
+type Execution = (now: Date | string) => unknown;
 
-class Task extends EventEmitter{
-    constructor(execution){
+class Task extends EventEmitter<{ 'task-finished': []; 'task-failed': [unknown] }>{
+    _execution: Execution;
+
+    constructor(execution: Execution){
         super();
         if(typeof execution !== 'function') {
-            throw 'execution must be a function';
+            throw new TypeError('execution must be a function');
         }
         this._execution = execution;
     }
 
-    execute(now) {
+    execute(now: Date | string) {
         let exec;
         try {
             exec = this._execution(now);
@@ -30,5 +32,8 @@ class Task extends EventEmitter{
     }
 }
 
-module.exports = Task;
+declare namespace Task {
+    export type { Execution };
+}
 
+export = Task;

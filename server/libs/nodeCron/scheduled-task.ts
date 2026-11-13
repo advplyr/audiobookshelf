@@ -1,12 +1,15 @@
-'use strict';
+import { EventEmitter } from 'node:events';
+import Task from './task';
+import Scheduler from './scheduler';
+import { getId } from '../../utils/index'
+import type { CronOptions } from './options';
 
-const EventEmitter = require('events');
-const Task = require('./task');
-const Scheduler = require('./scheduler');
-const { getId } = require('../../utils/index')
+class ScheduledTask extends EventEmitter<{ 'task-done': [unknown] }> {
+    options: CronOptions;
+    _task: Task;
+    _scheduler: Scheduler;
 
-class ScheduledTask extends EventEmitter {
-    constructor(cronExpression, func, options) {
+    constructor(cronExpression: string, func: Task.Execution, options?: CronOptions) {
         super();
         if (!options) {
             options = {
@@ -34,8 +37,8 @@ class ScheduledTask extends EventEmitter {
         }
     }
 
-    now(now = 'manual') {
-        let result = this._task.execute(now);
+    now(now: Date | string = 'manual') {
+        const result = this._task.execute(now);
         this.emit('task-done', result);
     }
 
@@ -48,4 +51,4 @@ class ScheduledTask extends EventEmitter {
     }
 }
 
-module.exports = ScheduledTask;
+export = ScheduledTask;
