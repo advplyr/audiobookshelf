@@ -1,12 +1,20 @@
-const EventEmitter = require('events');
-const path = require('path');
-const { fork } = require('child_process');
-const { getId } = require('../../../utils/index')
+import { EventEmitter } from 'node:events';
+import path from 'node:path';
+import { fork } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+import { getId } from '../../../utils/index'
+import type { CronOptions } from '../options';
+import type { RegisterMessage, TaskDoneMessage } from './messages';
 
 const daemonPath = `${__dirname}/daemon.js`;
 
-class BackgroundScheduledTask extends EventEmitter {
-    constructor(cronExpression, taskPath, options) {
+class BackgroundScheduledTask extends EventEmitter<{ 'task-done': [unknown] }> {
+    cronExpression: string;
+    taskPath: string;
+    options: CronOptions;
+    declare forkProcess: ChildProcess | undefined;
+
+    constructor(cronExpression: string, taskPath: string, options?: CronOptions) {
         super();
         if (!options) {
             options = {
@@ -28,7 +36,7 @@ class BackgroundScheduledTask extends EventEmitter {
         this.stop();
         this.forkProcess = fork(daemonPath);
 
-        this.forkProcess.on('message', (message) => {
+        this.forkProcess.on('message', (message: TaskDoneMessage | { type: 'registred' }) => {
             switch (message.type) {
                 case 'task-done':
                     this.emit('task-done', message.result);
@@ -36,7 +44,7 @@ class BackgroundScheduledTask extends EventEmitter {
             }
         });
 
-        let options = this.options;
+        const options = this.options;
         options.scheduled = true;
 
         this.forkProcess.send({
@@ -44,7 +52,7 @@ class BackgroundScheduledTask extends EventEmitter {
             path: path.resolve(this.taskPath),
             cron: this.cronExpression,
             options: options
-        });
+        } satisfies RegisterMessage);
     }
 
     stop() {
@@ -60,8 +68,8 @@ class BackgroundScheduledTask extends EventEmitter {
     }
 
     isRunning() {
-        return !this.forkProcess.killed;
+        return !this.forkProcess!.killed;
     }
 }
 
-module.exports = BackgroundScheduledTask;
+export = BackgroundScheduledTask;
