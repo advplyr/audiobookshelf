@@ -65,8 +65,11 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.20",
     "@types/express": "4.17.25",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^24.13.6",
+    "@types/sinon": "^17.0.4",
     "@typescript-eslint/eslint-plugin": "8.71.0",
     "@typescript-eslint/parser": "8.71.0",
     "chai": "^4.3.10",

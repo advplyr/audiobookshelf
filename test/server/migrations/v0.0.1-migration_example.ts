@@ -1,13 +1,5 @@
-const { DataTypes } = require('sequelize')
-
-/**
- * @typedef MigrationContext
- * @property {import('sequelize').QueryInterface} queryInterface - a suquelize QueryInterface object.
- * @property {import('../Logger')} logger - a Logger object.
- *
- * @typedef MigrationOptions
- * @property {MigrationContext} context - an object containing the migration context.
- */
+import { DataTypes } from 'sequelize'
+import type { MigrationOptions } from '../../../server/types/migrations'
 
 /**
  * This is an example of an upward migration script.
@@ -15,7 +7,7 @@ const { DataTypes } = require('sequelize')
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function up({ context: { queryInterface, logger } }) {
+async function up({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info('Running migration_example up...')
   logger.info('Creating example_table...')
   await queryInterface.createTable('example_table', {
@@ -39,7 +31,7 @@ async function up({ context: { queryInterface, logger } }) {
  * @param {MigrationOptions} options - an object containing the migration context.
  * @returns {Promise<void>} - A promise that resolves when the migration is complete.
  */
-async function down({ context: { queryInterface, logger } }) {
+async function down({ context: { queryInterface, logger } }: MigrationOptions) {
   logger.info('Running migration_example down...')
   logger.info('Dropping example_table...')
   await queryInterface.dropTable('example_table')
@@ -47,4 +39,4 @@ async function down({ context: { queryInterface, logger } }) {
   logger.info('migration_example down complete.')
 }
 
-module.exports = { up, down }
+export = { up, down }
