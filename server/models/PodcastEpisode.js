@@ -30,6 +30,8 @@ class PodcastEpisode extends Model {
     this.description
     /** @type {string} */
     this.pubDate
+    /** @type {string|null} */
+    this.coverPath
     /** @type {string} */
     this.enclosureURL
     /** @type {BigInt} */
@@ -58,7 +60,7 @@ class PodcastEpisode extends Model {
    * @param {string} podcastId
    * @param {import('../objects/files/AudioFile')} audioFile
    */
-  static async createFromRssPodcastEpisode(rssPodcastEpisode, podcastId, audioFile) {
+  static async createFromRssPodcastEpisode(rssPodcastEpisode, podcastId, audioFile, coverPath = null) {
     const podcastEpisode = {
       index: null,
       season: rssPodcastEpisode.season,
@@ -68,6 +70,7 @@ class PodcastEpisode extends Model {
       subtitle: rssPodcastEpisode.subtitle,
       description: rssPodcastEpisode.description,
       pubDate: rssPodcastEpisode.pubDate,
+      coverPath: coverPath || null,
       enclosureURL: rssPodcastEpisode.enclosure?.url || null,
       enclosureSize: rssPodcastEpisode.enclosure?.length || null,
       enclosureType: rssPodcastEpisode.enclosure?.type || null,
@@ -79,6 +82,9 @@ class PodcastEpisode extends Model {
     }
     if (rssPodcastEpisode.guid) {
       podcastEpisode.extraData.guid = rssPodcastEpisode.guid
+    }
+    if (rssPodcastEpisode.coverUrl) {
+      podcastEpisode.extraData.coverUrl = rssPodcastEpisode.coverUrl
     }
 
     if (audioFile.chapters?.length) {
@@ -110,6 +116,7 @@ class PodcastEpisode extends Model {
         subtitle: DataTypes.STRING(1000),
         description: DataTypes.TEXT,
         pubDate: DataTypes.STRING,
+        coverPath: DataTypes.STRING,
         enclosureURL: DataTypes.STRING,
         enclosureSize: DataTypes.BIGINT,
         enclosureType: DataTypes.STRING,
@@ -219,6 +226,7 @@ class PodcastEpisode extends Model {
       enclosure,
       guid: this.extraData?.guid || null,
       pubDate: this.pubDate,
+      coverPath: this.coverPath || null,
       chapters: structuredClone(this.chapters),
       audioFile: structuredClone(this.audioFile),
       publishedAt: this.publishedAt?.valueOf() || null,

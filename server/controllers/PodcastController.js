@@ -418,7 +418,7 @@ class PodcastController {
     }
 
     const updatePayload = {}
-    const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType']
+    const supportedStringKeys = ['title', 'subtitle', 'description', 'pubDate', 'episode', 'season', 'episodeType', 'coverPath']
     for (const key in req.body) {
       if (supportedStringKeys.includes(key) && typeof req.body[key] === 'string') {
         // Sanitize description HTML
@@ -487,6 +487,34 @@ class PodcastController {
     }
 
     res.json(episode.toOldJSON(req.libraryItem.id))
+  }
+
+  /**
+   * GET: /api/podcasts/:id/episode/:episodeId/cover
+   *
+   * @param {RequestWithLibraryItem} req
+   * @param {Response} res
+   */
+  async getEpisodeCover(req, res) {
+    const episodeId = req.params.episodeId
+
+    /** @type {import('../models/PodcastEpisode')} */
+    const episode = req.libraryItem.media.podcastEpisodes.find((ep) => ep.id === episodeId)
+    if (!episode) {
+      Logger.error(`[PodcastController] getEpisodeCover episode ${episodeId} not found for item ${req.libraryItem.id}`)
+      return res.sendStatus(404)
+    }
+
+    const coverPath = episode.coverPath || req.libraryItem.media.coverPath
+    if (!coverPath || !(await fs.pathExists(coverPath))) {
+      return res.sendStatus(404)
+    }
+
+    const extname = Path.extname(coverPath).toLowerCase().slice(1)
+    if (extname) {
+      res.type(`image/${extname === 'jpg' ? 'jpeg' : extname}`)
+    }
+    res.sendFile(coverPath)
   }
 
   /**

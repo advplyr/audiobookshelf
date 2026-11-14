@@ -343,5 +343,71 @@ class CoverManager {
       }
     }
   }
+
+  /**
+   * Extract embedded cover art from a podcast episode audio file
+   *
+   * @param {import('../objects/files/AudioFile')|import('../models/Book').AudioFileObject} audioFile
+   * @param {string} libraryItemId
+   * @param {string} episodeId
+   * @returns {Promise<string|null>}
+   */
+  async saveEmbeddedEpisodeCoverArt(audioFile, libraryItemId, episodeId) {
+    if (!audioFile?.embeddedCoverArt || !libraryItemId || !episodeId) return null
+
+    const coverDirPath = Path.posix.join(filePathToPOSIX(global.MetadataPath), 'items', libraryItemId, 'episodes')
+    await fs.ensureDir(coverDirPath)
+
+    const coverFilename = audioFile.embeddedCoverArt === 'png' ? `${episodeId}.png` : `${episodeId}.jpg`
+    const coverFilePath = Path.posix.join(coverDirPath, coverFilename)
+
+    if (await fs.pathExists(coverFilePath)) {
+      return coverFilePath
+    }
+
+    const success = await extractCoverArt(audioFile.metadata.path, coverFilePath)
+    return success ? coverFilePath : null
+  }
+
+  /**
+   * Download cover art from URL for a podcast episode
+   *
+   * @param {string} url
+   * @param {string} libraryItemId
+   * @param {string} episodeId
+   * @returns {Promise<{error?:string, cover?:string}>}
+   */
+  async downloadEpisodeCoverFromUrl(url, libraryItemId, episodeId) {
+    try {
+      if (!url || !libraryItemId || !episodeId) return { error: 'Invalid parameters' }
+
+      const coverDirPath = Path.posix.join(filePathToPOSIX(global.MetadataPath), 'items', libraryItemId, 'episodes')
+      await fs.ensureDir(coverDirPath)
+
+      const temppath = Path.posix.join(coverDirPath, `${episodeId}.tmp`)
+      const success = await downloadImageFile(url, temppath)
+        .then(() => true)
+        .catch((err) => {
+          Logger.error(`[CoverManager] Download episode image failed for "${url}"`, err)
+          return false
+        })
+      if (!success) {
+        return { error: 'Failed to download episode image from url' }
+      }
+
+      const imgtype = await this.checkFileIsValidImage(temppath, true)
+      if (imgtype.error) {
+        return imgtype
+      }
+
+      const coverFullPath = Path.posix.join(coverDirPath, `${episodeId}.${imgtype.ext}`)
+      await fs.rename(temppath, coverFullPath)
+
+      return { cover: coverFullPath }
+    } catch (error) {
+      Logger.error(`[CoverManager] Fetch episode cover image from url "${url}" failed`, error)
+      return { error: 'Failed to fetch episode image from url' }
+    }
+  }
 }
 module.exports = new CoverManager()

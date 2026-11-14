@@ -206,6 +206,21 @@ class PodcastManager {
 
     const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
 
+    const episodeCoverUrl = this.currentDownload.rssPodcastEpisode?.coverUrl
+    if (typeof episodeCoverUrl === 'string' && episodeCoverUrl.startsWith('http')) {
+      const coverRes = await CoverManager.downloadEpisodeCoverFromUrl(episodeCoverUrl, libraryItem.id, podcastEpisode.id)
+      if (coverRes?.cover) {
+        podcastEpisode.coverPath = coverRes.cover
+        await podcastEpisode.save()
+      }
+    } else if (audioFile.embeddedCoverArt) {
+      const extractedCover = await CoverManager.saveEmbeddedEpisodeCoverArt(audioFile, libraryItem.id, podcastEpisode.id)
+      if (extractedCover) {
+        podcastEpisode.coverPath = extractedCover
+        await podcastEpisode.save()
+      }
+    }
+
     libraryItem.libraryFiles.push(libraryFile.toJSON())
     // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
     let libraryItemSize = 0

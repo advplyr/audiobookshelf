@@ -165,6 +165,20 @@ class PodcastScanner {
       }
     }
 
+    for (const podcastEpisode of existingPodcastEpisodes) {
+      const coverUpdated = await this.resolveEpisodeCover(
+        existingLibraryItem.id,
+        podcastEpisode,
+        libraryItemData.imageLibraryFiles,
+        libraryItemData.imageLibraryFilesRemoved,
+        libraryScan
+      )
+      if (coverUpdated) {
+        await podcastEpisode.save()
+        hasEpisodeChanges = true
+      }
+    }
+
     // Keep association in sync for toOldJSONExpanded() / item_updated socket payload
     media.podcastEpisodes = existingPodcastEpisodes
 
@@ -289,6 +303,7 @@ class PodcastScanner {
       audioFile.index = 1
 
       const newEpisode = {
+        id: uuidv4(),
         title: audioFile.metaTags.tagTitle || audioFile.metadata.filenameNoExt,
         subtitle: null,
         season: null,
@@ -297,6 +312,7 @@ class PodcastScanner {
         pubDate: null,
         publishedAt: null,
         description: null,
+        coverPath: null,
         audioFile: audioFile.toJSON(),
         chapters: audioFile.chapters || []
       }
@@ -335,6 +351,10 @@ class PodcastScanner {
 
     const libraryItemObj = libraryItemData.libraryItemObject
     libraryItemObj.id = uuidv4() // Generate library item id ahead of time to use for saving extracted cover image
+
+    for (const newEpisode of newPodcastEpisodes) {
+      await this.resolveEpisodeCover(libraryItemObj.id, newEpisode, libraryItemData.imageLibraryFiles, [], libraryScan)
+    }
     libraryItemObj.isMissing = false
     libraryItemObj.isInvalid = false
     libraryItemObj.extraData = {}
@@ -493,6 +513,63 @@ class PodcastScanner {
         libraryScan.addLog(LogLevel.ERROR, `Failed to save json file at "${metadataFilePath}"`, error)
         return null
       })
+  }
+
+  /**
+   * Resolve sidecar or embedded cover art for a podcast episode
+   *
+   * @param {string} libraryItemId
+   * @param {import('../models/PodcastEpisode')|Object} podcastEpisode
+   * @param {import('../models/LibraryItem').LibraryFileObject[]} imageLibraryFiles
+   * @param {import('../models/LibraryItem').LibraryFileObject[]} imageLibraryFilesRemoved
+   * @param {import('./LibraryScan')} [libraryScan]
+   * @returns {Promise<boolean>} true if coverPath was updated
+   */
+  async resolveEpisodeCover(libraryItemId, podcastEpisode, imageLibraryFiles = [], imageLibraryFilesRemoved = [], libraryScan = null) {
+    const audioFile = podcastEpisode.audioFile
+    if (!audioFile?.metadata) return false
+
+    if (podcastEpisode.coverPath && imageLibraryFilesRemoved.some((lf) => lf.metadata.path === podcastEpisode.coverPath)) {
+      podcastEpisode.coverPath = null
+    }
+
+    if (podcastEpisode.coverPath && (await fsExtra.pathExists(podcastEpisode.coverPath))) {
+      return false
+    }
+
+    const audioExt = Path.extname(audioFile.metadata.filename)
+    const audioBase = Path.basename(audioFile.metadata.filename, audioExt).toLowerCase()
+    const audioDir = Path.dirname(audioFile.metadata.relPath || audioFile.metadata.path)
+
+    const matchingSidecar = imageLibraryFiles.find((imgFile) => {
+      const imgExt = Path.extname(imgFile.metadata.filename)
+      const imgBase = Path.basename(imgFile.metadata.filename, imgExt).toLowerCase()
+      const imgDir = Path.dirname(imgFile.metadata.relPath || imgFile.metadata.path)
+      return imgDir === audioDir && (imgBase === audioBase || imgBase === `${audioBase}-thumb` || imgBase === `${audioBase}-cover`)
+    })
+
+    if (matchingSidecar) {
+      if (podcastEpisode.coverPath !== matchingSidecar.metadata.path) {
+        podcastEpisode.coverPath = matchingSidecar.metadata.path
+        libraryScan?.addLog(LogLevel.DEBUG, `Matched sidecar cover "${podcastEpisode.coverPath}" for episode "${podcastEpisode.title}"`)
+        return true
+      }
+      return false
+    }
+
+    const episodeId = podcastEpisode.id || uuidv4()
+    if (!podcastEpisode.id) podcastEpisode.id = episodeId
+
+    if (audioFile.embeddedCoverArt) {
+      const extractedCoverPath = await CoverManager.saveEmbeddedEpisodeCoverArt(audioFile, libraryItemId, episodeId)
+      if (extractedCoverPath && podcastEpisode.coverPath !== extractedCoverPath) {
+        podcastEpisode.coverPath = extractedCoverPath
+        libraryScan?.addLog(LogLevel.DEBUG, `Extracted embedded cover "${extractedCoverPath}" for episode "${podcastEpisode.title}"`)
+        return true
+      }
+    }
+
+    return false
   }
 }
 module.exports = new PodcastScanner()

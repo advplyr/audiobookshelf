@@ -37,6 +37,8 @@ class FeedEpisode extends Model {
     this.duration
     /** @type {string} */
     this.filePath
+    /** @type {string|null} */
+    this.coverPath
     /** @type {boolean} */
     this.explicit
     /** @type {UUIDV4} */
@@ -72,6 +74,7 @@ class FeedEpisode extends Model {
       episodeType: episode.episodeType,
       duration: episode.audioFile.duration,
       filePath: episode.audioFile.metadata.path,
+      coverPath: episode.coverPath || null,
       explicit: libraryItemExpanded.media.explicit,
       feedId: feed.id
     }
@@ -106,7 +109,7 @@ class FeedEpisode extends Model {
       feedEpisodeObjs.push(this.getFeedEpisodeObjFromPodcastEpisode(libraryItemExpanded, feed, slug, episode, existingEpisode?.id))
     }
     Logger.info(`[FeedEpisode] Upserting ${feedEpisodeObjs.length} episodes for feed ${feed.id} (${numExisting} existing)`)
-    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'explicit'] })
+    return this.bulkCreate(feedEpisodeObjs, { transaction, updateOnDuplicate: ['title', 'author', 'description', 'siteURL', 'enclosureURL', 'enclosureType', 'enclosureSize', 'pubDate', 'season', 'episode', 'episodeType', 'duration', 'filePath', 'coverPath', 'explicit'] })
   }
 
   /**
@@ -268,6 +271,7 @@ class FeedEpisode extends Model {
         episodeType: DataTypes.STRING,
         duration: DataTypes.FLOAT,
         filePath: DataTypes.STRING,
+        coverPath: DataTypes.STRING,
         explicit: DataTypes.BOOLEAN
       },
       {
@@ -327,6 +331,16 @@ class FeedEpisode extends Model {
     })
     if (this.description) {
       customElements.push({ 'itunes:summary': { _cdata: this.description } })
+    }
+    if (this.coverPath) {
+      const itemBaseUrl = this.enclosureURL.replace(/\/media\.[^.\/]+$/, '')
+      customElements.push({
+        'itunes:image': {
+          _attr: {
+            href: `${hostPrefix}${itemBaseUrl}/cover${Path.extname(this.coverPath) || '.jpg'}`
+          }
+        }
+      })
     }
 
     return {

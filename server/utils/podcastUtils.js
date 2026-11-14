@@ -164,7 +164,8 @@ function extractEpisodeData(item) {
   }
 
   const episode = {
-    enclosure: enclosure
+    enclosure: enclosure,
+    coverUrl: extractImage(item) || item['media:thumbnail']?.[0]?.['$']?.url || null
   }
 
   episode.enclosure.url = episode.enclosure.url.trim()
@@ -283,6 +284,7 @@ function cleanEpisodeData(data) {
     explicit: data.explicit || '',
     publishedAt,
     enclosure: data.enclosure,
+    coverUrl: data.coverUrl || null,
     guid: data.guid || null,
     chaptersUrl: data.chaptersUrl || null,
     chaptersType: data.chaptersType || null,

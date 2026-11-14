@@ -202,13 +202,32 @@ class RssFeedManager {
       attributes: ['id', 'slug'],
       include: {
         model: Database.feedEpisodeModel,
-        attributes: ['id', 'filePath']
+        attributes: ['id', 'filePath', 'coverPath']
       }
     })
 
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
+      return
+    }
+    const requestedFile = req.params[0] || ''
+    if (requestedFile.startsWith('cover')) {
+      const episode = feed.feedEpisodes.find((ep) => ep.id === req.params.episodeId)
+      if (!episode?.coverPath || !(await fs.pathExists(episode.coverPath))) {
+        res.sendStatus(404)
+        return
+      }
+      const extname = Path.extname(episode.coverPath).toLowerCase().slice(1)
+      res.type(`image/${extname === 'jpg' ? 'jpeg' : extname}`)
+      const readStream = fs.createReadStream(episode.coverPath)
+      readStream.on('error', (error) => {
+        Logger.error(`[RssFeedManager] Error streaming episode cover image: ${error.message}`)
+        if (!res.headersSent) {
+          res.sendStatus(404)
+        }
+      })
+      readStream.pipe(res)
       return
     }
     const episodePath = feed.getEpisodePath(req.params.episodeId)
