@@ -172,7 +172,7 @@ class NotificationManager {
     }
 
     await Database.updateSetting(Database.notificationSettings)
-    SocketAuthority.emitter('notifications_updated', Database.notificationSettings.toJSON())
+    SocketAuthority.adminEmitter('notifications_updated', Database.notificationSettings.toJSON())
 
     this.notificationFinished()
   }
