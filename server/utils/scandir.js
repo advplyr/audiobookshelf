@@ -273,6 +273,7 @@ function getASIN(folder) {
   }
   return [folder.trim(), asin]
 }
+module.exports.getASIN = getASIN
 
 /**
  *
