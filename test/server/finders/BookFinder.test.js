@@ -657,6 +657,11 @@ describe('search with an ASIN in the title', () => {
     sinon.assert.calledWith(asinSearchStub, asin, 'uk')
   })
 
+  it('drops a region that is not a known Audible region', async () => {
+    await bookFinder.search(null, 'audible.uk&x=1', `A War in the Depths [${asin}]`, '')
+    sinon.assert.calledWith(asinSearchStub, asin, '')
+  })
+
   it('does not look up the ASIN for non-audible providers', async () => {
     await bookFinder.search(null, 'google', `A War in the Depths [${asin}]`, '')
     sinon.assert.notCalled(asinSearchStub)

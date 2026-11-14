@@ -478,7 +478,9 @@ class BookFinder {
     const [titleWithoutAsin, titleAsin] = getASIN(title)
     if (!titleAsin) return null
 
-    const region = provider.includes('.') ? provider.split('.').pop() : ''
+    let region = provider.includes('.') ? provider.split('.').pop() : ''
+    // asinSearch puts region into the request URL as is, so only allow known regions (as Audible.search does)
+    if (region && !this.audible.regionMap[region]) region = ''
     const item = await this.audible.asinSearch(titleAsin, region, this.#providerResponseTimeout)
     if (!item) {
       Logger.debug(`[BookFinder] ASIN "${titleAsin}" from title not found`)
