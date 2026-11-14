@@ -1,14 +1,16 @@
-const { expect } = require('chai')
-const sinon = require('sinon')
-const { up } = require('../../../server/migrations/v2.17.3-fk-constraints')
-const { Sequelize, QueryInterface } = require('sequelize')
-const Logger = require('../../../server/Logger')
+import { expect } from 'chai'
+import sinon from 'sinon'
+import migration from '../../../server/migrations/v2.17.3-fk-constraints'
+import { Sequelize } from 'sequelize'
+import type { QueryInterface } from 'sequelize'
+import Logger from '../../../server/Logger'
+
+const { up } = migration
 
 describe('migration-v2.17.3-fk-constraints', () => {
-  let sequelize
-  /** @type {QueryInterface} */
-  let queryInterface
-  let loggerInfoStub
+  let sequelize: Sequelize
+  let queryInterface: QueryInterface
+  let loggerInfoStub: sinon.SinonStub<Parameters<typeof Logger.info>, ReturnType<typeof Logger.info>>
 
   beforeEach(() => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
@@ -190,20 +192,20 @@ describe('migration-v2.17.3-fk-constraints', () => {
       await up({ context: { queryInterface, logger: Logger } })
 
       expect(loggerInfoStub.callCount).to.equal(14)
-      expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.17.3 migration] UPGRADE BEGIN: 2.17.3-fk-constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.17.3 migration] Updating libraryItems constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.17.3 migration] No changes needed for libraryItems constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.17.3 migration] Updating feeds constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.17.3 migration] No changes needed for feeds constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(5).calledWith(sinon.match('[2.17.3 migration] Updating mediaItemShares constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(6).calledWith(sinon.match('[2.17.3 migration] No changes needed for mediaItemShares constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(7).calledWith(sinon.match('[2.17.3 migration] Updating playbackSessions constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(8).calledWith(sinon.match('[2.17.3 migration] No changes needed for playbackSessions constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(9).calledWith(sinon.match('[2.17.3 migration] Updating playlistMediaItems constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(10).calledWith(sinon.match('[2.17.3 migration] No changes needed for playlistMediaItems constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(11).calledWith(sinon.match('[2.17.3 migration] Updating mediaProgresses constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(12).calledWith(sinon.match('[2.17.3 migration] No changes needed for mediaProgresses constraints'))).to.be.true
-      expect(loggerInfoStub.getCall(13).calledWith(sinon.match('[2.17.3 migration] UPGRADE END: 2.17.3-fk-constraints'))).to.be.true
+      expect(loggerInfoStub.getCall(0).calledWith(sinon.match('[2.17.3 migration] UPGRADE BEGIN: 2.17.3-fk-constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(1).calledWith(sinon.match('[2.17.3 migration] Updating libraryItems constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(2).calledWith(sinon.match('[2.17.3 migration] No changes needed for libraryItems constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(3).calledWith(sinon.match('[2.17.3 migration] Updating feeds constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(4).calledWith(sinon.match('[2.17.3 migration] No changes needed for feeds constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(5).calledWith(sinon.match('[2.17.3 migration] Updating mediaItemShares constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(6).calledWith(sinon.match('[2.17.3 migration] No changes needed for mediaItemShares constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(7).calledWith(sinon.match('[2.17.3 migration] Updating playbackSessions constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(8).calledWith(sinon.match('[2.17.3 migration] No changes needed for playbackSessions constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(9).calledWith(sinon.match('[2.17.3 migration] Updating playlistMediaItems constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(10).calledWith(sinon.match('[2.17.3 migration] No changes needed for playlistMediaItems constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(11).calledWith(sinon.match('[2.17.3 migration] Updating mediaProgresses constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(12).calledWith(sinon.match('[2.17.3 migration] No changes needed for mediaProgresses constraints'))).to.equal(true)
+      expect(loggerInfoStub.getCall(13).calledWith(sinon.match('[2.17.3 migration] UPGRADE END: 2.17.3-fk-constraints'))).to.equal(true)
 
       //
       // Validate that data is not changed
