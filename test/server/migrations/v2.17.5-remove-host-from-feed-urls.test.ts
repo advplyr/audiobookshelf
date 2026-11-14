@@ -1,11 +1,30 @@
-const { expect } = require('chai')
-const sinon = require('sinon')
-const { up, down } = require('../../../server/migrations/v2.17.5-remove-host-from-feed-urls')
-const { Sequelize, DataTypes } = require('sequelize')
-const Logger = require('../../../server/Logger')
+import { expect } from 'chai'
+import sinon from 'sinon'
+import migration from '../../../server/migrations/v2.17.5-remove-host-from-feed-urls'
+import { Sequelize, DataTypes } from 'sequelize'
+import Logger from '../../../server/Logger'
+import type { Model } from 'sequelize'
+import type { MigrationContext } from '../../../server/types/migrations'
 
-const defineModels = (sequelize) => {
-  const Feeds = sequelize.define('Feeds', {
+const { up, down } = migration
+
+type FeedAttributes = {
+  id: string
+  feedUrl: string
+  imageUrl: string | null
+  siteUrl: string
+  serverAddress: string | null
+}
+
+type FeedEpisodeAttributes = {
+  id: string
+  feedId: string
+  siteUrl: string | null
+  enclosureUrl: string
+}
+
+const defineModels = (sequelize: Sequelize) => {
+  const Feeds = sequelize.define<Model<FeedAttributes> & FeedAttributes>('Feeds', {
     id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
     feedUrl: { type: DataTypes.STRING },
     imageUrl: { type: DataTypes.STRING },
@@ -13,7 +32,7 @@ const defineModels = (sequelize) => {
     serverAddress: { type: DataTypes.STRING }
   })
 
-  const FeedEpisodes = sequelize.define('FeedEpisodes', {
+  const FeedEpisodes = sequelize.define<Model<FeedEpisodeAttributes> & FeedEpisodeAttributes>('FeedEpisodes', {
     id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
     feedId: { type: DataTypes.UUID },
     siteUrl: { type: DataTypes.STRING },
@@ -23,10 +42,12 @@ const defineModels = (sequelize) => {
   return { Feeds, FeedEpisodes }
 }
 
-describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
-  let queryInterface, logger, context
-  let sequelize
-  let Feeds, FeedEpisodes
+describe('Migration v2.17.5-remove-host-from-feed-urls', () => {
+  let context: MigrationContext
+  let info: sinon.SinonStub<Parameters<typeof Logger.info>, ReturnType<typeof Logger.info>>
+  let sequelize: Sequelize
+  let Feeds: ReturnType<typeof defineModels>['Feeds']
+  let FeedEpisodes: ReturnType<typeof defineModels>['FeedEpisodes']
   const feed1Id = '00000000-0000-4000-a000-000000000001'
   const feed2Id = '00000000-0000-4000-a000-000000000002'
   const feedEpisode1Id = '00000000-4000-a000-0000-000000000011'
@@ -35,7 +56,6 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
 
   before(async () => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
-    queryInterface = sequelize.getQueryInterface()
     ;({ Feeds, FeedEpisodes } = defineModels(sequelize))
     await sequelize.sync()
   })
@@ -49,11 +69,12 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
     await Feeds.destroy({ where: {}, truncate: true })
     await FeedEpisodes.destroy({ where: {}, truncate: true })
 
-    logger = {
-      info: sinon.stub(),
-      error: sinon.stub()
-    }
-    context = { queryInterface, logger }
+    info = sinon.stub(Logger, 'info')
+    context = { queryInterface: sequelize.getQueryInterface(), logger: Logger }
+  })
+
+  afterEach(() => {
+    sinon.restore()
   })
 
   describe('up', () => {
@@ -73,8 +94,8 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       const feeds = await Feeds.findAll({ raw: true })
       const feedEpisodes = await FeedEpisodes.findAll({ raw: true })
 
-      expect(logger.info.calledWith('[2.17.5 migration] UPGRADE BEGIN: 2.17.5-remove-host-from-feed-urls')).to.be.true
-      expect(logger.info.calledWith('[2.17.5 migration] Removing serverAddress from Feeds table URLs')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] UPGRADE BEGIN: 2.17.5-remove-host-from-feed-urls')).to.equal(true)
+      expect(info.calledWith('[2.17.5 migration] Removing serverAddress from Feeds table URLs')).to.equal(true)
 
       expect(feeds[0].feedUrl).to.equal('/feed1')
       expect(feeds[0].imageUrl).to.equal('/img1')
@@ -83,8 +104,8 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(feeds[1].imageUrl).to.equal('/img2')
       expect(feeds[1].siteUrl).to.equal('/site2')
 
-      expect(logger.info.calledWith('[2.17.5 migration] Removed serverAddress from Feeds table URLs')).to.be.true
-      expect(logger.info.calledWith('[2.17.5 migration] Removing serverAddress from FeedEpisodes table URLs')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] Removed serverAddress from Feeds table URLs')).to.equal(true)
+      expect(info.calledWith('[2.17.5 migration] Removing serverAddress from FeedEpisodes table URLs')).to.equal(true)
 
       expect(feedEpisodes[0].siteUrl).to.equal('/episode11')
       expect(feedEpisodes[0].enclosureUrl).to.equal('/enclosure11')
@@ -93,8 +114,8 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(feedEpisodes[2].siteUrl).to.equal('/episode21')
       expect(feedEpisodes[2].enclosureUrl).to.equal('/enclosure21')
 
-      expect(logger.info.calledWith('[2.17.5 migration] Removed serverAddress from FeedEpisodes table URLs')).to.be.true
-      expect(logger.info.calledWith('[2.17.5 migration] UPGRADE END: 2.17.5-remove-host-from-feed-urls')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] Removed serverAddress from FeedEpisodes table URLs')).to.equal(true)
+      expect(info.calledWith('[2.17.5 migration] UPGRADE END: 2.17.5-remove-host-from-feed-urls')).to.equal(true)
     })
 
     it('should handle null URLs in Feeds and FeedEpisodes tables', async () => {
@@ -107,9 +128,9 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       const feedEpisodes = await FeedEpisodes.findAll({ raw: true })
 
       expect(feeds[0].feedUrl).to.equal('/feed1')
-      expect(feeds[0].imageUrl).to.be.null
+      expect(feeds[0].imageUrl).to.equal(null)
       expect(feeds[0].siteUrl).to.equal('/site1')
-      expect(feedEpisodes[0].siteUrl).to.be.null
+      expect(feedEpisodes[0].siteUrl).to.equal(null)
       expect(feedEpisodes[0].enclosureUrl).to.equal('/enclosure11')
     })
 
@@ -146,8 +167,8 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       const feeds = await Feeds.findAll({ raw: true })
       const feedEpisodes = await FeedEpisodes.findAll({ raw: true })
 
-      expect(logger.info.calledWith('[2.17.5 migration] DOWNGRADE BEGIN: 2.17.5-remove-host-from-feed-urls')).to.be.true
-      expect(logger.info.calledWith('[2.17.5 migration] Adding serverAddress back to Feeds table URLs')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] DOWNGRADE BEGIN: 2.17.5-remove-host-from-feed-urls')).to.equal(true)
+      expect(info.calledWith('[2.17.5 migration] Adding serverAddress back to Feeds table URLs')).to.equal(true)
 
       expect(feeds[0].feedUrl).to.equal('http://server1.com/feed1')
       expect(feeds[0].imageUrl).to.equal('http://server1.com/img1')
@@ -156,8 +177,8 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(feeds[1].imageUrl).to.equal('http://server2.com/img2')
       expect(feeds[1].siteUrl).to.equal('http://server2.com/site2')
 
-      expect(logger.info.calledWith('[2.17.5 migration] Added serverAddress back to Feeds table URLs')).to.be.true
-      expect(logger.info.calledWith('[2.17.5 migration] Adding serverAddress back to FeedEpisodes table URLs')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] Added serverAddress back to Feeds table URLs')).to.equal(true)
+      expect(info.calledWith('[2.17.5 migration] Adding serverAddress back to FeedEpisodes table URLs')).to.equal(true)
 
       expect(feedEpisodes[0].siteUrl).to.equal('http://server1.com/episode11')
       expect(feedEpisodes[0].enclosureUrl).to.equal('http://server1.com/enclosure11')
@@ -166,7 +187,7 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       expect(feedEpisodes[2].siteUrl).to.equal('http://server2.com/episode21')
       expect(feedEpisodes[2].enclosureUrl).to.equal('http://server2.com/enclosure21')
 
-      expect(logger.info.calledWith('[2.17.5 migration] DOWNGRADE END: 2.17.5-remove-host-from-feed-urls')).to.be.true
+      expect(info.calledWith('[2.17.5 migration] DOWNGRADE END: 2.17.5-remove-host-from-feed-urls')).to.equal(true)
     })
 
     it('should handle null URLs in Feeds and FeedEpisodes tables', async () => {
@@ -178,9 +199,9 @@ describe('Migration v2.17.4-use-subfolder-for-oidc-redirect-uris', () => {
       const feedEpisodes = await FeedEpisodes.findAll({ raw: true })
 
       expect(feeds[0].feedUrl).to.equal('http://server1.com/feed1')
-      expect(feeds[0].imageUrl).to.be.null
+      expect(feeds[0].imageUrl).to.equal(null)
       expect(feeds[0].siteUrl).to.equal('http://server1.com/site1')
-      expect(feedEpisodes[0].siteUrl).to.be.null
+      expect(feedEpisodes[0].siteUrl).to.equal(null)
       expect(feedEpisodes[0].enclosureUrl).to.equal('http://server1.com/enclosure11')
     })
 
