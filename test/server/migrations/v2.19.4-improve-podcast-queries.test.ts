@@ -1,21 +1,22 @@
-const chai = require('chai')
-const sinon = require('sinon')
-const { expect } = chai
+import { expect } from 'chai'
+import sinon from 'sinon'
 
-const { DataTypes, Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+import { DataTypes, QueryTypes, Sequelize } from 'sequelize'
+import type { QueryInterface } from 'sequelize'
+import Logger from '../../../server/Logger'
 
-const { up, down } = require('../../../server/migrations/v2.19.4-improve-podcast-queries')
+import migration from '../../../server/migrations/v2.19.4-improve-podcast-queries'
+
+const { up, down } = migration
 
 describe('Migration v2.19.4-improve-podcast-queries', () => {
-  let sequelize
-  let queryInterface
-  let loggerInfoStub
+  let sequelize: Sequelize
+  let queryInterface: QueryInterface
 
   beforeEach(async () => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     queryInterface = sequelize.getQueryInterface()
-    loggerInfoStub = sinon.stub(Logger, 'info')
+    sinon.stub(Logger, 'info')
 
     await queryInterface.createTable('libraryItems', {
       id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
@@ -31,7 +32,7 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
 
     await queryInterface.createTable('podcastEpisodes', {
       id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
-      podcastId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'podcasts', key: 'id', onDelete: 'CASCADE' } }
+      podcastId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'podcasts', key: 'id' } }
     })
 
     await queryInterface.createTable('mediaProgresses', {
@@ -122,14 +123,20 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
     it('should add trigger to update title in libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
     it('should add trigger to update titleIgnorePrefix in libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
@@ -161,10 +168,16 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
         { id: 2, mediaId: 2, title: 'The Podcast 2', titleIgnorePrefix: 'Podcast 2, The' }
       ])
 
-      const [[{ count: count1 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`)
+      const [{ count: count1 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count1).to.equal(1)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(1)
     })
   })
@@ -214,7 +227,10 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -222,7 +238,10 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -255,10 +274,16 @@ describe('Migration v2.19.4-improve-podcast-queries', () => {
         { id: 2, mediaId: 2, title: 'The Podcast 2', titleIgnorePrefix: 'Podcast 2, The' }
       ])
 
-      const [[{ count: count1 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`)
+      const [{ count: count1 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_from_podcasts_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count1).to.equal(0)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix_from_podcasts_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(0)
     })
   })
