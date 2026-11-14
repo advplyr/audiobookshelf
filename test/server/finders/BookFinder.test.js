@@ -594,3 +594,88 @@ describe('search', () => {
     })
   })
 })
+
+describe('search with an ASIN in the title', () => {
+  const asin = 'B0DKB3FPZC'
+  const asinBook = { title: 'A War in the Depths: A Progression Fantasy LitRPG', subtitle: 'Newly Summoned Demoness, Book 2', author: 'Erios909', asin }
+  const titleSearchResult = [{ title: 'The Great War', author: 'Ruben Garcia', asin: 'B0FM69NRJK' }]
+
+  let asinSearchStub
+  let runSearchStub
+
+  beforeEach(() => {
+    asinSearchStub = sinon.stub(bookFinder.audible, 'asinSearch')
+    asinSearchStub.resolves(null)
+    asinSearchStub.withArgs(asin).resolves({ asin })
+    sinon.stub(bookFinder.audible, 'cleanResult').callsFake(() => ({ ...asinBook }))
+    runSearchStub = sinon.stub(bookFinder, 'runSearch').resolves(titleSearchResult)
+    sinon.stub(bookFinder.audnexus, 'authorASINsRequest').resolves([])
+  })
+
+  afterEach(() => {
+    sinon.restore()
+  })
+
+  it('returns the ASIN result when its title matches the rest of a Libation-style file name', async () => {
+    const results = await bookFinder.search(null, 'audible', `A War in the Depths: A Progression Fantasy LitRPG: Newly Summoned Demoness, Book 2 [${asin}]`, '')
+    expect(results).to.deep.equal([asinBook])
+    sinon.assert.calledOnce(asinSearchStub)
+    sinon.assert.notCalled(runSearchStub)
+  })
+
+  it('matches a folder name where the colon was replaced', async () => {
+    const results = await bookFinder.search(null, 'audible', `A War in the Depths - A Progression Fantasy LitRPG Newly Summoned Demoness, Book 2 [${asin}]`, '')
+    expect(results).to.deep.equal([asinBook])
+  })
+
+  it('matches a short folder name (Libation default folder template)', async () => {
+    const results = await bookFinder.search(null, 'audible', `A War in the Depths [${asin}]`, '')
+    expect(results).to.deep.equal([asinBook])
+  })
+
+  it('accepts a title that is only the bracketed ASIN', async () => {
+    const results = await bookFinder.search(null, 'audible', `[${asin}]`, '')
+    expect(results).to.deep.equal([asinBook])
+  })
+
+  it('falls back to the title search when the ASIN resolves to a different book', async () => {
+    const title = `Some Other Book [${asin}]`
+    const results = await bookFinder.search(null, 'audible', title, '')
+    expect(results).to.deep.equal(titleSearchResult)
+    sinon.assert.calledOnce(asinSearchStub)
+    sinon.assert.calledWith(runSearchStub, title)
+  })
+
+  it('falls back to the title search when the ASIN is not found', async () => {
+    const results = await bookFinder.search(null, 'audible', 'A War in the Depths [B000000000]', '')
+    expect(results).to.deep.equal(titleSearchResult)
+    sinon.assert.calledOnce(runSearchStub)
+  })
+
+  it('passes the region of the audible provider', async () => {
+    await bookFinder.search(null, 'audible.uk', `A War in the Depths [${asin}]`, '')
+    sinon.assert.calledWith(asinSearchStub, asin, 'uk')
+  })
+
+  it('does not look up the ASIN for non-audible providers', async () => {
+    await bookFinder.search(null, 'google', `A War in the Depths [${asin}]`, '')
+    sinon.assert.notCalled(asinSearchStub)
+  })
+
+  it('does not look up the title ASIN when an ASIN is passed in', async () => {
+    await bookFinder.search(null, 'audible', `A War in the Depths [${asin}]`, '', '', 'B0OTHER000')
+    sinon.assert.notCalled(asinSearchStub)
+  })
+
+  it('ignores a lowercase or unbracketed code', async () => {
+    await bookFinder.search(null, 'audible', `A War in the Depths ${asin}`, '')
+    await bookFinder.search(null, 'audible', `A War in the Depths [b0dkb3fpzc]`, '')
+    sinon.assert.notCalled(asinSearchStub)
+  })
+
+  it('gives the ASIN result a match confidence of 1', async () => {
+    const libraryItem = { media: { duration: 0 } }
+    const results = await bookFinder.search(libraryItem, 'audible', `A War in the Depths [${asin}]`, '')
+    expect(results[0].matchConfidence).to.equal(1)
+  })
+})
