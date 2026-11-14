@@ -1,21 +1,22 @@
-const chai = require('chai')
-const sinon = require('sinon')
-const { expect } = chai
+import { expect } from 'chai'
+import sinon from 'sinon'
 
-const { DataTypes, Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+import { DataTypes, QueryTypes, Sequelize } from 'sequelize'
+import type { QueryInterface } from 'sequelize'
+import Logger from '../../../server/Logger'
 
-const { up, down } = require('../../../server/migrations/v2.19.1-copy-title-to-library-items')
+import migration from '../../../server/migrations/v2.19.1-copy-title-to-library-items'
+
+const { up, down } = migration
 
 describe('Migration v2.19.1-copy-title-to-library-items', () => {
-  let sequelize
-  let queryInterface
-  let loggerInfoStub
+  let sequelize: Sequelize
+  let queryInterface: QueryInterface
 
   beforeEach(async () => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     queryInterface = sequelize.getQueryInterface()
-    loggerInfoStub = sinon.stub(Logger, 'info')
+    sinon.stub(Logger, 'info')
 
     await queryInterface.createTable('books', {
       id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
@@ -60,35 +61,50 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
     it('should add index on title to libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
     it('should add trigger to books.title to update libraryItems.title', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
     it('should add index on titleIgnorePrefix to libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
     it('should add trigger to books.titleIgnorePrefix to update libraryItems.titleIgnorePrefix', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
 
     it('should add index on createdAt to libraryItems', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_created_at'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_created_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
     })
   })
@@ -109,7 +125,10 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -117,7 +136,10 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -125,7 +147,10 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title_ignore_prefix'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -133,7 +158,10 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_title'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -141,7 +169,10 @@ describe('Migration v2.19.1-copy-title-to-library-items', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_created_at'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_created_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
   })
