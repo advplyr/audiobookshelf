@@ -1,23 +1,24 @@
-const chai = require('chai')
-const sinon = require('sinon')
-const { expect } = chai
+import { expect } from 'chai'
+import sinon from 'sinon'
 
-const { DataTypes, Sequelize } = require('sequelize')
-const Logger = require('../../../server/Logger')
+import { DataTypes, QueryTypes, Sequelize } from 'sequelize'
+import type { QueryInterface } from 'sequelize'
+import Logger from '../../../server/Logger'
 
-const { up, down } = require('../../../server/migrations/v2.20.0-improve-author-sort-queries')
+import migration from '../../../server/migrations/v2.20.0-improve-author-sort-queries'
 
-const normalizeWhitespaceAndBackticks = (str) => str.replace(/\s+/g, ' ').trim().replace(/`/g, '')
+const { up, down } = migration
+
+const normalizeWhitespaceAndBackticks = (str: string) => str.replace(/\s+/g, ' ').trim().replace(/`/g, '')
 
 describe('Migration v2.20.0-improve-author-sort-queries', () => {
-  let sequelize
-  let queryInterface
-  let loggerInfoStub
+  let sequelize: Sequelize
+  let queryInterface: QueryInterface
 
   beforeEach(async () => {
     sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
     queryInterface = sequelize.getQueryInterface()
-    loggerInfoStub = sinon.stub(Logger, 'info')
+    sinon.stub(Logger, 'info')
 
     await queryInterface.createTable('libraryItems', {
       id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
@@ -34,8 +35,8 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
 
     await queryInterface.createTable('bookAuthors', {
       id: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true, unique: true },
-      bookId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'libraryItems', key: 'id', onDelete: 'CASCADE' } },
-      authorId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'authors', key: 'id', onDelete: 'CASCADE' } },
+      bookId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'libraryItems', key: 'id' } },
+      authorId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'authors', key: 'id' } },
       createdAt: { type: DataTypes.DATE, allowNull: false }
     })
 
@@ -77,8 +78,8 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
 
       const libraryItems = await queryInterface.describeTable('libraryItems')
-      expect(libraryItems.authorNamesFirstLast).to.exist
-      expect(libraryItems.authorNamesLastFirst).to.exist
+      expect(libraryItems.authorNamesFirstLast != null).to.equal(true)
+      expect(libraryItems.authorNamesLastFirst != null).to.equal(true)
     })
 
     it('should populate the authorNamesFirstLast and authorNamesLastFirst columns with the author names for each libraryItem', async () => {
@@ -94,10 +95,16 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
     it('should create triggers to update the authorNamesFirstLast and authorNamesLastFirst columns when the corresponding bookAuthors and authors records are updated', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
 
-      const [[{ sql }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`)
+      const [{ sql }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE TRIGGER update_library_items_author_names_on_book_authors_insert
@@ -115,10 +122,16 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
         `)
       )
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(1)
 
-      const [[{ sql: sql2 }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`)
+      const [{ sql: sql2 }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql2)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE TRIGGER update_library_items_author_names_on_book_authors_delete
@@ -136,10 +149,16 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
         `)
       )
 
-      const [[{ count: count3 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`)
+      const [{ count: count3 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count3).to.equal(1)
 
-      const [[{ sql: sql3 }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`)
+      const [{ sql: sql3 }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql3)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE TRIGGER update_library_items_author_names_on_authors_update
@@ -161,20 +180,32 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
     it('should create indexes on the authorNamesFirstLast and authorNamesLastFirst columns', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
 
-      const [[{ sql }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`)
+      const [{ sql }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE INDEX library_items_library_id_media_type_author_names_first_last ON libraryItems (libraryId, mediaType, authorNamesFirstLast COLLATE NOCASE)
         `)
       )
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(1)
 
-      const [[{ sql: sql2 }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
+      const [{ sql: sql2 }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql2)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE INDEX library_items_library_id_media_type_author_names_last_first ON libraryItems (libraryId, mediaType, authorNamesLastFirst COLLATE NOCASE)
@@ -230,10 +261,16 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
     it('should add an index on publishedAt to the podcastEpisodes table', async () => {
       await up({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
 
-      const [[{ sql }]] = await queryInterface.sequelize.query(`SELECT sql FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      const [{ sql }] = await queryInterface.sequelize.query<{ sql: string }>(
+        `SELECT sql FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(normalizeWhitespaceAndBackticks(sql)).to.equal(
         normalizeWhitespaceAndBackticks(`
           CREATE INDEX podcast_episodes_published_at ON podcastEpisodes (publishedAt)
@@ -246,25 +283,43 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
 
       const libraryItemsTable = await queryInterface.describeTable('libraryItems')
-      expect(libraryItemsTable.authorNamesFirstLast).to.exist
-      expect(libraryItemsTable.authorNamesLastFirst).to.exist
+      expect(libraryItemsTable.authorNamesFirstLast != null).to.equal(true)
+      expect(libraryItemsTable.authorNamesLastFirst != null).to.equal(true)
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(1)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(1)
 
-      const [[{ count: count3 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`)
+      const [{ count: count3 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count3).to.equal(1)
 
-      const [[{ count: count4 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`)
+      const [{ count: count4 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count4).to.equal(1)
 
-      const [[{ count: count5 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
+      const [{ count: count5 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count5).to.equal(1)
 
-      const [[{ count: count6 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      const [{ count: count6 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count6).to.equal(1)
 
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
@@ -281,8 +336,8 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await down({ context: { queryInterface, logger: Logger } })
 
       const libraryItemsTable = await queryInterface.describeTable('libraryItems')
-      expect(libraryItemsTable.authorNamesFirstLast).to.not.exist
-      expect(libraryItemsTable.authorNamesLastFirst).to.not.exist
+      expect(libraryItemsTable.authorNamesFirstLast == null).to.equal(true)
+      expect(libraryItemsTable.authorNamesLastFirst == null).to.equal(true)
 
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
@@ -295,13 +350,22 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(0)
 
-      const [[{ count: count3 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`)
+      const [{ count: count3 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count3).to.equal(0)
     })
 
@@ -309,10 +373,16 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(0)
     })
 
@@ -320,7 +390,10 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await up({ context: { queryInterface, logger: Logger } })
       await down({ context: { queryInterface, logger: Logger } })
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
     })
 
@@ -330,8 +403,8 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
       await down({ context: { queryInterface, logger: Logger } })
 
       const libraryItemsTable = await queryInterface.describeTable('libraryItems')
-      expect(libraryItemsTable.authorNamesFirstLast).to.not.exist
-      expect(libraryItemsTable.authorNamesLastFirst).to.not.exist
+      expect(libraryItemsTable.authorNamesFirstLast == null).to.equal(true)
+      expect(libraryItemsTable.authorNamesLastFirst == null).to.equal(true)
 
       const [libraryItems] = await queryInterface.sequelize.query(`SELECT * FROM libraryItems`)
       expect(libraryItems).to.deep.equal([
@@ -339,22 +412,40 @@ describe('Migration v2.20.0-improve-author-sort-queries', () => {
         { id: 2, mediaId: 2, mediaType: 'book', libraryId: 1 }
       ])
 
-      const [[{ count }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`)
+      const [{ count }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_insert'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count).to.equal(0)
 
-      const [[{ count: count2 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`)
+      const [{ count: count2 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_book_authors_delete'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count2).to.equal(0)
 
-      const [[{ count: count3 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`)
+      const [{ count: count3 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='trigger' AND name='update_library_items_author_names_on_authors_update'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count3).to.equal(0)
 
-      const [[{ count: count4 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`)
+      const [{ count: count4 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_first_last'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count4).to.equal(0)
 
-      const [[{ count: count5 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`)
+      const [{ count: count5 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='library_items_library_id_media_type_author_names_last_first'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count5).to.equal(0)
 
-      const [[{ count: count6 }]] = await queryInterface.sequelize.query(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`)
+      const [{ count: count6 }] = await queryInterface.sequelize.query<{ count: number }>(
+        `SELECT COUNT(*) as count FROM sqlite_master WHERE type='index' AND name='podcast_episodes_published_at'`,
+        { type: QueryTypes.SELECT }
+      )
       expect(count6).to.equal(0)
     })
   })
