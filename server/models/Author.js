@@ -46,6 +46,7 @@ class Author extends Model {
 
   /**
    * Get author by name and libraryId. name case insensitive
+   * When authors differ only in case (e.g. "Ken Follett" and "Ken FOLLETT"), the one with the exact name is returned
    * TODO: Look for authors ignoring punctuation
    *
    * @param {string} authorName
@@ -53,7 +54,7 @@ class Author extends Model {
    * @returns {Promise<Author>}
    */
   static async getByNameAndLibrary(authorName, libraryId) {
-    return this.findOne({
+    const authors = await this.findAll({
       where: [
         where(fn('lower', col('name')), authorName.toLowerCase()),
         {
@@ -61,6 +62,7 @@ class Author extends Model {
         }
       ]
     })
+    return authors.find((author) => author.name === authorName) || authors[0] || null
   }
 
   /**

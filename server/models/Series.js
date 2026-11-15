@@ -38,13 +38,14 @@ class Series extends Model {
 
   /**
    * Get series by name and libraryId. name case insensitive
+   * When series differ only in case, the one with the exact name is returned
    *
    * @param {string} seriesName
    * @param {string} libraryId
    * @returns {Promise<Series>}
    */
   static async getByNameAndLibrary(seriesName, libraryId) {
-    return this.findOne({
+    const series = await this.findAll({
       where: [
         where(fn('lower', col('name')), seriesName.toLowerCase()),
         {
@@ -52,6 +53,7 @@ class Series extends Model {
         }
       ]
     })
+    return series.find((s) => s.name === seriesName) || series[0] || null
   }
 
   /**
