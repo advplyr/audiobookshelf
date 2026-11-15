@@ -299,7 +299,7 @@ class RssFeedManager {
     const feedExpanded = await Database.feedModel.createFeedForLibraryItem(userId, libraryItem, slug, serverAddress, feedOptions)
     if (feedExpanded) {
       Logger.info(`[RssFeedManager] Opened RSS feed "${feedExpanded.feedURL}"`)
-      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified())
+      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified(), (user) => user.checkCanAccessLibrary?.(libraryItem.libraryId))
     }
     return feedExpanded
   }
@@ -320,7 +320,7 @@ class RssFeedManager {
     const feedExpanded = await Database.feedModel.createFeedForCollection(userId, collectionExpanded, slug, serverAddress, feedOptions)
     if (feedExpanded) {
       Logger.info(`[RssFeedManager] Opened RSS feed "${feedExpanded.feedURL}"`)
-      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified())
+      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified(), (user) => user.checkCanAccessLibrary?.(collectionExpanded.libraryId))
     }
     return feedExpanded
   }
@@ -341,7 +341,7 @@ class RssFeedManager {
     const feedExpanded = await Database.feedModel.createFeedForSeries(userId, seriesExpanded, slug, serverAddress, feedOptions)
     if (feedExpanded) {
       Logger.info(`[RssFeedManager] Opened RSS feed "${feedExpanded.feedURL}"`)
-      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified())
+      SocketAuthority.emitter('rss_feed_open', feedExpanded.toOldJSONMinified(), (user) => user.checkCanAccessLibrary?.(seriesExpanded.libraryId))
     }
     return feedExpanded
   }
@@ -354,8 +354,11 @@ class RssFeedManager {
    */
   async handleCloseFeed(feed) {
     if (!feed) return false
+    const entity = await feed.getEntity({ attributes: ['libraryId'] })
     const wasRemoved = await Database.feedModel.removeById(feed.id)
-    SocketAuthority.emitter('rss_feed_closed', feed.toOldJSONMinified())
+    if (entity?.libraryId) {
+      SocketAuthority.emitter('rss_feed_closed', feed.toOldJSONMinified(), (user) => user.checkCanAccessLibrary?.(entity.libraryId))
+    }
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedURL}"`)
     return wasRemoved
   }
