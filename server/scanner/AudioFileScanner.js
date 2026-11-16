@@ -5,6 +5,7 @@ const { LogLevel } = require('../utils/constants')
 const { parseOverdriveMediaMarkersAsChapters } = require('../utils/parsers/parseOverdriveMediaMarkers')
 const parseNameString = require('../utils/parsers/parseNameString')
 const parseSeriesString = require('../utils/parsers/parseSeriesString')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 const LibraryItem = require('../models/LibraryItem')
 const AudioFile = require('../objects/files/AudioFile')
 
@@ -461,6 +462,7 @@ class AudioFileScanner {
 
       if (value && typeof value === 'string') {
         value = value.trim() // Trim whitespace
+        if (mapping.key === 'description' || mapping.key === 'subtitle') value = htmlSanitizer.sanitize(value)
 
         if (mapping.key === 'pubDate') {
           const pubJsDate = new Date(value)
