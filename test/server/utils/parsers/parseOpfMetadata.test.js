@@ -137,4 +137,23 @@ describe('parseOpfMetadata - test series', async () => {
     const parsedOpf = await parseOpfMetadataXML(opf)
     expect(parsedOpf.authors).to.deep.equal(['Nevil Shute'])
   })
+
+  it('test metadata and meta with a prefix the package does not use', async () => {
+    const opf = `
+        <package xmlns="http://www.idpf.org/2007/opf" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0" unique-identifier="book-id">
+          <opf:metadata>
+            <dc:title>Example Book</dc:title>
+            <dc:creator opf:role="aut">Example Author</dc:creator>
+            <opf:meta name="calibre:series" content="Example Series"/>
+            <opf:meta name="calibre:series_index" content="2"/>
+          </opf:metadata>
+          <manifest/>
+          <spine/>
+        </package>
+      `
+    const parsedOpf = await parseOpfMetadataXML(opf)
+    expect(parsedOpf.title).to.equal('Example Book')
+    expect(parsedOpf.authors).to.deep.equal(['Example Author'])
+    expect(parsedOpf.series).to.deep.equal([{ name: 'Example Series', sequence: '2' }])
+  })
 })

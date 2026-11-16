@@ -191,19 +191,32 @@ function stripPrefix(str) {
   return str.split(':').pop()
 }
 
+/**
+ * Child elements by local name, whatever prefix they use.
+ * Prefixes are local aliases: `<package>` can hold `<opf:metadata>`, and `<ns0:metadata>` can hold `<meta>`.
+ *
+ * @param {Object} parent
+ * @param {string} localName
+ * @returns {*}
+ */
+function findChild(parent, localName) {
+  if (!parent || typeof parent !== 'object') return undefined
+  const key = Object.keys(parent).find((k) => k !== '$' && k !== '_' && stripPrefix(k) === localName)
+  return key ? parent[key] : undefined
+}
+
 module.exports.parseOpfMetadataJson = (json) => {
   // Handle <package ...> or with prefix <ns0:package ...>
   const packageKey = Object.keys(json).find((key) => stripPrefix(key) === 'package')
   if (!packageKey) return null
-  const prefix = packageKey.split(':').shift()
-  let metadata = prefix ? json[packageKey][`${prefix}:metadata`] || json[packageKey].metadata : json[packageKey].metadata
+  let metadata = findChild(json[packageKey], 'metadata')
   if (!metadata) return null
   if (Array.isArray(metadata)) {
     if (!metadata.length) return null
     metadata = metadata[0]
   }
 
-  const metadataMeta = prefix ? metadata[`${prefix}:meta`] || metadata.meta : metadata.meta
+  const metadataMeta = findChild(metadata, 'meta')
 
   metadata.meta = {}
   if (metadataMeta?.length) {
