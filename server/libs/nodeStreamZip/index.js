@@ -393,11 +393,18 @@ const StreamZip = function (config) {
           return callback(err);
         }
         const offset = dataOffset(entry);
-        let entryStream = new EntryDataReaderStream(fd, offset, entry.compressedSize);
+        const dataStream = new EntryDataReaderStream(fd, offset, entry.compressedSize);
+        const streams = [dataStream];
+        let entryStream = dataStream;
         if (entry.method === consts.STORED) {
           // nothing to do
         } else if (entry.method === consts.DEFLATED) {
-          entryStream = entryStream.pipe(zlib.createInflateRaw());
+          const inflateStream = zlib.createInflateRaw();
+          dataStream.on('error', (e) => {
+            inflateStream.emit('error', e);
+          });
+          entryStream = dataStream.pipe(inflateStream);
+          streams.push(inflateStream);
         } else {
           return callback(new Error('Unknown compression method: ' + entry.method));
         }
@@ -405,7 +412,12 @@ const StreamZip = function (config) {
           entryStream = entryStream.pipe(
             new EntryVerifyStream(entryStream, entry.crc, entry.size)
           );
+          streams.push(entryStream);
         }
+        // destroying the returned stream must stop the reads on the zip's fd too
+        entryStream.on('close', () => {
+          streams.forEach((stm) => stm.destroy());
+        });
         callback(null, entryStream);
       },
       false
@@ -507,10 +519,11 @@ const StreamZip = function (config) {
         });
         fs.open(outPath, 'w', (err, fdFile) => {
           if (err) {
+            stm.destroy();
             return callback(err);
           }
           if (errThrown) {
-            fs.close(fd, () => {
+            fs.close(fdFile, () => {
               callback(errThrown);
             });
             return;
@@ -1086,6 +1099,9 @@ class EntryDataReaderStream extends stream.Readable {
   }
 
   readCallback(err, bytesRead, buffer) {
+    if (this.destroyed) {
+      return;
+    }
     this.pos += bytesRead;
     if (err) {
       this.emit('error', err);
