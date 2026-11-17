@@ -49,4 +49,30 @@ describe('stringifySequelizeQuery', () => {
     const result = stringifySequelizeQuery(query)
     expect(result).to.equal('{}')
   })
+
+  it('should preserve primitive JSON results and undefined root results', () => {
+    expect(stringifySequelizeQuery(null)).to.equal('null')
+    expect(stringifySequelizeQuery('query')).to.equal('"query"')
+    expect(stringifySequelizeQuery(42)).to.equal('42')
+    expect(stringifySequelizeQuery(undefined)).to.equal(undefined)
+    expect(stringifySequelizeQuery(() => {})).to.equal(undefined)
+    expect(stringifySequelizeQuery(Symbol('query'))).to.equal(undefined)
+  })
+
+  it('should include non-enumerable symbol values and prefer symbols on name collisions', () => {
+    const operator = Symbol('operator')
+    const query = { 'Symbol(operator)': 'string value' }
+    Object.defineProperty(query, operator, { value: 'symbol value' })
+
+    expect(stringifySequelizeQuery(query)).to.equal('{"Symbol(operator)":"symbol value"}')
+  })
+
+  it('should preserve errors for circular structures and bigint values', () => {
+    const query = {}
+    query.where = query
+
+    // The replacer copies objects, so cycles exhaust the stack rather than reaching JSON's cycle check.
+    expect(() => stringifySequelizeQuery(query)).to.throw(RangeError)
+    expect(() => stringifySequelizeQuery({ id: 1n })).to.throw(TypeError)
+  })
 })
