@@ -22,6 +22,7 @@ class Auth {
 
     /** @type {import('express-rate-limit').RateLimitRequestHandler} */
     this.authRateLimiter = RateLimiterFactory.getAuthRateLimiter()
+    this.passwordChangeRateLimiter = RateLimiterFactory.getPasswordChangeRateLimiter()
 
     this.tokenManager = new TokenManager()
     this.localAuthStrategy = new LocalAuthStrategy()
@@ -328,7 +329,7 @@ class Auth {
     })
 
     // Refresh token route
-    router.post('/auth/refresh', this.authRateLimiter, async (req, res) => {
+    router.post('/auth/refresh', async (req, res) => {
       let refreshToken = req.cookies.refresh_token
 
       // If x-refresh-token header is present, use it instead of the cookie
@@ -359,7 +360,7 @@ class Auth {
     })
 
     // openid strategy login route (this redirects to the configured openid login provider)
-    router.get('/auth/openid', this.authRateLimiter, (req, res) => {
+    router.get('/auth/openid', (req, res) => {
       const authorizationUrlResponse = this.oidcAuthStrategy.getAuthorizationUrl(req)
 
       if (authorizationUrlResponse.error) {
@@ -377,12 +378,11 @@ class Auth {
 
     // This will be the oauth2 callback route for mobile clients
     // It will redirect to an app-link like audiobookshelf://oauth
-    router.get('/auth/openid/mobile-redirect', this.authRateLimiter, (req, res) => this.oidcAuthStrategy.handleMobileRedirect(req, res))
+    router.get('/auth/openid/mobile-redirect', (req, res) => this.oidcAuthStrategy.handleMobileRedirect(req, res))
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get(
       '/auth/openid/callback',
-      this.authRateLimiter,
       (req, res, next) => {
         const sessionKey = this.oidcAuthStrategy.getStrategy()._key
 
@@ -461,7 +461,7 @@ class Auth {
      *
      * @example /auth/openid/config?issuer=http://192.168.1.66:9000/application/o/audiobookshelf/
      */
-    router.get('/auth/openid/config', this.authRateLimiter, this.isAuthenticated, async (req, res) => {
+    router.get('/auth/openid/config', this.isAuthenticated, async (req, res) => {
       if (!req.user.isAdminOrUp) {
         Logger.error(`[Auth] Non-admin user "${req.user.username}" attempted to get issuer config`)
         return res.sendStatus(403)
