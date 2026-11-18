@@ -404,6 +404,10 @@ module.exports = {
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
     }
+    // Search filter matches individual books so series are not collapsed
+    if (filterGroup === 'search' && collapseseries) {
+      collapseseries = false
+    }
     if (filterGroup !== 'series' && sortBy === 'sequence') {
       sortBy = 'media.metadata.title'
     }
@@ -551,6 +555,11 @@ module.exports = {
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
     let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
+
+    if (filterGroup === 'search') {
+      const textSearchQuery = await Database.createTextSearchQuery(filterValue)
+      bookWhere.push(this.getSearchBookWhere(textSearchQuery))
+    }
 
     // User permissions
     const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
@@ -1085,6 +1094,32 @@ module.exports = {
   },
 
   /**
+   * Get where options for books matching a text search on title, subtitle, asin or isbn
+   * Used by library search and the "search" library items filter
+   *
+   * @param {Database.TextSearchQuery} textSearchQuery
+   * @returns {Sequelize.WhereOptions}
+   */
+  getSearchBookWhere(textSearchQuery) {
+    return {
+      [Sequelize.Op.or]: [
+        Sequelize.literal(textSearchQuery.matchExpression('book.title')),
+        Sequelize.literal(textSearchQuery.matchExpression('book.subtitle')),
+        {
+          asin: {
+            [Sequelize.Op.substring]: textSearchQuery.query
+          }
+        },
+        {
+          isbn: {
+            [Sequelize.Op.substring]: textSearchQuery.query
+          }
+        }
+      ]
+    }
+  },
+
+  /**
    * Search books, authors, series
    * @param {import('../../models/User')} user
    * @param {import('../../models/Library')} library
@@ -1098,30 +1133,9 @@ module.exports = {
 
     const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = textSearchQuery.matchExpression('book.title')
-    const matchSubtitle = textSearchQuery.matchExpression('book.subtitle')
-
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
-      where: [
-        {
-          [Sequelize.Op.or]: [
-            Sequelize.literal(matchTitle),
-            Sequelize.literal(matchSubtitle),
-            {
-              asin: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              isbn: {
-                [Sequelize.Op.substring]: query
-              }
-            }
-          ]
-        },
-        ...userPermissionBookWhere.bookWhere
-      ],
+      where: [this.getSearchBookWhere(textSearchQuery), ...userPermissionBookWhere.bookWhere],
       replacements: userPermissionBookWhere.replacements,
       include: [
         {

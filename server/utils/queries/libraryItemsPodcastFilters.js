@@ -185,6 +185,11 @@ module.exports = {
     const podcastWhere = []
     if (Object.keys(mediaWhere).length) podcastWhere.push(mediaWhere)
 
+    if (filterGroup === 'search') {
+      const textSearchQuery = await Database.createTextSearchQuery(filterValue)
+      podcastWhere.push(this.getSearchPodcastWhere(textSearchQuery))
+    }
+
     const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
     replacements = { ...replacements, ...userPermissionPodcastWhere.replacements }
     podcastWhere.push(...userPermissionPodcastWhere.podcastWhere)
@@ -353,6 +358,32 @@ module.exports = {
   },
 
   /**
+   * Get where options for podcasts matching a text search on title, author, itunesId or itunesArtistId
+   * Used by library search and the "search" library items filter
+   *
+   * @param {Database.TextSearchQuery} textSearchQuery
+   * @returns {Sequelize.WhereOptions}
+   */
+  getSearchPodcastWhere(textSearchQuery) {
+    return {
+      [Sequelize.Op.or]: [
+        Sequelize.literal(textSearchQuery.matchExpression('podcast.title')),
+        Sequelize.literal(textSearchQuery.matchExpression('podcast.author')),
+        {
+          itunesId: {
+            [Sequelize.Op.substring]: textSearchQuery.query
+          }
+        },
+        {
+          itunesArtistId: {
+            [Sequelize.Op.substring]: textSearchQuery.query
+          }
+        }
+      ]
+    }
+  },
+
+  /**
    * Search podcasts
    * @param {import('../../models/User')} user
    * @param {import('../../models/Library')} library
@@ -366,30 +397,9 @@ module.exports = {
 
     const textSearchQuery = await Database.createTextSearchQuery(query)
 
-    const matchTitle = textSearchQuery.matchExpression('podcast.title')
-    const matchAuthor = textSearchQuery.matchExpression('podcast.author')
-
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
-      where: [
-        {
-          [Sequelize.Op.or]: [
-            Sequelize.literal(matchTitle),
-            Sequelize.literal(matchAuthor),
-            {
-              itunesId: {
-                [Sequelize.Op.substring]: query
-              }
-            },
-            {
-              itunesArtistId: {
-                [Sequelize.Op.substring]: query
-              }
-            }
-          ]
-        },
-        ...userPermissionPodcastWhere.podcastWhere
-      ],
+      where: [this.getSearchPodcastWhere(textSearchQuery), ...userPermissionPodcastWhere.podcastWhere],
       replacements: userPermissionPodcastWhere.replacements,
       include: [
         {
