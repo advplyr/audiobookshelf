@@ -275,7 +275,7 @@
   "LabelBonus": "ボーナス",
   "LabelBooks": "本",
   "LabelButtonText": "ボタンテキスト",
-  "LabelByAuthor": "by {0}",
+  "LabelByAuthor": "作者：{0}",
   "LabelChangePassword": "パスワードを変更",
   "LabelChannels": "チャンネル",
   "LabelChapterCount": "{0}チャプター",
