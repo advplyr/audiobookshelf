@@ -1,5 +1,6 @@
 const { DataTypes, Model, where, fn, col } = require('sequelize')
 const parseNameString = require('../utils/parsers/parseNameString')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 class Author extends Model {
   constructor(values, options) {
@@ -175,11 +176,16 @@ class Author extends Model {
   }
 
   toOldJSON() {
+    let description = this.description
+    if (description) {
+      description = htmlSanitizer.sanitize(description) || null
+    }
+
     return {
       id: this.id,
       asin: this.asin,
       name: this.name,
-      description: this.description,
+      description,
       imagePath: this.imagePath,
       libraryId: this.libraryId,
       addedAt: this.createdAt.valueOf(),
