@@ -13,7 +13,7 @@ interface DecodedToken {
 }
 
 // jws parses the wire format; the payload remains untrusted.
-const decodeJws = jws.decode as (this: typeof jws, jwt: string, options: DecodeOptions) => DecodedToken | null;
+const decodeJws = jws.decode;
 
 function decode(jwt: string, options: DecodeOptions & { complete: true }): DecodedToken | null;
 function decode(jwt: string, options?: DecodeOptions | null): unknown;
