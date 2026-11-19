@@ -1,21 +1,32 @@
-'use strict'
+import { createRequire } from 'node:module'
+import errors from '../../ours/errors'
+import teardown from './destroy'
+import Duplex from './duplex'
+import utils from './utils'
 
-const { pipeline } = require('./pipeline')
+type StreamCallback = (error?: Error | null) => void
+type Destroyable = NonNullable<Parameters<typeof teardown.destroyer>[0]>
 
-const Duplex = require('./duplex')
+interface PipelineEndpoint extends Destroyable {
+  writableObjectMode?: boolean
+  write(chunk: unknown, encoding: BufferEncoding): boolean
+  end(): void
+  read(): unknown
+  on(event: string, listener: () => void): void
+}
 
-const { destroyer } = require('./destroy')
-
-const { isNodeStream, isReadable, isWritable } = require('./utils')
+const { pipeline } = createRequire(__filename)('./pipeline') as { pipeline: (streams: unknown[], callback: StreamCallback) => PipelineEndpoint }
+const { destroyer } = teardown
+const { isNodeStream, isReadable, isWritable } = utils
 
 const {
   AbortError,
   codes: { ERR_INVALID_ARG_VALUE, ERR_MISSING_ARGS }
-} = require('../../ours/errors')
+} = errors
 
-module.exports = function compose(...streams) {
+function compose(...streams: unknown[]) {
   if (streams.length === 0) {
-    throw new ERR_MISSING_ARGS('streams')
+    throw new ERR_MISSING_ARGS!('streams')
   }
 
   if (streams.length === 1) {
@@ -34,27 +45,28 @@ module.exports = function compose(...streams) {
   }
 
   for (let n = 0; n < streams.length; ++n) {
-    if (!isNodeStream(streams[n])) {
+    const stream = streams[n] as PipelineEndpoint | undefined
+    if (!isNodeStream(stream)) {
       // TODO(ronag): Add checks for non streams.
       continue
     }
 
-    if (n < streams.length - 1 && !isReadable(streams[n])) {
-      throw new ERR_INVALID_ARG_VALUE(`streams[${n}]`, orgStreams[n], 'must be readable')
+    if (n < streams.length - 1 && !isReadable(stream)) {
+      throw new ERR_INVALID_ARG_VALUE!(`streams[${n}]`, orgStreams[n], 'must be readable')
     }
 
-    if (n > 0 && !isWritable(streams[n])) {
-      throw new ERR_INVALID_ARG_VALUE(`streams[${n}]`, orgStreams[n], 'must be writable')
+    if (n > 0 && !isWritable(stream)) {
+      throw new ERR_INVALID_ARG_VALUE!(`streams[${n}]`, orgStreams[n], 'must be writable')
     }
   }
 
-  let ondrain
-  let onfinish
-  let onreadable
-  let onclose
-  let d
+  let ondrain: StreamCallback | null | undefined
+  let onfinish: StreamCallback | null | undefined
+  let onreadable: (() => void) | null | undefined
+  let onclose: StreamCallback | null | undefined
+  let d: InstanceType<typeof Duplex>
 
-  function onfinished(err) {
+  function onfinished(err?: Error | null) {
     const cb = onclose
     onclose = null
 
@@ -67,7 +79,7 @@ module.exports = function compose(...streams) {
     }
   }
 
-  const head = streams[0]
+  const head = streams[0] as PipelineEndpoint | undefined
   const tail = pipeline(streams, onfinished)
   const writable = !!isWritable(head)
   const readable = !!isReadable(tail) // TODO(ronag): Avoid double buffering.
@@ -83,8 +95,8 @@ module.exports = function compose(...streams) {
   })
 
   if (writable) {
-    d._write = function (chunk, encoding, callback) {
-      if (head.write(chunk, encoding)) {
+    d._write = function (chunk: unknown, encoding, callback) {
+      if (head!.write(chunk, encoding)) {
         callback()
       } else {
         ondrain = callback
@@ -92,11 +104,11 @@ module.exports = function compose(...streams) {
     }
 
     d._final = function (callback) {
-      head.end()
+      head!.end()
       onfinish = callback
     }
 
-    head.on('drain', function () {
+    head!.on('drain', function () {
       if (ondrain) {
         const cb = ondrain
         ondrain = null
@@ -129,7 +141,8 @@ module.exports = function compose(...streams) {
         const buf = tail.read()
 
         if (buf === null) {
-          onreadable = d._read
+          // The composed stream's read hook takes no size argument.
+          onreadable = (d as unknown as { _read: () => void })._read
           return
         }
 
@@ -159,3 +172,5 @@ module.exports = function compose(...streams) {
 
   return d
 }
+
+export = compose
