@@ -491,7 +491,27 @@ class LibraryItem extends Model {
       }
       Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} of ${newestAuthorsPayload.count} authors for "Newest Authors" in ${newestAuthorsResult.elapsedSeconds}s`)
     } else if (library.isPodcast) {
-      const [newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)), timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)), timed(() => libraryFilters.getMediaFinished(library, user, include, limit))])
+      // load independent podcast shelves together
+      const [continueSeriesResult, newestEpisodesResult, mostRecentResult, mediaFinishedResult] = await Promise.all([
+        timed(() => libraryFilters.getPodcastEpisodesContinueSeries(library, user, limit)),
+        timed(() => libraryFilters.getNewestPodcastEpisodes(library, user, limit)),
+        timed(() => libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)),
+        timed(() => libraryFilters.getMediaFinished(library, user, include, limit))
+      ])
+
+      const continueSeriesPayload = continueSeriesResult.payload
+      // show the next episode for started podcasts
+      if (continueSeriesPayload.libraryItems.length) {
+        shelves.push({
+          id: 'continue-series',
+          label: 'Continue Series',
+          labelStringKey: 'LabelContinueSeries',
+          type: 'episode',
+          entities: continueSeriesPayload.libraryItems,
+          total: continueSeriesPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} episodes for "Continue Series" in ${continueSeriesResult.elapsedSeconds}s`)
 
       const newestEpisodesPayload = newestEpisodesResult.payload
       // "Newest Episodes" shelf

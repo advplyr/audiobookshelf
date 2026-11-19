@@ -418,6 +418,29 @@ module.exports = {
   },
 
   /**
+   * serialize the next episode for started unfinished podcasts
+   * @param {import('../../models/Library')} library
+   * @param {import('../../models/User')} user
+   * @param {number} limit
+   * @returns {Promise<{libraryItems:oldLibraryItem[], count:number}>}
+   */
+  async getPodcastEpisodesContinueSeries(library, user, limit) {
+    // skip non-podcast libraries
+    if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
+
+    const { libraryItems, count } = await libraryItemsPodcastFilters.getContinueSeriesPodcastEpisodes(user, library, limit, 0)
+    return {
+      count,
+      // preserve episode details in shelf payloads
+      libraryItems: libraryItems.map((li) => {
+        const oldLibraryItem = li.toOldJSONMinified()
+        oldLibraryItem.recentEpisode = li.recentEpisode
+        return oldLibraryItem
+      })
+    }
+  },
+
+  /**
    * Get library items for an author, optional use user permissions
    * @param {import('../../models/Author')} author
    * @param {import('../../models/User')} user
