@@ -1,11 +1,21 @@
-'use strict'
+import CustomStream from '../stream'
+import promises from '../stream/promises'
 
-const CustomStream = require('../stream')
+type Destroy = typeof CustomStream.destroy
+type BrowserMembers = Omit<typeof CustomStream, 'promises' | 'destroy'> & {
+  destroy?: Destroy
+  default: BrowserStream
+}
+type BrowserStream = BrowserMembers & Pick<typeof CustomStream.Readable, 'from'> & {
+  new (...args: ConstructorParameters<typeof CustomStream.Readable>): InstanceType<typeof CustomStream.Readable>
+}
 
-const promises = require('../stream/promises')
+// Keep the individual CommonJS assignments for named ESM imports.
+declare const module: { exports: Partial<BrowserMembers> }
 
-const originalDestroy = CustomStream.Readable.destroy
-module.exports = CustomStream.Readable // Explicit export naming is needed for ESM
+const Readable: typeof CustomStream.Readable & { destroy?: Destroy } = CustomStream.Readable
+const originalDestroy = Readable.destroy
+module.exports = Readable as unknown as Partial<BrowserMembers>
 
 module.exports._uint8ArrayToBuffer = CustomStream._uint8ArrayToBuffer
 module.exports._isUint8Array = CustomStream._isUint8Array
@@ -33,4 +43,7 @@ Object.defineProperty(CustomStream, 'promises', {
 })
 module.exports.Stream = CustomStream.Stream // Allow default importing
 
-module.exports.default = module.exports
+const exported = module.exports as BrowserStream
+module.exports.default = exported
+
+export = exported

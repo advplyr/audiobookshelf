@@ -50,8 +50,8 @@ type ComposedStream = LegacyStream & {
   compose: typeof composeStream
   promises: typeof streamPromises
   Stream: ComposedStream
-  _isUint8Array(value: unknown): value is Uint8Array
-  _uint8ArrayToBuffer(chunk: Uint8Array): Buffer
+  _isUint8Array: (value: unknown) => value is Uint8Array
+  _uint8ArrayToBuffer: (chunk: Uint8Array) => Buffer
 }
 
 declare const module: { exports: unknown }
