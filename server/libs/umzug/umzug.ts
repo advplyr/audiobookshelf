@@ -1,58 +1,77 @@
-'use strict'
-var __createBinding =
-  (this && this.__createBinding) ||
-  (Object.create
-    ? function (o, m, k, k2) {
-        if (k2 === undefined) k2 = k
-        var desc = Object.getOwnPropertyDescriptor(m, k)
-        if (!desc || ('get' in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-          desc = {
-            enumerable: true,
-            get: function () {
-              return m[k]
-            }
-          }
-        }
-        Object.defineProperty(o, k2, desc)
-      }
-    : function (o, m, k, k2) {
-        if (k2 === undefined) k2 = k
-        o[k2] = m[k]
-      })
-var __setModuleDefault =
-  (this && this.__setModuleDefault) ||
-  (Object.create
-    ? function (o, v) {
-        Object.defineProperty(o, 'default', { enumerable: true, value: v })
-      }
-    : function (o, v) {
-        o['default'] = v
-      })
-var __importStar =
-  (this && this.__importStar) ||
-  function (mod) {
-    if (mod && mod.__esModule) return mod
-    var result = {}
-    if (mod != null) for (var k in mod) if (k !== 'default' && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k)
-    __setModuleDefault(result, mod)
-    return result
-  }
-var __importDefault =
-  (this && this.__importDefault) ||
-  function (mod) {
-    return mod && mod.__esModule ? mod : { default: mod }
-  }
-var _a
-Object.defineProperty(exports, '__esModule', { value: true })
-exports.Umzug = exports.MigrationError = void 0
-const fs = __importStar(require('fs'))
-const path = __importStar(require('path'))
-const storage_1 = require('./storage')
-const templates = __importStar(require('./templates'))
-const types_1 = require('./types')
-class MigrationError extends Error {
+import * as fs from 'node:fs'
+import { createRequire } from 'node:module'
+import * as path from 'node:path'
+import { importMigrationFile } from './importMigrationFile.mjs'
+import { JSONStorage, verifyUmzugStorage } from './storage'
+import * as templates from './templates'
+import { RerunBehavior } from './types'
+
+const load = createRequire(__filename)
+
+interface MigrationMeta {
+  name: string
+  path?: string
+}
+
+interface MigrationParams<Context> extends MigrationMeta {
+  context: Context
+}
+
+type MigrationFunction<Context> = (params: MigrationParams<Context>) => unknown
+
+interface Migration<Context> extends MigrationMeta {
+  up: MigrationFunction<Context>
+  down?: MigrationFunction<Context>
+}
+
+interface Storage<Context> {
+  executed(params: { context: Context }): Promise<string[]>
+  logMigration(params: MigrationParams<Context>): Promise<void>
+  unlogMigration(params: MigrationParams<Context>): Promise<void>
+}
+
+type Resolver<Context> = (params: MigrationParams<Context>) => Migration<Context>
+type MigrationInput<Context> =
+  | Migration<Context>[]
+  | { files: string[]; resolve?: Resolver<Context> }
+  | ((context: Context) => MigrationInput<Context> | PromiseLike<MigrationInput<Context>>)
+
+type TemplateFiles = [filepath: string, content: string][]
+type Template = (filepath: string) => TemplateFiles | PromiseLike<TemplateFiles>
+type Direction = 'up' | 'down'
+
+interface UmzugOptions<Context> {
+  context?: Context | (() => Context | PromiseLike<Context>)
+  logger?: { info(message: unknown): void }
+  storage?: Storage<Context>
+  migrations: MigrationInput<Context>
+  create?: { folder?: string; template?: Template }
+}
+
+interface MigrateOptions {
+  migrations?: string[]
+  rerun?: (typeof RerunBehavior)[keyof typeof RerunBehavior]
+  step?: number
+  to?: string | 0
+}
+
+interface CreateOptions {
+  name: string
+  prefix?: 'TIMESTAMP' | 'DATE' | 'NONE'
+  allowExtension?: string
+  folder?: string
+  allowConfusingOrdering?: boolean
+  content?: string
+  skipVerify?: boolean
+}
+
+type MigrationModule<Context> = Pick<Migration<Context>, 'up' | 'down'>
+
+export class MigrationError<Context = unknown> extends Error {
+  declare migration: MigrationParams<Context> & { direction: Direction }
+
   // TODO [>=4.0.0] Take a `{ cause: ... }` options bag like the default `Error`, it looks like this because of verror backwards-compatibility.
-  constructor(migration, original) {
+  constructor(migration: MigrationParams<Context> & { direction: Direction }, original: unknown) {
     super(`Migration ${migration.name} (${migration.direction}) failed: ${MigrationError.errorString(original)}`, {
       cause: original
     })
@@ -63,22 +82,24 @@ class MigrationError extends Error {
   get info() {
     return this.migration
   }
-  static errorString(cause) {
-    return cause instanceof Error ? `Original error: ${cause.message}` : `Non-error value thrown. See info for full props: ${cause}`
+  static errorString(cause: unknown) {
+    return cause instanceof Error ? `Original error: ${cause.message}` : `Non-error value thrown. See info for full props: ${cause as string}`
   }
 }
-exports.MigrationError = MigrationError
-class Umzug {
+export class Umzug<Context = Record<string, never>> {
+  declare options: UmzugOptions<Context>
+  declare storage: Storage<Context>
+  declare migrations: (context?: Context) => Promise<Migration<Context>[]>
+  declare static defaultResolver: <Context>(params: MigrationParams<Context>) => Migration<Context>
+
   /** creates a new Umzug instance */
-  constructor(options) {
-    var _b
+  constructor(options: UmzugOptions<Context>) {
     this.options = options
-    this.storage = (0, storage_1.verifyUmzugStorage)((_b = options.storage) !== null && _b !== void 0 ? _b : new storage_1.JSONStorage())
+    this.storage = verifyUmzugStorage(options.storage ?? new JSONStorage())
     this.migrations = this.getMigrationsResolver(this.options.migrations)
   }
-  logging(message) {
-    var _b
-    ;(_b = this.options.logger) === null || _b === void 0 ? void 0 : _b.info(message)
+  logging(message: unknown) {
+    this.options.logger?.info(message)
   }
   /** Get the list of migrations which have already been applied */
   async executed() {
@@ -89,7 +110,7 @@ class Umzug {
     })
   }
   /** Get the list of migrations which have already been applied */
-  async _executed(context) {
+  async _executed(context: Context) {
     const [migrations, executedNames] = await Promise.all([this.migrations(context), this.storage.executed({ context })])
     const executedSet = new Set(executedNames)
     return migrations.filter((m) => executedSet.has(m.name))
@@ -102,12 +123,13 @@ class Umzug {
       return list.map((m) => ({ name: m.name, path: m.path }))
     })
   }
-  async _pending(context) {
+  async _pending(context: Context) {
     const [migrations, executedNames] = await Promise.all([this.migrations(context), this.storage.executed({ context })])
     const executedSet = new Set(executedNames)
     return migrations.filter((m) => !executedSet.has(m.name))
   }
-  async runCommand(command, cb) {
+  async runCommand<Result>(command: string, cb: (params: { context: Context }) => Result | PromiseLike<Result>) {
+    void command
     const context = await this.getContext()
     return await cb({ context })
   }
@@ -115,15 +137,14 @@ class Umzug {
    * Apply migrations. By default, runs all pending migrations.
    * @see MigrateUpOptions for other use cases using `to`, `migrations` and `rerun`.
    */
-  async up(options = {}) {
-    const eligibleMigrations = async (context) => {
-      var _b
-      if (options.migrations && options.rerun === types_1.RerunBehavior.ALLOW) {
+  async up(options: MigrateOptions = {}) {
+    const eligibleMigrations = async (context: Context) => {
+      if (options.migrations && options.rerun === RerunBehavior.ALLOW) {
         // Allow rerun means the specified migrations should be run even if they've run before - so get all migrations, not just pending
         const list = await this.migrations(context)
         return this.findMigrations(list, options.migrations)
       }
-      if (options.migrations && options.rerun === types_1.RerunBehavior.SKIP) {
+      if (options.migrations && options.rerun === RerunBehavior.SKIP) {
         const executedNames = new Set((await this._executed(context)).map((m) => m.name))
         const filteredMigrations = options.migrations.filter((m) => !executedNames.has(m))
         return this.findMigrations(await this.migrations(context), filteredMigrations)
@@ -132,7 +153,7 @@ class Umzug {
         return this.findMigrations(await this._pending(context), options.migrations)
       }
       const allPending = await this._pending(context)
-      let sliceIndex = (_b = options.step) !== null && _b !== void 0 ? _b : allPending.length
+      let sliceIndex = options.step ?? allPending.length
       if (options.to) {
         sliceIndex = this.findNameIndex(allPending, options.to) + 1
       }
@@ -160,14 +181,13 @@ class Umzug {
    * Revert migrations. By default, the last executed migration is reverted.
    * @see MigrateDownOptions for other use cases using `to`, `migrations` and `rerun`.
    */
-  async down(options = {}) {
-    const eligibleMigrations = async (context) => {
-      var _b
-      if (options.migrations && options.rerun === types_1.RerunBehavior.ALLOW) {
+  async down(options: MigrateOptions = {}) {
+    const eligibleMigrations = async (context: Context) => {
+      if (options.migrations && options.rerun === RerunBehavior.ALLOW) {
         const list = await this.migrations(context)
         return this.findMigrations(list, options.migrations)
       }
-      if (options.migrations && options.rerun === types_1.RerunBehavior.SKIP) {
+      if (options.migrations && options.rerun === RerunBehavior.SKIP) {
         const pendingNames = new Set((await this._pending(context)).map((m) => m.name))
         const filteredMigrations = options.migrations.filter((m) => !pendingNames.has(m))
         return this.findMigrations(await this.migrations(context), filteredMigrations)
@@ -176,7 +196,7 @@ class Umzug {
         return this.findMigrations(await this._executed(context), options.migrations)
       }
       const executedReversed = (await this._executed(context)).slice().reverse()
-      let sliceIndex = (_b = options.step) !== null && _b !== void 0 ? _b : 1
+      let sliceIndex = options.step ?? 1
       if (options.to === 0 || options.migrations) {
         sliceIndex = executedReversed.length
       } else if (options.to) {
@@ -185,14 +205,13 @@ class Umzug {
       return executedReversed.slice(0, sliceIndex)
     }
     return this.runCommand('down', async ({ context }) => {
-      var _b
       const toBeReverted = await eligibleMigrations(context)
       for (const m of toBeReverted) {
         const start = Date.now()
         const params = { name: m.name, path: m.path, context }
         this.logging({ event: 'reverting', name: m.name })
         try {
-          await ((_b = m.down) === null || _b === void 0 ? void 0 : _b.call(m, params))
+          await m.down?.(params)
         } catch (e) {
           throw new MigrationError({ direction: 'down', ...params }, e)
         }
@@ -203,21 +222,20 @@ class Umzug {
       return toBeReverted.map((m) => ({ name: m.name, path: m.path }))
     })
   }
-  async create(options) {
+  async create(options: CreateOptions) {
     await this.runCommand('create', async ({ context }) => {
-      var _b, _c, _d, _e
       const isoDate = new Date().toISOString()
       const prefixes = {
         TIMESTAMP: isoDate.replace(/\.\d{3}Z$/, '').replace(/\W/g, '.'),
         DATE: isoDate.split('T')[0].replace(/\W/g, '.'),
         NONE: ''
       }
-      const prefixType = (_b = options.prefix) !== null && _b !== void 0 ? _b : 'TIMESTAMP'
+      const prefixType = options.prefix ?? 'TIMESTAMP'
       const fileBasename = [prefixes[prefixType], options.name].filter(Boolean).join('.')
       const allowedExtensions = options.allowExtension ? [options.allowExtension] : ['.js', '.cjs', '.mjs', '.ts', '.cts', '.mts', '.sql']
       const existing = await this.migrations(context)
       const last = existing.slice(-1)[0]
-      const folder = options.folder || ((_c = this.options.create) === null || _c === void 0 ? void 0 : _c.folder) || ((last === null || last === void 0 ? void 0 : last.path) && path.dirname(last.path))
+      const folder = options.folder || this.options.create?.folder || (last?.path && path.dirname(last.path))
       if (!folder) {
         throw new Error(`Couldn't infer a directory to generate migration file in. Pass folder explicitly`)
       }
@@ -230,11 +248,8 @@ class Umzug {
       }
       const template =
         typeof options.content === 'string'
-          ? async () => [[filepath, options.content]]
-          : // eslint-disable-next-line @typescript-eslint/unbound-method
-          (_e = (_d = this.options.create) === null || _d === void 0 ? void 0 : _d.template) !== null && _e !== void 0
-          ? _e
-          : Umzug.defaultCreationTemplate
+          ? (): TemplateFiles => [[filepath, options.content!]]
+          : this.options.create?.template ?? Umzug.defaultCreationTemplate
       const toWrite = await template(filepath)
       if (toWrite.length === 0) {
         toWrite.push([filepath, ''])
@@ -263,7 +278,7 @@ class Umzug {
       }
     })
   }
-  static defaultCreationTemplate(filepath) {
+  static defaultCreationTemplate(this: void, filepath: string): TemplateFiles {
     const ext = path.extname(filepath)
     if ((ext === '.js' && typeof require.main === 'object') || ext === '.cjs') {
       return [[filepath, templates.js]]
@@ -283,14 +298,14 @@ class Umzug {
     }
     return []
   }
-  findNameIndex(migrations, name) {
+  findNameIndex(migrations: MigrationMeta[], name: string) {
     const index = migrations.findIndex((m) => m.name === name)
     if (index === -1) {
       throw new Error(`Couldn't find migration to apply with name ${JSON.stringify(name)}`)
     }
     return index
   }
-  findMigrations(migrations, names) {
+  findMigrations(migrations: Migration<Context>[], names: string[]) {
     const map = new Map(migrations.map((m) => [m.name, m]))
     return names.map((name) => {
       const migration = map.get(name)
@@ -301,52 +316,48 @@ class Umzug {
     })
   }
   async getContext() {
-    const { context = {} } = this.options
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return typeof context === 'function' ? context() : context
+    const { context = {} as Context } = this.options
+    return typeof context === 'function' ? (context as () => Context | PromiseLike<Context>)() : context
   }
   /** helper for parsing input migrations into a callback returning a list of ready-to-run migrations */
-  getMigrationsResolver(inputMigrations) {
-    var _b
+  getMigrationsResolver(inputMigrations: MigrationInput<Context>): (context?: Context) => Promise<Migration<Context>[]> {
     if (Array.isArray(inputMigrations)) {
-      return async () => inputMigrations
+      return () => Promise.resolve(inputMigrations)
     }
     if (typeof inputMigrations === 'function') {
       // Lazy migrations definition, recurse.
       return async (ctx) => {
-        const resolved = await inputMigrations(ctx)
+        const resolved = await inputMigrations(ctx as Context)
         return this.getMigrationsResolver(resolved)(ctx)
       }
     }
     const paths = inputMigrations.files
-    const resolver = (_b = inputMigrations.resolve) !== null && _b !== void 0 ? _b : Umzug.defaultResolver
+    const resolver = inputMigrations.resolve ?? Umzug.defaultResolver
     return async (context) => {
       paths.sort()
-      return paths.map((unresolvedPath) => {
+      return Promise.resolve(paths.map((unresolvedPath) => {
         const filepath = path.resolve(unresolvedPath)
         const name = path.basename(filepath)
         return {
           path: filepath,
-          ...resolver({ name, path: filepath, context })
+          ...resolver({ name, path: filepath, context: context as Context })
         }
-      })
+      }))
     }
   }
 }
-exports.Umzug = Umzug
-_a = Umzug
-Umzug.defaultResolver = ({ name, path: filepath }) => {
+Umzug.defaultResolver = <Context>({ name, path: filepath }: MigrationParams<Context>): Migration<Context> => {
   if (!filepath) {
     throw new Error(`Can't use default resolver for non-filesystem migrations`)
   }
   const ext = path.extname(filepath)
-  const languageSpecificHelp = {
+  const languageSpecificHelp: Record<string, string> = {
     '.ts': "TypeScript files can be required by adding `ts-node` as a dependency and calling `require('ts-node/register')` at the program entrypoint before running migrations.",
     '.sql': 'Try writing a resolver which reads file content and executes it as a sql query.'
   }
   languageSpecificHelp['.cts'] = languageSpecificHelp['.ts']
   languageSpecificHelp['.mts'] = languageSpecificHelp['.ts']
-  let loadModule
+  let loadModule: () => Promise<MigrationModule<Context>>
   const jsExt = ext.replace(/\.([cm]?)ts$/, '.$1js')
   const getModule = async () => {
     try {
@@ -359,28 +370,23 @@ Umzug.defaultResolver = ({ name, path: filepath }) => {
     }
   }
   if ((jsExt === '.js' && typeof require.main === 'object') || jsExt === '.cjs') {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    loadModule = async () => require(filepath)
+    loadModule = () => new Promise((resolve) => resolve(load(filepath) as MigrationModule<Context>))
   } else if (jsExt === '.js' || jsExt === '.mjs') {
-    loadModule = async () => import(filepath)
+    loadModule = async () => await importMigrationFile(filepath) as MigrationModule<Context>
   } else {
-    loadModule = async () => {
-      throw new MissingResolverError(filepath)
-    }
+    loadModule = () => Promise.reject(new MissingResolverError(filepath))
   }
   return {
     name,
     path: filepath,
     up: async ({ context }) => (await getModule()).up({ path: filepath, name, context }),
     down: async ({ context }) => {
-      var _b, _c
-      return (_c = (_b = await getModule()).down) === null || _c === void 0 ? void 0 : _c.call(_b, { path: filepath, name, context })
+      return (await getModule()).down?.({ path: filepath, name, context })
     }
   }
 }
 class MissingResolverError extends Error {
-  constructor(filepath) {
+  constructor(filepath: string) {
     super(`No resolver specified for file ${filepath}. See docs for guidance on how to write a custom resolver.`)
   }
 }
-//# sourceMappingURL=umzug.js.map
