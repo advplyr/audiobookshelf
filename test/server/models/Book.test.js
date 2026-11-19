@@ -58,6 +58,32 @@ describe('Book author and series updates', () => {
     expect(links).to.have.lengthOf(1)
   })
 
+  it('uses the author spelled exactly as given when two authors differ only in case', async () => {
+    await Database.authorModel.create({ name: 'Ken FOLLETT', libraryId: library.id })
+    const exact = await Database.authorModel.create({ name: 'Ken Follett', libraryId: library.id })
+
+    const result = await book.updateAuthorsFromRequest(['Ken Follett'], library.id)
+
+    expect(result.authorsAdded.map((a) => a.id)).to.deep.equal([exact.id])
+  })
+
+  it('still finds an author whose name differs only in case', async () => {
+    const author = await Database.authorModel.create({ name: 'Ken Follett', libraryId: library.id })
+
+    const result = await book.updateAuthorsFromRequest(['ken follett'], library.id)
+
+    expect(result.authorsAdded.map((a) => a.id)).to.deep.equal([author.id])
+  })
+
+  it('uses the series spelled exactly as given when two series differ only in case', async () => {
+    await Database.seriesModel.create({ name: 'The Kingsbridge Novels', libraryId: library.id })
+    const exact = await Database.seriesModel.create({ name: 'The Kingsbridge novels', libraryId: library.id })
+
+    const result = await book.updateSeriesFromRequest([{ name: 'The Kingsbridge novels', sequence: '1' }], library.id)
+
+    expect(result.seriesAdded.map((s) => s.id)).to.deep.equal([exact.id])
+  })
+
   it('does not throw when the bookAuthor link already exists', async () => {
     const author = await Database.authorModel.create({ name: 'Sarah Maas', libraryId: library.id })
     await Database.bookAuthorModel.create({ bookId: book.id, authorId: author.id })
