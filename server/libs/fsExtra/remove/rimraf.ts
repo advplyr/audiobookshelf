@@ -1,30 +1,31 @@
-'use strict'
+import fs from 'graceful-fs'
+import path from 'node:path'
+import assert from 'node:assert'
+import type { PathLike, RmDirOptions } from 'node:fs'
 
-const fs = require('graceful-fs')
-const path = require('path')
-const assert = require('assert')
+type Done = (error?: NodeJS.ErrnoException | null) => void
+type FileMethod = 'unlink' | 'chmod' | 'stat' | 'lstat' | 'rmdir' | 'readdir'
+type Options = Pick<typeof fs, FileMethod | `${FileMethod}Sync`> & RmDirOptions & { maxBusyTries: number }
 
 const isWindows = (process.platform === 'win32')
 
-function defaults (options) {
-  const methods = [
-    'unlink',
-    'chmod',
-    'stat',
-    'lstat',
-    'rmdir',
-    'readdir'
-  ]
-  methods.forEach(m => {
-    options[m] = options[m] || fs[m]
-    m = m + 'Sync'
-    options[m] = options[m] || fs[m]
+function defaults (options: Partial<Options>): asserts options is Options {
+  const methods = ['unlink', 'chmod', 'stat', 'lstat', 'rmdir', 'readdir'] as const
+  function setDefault<K extends keyof typeof fs> (method: K) {
+    const target: Partial<typeof fs> = options
+    target[method] = target[method] || fs[method]
+  }
+  methods.forEach(method => {
+    setDefault(method)
+    setDefault(`${method}Sync`)
   })
 
   options.maxBusyTries = options.maxBusyTries || 3
 }
 
-function rimraf (p, options, cb) {
+function rimraf (p: PathLike, cb: Done): void
+function rimraf (p: PathLike, options: Partial<Options>, cb: Done): void
+function rimraf (p: PathLike, options: Partial<Options> | Done, cb?: Done): void {
   let busyTries = 0
 
   if (typeof options === 'function') {
@@ -34,27 +35,31 @@ function rimraf (p, options, cb) {
 
   assert(p, 'rimraf: missing path')
   assert.strictEqual(typeof p, 'string', 'rimraf: path should be a string')
+  if (typeof p !== 'string') return
   assert.strictEqual(typeof cb, 'function', 'rimraf: callback function required')
+  if (!cb) return
   assert(options, 'rimraf: invalid options argument provided')
   assert.strictEqual(typeof options, 'object', 'rimraf: options should be object')
 
   defaults(options)
+  const resolvedOptions = options
+  const callback = cb
 
-  rimraf_(p, options, function CB (er) {
+  rimraf_(p, resolvedOptions, function CB (er) {
     if (er) {
       if ((er.code === 'EBUSY' || er.code === 'ENOTEMPTY' || er.code === 'EPERM') &&
-          busyTries < options.maxBusyTries) {
+          busyTries < resolvedOptions.maxBusyTries) {
         busyTries++
         const time = busyTries * 100
         // try again, with the same exact callback as this one.
-        return setTimeout(() => rimraf_(p, options, CB), time)
+        return setTimeout(() => rimraf_(p, resolvedOptions, CB), time)
       }
 
       // already gone
       if (er.code === 'ENOENT') er = null
     }
 
-    cb(er)
+    callback(er)
   })
 }
 
@@ -69,7 +74,7 @@ function rimraf (p, options, cb) {
 //
 // If anyone ever complains about this, then I guess the strategy could
 // be made configurable somehow.  But until then, YAGNI.
-function rimraf_ (p, options, cb) {
+function rimraf_ (p: string, options: Options, cb: Done): void {
   assert(p)
   assert(options)
   assert(typeof cb === 'function')
@@ -109,7 +114,7 @@ function rimraf_ (p, options, cb) {
   })
 }
 
-function fixWinEPERM (p, options, er, cb) {
+function fixWinEPERM (p: string, options: Options, er: NodeJS.ErrnoException, cb: Done): void {
   assert(p)
   assert(options)
   assert(typeof cb === 'function')
@@ -131,7 +136,7 @@ function fixWinEPERM (p, options, er, cb) {
   })
 }
 
-function fixWinEPERMSync (p, options, er) {
+function fixWinEPERMSync (p: string, options: Options, er: unknown): void {
   let stats
 
   assert(p)
@@ -140,7 +145,8 @@ function fixWinEPERMSync (p, options, er) {
   try {
     options.chmodSync(p, 0o666)
   } catch (er2) {
-    if (er2.code === 'ENOENT') {
+    const code = er2 && typeof er2 === 'object' && 'code' in er2 ? er2.code : undefined
+    if (code === 'ENOENT') {
       return
     } else {
       throw er
@@ -150,7 +156,8 @@ function fixWinEPERMSync (p, options, er) {
   try {
     stats = options.statSync(p)
   } catch (er3) {
-    if (er3.code === 'ENOENT') {
+    const code = er3 && typeof er3 === 'object' && 'code' in er3 ? er3.code : undefined
+    if (code === 'ENOENT') {
       return
     } else {
       throw er
@@ -164,7 +171,7 @@ function fixWinEPERMSync (p, options, er) {
   }
 }
 
-function rmdir (p, options, originalEr, cb) {
+function rmdir (p: string, options: Options, originalEr: NodeJS.ErrnoException | null, cb: Done): void {
   assert(p)
   assert(options)
   assert(typeof cb === 'function')
@@ -183,7 +190,7 @@ function rmdir (p, options, originalEr, cb) {
   })
 }
 
-function rmkids (p, options, cb) {
+function rmkids (p: string, options: Options, cb: Done): void {
   assert(p)
   assert(options)
   assert(typeof cb === 'function')
@@ -192,7 +199,7 @@ function rmkids (p, options, cb) {
     if (er) return cb(er)
 
     let n = files.length
-    let errState
+    let errState: NodeJS.ErrnoException | undefined
 
     if (n === 0) return options.rmdir(p, cb)
 
@@ -213,7 +220,7 @@ function rmkids (p, options, cb) {
 // this looks simpler, and is strictly *faster*, but will
 // tie up the JavaScript thread and fail on excessively
 // deep directory trees.
-function rimrafSync (p, options) {
+function rimrafSync (p: PathLike, options?: Partial<Options> | null): void {
   let st
 
   options = options || {}
@@ -221,18 +228,20 @@ function rimrafSync (p, options) {
 
   assert(p, 'rimraf: missing path')
   assert.strictEqual(typeof p, 'string', 'rimraf: path should be a string')
+  if (typeof p !== 'string') return
   assert(options, 'rimraf: missing options')
   assert.strictEqual(typeof options, 'object', 'rimraf: options should be object')
 
   try {
     st = options.lstatSync(p)
   } catch (er) {
-    if (er.code === 'ENOENT') {
+    const code = er && typeof er === 'object' && 'code' in er ? er.code : undefined
+    if (code === 'ENOENT') {
       return
     }
 
     // Windows can EPERM on stat.  Life is suffering.
-    if (er.code === 'EPERM' && isWindows) {
+    if (code === 'EPERM' && isWindows) {
       fixWinEPERMSync(p, options, er)
     }
   }
@@ -245,35 +254,37 @@ function rimrafSync (p, options) {
       options.unlinkSync(p)
     }
   } catch (er) {
-    if (er.code === 'ENOENT') {
+    const code = er && typeof er === 'object' && 'code' in er ? er.code : undefined
+    if (code === 'ENOENT') {
       return
-    } else if (er.code === 'EPERM') {
+    } else if (code === 'EPERM') {
       return isWindows ? fixWinEPERMSync(p, options, er) : rmdirSync(p, options, er)
-    } else if (er.code !== 'EISDIR') {
+    } else if (code !== 'EISDIR') {
       throw er
     }
     rmdirSync(p, options, er)
   }
 }
 
-function rmdirSync (p, options, originalEr) {
+function rmdirSync (p: string, options: Options, originalEr: unknown): void {
   assert(p)
   assert(options)
 
   try {
     options.rmdirSync(p)
   } catch (er) {
-    if (er.code === 'ENOTDIR') {
+    const code = er && typeof er === 'object' && 'code' in er ? er.code : undefined
+    if (code === 'ENOTDIR') {
       throw originalEr
-    } else if (er.code === 'ENOTEMPTY' || er.code === 'EEXIST' || er.code === 'EPERM') {
+    } else if (code === 'ENOTEMPTY' || code === 'EEXIST' || code === 'EPERM') {
       rmkidsSync(p, options)
-    } else if (er.code !== 'ENOENT') {
+    } else if (code !== 'ENOENT') {
       throw er
     }
   }
 }
 
-function rmkidsSync (p, options) {
+function rmkidsSync (p: string, options: Options): void {
   assert(p)
   assert(options)
   options.readdirSync(p).forEach(f => rimrafSync(path.join(p, f), options))
@@ -298,5 +309,4 @@ function rmkidsSync (p, options) {
   }
 }
 
-module.exports = rimraf
-rimraf.sync = rimrafSync
+export = Object.assign(rimraf, { sync: rimrafSync })

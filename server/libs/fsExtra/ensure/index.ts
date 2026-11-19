@@ -1,10 +1,12 @@
-'use strict'
+import file from './file'
+import link from './link'
+import symlink from './symlink'
 
-const { createFile, createFileSync } = require('./file')
-const { createLink, createLinkSync } = require('./link')
-const { createSymlink, createSymlinkSync } = require('./symlink')
+const { createFile, createFileSync } = file
+const { createLink, createLinkSync } = link
+const { createSymlink, createSymlinkSync } = symlink
 
-module.exports = {
+export = {
   // file
   createFile,
   createFileSync,
