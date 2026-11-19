@@ -18,30 +18,33 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
+import { createRequire } from 'node:module'
+import type { PassThrough as PassThroughStream, TransformCallback, TransformOptions } from 'node:stream'
 
-'use strict';
-
-module.exports = PassThrough;
-
-var Transform = require('./_stream_transform');
-
-/*<replacement>*/
-var util = require('util')
-// util.inherits = require('inherits');
-/*</replacement>*/
-
-util.inherits(PassThrough, Transform);
-
-function PassThrough(options) {
-  if (!(this instanceof PassThrough)) return new PassThrough(options);
-
-  Transform.call(this, options);
+const load = createRequire(__filename)
+const { ObjectSetPrototypeOf } = load('../../ours/primordials') as { ObjectSetPrototypeOf: typeof Object.setPrototypeOf }
+const Transform = load('./transform') as {
+  (this: PassThroughStream, options?: TransformOptions): void
+  prototype: PassThroughStream
 }
 
-PassThrough.prototype._transform = function (chunk, encoding, cb) {
-  cb(null, chunk);
-};
+const PassThrough = function (this: PassThroughStream, options?: TransformOptions) {
+  if (!(this instanceof PassThrough)) return new PassThrough(options)
+  Transform.call(this, options)
+} as unknown as {
+  (options?: TransformOptions): PassThroughStream
+  new (options?: TransformOptions): PassThroughStream
+  prototype: PassThroughStream
+}
+
+ObjectSetPrototypeOf(PassThrough.prototype, Transform.prototype)
+ObjectSetPrototypeOf(PassThrough, Transform)
+
+PassThrough.prototype._transform = function (chunk: unknown, _encoding: BufferEncoding, cb: TransformCallback) {
+  cb(null, chunk)
+}
+
+export = PassThrough
