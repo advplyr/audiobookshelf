@@ -528,6 +528,31 @@ class ApiRouter {
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
+  /**
+   * One page of getUserListeningSessionsHelper without loading every session of the user
+   *
+   * @param {string} userId
+   * @param {number} page
+   * @param {number} itemsPerPage
+   * @returns {Promise<{ total: number, sessions: import('../objects/PlaybackSession')[] }>}
+   */
+  async getUserListeningSessionsPageHelper(userId, page, itemsPerPage) {
+    // The device include is a belongsTo, so there is one row per session and the count needs no distinct
+    const { rows, count } = await Database.playbackSessionModel.findAndCountAll({
+      where: { userId },
+      include: [
+        {
+          model: Database.deviceModel
+        }
+      ],
+      // rowid keeps sessions with the same updatedAt in table order, as the stable sort above does
+      order: [['updatedAt', 'DESC'], [sequelize.literal('`playbackSession`.`rowid`'), 'ASC']],
+      limit: itemsPerPage,
+      offset: itemsPerPage * page
+    })
+    return { total: count, sessions: rows.map((session) => Database.playbackSessionModel.getOldPlaybackSession(session)) }
+  }
+
   async getUserItemListeningSessionsHelper(userId, mediaItemId) {
     const userSessions = await Database.getPlaybackSessions({ userId, mediaItemId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
