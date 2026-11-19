@@ -5,7 +5,7 @@
  * Licensed under the MIT license.
  * https://github.com/archiverjs/node-compress-commons/blob/master/LICENSE-MIT
  */
-module.exports = {
+export = {
   WORD: 4,
   DWORD: 8,
   EMPTY: Buffer.alloc(0),
@@ -13,9 +13,9 @@ module.exports = {
   SHORT: 2,
   SHORT_MASK: 0xffff,
   SHORT_SHIFT: 16,
-  SHORT_ZERO: Buffer.from(Array(2)),
+  SHORT_ZERO: Buffer.alloc(2),
   LONG: 4,
-  LONG_ZERO: Buffer.from(Array(4)),
+  LONG_ZERO: Buffer.alloc(4),
 
   MIN_VERSION_INITIAL: 10,
   MIN_VERSION_DATA_DESCRIPTOR: 20,
