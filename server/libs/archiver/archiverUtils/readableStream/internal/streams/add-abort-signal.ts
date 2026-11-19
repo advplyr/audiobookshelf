@@ -6,8 +6,8 @@ type AbortableStream = Pick<Duplex, 'pipe' | 'destroy' | 'on' | 'removeListener'
 type Signal = Pick<AbortSignal, 'aborted' | 'addEventListener' | 'removeEventListener'> & { reason?: unknown }
 
 interface AbortSignalApi {
-  addAbortSignal<Stream extends AbortableStream>(signal: Signal, stream: Stream): Stream
-  addAbortSignalNoValidate<Stream extends AbortableStream>(signal: Signal, stream: Stream): Stream
+  addAbortSignal<Stream extends AbortableStream>(this: void, signal: Signal, stream: Stream): Stream
+  addAbortSignalNoValidate<Stream extends AbortableStream>(this: void, signal: Signal, stream: Stream): Stream
 }
 
 declare const module: { exports: AbortSignalApi }

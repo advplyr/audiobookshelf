@@ -1,5 +1,4 @@
 // Keep this file as an alias for the full stream module.
-import { createRequire } from 'node:module'
+import stream from './stream'
 
-const { Transform } = createRequire(__filename)('./stream') as Pick<typeof import('node:stream'), 'Transform'>
-export = Transform
+export = stream.Transform
