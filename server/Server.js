@@ -1,4 +1,5 @@
 const Path = require('path')
+const Module = require('module')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
@@ -68,6 +69,51 @@ function normalizeBasePath(basePath) {
  * one more `.server` down. Older react clients have no basePath and must keep
  * Express-stripped URLs.
  */
+/**
+ * Next 16's production custom server loads `start-server.js` during prepare().
+ * That file loads `app-info-log.js`, which requires `inspector` at module scope
+ * to print a debugger URL. pkg's Node binary has no inspector, and calling the
+ * real builtin throws ERR_INSPECTOR_NOT_AVAILABLE. Return a stub instead of
+ * calling it. Outside pkg, Next gets the real module.
+ */
+function inspectorStub() {
+  const stub = {
+    url: () => undefined,
+    open() {},
+    close() {},
+    waitForDebugger() {},
+    console
+  }
+  stub.Session = class Session {
+    connect() {}
+    disconnect() {}
+    post(_method, callback) {
+      if (typeof callback === 'function') callback(null, {})
+    }
+  }
+  return stub
+}
+
+function isInspectorRequest(id) {
+  return id === 'inspector' || id === 'node:inspector'
+}
+
+function allowPkgWithoutInspector() {
+  if (!process.pkg || Module.prototype.require.__absInspectorPatched) return
+  const originalRequire = Module.prototype.require
+  const originalLoad = Module._load
+  function requireWithInspectorFallback(id) {
+    if (isInspectorRequest(id)) return inspectorStub()
+    return originalRequire.apply(this, arguments)
+  }
+  requireWithInspectorFallback.__absInspectorPatched = true
+  Module.prototype.require = requireWithInspectorFallback
+  Module._load = function (request, parent, isMain) {
+    if (isInspectorRequest(request)) return inspectorStub()
+    return originalLoad.call(this, request, parent, isMain)
+  }
+}
+
 function getPreparedNextBasePath(nextApp) {
   const nodeServer = nextApp.server?.server
   const basePath = nodeServer?.nextConfig?.basePath
@@ -429,6 +475,7 @@ class Server {
     } else {
       // This is for using the experimental Next.js client
       Logger.info(`Using React client at ${ReactClientPath}`)
+      allowPkgWithoutInspector()
       const nextPath = Path.join(ReactClientPath, 'node_modules/next')
       const next = require(nextPath)
       const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
