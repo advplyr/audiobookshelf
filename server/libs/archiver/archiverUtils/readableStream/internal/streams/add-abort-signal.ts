@@ -1,7 +1,8 @@
 import { createRequire } from 'node:module'
 import type { Duplex } from 'node:stream'
+import eos from './end-of-stream'
 
-type AbortableStream = Pick<Duplex, 'pipe' | 'destroy'>
+type AbortableStream = Pick<Duplex, 'pipe' | 'destroy' | 'on' | 'removeListener'>
 type Signal = Pick<AbortSignal, 'aborted' | 'addEventListener' | 'removeEventListener'> & { reason?: unknown }
 
 interface AbortSignalApi {
@@ -16,7 +17,6 @@ const { AbortError, codes } = load('../../ours/errors') as {
   AbortError: new (message?: string, options?: ErrorOptions) => Error
   codes: { ERR_INVALID_ARG_TYPE: new (name: string, expected: string, actual: unknown) => Error }
 }
-const eos = load('./end-of-stream') as (stream: AbortableStream, callback: () => void) => void
 const { ERR_INVALID_ARG_TYPE } = codes // This method is inlined here for readable-stream
 // It also does not allow for signal to not exist on the stream
 // https://github.com/nodejs/node/pull/36061#discussion_r533718029

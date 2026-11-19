@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module'
-import type { finished as Finished } from 'node:stream/promises'
+import eos from '../internal/streams/end-of-stream'
 import streamUtils from '../internal/streams/utils'
 import primordials from '../ours/primordials'
 
@@ -17,7 +17,7 @@ const { pipelineImpl: pl } = load('../internal/streams/pipeline') as {
   pipelineImpl: (streams: unknown[], callback: (error: Error | null, value?: unknown) => void, options: PipelineOptions) => void
 }
 
-const { finished } = load('../internal/streams/end-of-stream') as { finished: typeof Finished }
+const { finished } = eos
 
 function pipeline(...streams: unknown[]) {
   return new Promise<unknown>((resolve, reject) => {

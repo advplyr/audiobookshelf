@@ -1,16 +1,52 @@
 // Ported from https://github.com/mafintosh/end-of-stream with
 // permission from the author, Mathias Buus (@mafintosh).
-'use strict'
+import { createRequire } from 'node:module'
+import primordials from '../../ours/primordials'
+import util from '../../ours/util'
+import streamUtils from './utils'
 
-const { AbortError, codes } = require('../../ours/errors')
+type StreamProbe = NonNullable<Parameters<typeof streamUtils.isDestroyed>[0]>
+type Listener = (error?: Error) => void
 
+interface StreamEvents {
+  on(event: string, listener: Listener): void
+  removeListener(event: string, listener: Listener): void
+}
+
+type WatchedStream = StreamProbe & StreamEvents & {
+  setHeader?: unknown
+  abort?: unknown
+  aborted?: boolean
+  req?: (StreamEvents & { upgradeOrConnect?: unknown }) | null
+}
+
+type Callback = (this: WatchedStream, error?: Error) => void
+type Signal = Pick<AbortSignal, 'aborted' | 'addEventListener' | 'removeEventListener'> & { reason?: unknown }
+
+interface FinishedOptions {
+  readable?: boolean
+  writable?: boolean
+  error?: boolean
+  signal?: Signal
+}
+
+interface Validators {
+  validateAbortSignal(signal: unknown, name: string): void
+  validateFunction(callback: unknown, name: string): asserts callback is Callback
+  validateObject(value: unknown, name: string): void
+}
+
+const load = createRequire(__filename)
+const { AbortError, codes } = load('../../ours/errors') as {
+  AbortError: new (message?: string, options?: ErrorOptions) => Error
+  codes: {
+    ERR_INVALID_ARG_TYPE: new (name: string, expected: string, actual: unknown) => Error
+    ERR_STREAM_PREMATURE_CLOSE: new () => Error
+  }
+}
 const { ERR_INVALID_ARG_TYPE, ERR_STREAM_PREMATURE_CLOSE } = codes
-
-const { once } = require('../../ours/util')
-
-const { validateAbortSignal, validateFunction, validateObject } = require('../validators')
-
-const { Promise } = require('../../ours/primordials')
+const validators: Validators = load('../validators') as Validators
+const { Promise } = primordials
 
 const {
   isClosed,
@@ -24,35 +60,40 @@ const {
   isWritableErrored,
   isNodeStream,
   willEmitClose: _willEmitClose
-} = require('./utils')
+} = streamUtils
 
-function isRequest(stream) {
+function isRequest(stream: WatchedStream) {
   return stream.setHeader && typeof stream.abort === 'function'
 }
 
 const nop = () => {}
 
-function eos(stream, options, callback) {
-  var _options$readable, _options$writable
+function eos(stream: WatchedStream, callback: Callback): () => void
+function eos(stream: WatchedStream, options: FinishedOptions | null | undefined, callback: Callback): () => void
+function eos(stream: WatchedStream, optionsOrCallback: FinishedOptions | Callback | null | undefined, callbackInput?: Callback) {
+  let options = optionsOrCallback as FinishedOptions | null | undefined
+  let callback = callbackInput
+  var _options$readable: boolean | undefined, _options$writable: boolean | undefined
 
   if (arguments.length === 2) {
-    callback = options
+    callback = optionsOrCallback as Callback
     options = {}
   } else if (options == null) {
     options = {}
   } else {
-    validateObject(options, 'options')
+    validators.validateObject(options, 'options')
   }
 
-  validateFunction(callback, 'callback')
-  validateAbortSignal(options.signal, 'options.signal')
-  callback = once(callback)
+  const resolvedOptions = options
+  validators.validateFunction(callback, 'callback')
+  validators.validateAbortSignal(resolvedOptions.signal, 'options.signal')
+  let complete = util.once(callback)
   const readable =
-    (_options$readable = options.readable) !== null && _options$readable !== undefined
+    (_options$readable = resolvedOptions.readable) !== null && _options$readable !== undefined
       ? _options$readable
       : isReadableNodeStream(stream)
   const writable =
-    (_options$writable = options.writable) !== null && _options$writable !== undefined
+    (_options$writable = resolvedOptions.writable) !== null && _options$writable !== undefined
       ? _options$writable
       : isWritableNodeStream(stream)
 
@@ -90,7 +131,7 @@ function eos(stream, options, callback) {
     }
 
     if (!readable || readableFinished) {
-      callback.call(stream)
+      complete.call(stream)
     }
   }
 
@@ -110,12 +151,12 @@ function eos(stream, options, callback) {
     }
 
     if (!writable || writableFinished) {
-      callback.call(stream)
+      complete.call(stream)
     }
   }
 
-  const onerror = (err) => {
-    callback.call(stream, err)
+  const onerror = (err?: Error) => {
+    complete.call(stream, err)
   }
 
   let closed = isClosed(stream)
@@ -125,22 +166,22 @@ function eos(stream, options, callback) {
     const errored = isWritableErrored(stream) || isReadableErrored(stream)
 
     if (errored && typeof errored !== 'boolean') {
-      return callback.call(stream, errored)
+      return complete.call(stream, errored)
     }
 
     if (readable && !readableFinished && isReadableNodeStream(stream, true)) {
-      if (!isReadableFinished(stream, false)) return callback.call(stream, new ERR_STREAM_PREMATURE_CLOSE())
+      if (!isReadableFinished(stream, false)) return complete.call(stream, new ERR_STREAM_PREMATURE_CLOSE())
     }
 
     if (writable && !writableFinished) {
-      if (!isWritableFinished(stream, false)) return callback.call(stream, new ERR_STREAM_PREMATURE_CLOSE())
+      if (!isWritableFinished(stream, false)) return complete.call(stream, new ERR_STREAM_PREMATURE_CLOSE())
     }
 
-    callback.call(stream)
+    complete.call(stream)
   }
 
   const onrequest = () => {
-    stream.req.on('finish', onfinish)
+    stream.req!.on('finish', onfinish)
   }
 
   if (isRequest(stream)) {
@@ -168,7 +209,7 @@ function eos(stream, options, callback) {
   stream.on('end', onend)
   stream.on('finish', onfinish)
 
-  if (options.error !== false) {
+  if (resolvedOptions.error !== false) {
     stream.on('error', onerror)
   }
 
@@ -200,7 +241,7 @@ function eos(stream, options, callback) {
   }
 
   const cleanup = () => {
-    callback = nop
+    complete = nop
     stream.removeListener('aborted', onclose)
     stream.removeListener('complete', onfinish)
     stream.removeListener('abort', onclose)
@@ -214,36 +255,36 @@ function eos(stream, options, callback) {
     stream.removeListener('close', onclose)
   }
 
-  if (options.signal && !closed) {
+  if (resolvedOptions.signal && !closed) {
     const abort = () => {
       // Keep it because cleanup removes it.
-      const endCallback = callback
+      const endCallback = complete
       cleanup()
       endCallback.call(
         stream,
         new AbortError(undefined, {
-          cause: options.signal.reason
+          cause: resolvedOptions.signal!.reason
         })
       )
     }
 
-    if (options.signal.aborted) {
+    if (resolvedOptions.signal.aborted) {
       process.nextTick(abort)
     } else {
-      const originalCallback = callback
-      callback = once((...args) => {
-        options.signal.removeEventListener('abort', abort)
+      const originalCallback = complete
+      complete = util.once((...args: Parameters<Callback>) => {
+        resolvedOptions.signal!.removeEventListener('abort', abort)
         originalCallback.apply(stream, args)
       })
-      options.signal.addEventListener('abort', abort)
+      resolvedOptions.signal.addEventListener('abort', abort)
     }
   }
 
   return cleanup
 }
 
-function finished(stream, opts) {
-  return new Promise((resolve, reject) => {
+function finished(stream: WatchedStream, opts?: FinishedOptions | null) {
+  return new Promise<void>((resolve, reject) => {
     eos(stream, opts, (err) => {
       if (err) {
         reject(err)
@@ -254,5 +295,8 @@ function finished(stream, opts) {
   })
 }
 
+declare const module: { exports: typeof eos & { finished?: typeof finished } }
 module.exports = eos
 module.exports.finished = finished
+
+export = module.exports as typeof eos & { finished: typeof finished }
