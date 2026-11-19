@@ -1,11 +1,7 @@
 import xml from '../../libs/xml'
-import escapeForXMLImport from '../../libs/xml/escapeForXML'
+import escapeForXML from '../../libs/xml/escapeForXML'
 
 type XmlText = string | null | undefined
-
-// escapeForXML.js has no annotations, so its inferred signature is any.
-type EscapeForXML = (value: XmlText) => XmlText
-const escapeForXML: EscapeForXML = escapeForXMLImport
 
 type OpmlPodcast = {
   feedURL?: string | null
