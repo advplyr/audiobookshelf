@@ -5,8 +5,26 @@
  * @license [MIT]{@link https://github.com/archiverjs/node-archiver/blob/master/LICENSE}
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
-var engine = require('../../zip-stream');
-var util = require('../../archiverUtils');
+import ZipStream from '../../zip-stream';
+import runtimeUtils from '../../archiverUtils';
+
+type Options = ZipStream.Options & { forceUTC?: boolean };
+type Engine = ZipStream.Instance;
+
+interface ZipPlugin {
+  options: Options;
+  supports: { directory: boolean; symlink: boolean };
+  engine: Engine;
+  append(source: unknown, data: ZipStream.Data, callback?: ZipStream.Callback): void;
+  finalize(): void;
+  on(...args: Parameters<Engine['on']>): ReturnType<Engine['on']>;
+  pipe<Destination extends NodeJS.WritableStream>(destination: Destination, options?: { end?: boolean }): Destination;
+  unpipe(...args: Parameters<Engine['unpipe']>): ReturnType<Engine['unpipe']>;
+}
+
+const util = runtimeUtils as {
+  defaults(options: Options | undefined, defaults: Options): Options;
+};
 
 /**
  * @constructor
@@ -18,9 +36,9 @@ var util = require('../../archiverUtils');
  * @param {Boolean} [options.store=false] Sets the compression method to STORE.
  * @param {Object} [options.zlib] Passed to [zlib]{@link https://nodejs.org/api/zlib.html#zlib_class_options}
  */
-var Zip = function (options) {
-  if (!(this instanceof Zip)) {
-    return new Zip(options);
+const constructor: unknown = function Zip(this: ZipPlugin, options?: Options) {
+  if (!(this instanceof createZipPlugin)) {
+    return new createZipPlugin(options);
   }
 
   options = this.options = util.defaults(options, {
@@ -35,7 +53,13 @@ var Zip = function (options) {
     symlink: true
   };
 
-  this.engine = new engine(options);
+  this.engine = new ZipStream(options);
+};
+
+const createZipPlugin = constructor as {
+  (options?: Options): ZipPlugin;
+  new (options?: Options): ZipPlugin;
+  prototype: ZipPlugin;
 };
 
 /**
@@ -52,39 +76,39 @@ var Zip = function (options) {
  * @param  {Function} callback
  * @return void
  */
-Zip.prototype.append = function (source, data, callback) {
+createZipPlugin.prototype.append = function (source, data, callback) {
   this.engine.entry(source, data, callback);
 };
 
 /**
  * @return void
  */
-Zip.prototype.finalize = function () {
+createZipPlugin.prototype.finalize = function () {
   this.engine.finalize();
 };
 
 /**
  * @return this.engine
  */
-Zip.prototype.on = function () {
-  return this.engine.on.apply(this.engine, arguments);
+createZipPlugin.prototype.on = function (...args: Parameters<Engine['on']>) {
+  return this.engine.on(...args);
 };
 
 /**
  * @return this.engine
  */
-Zip.prototype.pipe = function () {
-  return this.engine.pipe.apply(this.engine, arguments);
+createZipPlugin.prototype.pipe = function <Destination extends NodeJS.WritableStream>(destination: Destination, options?: { end?: boolean }) {
+  return this.engine.pipe(destination, options);
 };
 
 /**
  * @return this.engine
  */
-Zip.prototype.unpipe = function () {
-  return this.engine.unpipe.apply(this.engine, arguments);
+createZipPlugin.prototype.unpipe = function (...args: Parameters<Engine['unpipe']>) {
+  return this.engine.unpipe(...args);
 };
 
-module.exports = Zip;
+export = createZipPlugin;
 
 /**
  * @typedef {Object} ZipOptions
