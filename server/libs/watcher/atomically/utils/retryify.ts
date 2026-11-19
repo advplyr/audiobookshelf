@@ -2,11 +2,13 @@
 import RetryfyQueue from "./retryify_queue";
 
 /* RETRYIFY */
-export const retryifyAsync = <Args extends unknown[], Result>(fn: (...args: Args) => Promise<Result>, isRetriableError: (error: unknown) => boolean) => {
-    return function (timestamp: number) {
-        return function attempt(...args: Args): Promise<Result> {
+export const retryifyAsync = <Fn extends (...args: never[]) => Promise<unknown>>(fn: Fn, isRetriableError: (error: unknown) => boolean) => {
+    const operation = fn as (...args: Parameters<Fn>) => Promise<unknown>;
+    return function (timestamp: number): Fn {
+        // The wrapper forwards the arguments and result of every overload unchanged.
+        return function attempt(...args: Parameters<Fn>): Promise<unknown> {
             return RetryfyQueue.schedule().then(cleanup => {
-                return fn.apply(undefined, args).then(result => {
+                return operation.apply(undefined, args).then(result => {
                     cleanup();
                     return result;
                 }, (error: unknown) => {
@@ -20,14 +22,15 @@ export const retryifyAsync = <Args extends unknown[], Result>(fn: (...args: Args
                     throw error;
                 });
             });
-        };
+        } as Fn;
     };
 };
-export const retryifySync = <Args extends unknown[], Result>(fn: (...args: Args) => Result, isRetriableError: (error: unknown) => boolean) => {
-    return function (timestamp: number) {
-        return function attempt(...args: Args): Result {
+export const retryifySync = <Fn extends (...args: never[]) => unknown>(fn: Fn, isRetriableError: (error: unknown) => boolean) => {
+    const operation = fn as (...args: Parameters<Fn>) => unknown;
+    return function (timestamp: number): Fn {
+        return function attempt(...args: Parameters<Fn>): unknown {
             try {
-                return fn.apply(undefined, args);
+                return operation.apply(undefined, args);
             }
             catch (error) {
                 if (Date.now() > timestamp)
@@ -36,6 +39,6 @@ export const retryifySync = <Args extends unknown[], Result>(fn: (...args: Args)
                     return attempt.apply(undefined, args);
                 throw error;
             }
-        };
+        } as Fn;
     };
 };
