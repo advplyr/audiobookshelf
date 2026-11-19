@@ -1,13 +1,12 @@
-/*jshint node:true*/
-'use strict';
-
-var utils = require('../utils');
+import type Ffmpeg from '../../fluentFfmpeg';
+import utils from '../utils';
+import type { CommandInput, CommandWithInput } from './types';
 
 /*
  *! Input-related methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Add an input to command
    *
@@ -25,7 +24,7 @@ module.exports = function(proto) {
    */
   proto.mergeAdd =
   proto.addInput =
-  proto.input = function(source) {
+  proto.input = function(this: CommandWithInput, source: CommandInput['source']) {
     var isFile = false;
     var isStream = false;
 
@@ -72,7 +71,7 @@ module.exports = function(proto) {
    */
   proto.withInputFormat =
   proto.inputFormat =
-  proto.fromFormat = function(format) {
+  proto.fromFormat = function(this: CommandWithInput, format: string) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
@@ -100,7 +99,7 @@ module.exports = function(proto) {
   proto.inputFPS =
   proto.inputFps =
   proto.fpsInput =
-  proto.FPSInput = function(fps) {
+  proto.FPSInput = function(this: CommandWithInput, fps: number) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
@@ -121,7 +120,7 @@ module.exports = function(proto) {
    */
   proto.nativeFramerate =
   proto.withNativeFramerate =
-  proto.native = function() {
+  proto.native = function(this: CommandWithInput) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
@@ -142,7 +141,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.setStartTime =
-  proto.seekInput = function(seek) {
+  proto.seekInput = function(this: CommandWithInput, seek: string | number) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
@@ -162,7 +161,7 @@ module.exports = function(proto) {
    * @param {String|Number} [duration] loop duration in seconds or as a '[[hh:]mm:]ss[.xxx]' string
    * @return FfmpegCommand
    */
-  proto.loop = function(duration) {
+  proto.loop = function(this: CommandWithInput, duration?: string | number) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
@@ -175,4 +174,6 @@ module.exports = function(proto) {
 
     return this;
   };
-};
+}
+
+export = install;

@@ -1,14 +1,12 @@
-/*jshint node:true*/
-'use strict';
-
-var utils = require('../utils');
-
+import type Ffmpeg from '../../fluentFfmpeg';
+import utils from '../utils';
+import type { CommandOutput, CommandWithMediaOutput, PipeOptions } from './types';
 
 /*
  *! Output-related methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Add output
    *
@@ -21,7 +19,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.addOutput =
-  proto.output = function(target, pipeopts) {
+  proto.output = function(this: CommandWithMediaOutput, target?: CommandOutput['target'], pipeopts?: PipeOptions) {
     var isFile = false;
 
     if (!target && this._currentOutput) {
@@ -58,12 +56,13 @@ module.exports = function(proto) {
         target: target,
         isFile: isFile,
         flags: {},
-        pipeopts: pipeopts || {}
-      });
-
-      var self = this;
-      ['audio', 'audioFilters', 'video', 'videoFilters', 'sizeFilters', 'options'].forEach(function(key) {
-        self._currentOutput[key] = utils.args();
+        pipeopts: pipeopts || {},
+        audio: utils.args(),
+        audioFilters: utils.args(),
+        video: utils.args(),
+        videoFilters: utils.args(),
+        sizeFilters: utils.args(),
+        options: utils.args()
       });
 
       if (!target) {
@@ -87,7 +86,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.seekOutput =
-  proto.seek = function(seek) {
+  proto.seek = function(this: CommandWithMediaOutput, seek: string | number) {
     this._currentOutput.options('-ss', seek);
     return this;
   };
@@ -105,7 +104,7 @@ module.exports = function(proto) {
    */
   proto.withDuration =
   proto.setDuration =
-  proto.duration = function(duration) {
+  proto.duration = function(this: CommandWithMediaOutput, duration: string | number) {
     this._currentOutput.options('-t', duration);
     return this;
   };
@@ -124,7 +123,7 @@ module.exports = function(proto) {
   proto.toFormat =
   proto.withOutputFormat =
   proto.outputFormat =
-  proto.format = function(format) {
+  proto.format = function(this: CommandWithMediaOutput, format: string) {
     this._currentOutput.options('-f', format);
     return this;
   };
@@ -139,7 +138,7 @@ module.exports = function(proto) {
    * @param {String} spec stream specification string, with optional square brackets
    * @return FfmpegCommand
    */
-  proto.map = function(spec) {
+  proto.map = function(this: CommandWithMediaOutput, spec: string) {
     this._currentOutput.options('-map', spec.replace(utils.streamRegexp, '[$1]'));
     return this;
   };
@@ -155,8 +154,10 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.updateFlvMetadata =
-  proto.flvmeta = function() {
+  proto.flvmeta = function(this: CommandWithMediaOutput) {
     this._currentOutput.flags.flvmeta = true;
     return this;
   };
-};
+}
+
+export = install;
