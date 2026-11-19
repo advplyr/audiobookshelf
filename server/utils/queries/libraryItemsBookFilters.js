@@ -2,6 +2,7 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
 const authorFilters = require('./authorFilters')
+const { isFileSearchQuery, getFileMatchIds } = require('./searchFileHelpers')
 
 const ShareManager = require('../../managers/ShareManager')
 const { profile } = require('../profiler')
@@ -1101,6 +1102,9 @@ module.exports = {
     const matchTitle = textSearchQuery.matchExpression('book.title')
     const matchSubtitle = textSearchQuery.matchExpression('book.subtitle')
 
+    // When the query looks like a file name, also match library items by file path or folder path
+    const fileMatchIds = isFileSearchQuery(query) ? await getFileMatchIds(library.id, textSearchQuery) : []
+
     // Search title, subtitle, asin, isbn
     const books = await Database.bookModel.findAll({
       where: [
@@ -1117,7 +1121,8 @@ module.exports = {
               isbn: {
                 [Sequelize.Op.substring]: query
               }
-            }
+            },
+            ...(fileMatchIds.length ? [{ '$libraryItem.id$': { [Sequelize.Op.in]: fileMatchIds } }] : [])
           ]
         },
         ...userPermissionBookWhere.bookWhere

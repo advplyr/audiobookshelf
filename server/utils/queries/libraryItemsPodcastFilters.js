@@ -2,6 +2,7 @@ const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
 const { profile } = require('../../utils/profiler')
+const { isFileSearchQuery, getFileMatchIds } = require('./searchFileHelpers')
 const stringifySequelizeQuery = require('../stringifySequelizeQuery')
 
 const countCache = new Map()
@@ -369,6 +370,48 @@ module.exports = {
     const matchTitle = textSearchQuery.matchExpression('podcast.title')
     const matchAuthor = textSearchQuery.matchExpression('podcast.author')
 
+    // When the query looks like a file name, also match library items by file path or folder path.
+    // Episode file matches are attributed to the parent podcast so the podcast is returned.
+    let fileMatchIds = []
+    if (isFileSearchQuery(query)) {
+      const matchedItemIds = await getFileMatchIds(library.id, textSearchQuery)
+      if (matchedItemIds.length) {
+        fileMatchIds.push(...matchedItemIds)
+        const matchedEpisodeItems = await Database.libraryItemModel.findAll({
+          attributes: ['mediaId'],
+          where: {
+            mediaType: 'episode',
+            id: {
+              [Sequelize.Op.in]: matchedItemIds
+            }
+          }
+        })
+        if (matchedEpisodeItems.length) {
+          const matchedEpisodes = await Database.podcastEpisodeModel.findAll({
+            attributes: ['podcastId'],
+            where: {
+              id: {
+                [Sequelize.Op.in]: matchedEpisodeItems.map((episodeItem) => episodeItem.mediaId)
+              }
+            }
+          })
+          if (matchedEpisodes.length) {
+            const episodePodcastItems = await Database.libraryItemModel.findAll({
+              attributes: ['id'],
+              where: {
+                mediaType: 'podcast',
+                mediaId: {
+                  [Sequelize.Op.in]: matchedEpisodes.map((episode) => episode.podcastId)
+                }
+              }
+            })
+            fileMatchIds.push(...episodePodcastItems.map((li) => li.id))
+          }
+        }
+        fileMatchIds = [...new Set(fileMatchIds)]
+      }
+    }
+
     // Search title, author, itunesId, itunesArtistId
     const podcasts = await Database.podcastModel.findAll({
       where: [
@@ -385,7 +428,8 @@ module.exports = {
               itunesArtistId: {
                 [Sequelize.Op.substring]: query
               }
-            }
+            },
+            ...(fileMatchIds.length ? [{ '$libraryItem.id$': { [Sequelize.Op.in]: fileMatchIds } }] : [])
           ]
         },
         ...userPermissionPodcastWhere.podcastWhere
