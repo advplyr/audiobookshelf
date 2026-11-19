@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
+import * as Async from '../async';
 import type Ffmpeg from '../fluentFfmpeg';
 import utils from './utils';
 import type { CommandWithInput, CommandWithMediaOutput } from './options/types';
@@ -23,7 +23,7 @@ interface AsyncWaterfall {
 }
 
 // The embedded async runtime passes each task's result to the next task.
-const async = createRequire(__filename)('../async') as AsyncWaterfall;
+const async: AsyncWaterfall = Async;
 
 interface CapabilitiesPrototype {
   setFfmpegPath(path: string): Ffmpeg.FfmpegCommand;

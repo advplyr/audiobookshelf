@@ -1,7 +1,7 @@
 import { spawn as spawnChildProcess } from 'node:child_process';
-import { createRequire } from 'node:module';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { Writable } from 'node:stream';
+import * as Async from '../async';
 import type Ffmpeg from '../fluentFfmpeg';
 import type Capabilities from './capabilities';
 import type Probe from './ffprobe';
@@ -63,7 +63,7 @@ interface ProcessorAsync {
   each<T>(items: T[], iterator: (item: T, callback: Done) => void, callback: Done): void;
 }
 
-const async = createRequire(__filename)('../async') as ProcessorAsync;
+const async: ProcessorAsync = Async;
 // Node accepts numeric arguments and converts them to strings before spawning.
 const spawn = spawnChildProcess as (command: string, args: Argument[], options: SpawnOptions) => ChildProcessWithoutNullStreams;
 

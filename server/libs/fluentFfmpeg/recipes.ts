@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
+import * as Async from '../async';
 import type Ffmpeg from '../fluentFfmpeg';
 import type Probe from './ffprobe';
 import type Processor from './processor';
@@ -53,7 +53,7 @@ interface ScreenshotAsync {
   ], done: Next<[string[]]>): void;
 }
 
-const async = createRequire(__filename)('../async') as ScreenshotAsync;
+const async: ScreenshotAsync = Async;
 
 /*
  * Useful recipes for commands

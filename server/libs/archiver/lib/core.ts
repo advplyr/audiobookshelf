@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { Stream, Transform as NodeTransform, TransformCallback, TransformOptions } from 'node:stream';
 import { inherits } from 'node:util';
+import * as async from '../../async';
 import util from '../archiverUtils';
 import glob from '../readdir-glob';
 import ArchiverError from './error';
@@ -125,9 +126,6 @@ interface Archive extends NodeTransform {
 }
 
 const load = createRequire(__filename);
-const async = load('../../async') as {
-  queue<Task>(worker: (task: Task, callback: QueueCallback) => void, concurrency: number): Queue<Task>;
-};
 const { Transform } = load('../archiverUtils/readableStream') as {
   Transform: (this: Archive, options: TransformOptions) => void;
 };
