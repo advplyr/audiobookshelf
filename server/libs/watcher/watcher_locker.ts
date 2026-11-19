@@ -1,16 +1,16 @@
 /* IMPORT */
 import { RENAME_TIMEOUT } from "./constants";
 import WatcherLocksResolver from "./watcher_locks_resolver";
-import type { WatchEvent } from "./enums";
+import type { PollEvent, RenameEvent } from "./enums";
 import type WatcherPoller from "./watcher_poller";
 
 type Inode = NonNullable<ReturnType<WatcherPoller["getIno"]>>;
 
 interface LockEvents {
-    add: WatchEvent;
-    change?: WatchEvent;
-    rename: WatchEvent;
-    unlink: WatchEvent;
+    add: PollEvent;
+    change?: PollEvent;
+    rename: RenameEvent;
+    unlink: PollEvent;
 }
 
 interface Locks {
@@ -27,7 +27,8 @@ interface LockConfig {
 
 interface Watcher {
     _poller: Pick<WatcherPoller, "getIno" | "stats">;
-    event(event: WatchEvent, path: string, nextPath?: string): unknown;
+    event(event: PollEvent, path: string): unknown;
+    event(event: RenameEvent, path: string, nextPath: string): unknown;
 }
 
 /* WATCHER LOCKER */

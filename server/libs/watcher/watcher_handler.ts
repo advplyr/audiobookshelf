@@ -3,7 +3,7 @@ import path from "node:path";
 import type { FSWatcher, WatchEventType } from "node:fs";
 import { DEBOUNCE, DEPTH, HAS_NATIVE_RECURSION, IS_WINDOWS } from "./constants";
 import Utils from "./utils";
-import type { PollEvent, WatchEvent } from "./enums";
+import type { PollEvent } from "./enums";
 import type { IgnorePath, WatcherOptions, WatcherConfig, WatchHandler } from "./types";
 import type WatcherLocker from "./watcher_locker";
 import type WatcherPoller from "./watcher_poller";
@@ -19,7 +19,7 @@ interface Watcher {
     isClosed(): boolean;
     isReady(): boolean;
     isIgnored(targetPath: string, ignore?: IgnorePath): boolean;
-    event(event: WatchEvent, targetPath: string): unknown;
+    event(event: PollEvent, targetPath: string): unknown;
     error(exception: unknown): unknown;
     watchDirectory(folderPath: string, options: WatcherOptions, handler: WatchHandler, filePath?: string, base?: WatcherHandler): Promise<unknown>;
     watchersClose(folderPath: string, filePath?: string, recursive?: boolean): void;
