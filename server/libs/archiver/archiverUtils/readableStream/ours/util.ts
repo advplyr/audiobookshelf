@@ -35,8 +35,6 @@ class AggregateError extends Error {
   }
 }
 
-type FormatValue = string | number | boolean | bigint | symbol | object | null | undefined
-
 const util = {
   AggregateError,
 
@@ -83,7 +81,7 @@ const util = {
     return function () {}
   },
 
-  format(format: string, ...args: FormatValue[]) {
+  format(this: void, format: string, ...args: unknown[]) {
     // Simplified version of https://nodejs.org/api/util.html#utilformatformat-args
     return format.replace(/%([sdifj])/g, function (...matches: [string, string, ...unknown[]]) {
       const type = matches[1]
@@ -103,7 +101,7 @@ const util = {
     })
   },
 
-  inspect(value: unknown) {
+  inspect(this: void, value: unknown) {
     // Vastly simplified version of https://nodejs.org/api/util.html#utilinspectobject-options
     switch (typeof value) {
       case 'string':

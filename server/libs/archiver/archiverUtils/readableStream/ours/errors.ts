@@ -1,6 +1,8 @@
-'use strict'
+import type { InspectOptions } from 'node:util'
+import util from './util'
 
-const { format, inspect, AggregateError: CustomAggregateError } = require('./util')
+const { format, AggregateError: CustomAggregateError } = util
+const inspect: (value: unknown, options?: InspectOptions) => ReturnType<typeof util.inspect> = util.inspect
 /*
   This file is a reduced and adapted version of the main lib/internal/errors.js file defined at
 
@@ -10,7 +12,20 @@ const { format, inspect, AggregateError: CustomAggregateError } = require('./uti
   with the upstream file.
 */
 
-const AggregateError = globalThis.AggregateError || CustomAggregateError
+interface CodedError extends Error {
+  code?: string
+  errors?: unknown[]
+}
+
+interface NodeError extends Error {
+  code: string
+  [kIsNodeError]: true
+}
+
+type NodeErrorConstructor = new (...args: unknown[]) => NodeError
+type ErrorBase = new (message: string) => Error
+
+const AggregateError: new (errors: Error[], message?: string) => CodedError = globalThis.AggregateError || CustomAggregateError
 const kIsNodeError = Symbol('kIsNodeError')
 const kTypes = [
   'string',
@@ -25,15 +40,15 @@ const kTypes = [
 ]
 const classRegExp = /^([A-Z][a-z0-9]*)+$/
 const nodeInternalPrefix = '__node_internal_'
-const codes = {}
+const codes: Record<string, NodeErrorConstructor | undefined> = {}
 
-function assert(value, message) {
+function assert(value: unknown, message: string): asserts value {
   if (!value) {
-    throw new codes.ERR_INTERNAL_ASSERTION(message)
+    throw new codes.ERR_INTERNAL_ASSERTION!(message)
   }
 } // Only use this for integers! Decimal numbers do not work with this function.
 
-function addNumericalSeparator(val) {
+function addNumericalSeparator(val: string) {
   let res = ''
   let i = val.length
   const start = val[0] === '-' ? 1 : 0
@@ -45,7 +60,7 @@ function addNumericalSeparator(val) {
   return `${val.slice(0, i)}${res}`
 }
 
-function getMessage(key, msg, args) {
+function getMessage<Args extends unknown[]>(key: string, msg: string | ((...args: Args) => string), args: Args) {
   if (typeof msg === 'function') {
     assert(
       msg.length <= args.length, // Default options do not count.
@@ -67,13 +82,16 @@ function getMessage(key, msg, args) {
   return format(msg, ...args)
 }
 
-function E(code, message, Base) {
+function E<Args extends unknown[]>(code: string, message: string | ((...args: Args) => string), Base?: ErrorBase) {
   if (!Base) {
     Base = Error
   }
 
   class NodeError extends Base {
-    constructor(...args) {
+    declare code: string
+    declare [kIsNodeError]: true
+
+    constructor(...args: Args) {
       super(getMessage(code, message, args))
     }
 
@@ -90,10 +108,11 @@ function E(code, message, Base) {
     return `${this.name} [${code}]: ${this.message}`
   }
 
-  codes[code] = NodeError
+  // Each code has its own formatter and the exported map dispatches by code.
+  codes[code] = NodeError as unknown as NodeErrorConstructor
 }
 
-function hideStackFrames(fn) {
+function hideStackFrames<Args extends unknown[], Result>(fn: (...args: Args) => Result) {
   // We rename the functions that will be hidden to cut off the stacktrace
   // at the outermost one
   const hidden = nodeInternalPrefix + fn.name
@@ -103,7 +122,7 @@ function hideStackFrames(fn) {
   return fn
 }
 
-function aggregateTwoErrors(innerError, outerError) {
+function aggregateTwoErrors(innerError: CodedError | null | undefined, outerError: CodedError | null | undefined) {
   if (innerError && outerError && innerError !== outerError) {
     if (Array.isArray(outerError.errors)) {
       // If `outerError` is already an `AggregateError`.
@@ -120,12 +139,14 @@ function aggregateTwoErrors(innerError, outerError) {
 }
 
 class AbortError extends Error {
-  constructor(message = 'The operation was aborted', options = undefined) {
+  declare code: string
+
+  constructor(message = 'The operation was aborted', options?: ErrorOptions | null) {
     if (options !== undefined && typeof options !== 'object') {
-      throw new codes.ERR_INVALID_ARG_TYPE('options', 'Object', options)
+      throw new codes.ERR_INVALID_ARG_TYPE!('options', 'Object', options)
     }
 
-    super(message, options)
+    super(message, options as ErrorOptions | undefined)
     this.code = 'ABORT_ERR'
     this.name = 'AbortError'
   }
@@ -134,12 +155,10 @@ class AbortError extends Error {
 E('ERR_ASSERTION', '%s', Error)
 E(
   'ERR_INVALID_ARG_TYPE',
-  (name, expected, actual) => {
+  (name: unknown, expected: unknown, actual: unknown) => {
     assert(typeof name === 'string', "'name' must be a string")
 
-    if (!Array.isArray(expected)) {
-      expected = [expected]
-    }
+    const descriptions: unknown[] = Array.isArray(expected) ? expected : [expected]
 
     let msg = 'The '
 
@@ -151,11 +170,11 @@ E(
     }
 
     msg += 'must be '
-    const types = []
-    const instances = []
-    const other = []
+    const types: (string | number)[] = []
+    const instances: string[] = []
+    const other: string[] = []
 
-    for (const value of expected) {
+    for (const value of descriptions) {
       assert(typeof value === 'string', 'All expected entries have to be of type string')
 
       if (kTypes.includes(value)) {
@@ -173,7 +192,8 @@ E(
       const pos = types.indexOf('object')
 
       if (pos !== -1) {
-        types.splice(types, pos, 1)
+        // Preserve the original coercion of the collected types into the splice index.
+        types.splice(Number(types), pos, 1)
         instances.push('Object')
       }
     }
@@ -266,8 +286,8 @@ E(
         colors: false
       })
 
-      if (inspected.length > 25) {
-        inspected = `${inspected.slice(0, 25)}...`
+      if ((inspected as string).length > 25) {
+        inspected = `${(inspected as string).slice(0, 25)}...`
       }
 
       msg += `. Received type ${typeof actual} (${inspected})`
@@ -279,11 +299,11 @@ E(
 )
 E(
   'ERR_INVALID_ARG_VALUE',
-  (name, value, reason = 'is invalid') => {
+  (name: string, value: unknown, reason: string = 'is invalid') => {
     let inspected = inspect(value)
 
-    if (inspected.length > 128) {
-      inspected = inspected.slice(0, 128) + '...'
+    if ((inspected as string).length > 128) {
+      inspected = (inspected as string).slice(0, 128) + '...'
     }
 
     const type = name.includes('.') ? 'property' : 'argument'
@@ -293,7 +313,7 @@ E(
 )
 E(
   'ERR_INVALID_RETURN_VALUE',
-  (input, name, value) => {
+  (input: string, name: string, value: unknown) => {
     var _value$constructor
 
     const type =
@@ -310,11 +330,11 @@ E(
 )
 E(
   'ERR_MISSING_ARGS',
-  (...args) => {
-    assert(args.length > 0, 'At least one arg needs to be specified')
-    let msg
-    const len = args.length
-    args = (Array.isArray(args) ? args : [args]).map((a) => `"${a}"`).join(' or ')
+  (...input: string[]) => {
+    assert(input.length > 0, 'At least one arg needs to be specified')
+    let msg: string | undefined
+    const len = input.length
+    const args = (Array.isArray(input) ? input : [input]).map((a) => `"${a}"`).join(' or ') as string & Partial<Pick<string[], 'pop' | 'join'>>
 
     switch (len) {
       case 1:
@@ -327,8 +347,8 @@ E(
 
       default:
         {
-          const last = args.pop()
-          msg += `The ${args.join(', ')}, and ${last} arguments`
+          const last = args.pop!()
+          msg += `The ${args.join!(', ')}, and ${last} arguments`
         }
         break
     }
@@ -339,11 +359,11 @@ E(
 )
 E(
   'ERR_OUT_OF_RANGE',
-  (str, range, input) => {
+  (str: string, range: string, input: unknown) => {
     assert(range, 'Missing "range" argument')
     let received
 
-    if (Number.isInteger(input) && Math.abs(input) > 2 ** 32) {
+    if (Number.isInteger(input) && Math.abs(input as number) > 2 ** 32) {
       received = addNumericalSeparator(String(input))
     } else if (typeof input === 'bigint') {
       received = String(input)
@@ -372,7 +392,7 @@ E('ERR_STREAM_PUSH_AFTER_EOF', 'stream.push() after EOF', Error)
 E('ERR_STREAM_UNSHIFT_AFTER_END_EVENT', 'stream.unshift() after end event', Error)
 E('ERR_STREAM_WRITE_AFTER_END', 'write after end', Error)
 E('ERR_UNKNOWN_ENCODING', 'Unknown encoding: %s', TypeError)
-module.exports = {
+export = {
   AbortError,
   aggregateTwoErrors: hideStackFrames(aggregateTwoErrors),
   hideStackFrames,
