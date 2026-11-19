@@ -9,15 +9,13 @@ import fs from 'graceful-fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { Stream } from 'node:stream';
-import type { PassThrough as PassThroughStream, Readable } from 'node:stream';
+import type { PassThrough as PassThroughStream } from 'node:stream';
 import type { Stats } from 'node:fs';
 import normalizePath from '../normalize-path';
 import file from './file.js';
+import lazystream from './lazystream';
 
 const load = createRequire(__filename);
-const lazystream = load('./lazystream') as {
-  Readable: new (open: () => ReturnType<typeof fs.createReadStream>) => Readable;
-};
 const { PassThrough } = load('./readableStream') as { PassThrough: new () => PassThroughStream };
 
 type WithDefaults<Input extends object, Defaults extends object> = Omit<Input, keyof Defaults> & {
