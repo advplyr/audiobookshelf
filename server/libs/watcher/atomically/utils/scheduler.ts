@@ -1,12 +1,12 @@
-"use strict";
-/* IMPORT */
-Object.defineProperty(exports, "__esModule", { value: true });
+type Release = () => void;
+type Job = (release: Release) => void;
+
 /* VARIABLES */
-const Queues = {};
+const Queues: Partial<Record<string, Job[]>> = {};
 /* SCHEDULER */
 //TODO: Maybe publish this as a standalone package
 const Scheduler = {
-    next: (id) => {
+    next: (id: string) => {
         const queue = Queues[id];
         if (!queue)
             return;
@@ -19,8 +19,8 @@ const Scheduler = {
             delete Queues[id];
         }
     },
-    schedule: (id) => {
-        return new Promise(resolve => {
+    schedule: (id: string) => {
+        return new Promise<Release>(resolve => {
             let queue = Queues[id];
             if (!queue)
                 queue = Queues[id] = [];
@@ -32,4 +32,4 @@ const Scheduler = {
     }
 };
 /* EXPORT */
-exports.default = Scheduler;
+export default Scheduler;

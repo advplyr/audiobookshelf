@@ -1,14 +1,15 @@
-"use strict";
 /* IMPORT */
-Object.defineProperty(exports, "__esModule", { value: true });
-const consts_1 = require("../consts");
+import { LIMIT_FILES_DESCRIPTORS } from "../consts";
+
+type QueueTask = () => void;
+
 /* RETRYIFY QUEUE */
 const RetryfyQueue = {
     interval: 25,
-    intervalId: undefined,
-    limit: consts_1.LIMIT_FILES_DESCRIPTORS,
-    queueActive: new Set(),
-    queueWaiting: new Set(),
+    intervalId: undefined as NodeJS.Timeout | undefined,
+    limit: LIMIT_FILES_DESCRIPTORS,
+    queueActive: new Set<QueueTask>(),
+    queueWaiting: new Set<QueueTask>(),
     init: () => {
         if (RetryfyQueue.intervalId)
             return;
@@ -20,21 +21,21 @@ const RetryfyQueue = {
         clearInterval(RetryfyQueue.intervalId);
         delete RetryfyQueue.intervalId;
     },
-    add: (fn) => {
+    add: (fn: QueueTask) => {
         RetryfyQueue.queueWaiting.add(fn);
-        if (RetryfyQueue.queueActive.size < (RetryfyQueue.limit / 2)) { // Active queue not under preassure, executing immediately
+        if (RetryfyQueue.queueActive.size < (RetryfyQueue.limit / 2)) { // Active queue not under pressure, executing immediately
             RetryfyQueue.tick();
         }
         else {
             RetryfyQueue.init();
         }
     },
-    remove: (fn) => {
+    remove: (fn: QueueTask) => {
         RetryfyQueue.queueWaiting.delete(fn);
         RetryfyQueue.queueActive.delete(fn);
     },
     schedule: () => {
-        return new Promise(resolve => {
+        return new Promise<QueueTask>(resolve => {
             const cleanup = () => RetryfyQueue.remove(resolver);
             const resolver = () => resolve(cleanup);
             RetryfyQueue.add(resolver);
@@ -55,4 +56,4 @@ const RetryfyQueue = {
     }
 };
 /* EXPORT */
-exports.default = RetryfyQueue;
+export default RetryfyQueue;
