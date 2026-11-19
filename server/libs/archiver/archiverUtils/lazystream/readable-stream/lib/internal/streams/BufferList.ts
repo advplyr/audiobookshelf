@@ -1,5 +1,5 @@
-import { createRequire } from 'node:module';
 import util from 'node:util';
+import safeBuffer from '../../../../../safeBuffer';
 
 interface Entry<Chunk = unknown> {
   data: Chunk;
@@ -19,7 +19,7 @@ interface BufferList {
   [util.inspect.custom](): string;
 }
 
-const { Buffer } = createRequire(__filename)('../../../../../safeBuffer') as Pick<typeof import('node:buffer'), 'Buffer'>;
+const { Buffer } = safeBuffer;
 
 function copyBuffer(src: Buffer, target: Buffer, offset: number) {
   src.copy(target, offset);
