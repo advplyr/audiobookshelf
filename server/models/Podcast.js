@@ -184,25 +184,6 @@ class Podcast extends Model {
     return this.podcastEpisodes.reduce((total, episode) => total + episode.size, 0)
   }
 
-  getAbsMetadataJson() {
-    return {
-      tags: this.tags || [],
-      title: this.title,
-      author: this.author,
-      description: this.description,
-      releaseDate: this.releaseDate,
-      genres: this.genres || [],
-      feedURL: this.feedURL,
-      imageURL: this.imageURL,
-      itunesPageURL: this.itunesPageURL,
-      itunesId: this.itunesId,
-      itunesArtistId: this.itunesArtistId,
-      language: this.language,
-      explicit: !!this.explicit,
-      podcastType: this.podcastType
-    }
-  }
-
   /**
    *
    * @param {Object} payload - Old podcast object

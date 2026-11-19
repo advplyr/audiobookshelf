@@ -154,11 +154,6 @@ class LibraryItemScanData {
   }
 
   /** @type {LibraryItem.LibraryFileObject} */
-  get metadataAbsLibraryFile() {
-    return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.abs')
-  }
-
-  /** @type {LibraryItem.LibraryFileObject} */
   get metadataJsonLibraryFile() {
     return this.libraryFiles.find(lf => lf.metadata.filename === 'metadata.json')
   }

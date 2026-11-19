@@ -1327,7 +1327,7 @@ class LibraryController {
 
   /**
    * POST: /api/libraries/:id/remove-metadata
-   * Remove all metadata.json or metadata.abs files in library item folders
+   * Remove all metadata.json files in library item folders
    *
    * @param {LibraryControllerRequest} req
    * @param {Response} res
@@ -1338,8 +1338,11 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const fileExt = req.query.ext === 'abs' ? 'abs' : 'json'
-    const metadataFilename = `metadata.${fileExt}`
+    if (req.query.ext && req.query.ext !== 'json') {
+      return res.status(400).send('Unsupported metadata file format')
+    }
+
+    const metadataFilename = 'metadata.json'
     const libraryItemsWithMetadata = await Database.libraryItemModel.findAll({
       attributes: ['id', 'libraryFiles'],
       where: [
