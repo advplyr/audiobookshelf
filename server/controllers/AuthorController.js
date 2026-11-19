@@ -11,10 +11,23 @@ const CoverManager = require('../managers/CoverManager')
 const AuthorFinder = require('../finders/AuthorFinder')
 
 const { reqSupportsWebp, isValidASIN, clampPositiveInt } = require('../utils/index')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
+
+/**
+ * @param {string} description
+ * @returns {string|null}
+ */
+function sanitizeAuthorDescription(description) {
+  const sanitizedDescription = htmlSanitizer.sanitize(description)
+  if (sanitizedDescription !== description) {
+    Logger.debug(`[AuthorController] Sanitized description from "${description}" to "${sanitizedDescription}"`)
+  }
+  return sanitizedDescription || null
+}
 
 /**
  * @typedef RequestUserObject
@@ -101,6 +114,10 @@ class AuthorController {
         payload[key] = req.body[key]
       }
     }
+    if (payload.description) {
+      payload.description = sanitizeAuthorDescription(payload.description)
+    }
+
     if (!Object.keys(payload).length) {
       Logger.error(`[AuthorController] Invalid request payload. No valid keys found`, req.body)
       return res.status(400).send('Invalid request payload. No valid keys found')
@@ -364,9 +381,12 @@ class AuthorController {
       }
     }
 
-    if (authorData.description && req.author.description !== authorData.description) {
-      req.author.description = authorData.description
-      hasUpdates = true
+    if (authorData.description) {
+      const description = sanitizeAuthorDescription(authorData.description)
+      if (req.author.description !== description) {
+        req.author.description = description
+        hasUpdates = true
+      }
     }
 
     if (hasUpdates) {
