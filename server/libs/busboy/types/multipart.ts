@@ -1,8 +1,8 @@
-'use strict';
-
-const { Readable, Writable } = require('stream');
-
-const StreamSearch = require('../../streamsearch');
+import { Readable, Writable } from 'node:stream';
+import type { ReadableOptions } from 'node:stream';
+import StreamSearch from '../../streamsearch';
+import utils from '../utils.js';
+import type { ContentType, Latin1Buffer, ParserConfig } from './config';
 
 const {
   basename,
@@ -10,7 +10,10 @@ const {
   getDecoder,
   parseContentType,
   parseDisposition,
-} = require('../utils.js');
+} = utils;
+
+type Header = Record<string, string[] | undefined>;
+type WriteCallback = (error?: Error | null) => void;
 
 const BUF_CRLF = Buffer.from('\r\n');
 const BUF_CR = Buffer.from('\r');
@@ -25,8 +28,17 @@ const HPARSER_NAME = 0;
 const HPARSER_PRE_OWS = 1;
 const HPARSER_VALUE = 2;
 class HeaderParser {
-  constructor(cb) {
-    this.header = Object.create(null);
+  declare header: Header;
+  declare pairCount: number;
+  declare byteCount: number;
+  declare state: number;
+  declare name: string;
+  declare value: string;
+  declare crlf: number;
+  declare cb: (header: Header) => void;
+
+  constructor(cb: (header: Header) => void) {
+    this.header = Object.create(null) as Header;
     this.pairCount = 0;
     this.byteCount = 0;
     this.state = HPARSER_NAME;
@@ -37,7 +49,7 @@ class HeaderParser {
   }
 
   reset() {
-    this.header = Object.create(null);
+    this.header = Object.create(null) as Header;
     this.pairCount = 0;
     this.byteCount = 0;
     this.state = HPARSER_NAME;
@@ -46,7 +58,7 @@ class HeaderParser {
     this.crlf = 0;
   }
 
-  push(chunk, pos, end) {
+  push(chunk: Latin1Buffer, pos: number, end: number) {
     let start = pos;
     while (pos < end) {
       switch (this.state) {
@@ -134,7 +146,7 @@ class HeaderParser {
                   if (this.header[this.name] === undefined)
                     this.header[this.name] = [this.value];
                   else
-                    this.header[this.name].push(this.value);
+                    this.header[this.name]!.push(this.value);
                 }
                 if (code === 13/* '\r' */) {
                   ++this.crlf;
@@ -172,7 +184,10 @@ class HeaderParser {
 }
 
 class FileStream extends Readable {
-  constructor(opts, owner) {
+  declare truncated: boolean;
+  declare _readcb: WriteCallback | null;
+
+  constructor(opts: ReadableOptions, owner: Multipart) {
     super(opts);
     this.truncated = false;
     this._readcb = null;
@@ -191,7 +206,8 @@ class FileStream extends Readable {
       }
     });
   }
-  _read(n) {
+  _read(n?: number) {
+    void n;
     const cb = this._readcb;
     if (cb) {
       this._readcb = null;
@@ -201,11 +217,11 @@ class FileStream extends Readable {
 }
 
 const ignoreData = {
-  push: (chunk, pos) => { },
+  push: (chunk: Buffer | string, pos?: number) => { void chunk; void pos; },
   destroy: () => { },
 };
 
-function callAndUnsetCb(self, err) {
+function callAndUnsetCb(self: Multipart, err?: Error) {
   const cb = self._writecb;
   self._writecb = null;
   if (err)
@@ -214,12 +230,21 @@ function callAndUnsetCb(self, err) {
     cb();
 }
 
-function nullDecoder(val, hint) {
+function nullDecoder(val: string, hint: number) {
+  void hint;
   return val;
 }
 
 class Multipart extends Writable {
-  constructor(cfg) {
+  declare _fileEndsLeft: number;
+  declare _fileStream: FileStream | null | undefined;
+  declare _complete: boolean;
+  declare _hparser: HeaderParser | null;
+  declare _bparser: StreamSearch | typeof ignoreData;
+  declare _writecb: WriteCallback | null;
+  declare _finalcb: WriteCallback | null;
+
+  constructor(cfg: ParserConfig) {
     const streamOpts = {
       autoDestroy: true,
       emitClose: true,
@@ -274,12 +299,12 @@ class Multipart extends Writable {
     this._complete = false;
     let fileSize = 0;
 
-    let field;
+    let field: Buffer[] | undefined;
     let fieldSize = 0;
-    let partCharset;
-    let partEncoding;
-    let partType;
-    let partName;
+    let partCharset: string;
+    let partEncoding: string;
+    let partType: string;
+    let partName: string | undefined;
     let partTruncated = false;
 
     let hitFilesLimit = false;
@@ -389,11 +414,11 @@ class Multipart extends Writable {
     });
 
     let matchPostBoundary = 0;
-    const ssCb = (isMatch, data, start, end, isDataSafe) => {
+    const ssCb: OmitThisParameter<ConstructorParameters<typeof StreamSearch>[1]> = (isMatch, data, start, end, isDataSafe) => {
       retrydata:
       while (data) {
         if (this._hparser !== null) {
-          const ret = this._hparser.push(data, start, end);
+          const ret = this._hparser.push(data as Latin1Buffer, start, end);
           if (ret === -1) {
             this._hparser = null;
             hparser.reset();
@@ -562,18 +587,20 @@ class Multipart extends Writable {
     this.write(BUF_CRLF);
   }
 
-  static detect(conType) {
+  static detect(conType: ContentType) {
     return (conType.type === 'multipart' && conType.subtype === 'form-data');
   }
 
-  _write(chunk, enc, cb) {
+  _write(chunk: Buffer, enc: BufferEncoding, cb: WriteCallback) {
+    void enc;
     this._writecb = cb;
     this._bparser.push(chunk, 0);
-    if (this._writecb)
+    // Parsing can synchronously clear the callback when the file stream applies backpressure.
+    if (this._writecb as WriteCallback | null)
       callAndUnsetCb(this);
   }
 
-  _destroy(err, cb) {
+  _destroy(err: Error | null | undefined, cb: (error?: Error | null) => void) {
     this._hparser = null;
     this._bparser = ignoreData;
     if (!err)
@@ -586,7 +613,7 @@ class Multipart extends Writable {
     cb(err);
   }
 
-  _final(cb) {
+  _final(cb: WriteCallback) {
     this._bparser.destroy();
     if (!this._complete)
       return cb(new Error('Unexpected end of form'));
@@ -597,14 +624,14 @@ class Multipart extends Writable {
   }
 }
 
-function finalcb(self, cb, err) {
+function finalcb(self: Multipart, cb: WriteCallback, err?: Error | null) {
   if (err)
     return cb(err);
   err = checkEndState(self);
   cb(err);
 }
 
-function checkEndState(self) {
+function checkEndState(self: Multipart) {
   if (self._hparser)
     return new Error('Malformed part header');
   const fileStream = self._fileStream;
@@ -654,4 +681,4 @@ const FIELD_VCHAR = [
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 
-module.exports = Multipart;
+export = Multipart;

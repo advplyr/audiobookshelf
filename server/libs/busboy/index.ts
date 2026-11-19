@@ -1,13 +1,20 @@
-'use strict';
-
 //
 // used by expressFileUpload
 // Source: https://github.com/mscdex/busboy
 //
 
-const { parseContentType } = require('./utils.js');
+import type { IncomingHttpHeaders } from 'node:http';
+import utils from './utils.js';
+import Multipart from './types/multipart';
+import URLEncoded from './types/urlencoded';
+import type { BusboyOptions, ParserConfig } from './types/config';
 
-function getInstance(cfg) {
+type Config = BusboyOptions & { headers?: IncomingHttpHeaders };
+type ConfigWithContentType = BusboyOptions & { headers: IncomingHttpHeaders & { 'content-type': string } };
+
+const { parseContentType } = utils;
+
+function getInstance(cfg: ConfigWithContentType) {
   const headers = cfg.headers;
   const conType = parseContentType(headers['content-type']);
   if (!conType)
@@ -18,7 +25,7 @@ function getInstance(cfg) {
     if (!matched)
       continue;
 
-    const instanceCfg = {
+    const instanceCfg: ParserConfig = {
       limits: cfg.limits,
       headers,
       conType,
@@ -44,11 +51,11 @@ function getInstance(cfg) {
 // Note: types are explicitly listed here for easier bundling
 // See: https://github.com/mscdex/busboy/issues/121
 const TYPES = [
-  require('./types/multipart'),
-  require('./types/urlencoded'),
+  Multipart,
+  URLEncoded,
 ].filter(function (typemod) { return typeof typemod.detect === 'function'; });
 
-module.exports = (cfg) => {
+export = (cfg?: Config | null) => {
   if (typeof cfg !== 'object' || cfg === null)
     cfg = {};
 
@@ -58,5 +65,5 @@ module.exports = (cfg) => {
     throw new Error('Missing Content-Type');
   }
 
-  return getInstance(cfg);
+  return getInstance(cfg as ConfigWithContentType);
 };

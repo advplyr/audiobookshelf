@@ -1,5 +1,6 @@
 type Params = Record<string, string | undefined>;
 type Decoder = (data: string | Buffer, hint: number) => string | undefined;
+type ParameterDecoder = (data: string, hint: number) => string | undefined;
 
 // The Node Buffer methods used by the parser are absent from the public declarations.
 interface BufferSlices extends Buffer {
@@ -169,7 +170,7 @@ function parseContentTypeParams(str: string, i: number, params: Params) {
   return params;
 }
 
-function parseDisposition(str: string, defDecoder: Decoder) {
+function parseDisposition(str: string, defDecoder: ParameterDecoder) {
   if (str.length === 0)
     return;
 
@@ -190,7 +191,7 @@ function parseDisposition(str: string, defDecoder: Decoder) {
   return { type, params };
 }
 
-function parseDispositionParams(str: string, i: number, params: Params, defDecoder: Decoder) {
+function parseDispositionParams(str: string, i: number, params: Params, defDecoder: ParameterDecoder) {
   while (i < str.length) {
     // Consume whitespace
     for (; i < str.length; ++i) {
