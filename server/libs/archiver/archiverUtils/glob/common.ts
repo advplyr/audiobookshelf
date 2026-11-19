@@ -1,3 +1,105 @@
+import fs from 'node:fs'
+import type { Stats } from 'node:fs'
+import { createRequire } from 'node:module'
+import path, { isAbsolute } from 'node:path'
+
+type FileCache = Record<string, string[] | 'DIR' | 'FILE' | boolean | undefined>
+type StatCache = Record<string, Stats | false | undefined>
+type SymlinkCache = Record<string, boolean | undefined>
+type RealpathCache = Record<string, string>
+type Matches = Record<string, boolean>
+
+interface GlobOptions {
+  absolute?: boolean
+  allowWindowsEscape?: boolean
+  cache?: FileCache
+  cwd?: string
+  dot?: boolean
+  follow?: boolean
+  fs?: typeof fs
+  ignore?: string | string[]
+  mark?: boolean
+  matchBase?: boolean
+  maxLength?: number
+  nocase?: boolean
+  nocomment?: boolean
+  nodir?: boolean
+  noglobstar?: boolean
+  nomount?: boolean
+  nonegate?: boolean
+  nonull?: boolean
+  noprocess?: boolean
+  nosort?: boolean
+  nounique?: boolean
+  realpath?: boolean
+  realpathCache?: RealpathCache
+  root?: string
+  silent?: boolean
+  stat?: boolean
+  statCache?: StatCache
+  strict?: boolean
+  symlinks?: SymlinkCache
+  sync?: boolean
+}
+
+interface GlobPattern {
+  match(path: string): boolean
+  globSet: string[]
+  set: (string | RegExp | symbol)[][]
+  options: GlobOptions
+}
+
+interface Ignore {
+  matcher: GlobPattern
+  gmatcher: GlobPattern | null
+}
+
+interface GlobState {
+  silent: boolean
+  pattern: string
+  strict: boolean
+  realpath: boolean
+  realpathCache: RealpathCache
+  follow: boolean
+  dot: boolean
+  mark: boolean
+  nodir: boolean
+  sync: boolean
+  nounique: boolean
+  nonull: boolean
+  nosort: boolean
+  nocase: boolean
+  stat: boolean
+  noprocess: boolean
+  absolute: boolean
+  fs: typeof fs
+  maxLength: number
+  cache: FileCache
+  statCache: StatCache
+  symlinks: SymlinkCache
+  ignore: Ignore[]
+  changedCwd: boolean
+  cwd: string
+  cwdAbs: string
+  root: string
+  nomount: boolean
+  minimatch: GlobPattern
+  options: GlobOptions
+  matches: (Matches | undefined)[]
+  found: string[]
+  _mark(path: string): string
+}
+
+declare const exports: {
+  setopts: typeof setopts
+  ownProp: typeof ownProp
+  makeAbs: typeof makeAbs
+  finish: typeof finish
+  mark: typeof mark
+  isIgnored: typeof isIgnored
+  childrenIgnored: typeof childrenIgnored
+}
+
 exports.setopts = setopts
 exports.ownProp = ownProp
 exports.makeAbs = makeAbs
@@ -6,34 +108,33 @@ exports.mark = mark
 exports.isIgnored = isIgnored
 exports.childrenIgnored = childrenIgnored
 
-function ownProp(obj, field) {
+function ownProp(obj: object, field: PropertyKey) {
   return Object.prototype.hasOwnProperty.call(obj, field)
 }
 
-var fs = require("fs")
-var path = require("path")
-var minimatch = require("../minimatch")
-var isAbsolute = require("path").isAbsolute
-var Minimatch = minimatch.Minimatch
+const { Minimatch } = createRequire(__filename)('../minimatch') as {
+  Minimatch: new (pattern: string, options: GlobOptions) => GlobPattern
+}
 
-function alphasort(a, b) {
+function alphasort(a: string, b: string) {
   return a.localeCompare(b, 'en')
 }
 
-function setupIgnores(self, options) {
-  self.ignore = options.ignore || []
+function setupIgnores(self: GlobState, options: GlobOptions) {
+  const setup = self as { ignore: string | string[] | Ignore[] }
+  setup.ignore = options.ignore || []
 
-  if (!Array.isArray(self.ignore))
-    self.ignore = [self.ignore]
+  if (!Array.isArray(setup.ignore))
+    setup.ignore = [setup.ignore]
 
-  if (self.ignore.length) {
-    self.ignore = self.ignore.map(ignoreMap)
+  if (setup.ignore.length) {
+    setup.ignore = setup.ignore.map(ignoreMap)
   }
 }
 
 // ignore patterns are always in dot:true mode.
-function ignoreMap(pattern) {
-  var gmatcher = null
+function ignoreMap(pattern: string): Ignore {
+  var gmatcher: GlobPattern | null = null
   if (pattern.slice(-3) === '/**') {
     var gpattern = pattern.replace(/(\/\*\*)+$/, '')
     gmatcher = new Minimatch(gpattern, { dot: true })
@@ -45,7 +146,7 @@ function ignoreMap(pattern) {
   }
 }
 
-function setopts(self, pattern, options) {
+function setopts(self: GlobState, pattern: string, options?: GlobOptions | null) {
   if (!options)
     options = {}
 
@@ -61,7 +162,7 @@ function setopts(self, pattern, options) {
   self.pattern = pattern
   self.strict = options.strict !== false
   self.realpath = !!options.realpath
-  self.realpathCache = options.realpathCache || Object.create(null)
+  self.realpathCache = options.realpathCache || Object.create(null) as RealpathCache
   self.follow = !!options.follow
   self.dot = !!options.dot
   self.mark = !!options.mark
@@ -79,9 +180,9 @@ function setopts(self, pattern, options) {
   self.fs = options.fs || fs
 
   self.maxLength = options.maxLength || Infinity
-  self.cache = options.cache || Object.create(null)
-  self.statCache = options.statCache || Object.create(null)
-  self.symlinks = options.symlinks || Object.create(null)
+  self.cache = options.cache || Object.create(null) as FileCache
+  self.statCache = options.statCache || Object.create(null) as StatCache
+  self.symlinks = options.symlinks || Object.create(null) as SymlinkCache
 
   setupIgnores(self, options)
 
@@ -90,7 +191,7 @@ function setopts(self, pattern, options) {
   if (!ownProp(options, "cwd"))
     self.cwd = path.resolve(cwd)
   else {
-    self.cwd = path.resolve(options.cwd)
+    self.cwd = path.resolve(options.cwd!)
     self.changedCwd = self.cwd !== cwd
   }
 
@@ -119,9 +220,9 @@ function setopts(self, pattern, options) {
   self.options = self.minimatch.options
 }
 
-function finish(self) {
+function finish(self: GlobState) {
   var nou = self.nounique
-  var all = nou ? [] : Object.create(null)
+  var all: string[] | Matches = nou ? [] : Object.create(null) as Matches
 
   for (var i = 0, l = self.matches.length; i < l; i++) {
     var matches = self.matches[i]
@@ -129,7 +230,7 @@ function finish(self) {
       if (self.nonull) {
         // do like the shell, and spit out the literal glob
         var literal = self.minimatch.globSet[i]
-        if (nou)
+        if (Array.isArray(all))
           all.push(literal)
         else
           all[literal] = true
@@ -137,28 +238,29 @@ function finish(self) {
     } else {
       // had matches
       var m = Object.keys(matches)
-      if (nou)
+      if (Array.isArray(all)) {
         all.push.apply(all, m)
-      else
+      } else {
+        const uniqueMatches = all
         m.forEach(function (m) {
-          all[m] = true
+          uniqueMatches[m] = true
         })
+      }
     }
   }
 
-  if (!nou)
-    all = Object.keys(all)
+  var found = Array.isArray(all) ? all : Object.keys(all)
 
   if (!self.nosort)
-    all = all.sort(alphasort)
+    found = found.sort(alphasort)
 
   // at *some* point we statted all of these
   if (self.mark) {
-    for (var i = 0; i < all.length; i++) {
-      all[i] = self._mark(all[i])
+    for (var i = 0; i < found.length; i++) {
+      found[i] = self._mark(found[i])
     }
     if (self.nodir) {
-      all = all.filter(function (e) {
+      found = found.filter(function (e) {
         var notDir = !(/\/$/.test(e))
         var c = self.cache[e] || self.cache[makeAbs(self, e)]
         if (notDir && c)
@@ -169,14 +271,14 @@ function finish(self) {
   }
 
   if (self.ignore.length)
-    all = all.filter(function (m) {
+    found = found.filter(function (m) {
       return !isIgnored(self, m)
     })
 
-  self.found = all
+  self.found = found
 }
 
-function mark(self, p) {
+function mark(self: GlobState, p: string) {
   var abs = makeAbs(self, p)
   var c = self.cache[abs]
   var m = p
@@ -200,7 +302,7 @@ function mark(self, p) {
 }
 
 // lotta situps...
-function makeAbs(self, f) {
+function makeAbs(self: GlobState, f: string) {
   var abs = f
   if (f.charAt(0) === '/') {
     abs = path.join(self.root, f)
@@ -221,7 +323,7 @@ function makeAbs(self, f) {
 
 // Return true, if pattern ends with globstar '**', for the accompanying parent directory.
 // Ex:- If node_modules/** is the pattern, add 'node_modules' to ignore list along with it's contents
-function isIgnored(self, path) {
+function isIgnored(self: GlobState, path: string) {
   if (!self.ignore.length)
     return false
 
@@ -230,7 +332,7 @@ function isIgnored(self, path) {
   })
 }
 
-function childrenIgnored(self, path) {
+function childrenIgnored(self: GlobState, path: string) {
   if (!self.ignore.length)
     return false
 
@@ -238,3 +340,5 @@ function childrenIgnored(self, path) {
     return !!(item.gmatcher && item.gmatcher.match(path))
   })
 }
+
+export = exports
