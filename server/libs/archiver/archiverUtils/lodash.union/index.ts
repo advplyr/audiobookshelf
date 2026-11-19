@@ -38,7 +38,40 @@ var freeGlobal = typeof global == 'object' && global && global.Object === Object
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 /** Used as a reference to the global object. */
-var root = freeGlobal || freeSelf || Function('return this')();
+var root = freeGlobal || freeSelf || globalThis;
+
+interface Cache {
+  clear(): void;
+  delete(key: unknown): boolean;
+  get(key: unknown): unknown;
+  has(key: unknown): boolean;
+  set(key: unknown, value: unknown): this;
+}
+
+type Entry = [key: unknown, value: unknown];
+type Comparator = (left: unknown, right: unknown) => unknown;
+type Iteratee = (value: unknown) => unknown;
+type HasCache = Pick<Cache, 'has'>;
+
+interface Hash extends Cache {
+  __data__: Record<PropertyKey, unknown>;
+}
+
+interface ListCache extends Cache {
+  __data__: Entry[];
+}
+
+interface MapCache extends Cache {
+  __data__: { hash: Hash; map: Cache; string: Hash };
+}
+
+interface SetCache extends HasCache {
+  __data__: MapCache;
+  add(value: unknown): this;
+  push(value: unknown): this;
+}
+
+type CacheConstructor<Store> = { new (entries?: Entry[]): Store; prototype: Store };
 
 /**
  * A faster alternative to `Function#apply`, this function invokes `func`
@@ -50,7 +83,7 @@ var root = freeGlobal || freeSelf || Function('return this')();
  * @param {Array} args The arguments to invoke `func` with.
  * @returns {*} Returns the result of `func`.
  */
-function apply(func, thisArg, args) {
+function apply<Result>(func: (...args: unknown[]) => Result, thisArg: unknown, args: unknown[]) {
   switch (args.length) {
     case 0: return func.call(thisArg);
     case 1: return func.call(thisArg, args[0]);
@@ -69,7 +102,7 @@ function apply(func, thisArg, args) {
  * @param {*} target The value to search for.
  * @returns {boolean} Returns `true` if `target` is found, else `false`.
  */
-function arrayIncludes(array, value) {
+function arrayIncludes(array: ArrayLike<unknown>, value: unknown) {
   var length = array ? array.length : 0;
   return !!length && baseIndexOf(array, value, 0) > -1;
 }
@@ -83,7 +116,7 @@ function arrayIncludes(array, value) {
  * @param {Function} comparator The comparator invoked per element.
  * @returns {boolean} Returns `true` if `target` is found, else `false`.
  */
-function arrayIncludesWith(array, value, comparator) {
+function arrayIncludesWith(array: ArrayLike<unknown>, value: unknown, comparator: Comparator) {
   var index = -1,
     length = array ? array.length : 0;
 
@@ -103,7 +136,7 @@ function arrayIncludesWith(array, value, comparator) {
  * @param {Array} values The values to append.
  * @returns {Array} Returns `array`.
  */
-function arrayPush(array, values) {
+function arrayPush(array: unknown[], values: ArrayLike<unknown>) {
   var index = -1,
     length = values.length,
     offset = array.length;
@@ -125,7 +158,7 @@ function arrayPush(array, values) {
  * @param {boolean} [fromRight] Specify iterating from right to left.
  * @returns {number} Returns the index of the matched value, else `-1`.
  */
-function baseFindIndex(array, predicate, fromIndex, fromRight) {
+function baseFindIndex(array: ArrayLike<unknown>, predicate: (value: unknown, index: number, array: ArrayLike<unknown>) => boolean, fromIndex: number, fromRight?: boolean) {
   var length = array.length,
     index = fromIndex + (fromRight ? 1 : -1);
 
@@ -146,7 +179,7 @@ function baseFindIndex(array, predicate, fromIndex, fromRight) {
  * @param {number} fromIndex The index to search from.
  * @returns {number} Returns the index of the matched value, else `-1`.
  */
-function baseIndexOf(array, value, fromIndex) {
+function baseIndexOf(array: ArrayLike<unknown>, value: unknown, fromIndex: number) {
   if (value !== value) {
     return baseFindIndex(array, baseIsNaN, fromIndex);
   }
@@ -168,7 +201,7 @@ function baseIndexOf(array, value, fromIndex) {
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is `NaN`, else `false`.
  */
-function baseIsNaN(value) {
+function baseIsNaN(value: unknown) {
   return value !== value;
 }
 
@@ -180,7 +213,7 @@ function baseIsNaN(value) {
  * @param {string} key The key of the entry to check.
  * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
  */
-function cacheHas(cache, key) {
+function cacheHas(cache: HasCache, key: unknown) {
   return cache.has(key);
 }
 
@@ -192,7 +225,7 @@ function cacheHas(cache, key) {
  * @param {string} key The key of the property to get.
  * @returns {*} Returns the property value.
  */
-function getValue(object, key) {
+function getValue<T extends object, Key extends keyof T>(object: T | null | undefined, key: Key) {
   return object == null ? undefined : object[key];
 }
 
@@ -203,14 +236,14 @@ function getValue(object, key) {
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
  */
-function isHostObject(value) {
+function isHostObject(value: unknown) {
   // Many host objects are `Object` objects that can coerce to strings
   // despite having improperly defined `toString` methods.
   var result = false;
-  if (value != null && typeof value.toString != 'function') {
+  if (value != null && typeof (value as { toString?: unknown }).toString != 'function') {
     try {
-      result = !!(value + '');
-    } catch (e) { }
+      result = !!((value as string) + '');
+    } catch { /* Some host objects throw during coercion. */ }
   }
   return result;
 }
@@ -222,9 +255,9 @@ function isHostObject(value) {
  * @param {Object} set The set to convert.
  * @returns {Array} Returns the values.
  */
-function setToArray(set) {
+function setToArray(set: Set<unknown>) {
   var index = -1,
-    result = Array(set.size);
+    result = Array<unknown>(set.size);
 
   set.forEach(function (value) {
     result[++index] = value;
@@ -234,16 +267,20 @@ function setToArray(set) {
 
 /** Used for built-in method references. */
 var arrayProto = Array.prototype,
-  funcProto = Function.prototype,
-  objectProto = Object.prototype;
+  funcProto = Function.prototype as { toString: (this: unknown) => string },
+  objectProto = Object.prototype as {
+    hasOwnProperty: (this: unknown, key: PropertyKey) => boolean;
+    propertyIsEnumerable: (this: unknown, key: PropertyKey) => boolean;
+    toString: (this: unknown) => string;
+  };
 
 /** Used to detect overreaching core-js shims. */
-var coreJsData = root['__core-js_shared__'];
+var coreJsData = (root as typeof globalThis & { '__core-js_shared__'?: { keys?: { IE_PROTO?: string } } })['__core-js_shared__'];
 
 /** Used to detect methods masquerading as native. */
 var maskSrcKey = (function () {
   var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-  return uid ? ('Symbol(src)_1.' + uid) : '';
+  return uid ? ('Symbol(src)_1.' + (uid as unknown as string)) : '';
 }());
 
 /** Used to resolve the decompiled source of functions. */
@@ -268,16 +305,16 @@ var reIsNative = RegExp('^' +
 /** Built-in value references. */
 var Symbol = root.Symbol,
   propertyIsEnumerable = objectProto.propertyIsEnumerable,
-  splice = arrayProto.splice,
+  splice: (this: Entry[], start: number, count: number) => Entry[] = arrayProto.splice,
   spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeMax = Math.max;
 
 /* Built-in method references that are verified to be native. */
-var Map = getNative(root, 'Map'),
-  Set = getNative(root, 'Set'),
-  nativeCreate = getNative(Object, 'create');
+var NativeMap = getNative(root, 'Map'),
+  NativeSet = getNative(root, 'Set'),
+  nativeCreate = getNative(Object as { create: (prototype: null) => Record<PropertyKey, unknown> }, 'create');
 
 /**
  * Creates a hash object.
@@ -286,16 +323,16 @@ var Map = getNative(root, 'Map'),
  * @constructor
  * @param {Array} [entries] The key-value pairs to cache.
  */
-function Hash(entries) {
+var Hash = function Hash(this: Hash, entries?: Entry[]) {
   var index = -1,
     length = entries ? entries.length : 0;
 
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries![index];
     this.set(entry[0], entry[1]);
   }
-}
+} as unknown as CacheConstructor<Hash>;
 
 /**
  * Removes all key-value entries from the hash.
@@ -304,7 +341,7 @@ function Hash(entries) {
  * @name clear
  * @memberOf Hash
  */
-function hashClear() {
+function hashClear(this: Hash) {
   this.__data__ = nativeCreate ? nativeCreate(null) : {};
 }
 
@@ -318,8 +355,8 @@ function hashClear() {
  * @param {string} key The key of the value to remove.
  * @returns {boolean} Returns `true` if the entry was removed, else `false`.
  */
-function hashDelete(key) {
-  return this.has(key) && delete this.__data__[key];
+function hashDelete(this: Hash, key: unknown) {
+  return this.has(key) && delete this.__data__[key as PropertyKey];
 }
 
 /**
@@ -331,13 +368,13 @@ function hashDelete(key) {
  * @param {string} key The key of the value to get.
  * @returns {*} Returns the entry value.
  */
-function hashGet(key) {
+function hashGet(this: Hash, key: unknown) {
   var data = this.__data__;
   if (nativeCreate) {
-    var result = data[key];
+    var result = data[key as PropertyKey];
     return result === HASH_UNDEFINED ? undefined : result;
   }
-  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+  return hasOwnProperty.call(data, key as PropertyKey) ? data[key as PropertyKey] : undefined;
 }
 
 /**
@@ -349,9 +386,9 @@ function hashGet(key) {
  * @param {string} key The key of the entry to check.
  * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
  */
-function hashHas(key) {
+function hashHas(this: Hash, key: unknown) {
   var data = this.__data__;
-  return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+  return nativeCreate ? data[key as PropertyKey] !== undefined : hasOwnProperty.call(data, key as PropertyKey);
 }
 
 /**
@@ -364,9 +401,9 @@ function hashHas(key) {
  * @param {*} value The value to set.
  * @returns {Object} Returns the hash instance.
  */
-function hashSet(key, value) {
+function hashSet(this: Hash, key: unknown, value: unknown) {
   var data = this.__data__;
-  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+  data[key as PropertyKey] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
   return this;
 }
 
@@ -384,16 +421,16 @@ Hash.prototype.set = hashSet;
  * @constructor
  * @param {Array} [entries] The key-value pairs to cache.
  */
-function ListCache(entries) {
+var ListCache = function ListCache(this: ListCache, entries?: Entry[]) {
   var index = -1,
     length = entries ? entries.length : 0;
 
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries![index];
     this.set(entry[0], entry[1]);
   }
-}
+} as unknown as CacheConstructor<ListCache>;
 
 /**
  * Removes all key-value entries from the list cache.
@@ -402,7 +439,7 @@ function ListCache(entries) {
  * @name clear
  * @memberOf ListCache
  */
-function listCacheClear() {
+function listCacheClear(this: ListCache) {
   this.__data__ = [];
 }
 
@@ -415,7 +452,7 @@ function listCacheClear() {
  * @param {string} key The key of the value to remove.
  * @returns {boolean} Returns `true` if the entry was removed, else `false`.
  */
-function listCacheDelete(key) {
+function listCacheDelete(this: ListCache, key: unknown) {
   var data = this.__data__,
     index = assocIndexOf(data, key);
 
@@ -440,7 +477,7 @@ function listCacheDelete(key) {
  * @param {string} key The key of the value to get.
  * @returns {*} Returns the entry value.
  */
-function listCacheGet(key) {
+function listCacheGet(this: ListCache, key: unknown) {
   var data = this.__data__,
     index = assocIndexOf(data, key);
 
@@ -456,7 +493,7 @@ function listCacheGet(key) {
  * @param {string} key The key of the entry to check.
  * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
  */
-function listCacheHas(key) {
+function listCacheHas(this: ListCache, key: unknown) {
   return assocIndexOf(this.__data__, key) > -1;
 }
 
@@ -470,7 +507,7 @@ function listCacheHas(key) {
  * @param {*} value The value to set.
  * @returns {Object} Returns the list cache instance.
  */
-function listCacheSet(key, value) {
+function listCacheSet(this: ListCache, key: unknown, value: unknown) {
   var data = this.__data__,
     index = assocIndexOf(data, key);
 
@@ -496,16 +533,16 @@ ListCache.prototype.set = listCacheSet;
  * @constructor
  * @param {Array} [entries] The key-value pairs to cache.
  */
-function MapCache(entries) {
+var MapCache = function MapCache(this: MapCache, entries?: Entry[]) {
   var index = -1,
     length = entries ? entries.length : 0;
 
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries![index];
     this.set(entry[0], entry[1]);
   }
-}
+} as unknown as CacheConstructor<MapCache>;
 
 /**
  * Removes all key-value entries from the map.
@@ -514,10 +551,10 @@ function MapCache(entries) {
  * @name clear
  * @memberOf MapCache
  */
-function mapCacheClear() {
+function mapCacheClear(this: MapCache) {
   this.__data__ = {
     'hash': new Hash,
-    'map': new (Map || ListCache),
+    'map': new (NativeMap || ListCache),
     'string': new Hash
   };
 }
@@ -531,7 +568,7 @@ function mapCacheClear() {
  * @param {string} key The key of the value to remove.
  * @returns {boolean} Returns `true` if the entry was removed, else `false`.
  */
-function mapCacheDelete(key) {
+function mapCacheDelete(this: MapCache, key: unknown) {
   return getMapData(this, key)['delete'](key);
 }
 
@@ -544,7 +581,7 @@ function mapCacheDelete(key) {
  * @param {string} key The key of the value to get.
  * @returns {*} Returns the entry value.
  */
-function mapCacheGet(key) {
+function mapCacheGet(this: MapCache, key: unknown) {
   return getMapData(this, key).get(key);
 }
 
@@ -557,7 +594,7 @@ function mapCacheGet(key) {
  * @param {string} key The key of the entry to check.
  * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
  */
-function mapCacheHas(key) {
+function mapCacheHas(this: MapCache, key: unknown) {
   return getMapData(this, key).has(key);
 }
 
@@ -571,7 +608,7 @@ function mapCacheHas(key) {
  * @param {*} value The value to set.
  * @returns {Object} Returns the map cache instance.
  */
-function mapCacheSet(key, value) {
+function mapCacheSet(this: MapCache, key: unknown, value: unknown) {
   getMapData(this, key).set(key, value);
   return this;
 }
@@ -591,15 +628,15 @@ MapCache.prototype.set = mapCacheSet;
  * @constructor
  * @param {Array} [values] The values to cache.
  */
-function SetCache(values) {
+var SetCache = function SetCache(this: SetCache, values?: ArrayLike<unknown>) {
   var index = -1,
     length = values ? values.length : 0;
 
   this.__data__ = new MapCache;
   while (++index < length) {
-    this.add(values[index]);
+    this.add(values![index]);
   }
-}
+} as unknown as { new (values?: ArrayLike<unknown>): SetCache; prototype: SetCache };
 
 /**
  * Adds `value` to the array cache.
@@ -611,7 +648,7 @@ function SetCache(values) {
  * @param {*} value The value to cache.
  * @returns {Object} Returns the cache instance.
  */
-function setCacheAdd(value) {
+function setCacheAdd(this: SetCache, value: unknown) {
   this.__data__.set(value, HASH_UNDEFINED);
   return this;
 }
@@ -625,7 +662,7 @@ function setCacheAdd(value) {
  * @param {*} value The value to search for.
  * @returns {number} Returns `true` if `value` is found, else `false`.
  */
-function setCacheHas(value) {
+function setCacheHas(this: SetCache, value: unknown) {
   return this.__data__.has(value);
 }
 
@@ -641,7 +678,7 @@ SetCache.prototype.has = setCacheHas;
  * @param {*} key The key to search for.
  * @returns {number} Returns the index of the matched value, else `-1`.
  */
-function assocIndexOf(array, key) {
+function assocIndexOf(array: Entry[], key: unknown) {
   var length = array.length;
   while (length--) {
     if (eq(array[length][0], key)) {
@@ -662,12 +699,12 @@ function assocIndexOf(array, key) {
  * @param {Array} [result=[]] The initial result value.
  * @returns {Array} Returns the new flattened array.
  */
-function baseFlatten(array, depth, predicate, isStrict, result) {
+function baseFlatten(array: ArrayLike<unknown>, depth: number, predicate?: (value: unknown) => value is ArrayLike<unknown>, isStrict?: boolean, result?: unknown[]): unknown[] {
   var index = -1,
     length = array.length;
 
-  predicate || (predicate = isFlattenable);
-  result || (result = []);
+  predicate = predicate || isFlattenable;
+  result = result || [];
 
   while (++index < length) {
     var value = array[index];
@@ -693,7 +730,7 @@ function baseFlatten(array, depth, predicate, isStrict, result) {
  * @returns {boolean} Returns `true` if `value` is a native function,
  *  else `false`.
  */
-function baseIsNative(value) {
+function baseIsNative(value: unknown) {
   if (!isObject(value) || isMasked(value)) {
     return false;
   }
@@ -709,21 +746,21 @@ function baseIsNative(value) {
  * @param {number} [start=func.length-1] The start position of the rest parameter.
  * @returns {Function} Returns the new function.
  */
-function baseRest(func, start) {
+function baseRest<Result>(func: (...args: unknown[]) => Result, start?: number): (...args: unknown[]) => Result {
   start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
-  return function () {
+  return function (this: unknown) {
     var args = arguments,
       index = -1,
       length = nativeMax(args.length - start, 0),
-      array = Array(length);
+      array = Array<unknown>(length);
 
     while (++index < length) {
-      array[index] = args[start + index];
+      array[index] = (args as ArrayLike<unknown>)[start + index];
     }
     index = -1;
-    var otherArgs = Array(start + 1);
+    var otherArgs = Array<unknown>(start + 1);
     while (++index < start) {
-      otherArgs[index] = args[index];
+      otherArgs[index] = (args as ArrayLike<unknown>)[index];
     }
     otherArgs[start] = array;
     return apply(func, this, otherArgs);
@@ -739,13 +776,13 @@ function baseRest(func, start) {
  * @param {Function} [comparator] The comparator invoked per element.
  * @returns {Array} Returns the new duplicate free array.
  */
-function baseUniq(array, iteratee, comparator) {
+function baseUniq(array: unknown[], iteratee?: Iteratee, comparator?: Comparator) {
   var index = -1,
-    includes = arrayIncludes,
+    includes: typeof arrayIncludes | typeof arrayIncludesWith | typeof cacheHas = arrayIncludes,
     length = array.length,
     isCommon = true,
-    result = [],
-    seen = result;
+    result: unknown[] = [],
+    seen: unknown[] | SetCache = result;
 
   if (comparator) {
     isCommon = false;
@@ -770,9 +807,11 @@ function baseUniq(array, iteratee, comparator) {
 
     value = (comparator || value !== 0) ? value : 0;
     if (isCommon && computed === computed) {
-      var seenIndex = seen.length;
+      // Cache-backed membership is only used when isCommon is false.
+      const indexed = seen as unknown[];
+      var seenIndex = indexed.length;
       while (seenIndex--) {
-        if (seen[seenIndex] === computed) {
+        if (indexed[seenIndex] === computed) {
           continue outer;
         }
       }
@@ -781,7 +820,7 @@ function baseUniq(array, iteratee, comparator) {
       }
       result.push(value);
     }
-    else if (!includes(seen, computed, comparator)) {
+    else if (!(includes as (collection: typeof seen, value: unknown, compare?: Comparator) => boolean)(seen, computed, comparator)) {
       if (seen !== result) {
         seen.push(computed);
       }
@@ -798,8 +837,8 @@ function baseUniq(array, iteratee, comparator) {
  * @param {Array} values The values to add to the set.
  * @returns {Object} Returns the new set.
  */
-var createSet = !(Set && (1 / setToArray(new Set([, -0]))[1]) == INFINITY) ? noop : function (values) {
-  return new Set(values);
+var createSet = !(NativeSet && (1 / (setToArray(new NativeSet([, -0]))[1] as number)) == INFINITY) ? noop : function (values: unknown[]) {
+  return new NativeSet!(values);
 };
 
 /**
@@ -810,7 +849,7 @@ var createSet = !(Set && (1 / setToArray(new Set([, -0]))[1]) == INFINITY) ? noo
  * @param {string} key The reference key.
  * @returns {*} Returns the map data.
  */
-function getMapData(map, key) {
+function getMapData(map: MapCache, key: unknown) {
   var data = map.__data__;
   return isKeyable(key)
     ? data[typeof key == 'string' ? 'string' : 'hash']
@@ -825,7 +864,7 @@ function getMapData(map, key) {
  * @param {string} key The key of the method to get.
  * @returns {*} Returns the function if it's native, else `undefined`.
  */
-function getNative(object, key) {
+function getNative<T extends object, Key extends keyof T>(object: T, key: Key) {
   var value = getValue(object, key);
   return baseIsNative(value) ? value : undefined;
 }
@@ -837,9 +876,9 @@ function getNative(object, key) {
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
-function isFlattenable(value) {
+function isFlattenable(value: unknown): value is ArrayLike<unknown> {
   return isArray(value) || isArguments(value) ||
-    !!(spreadableSymbol && value && value[spreadableSymbol]);
+    !!(spreadableSymbol && value && (value as Record<symbol, unknown>)[spreadableSymbol]);
 }
 
 /**
@@ -849,7 +888,7 @@ function isFlattenable(value) {
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
  */
-function isKeyable(value) {
+function isKeyable(value: unknown) {
   var type = typeof value;
   return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
     ? (value !== '__proto__')
@@ -863,7 +902,7 @@ function isKeyable(value) {
  * @param {Function} func The function to check.
  * @returns {boolean} Returns `true` if `func` is masked, else `false`.
  */
-function isMasked(func) {
+function isMasked(func: object) {
   return !!maskSrcKey && (maskSrcKey in func);
 }
 
@@ -874,14 +913,14 @@ function isMasked(func) {
  * @param {Function} func The function to process.
  * @returns {string} Returns the source code.
  */
-function toSource(func) {
+function toSource(func: unknown) {
   if (func != null) {
     try {
       return funcToString.call(func);
-    } catch (e) { }
+    } catch { /* Some host objects throw during coercion. */ }
     try {
-      return (func + '');
-    } catch (e) { }
+      return ((func as string) + '');
+    } catch { /* Some host objects throw during coercion. */ }
   }
   return '';
 }
@@ -902,9 +941,12 @@ function toSource(func) {
  * _.union([2], [1, 2]);
  * // => [2, 1]
  */
-var union = baseRest(function (arrays) {
-  return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
-});
+var union = baseRest(function (arrays: unknown) {
+  return baseUniq(baseFlatten(arrays as unknown[], 1, isArrayLikeObject, true));
+}) as {
+  <Value>(...arrays: ArrayLike<Value>[]): Value[];
+  (...arrays: unknown[]): unknown[];
+};
 
 /**
  * Performs a
@@ -938,7 +980,7 @@ var union = baseRest(function (arrays) {
  * _.eq(NaN, NaN);
  * // => true
  */
-function eq(value, other) {
+function eq(value: unknown, other: unknown) {
   return value === other || (value !== value && other !== other);
 }
 
@@ -960,7 +1002,7 @@ function eq(value, other) {
  * _.isArguments([1, 2, 3]);
  * // => false
  */
-function isArguments(value) {
+function isArguments(value: unknown): value is IArguments {
   // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
   return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
     (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
@@ -1016,8 +1058,8 @@ var isArray = Array.isArray;
  * _.isArrayLike(_.noop);
  * // => false
  */
-function isArrayLike(value) {
-  return value != null && isLength(value.length) && !isFunction(value);
+function isArrayLike(value: unknown): value is ArrayLike<unknown> {
+  return value != null && isLength((value as { length?: unknown }).length) && !isFunction(value);
 }
 
 /**
@@ -1045,7 +1087,7 @@ function isArrayLike(value) {
  * _.isArrayLikeObject(_.noop);
  * // => false
  */
-function isArrayLikeObject(value) {
+function isArrayLikeObject(value: unknown): value is ArrayLike<unknown> {
   return isObjectLike(value) && isArrayLike(value);
 }
 
@@ -1066,7 +1108,7 @@ function isArrayLikeObject(value) {
  * _.isFunction(/abc/);
  * // => false
  */
-function isFunction(value) {
+function isFunction(value: unknown) {
   // The use of `Object#toString` avoids issues with the `typeof` operator
   // in Safari 8-9 which returns 'object' for typed array and other constructors.
   var tag = isObject(value) ? objectToString.call(value) : '';
@@ -1099,7 +1141,7 @@ function isFunction(value) {
  * _.isLength('3');
  * // => false
  */
-function isLength(value) {
+function isLength(value: unknown) {
   return typeof value == 'number' &&
     value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 }
@@ -1129,7 +1171,7 @@ function isLength(value) {
  * _.isObject(null);
  * // => false
  */
-function isObject(value) {
+function isObject(value: unknown): value is object {
   var type = typeof value;
   return !!value && (type == 'object' || type == 'function');
 }
@@ -1158,7 +1200,7 @@ function isObject(value) {
  * _.isObjectLike(null);
  * // => false
  */
-function isObjectLike(value) {
+function isObjectLike(value: unknown): value is object {
   return !!value && typeof value == 'object';
 }
 
@@ -1178,4 +1220,4 @@ function noop() {
   // No operation performed.
 }
 
-module.exports = union;
+export = union;
