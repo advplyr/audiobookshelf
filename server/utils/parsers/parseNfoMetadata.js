@@ -1,3 +1,14 @@
+/**
+ * @param {string} value
+ * @returns {boolean|null} null when the value is not a yes/no answer
+ */
+function parseYesNo(value) {
+  const lower = value.toLowerCase()
+  if (['yes', 'y', 'true', '1'].includes(lower)) return true
+  if (['no', 'n', 'false', '0'].includes(lower)) return false
+  return null
+}
+
 function parseNfoMetadata(nfoText) {
   if (!nfoText) return null
   const lines = nfoText.split(/\r?\n/)
@@ -65,10 +76,16 @@ function parseNfoMetadata(nfoText) {
           metadata.sequence = value
           break
         case 'unabridged':
-          metadata.abridged = value.toLowerCase() === 'yes' ? false : true
+          {
+            const unabridged = parseYesNo(value)
+            if (unabridged !== null) metadata.abridged = !unabridged
+          }
           break
         case 'abridged':
-          metadata.abridged = value.toLowerCase() === 'no' ? false : true
+          {
+            const abridged = parseYesNo(value)
+            if (abridged !== null) metadata.abridged = abridged
+          }
           break
         case 'publisher':
           metadata.publisher = value

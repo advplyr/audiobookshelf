@@ -105,6 +105,20 @@ describe('parseNfoMetadata', () => {
     expect(result2.abridged).to.be.false
   })
 
+  it('parses true/false values for the abridged flag', () => {
+    expect(parseNfoMetadata('Unabridged: True').abridged).to.be.false
+    expect(parseNfoMetadata('Unabridged: false').abridged).to.be.true
+    expect(parseNfoMetadata('Abridged: false').abridged).to.be.false
+    expect(parseNfoMetadata('Abridged: True').abridged).to.be.true
+    expect(parseNfoMetadata('Abridged: Yes').abridged).to.be.true
+    expect(parseNfoMetadata('Unabridged: No').abridged).to.be.true
+  })
+
+  it('ignores an abridged flag that is not a yes/no value', () => {
+    expect(parseNfoMetadata('Unabridged: Unknown').abridged).to.be.undefined
+    expect(parseNfoMetadata('Abridged: N/A').abridged).to.be.undefined
+  })
+
   it('parses publisher', () => {
     const nfoText = 'Publisher: Penguin Random House'
     const result = parseNfoMetadata(nfoText)
