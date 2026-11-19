@@ -13,7 +13,7 @@ RUN npm run generate
 FROM --platform=$BUILDPLATFORM node:24-alpine AS compile-server
 
 WORKDIR /server
-COPY index.js package* tsconfig.server.json /server
+COPY index.js package* tsconfig.server.json /server/
 COPY /server /server/server
 RUN npm ci --include=dev --ignore-scripts && npm run build:server
 
@@ -33,7 +33,7 @@ RUN apk add --no-cache --update \
   unzip
 
 WORKDIR /server
-COPY index.js package* /server
+COPY index.js package* /server/
 COPY /server /server/server
 COPY --from=compile-server /server/dist-server /server/dist-server
 
