@@ -1,9 +1,9 @@
 const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
 const Logger = require('../Logger')
 const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 const Fuse = require('../libs/fusejs')
+const { getSsrfRequestFilterAgents } = require('./ssrfUtils')
 
 /**
  * @typedef RssPodcastChapter
@@ -362,6 +362,7 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   if (feedUrl.startsWith('https://www.cbc.ca')) {
     userAgent = 'audiobookshelf (+https://audiobookshelf.org; like iTMS) - CBC'
   }
+  const ssrfRequestFilterAgents = getSsrfRequestFilterAgents(feedUrl)
 
   return axios({
     url: feedUrl,
@@ -373,8 +374,8 @@ module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
       'Accept-Encoding': 'gzip, compress, deflate',
       'User-Agent': userAgent
     },
-    httpAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl),
-    httpsAgent: global.DisableSsrfRequestFilter?.(feedUrl) ? null : ssrfFilter(feedUrl)
+    httpAgent: ssrfRequestFilterAgents.httpAgent,
+    httpsAgent: ssrfRequestFilterAgents.httpsAgent
   })
     .then(async (data) => {
       // Adding support for ios-8859-1 encoded RSS feeds.
