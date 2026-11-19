@@ -38,28 +38,71 @@
 //   `true` for files, and [children,...] for directories, or `false` for
 //   things that don't exist.
 
-module.exports = glob
+import assert from 'node:assert'
+import { EventEmitter as EE } from 'node:events'
+import type { Stats } from 'node:fs'
+import { createRequire } from 'node:module'
+import path, { isAbsolute } from 'node:path'
+import { inherits } from 'node:util'
+import once from '../../../lodash.once'
+import rp from '../fsRealpath'
+import inflight from '../inflight'
+import common from './common.js'
+import globSync from './sync.js'
 
-var rp = require('../fsRealpath')
-var minimatch = require('../minimatch')
-// var inherits = require('inherits')
-const util = require('util')
-var EE = require('events').EventEmitter
-var path = require('path')
-var assert = require('assert')
-var isAbsolute = require('path').isAbsolute
-var globSync = require('./sync.js')
-var common = require('./common.js')
+type GlobState = Parameters<typeof common.setopts>[0]
+type GlobOptions = NonNullable<Parameters<typeof common.setopts>[2]>
+type Pattern = GlobState['minimatch']['set'][number]
+type MatchSet = NonNullable<GlobState['matches'][number]>
+type FsError = NodeJS.ErrnoException | null
+type StatResult = 'DIR' | 'FILE' | boolean
+type GlobCallback = (error: FsError, matches?: string[]) => void
+type ReaddirCallback = (error?: FsError, entries?: string[]) => void
+type StatCallback = (error?: FsError, type?: StatResult, stats?: Stats) => void
+type Done = () => void
+
+interface AsyncGlob extends GlobState, EE {
+  aborted?: boolean
+  paused: boolean
+  _didRealPath: boolean
+  _didRealpath?: boolean
+  _processing: number
+  _emitQueue: [index: number, entry: string][]
+  _processQueue: [pattern: Pattern, index: number, inGlobStar: boolean, callback: Done][]
+  _finish(): void
+  _realpath(): void
+  _realpathSet(index: number, callback: Done): void
+  _makeAbs(file: string): string
+  abort(): void
+  pause(): void
+  resume(): void
+  _process(pattern: Pattern, index: number, inGlobStar: boolean, callback: Done): void
+  _processReaddir(prefix: string | null, read: string, abs: string, remain: Pattern, index: number, inGlobStar: boolean, cb: Done): void
+  _processReaddir2(prefix: string | null, read: string, abs: string, remain: Pattern, index: number, inGlobStar: boolean, entries: string[] | undefined, cb: Done): void
+  _emitMatch(index: number, entry: string): void
+  _readdirInGlobStar(abs: string, callback: ReaddirCallback): void
+  _readdir(abs: string, inGlobStar: boolean, callback: ReaddirCallback): void
+  _readdirEntries(abs: string, entries: string[], callback: ReaddirCallback): void
+  _readdirError(file: string, error: NodeJS.ErrnoException, callback: ReaddirCallback): void
+  _processGlobStar(prefix: string | null, read: string, abs: string, remain: Pattern, index: number, inGlobStar: boolean, cb: Done): void
+  _processGlobStar2(prefix: string | null, read: string, abs: string, remain: Pattern, index: number, inGlobStar: boolean, entries: string[] | undefined, cb: Done): void
+  _processSimple(prefix: string, index: number, callback: Done): void
+  _processSimple2(prefix: string, index: number, error: FsError | undefined, exists: StatResult | undefined, callback: Done): void
+  _stat(file: string, callback: StatCallback): void
+  _stat2(file: string, abs: string, error: FsError, stats: Stats | undefined, callback: StatCallback): void
+}
+
+const minimatch = createRequire(__filename)('../minimatch') as { GLOBSTAR: symbol }
 var setopts = common.setopts
 var ownProp = common.ownProp
-var inflight = require('../inflight')
 var childrenIgnored = common.childrenIgnored
 var isIgnored = common.isIgnored
 
-var once = require('../../../lodash.once')
-
-function glob(pattern, options, cb) {
-  if (typeof options === 'function') cb = options, options = {}
+function glob(pattern: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback) {
+  if (typeof options === 'function') {
+    cb = options
+    options = {}
+  }
   if (!options) options = {}
 
   if (options.sync) {
@@ -77,7 +120,7 @@ var GlobSync = glob.GlobSync = globSync.GlobSync
 // old api surface
 glob.glob = glob
 
-function extend(origin, add) {
+function extend(origin: Record<string, unknown>, add: unknown) {
   if (add === null || typeof add !== 'object') {
     return origin
   }
@@ -85,12 +128,12 @@ function extend(origin, add) {
   var keys = Object.keys(add)
   var i = keys.length
   while (i--) {
-    origin[keys[i]] = add[keys[i]]
+    origin[keys[i]] = (add as Record<string, unknown>)[keys[i]]
   }
   return origin
 }
 
-glob.hasMagic = function (pattern, options_) {
+glob.hasMagic = function (pattern: string, options_?: GlobOptions | null) {
   var options = extend({}, options_)
   options.noprocess = true
 
@@ -111,9 +154,7 @@ glob.hasMagic = function (pattern, options_) {
   return false
 }
 
-glob.Glob = Glob
-util.inherits(Glob, EE)
-function Glob(pattern, options, cb) {
+const Glob = function (this: AsyncGlob, pattern: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback) {
   if (typeof options === 'function') {
     cb = options
     options = null
@@ -138,22 +179,35 @@ function Glob(pattern, options, cb) {
   // duplicates are automagically pruned.
   // Later, we do an Object.keys() on these.
   // Keep them as a list so we can fill in when nonull is set.
-  this.matches = new Array(n)
+  this.matches = new Array<MatchSet | undefined>(n)
 
   if (typeof cb === 'function') {
-    cb = once(cb)
-    this.on('error', cb)
-    this.on('end', function (matches) {
-      cb(null, matches)
+    const callback = once(cb)
+    this.on('error', callback)
+    this.on('end', function (matches: string[]) {
+      callback(null, matches)
     })
   }
 
-  var self = this
   this._processing = 0
 
   this._emitQueue = []
   this._processQueue = []
   this.paused = false
+
+  var sync: boolean | undefined
+  const done = () => {
+    --this._processing
+    if (this._processing <= 0) {
+      if (sync) {
+        process.nextTick(() => {
+          this._finish()
+        })
+      } else {
+        this._finish()
+      }
+    }
+  }
 
   if (this.noprocess)
     return this
@@ -161,25 +215,20 @@ function Glob(pattern, options, cb) {
   if (n === 0)
     return done()
 
-  var sync = true
+  sync = true
   for (var i = 0; i < n; i++) {
     this._process(this.minimatch.set[i], i, false, done)
   }
   sync = false
 
-  function done() {
-    --self._processing
-    if (self._processing <= 0) {
-      if (sync) {
-        process.nextTick(function () {
-          self._finish()
-        })
-      } else {
-        self._finish()
-      }
-    }
-  }
+} as unknown as {
+  (pattern: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback): AsyncGlob | InstanceType<typeof GlobSync>
+  new (pattern: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback): AsyncGlob | InstanceType<typeof GlobSync>
+  prototype: AsyncGlob
 }
+
+glob.Glob = Glob
+inherits(Glob, EE)
 
 Glob.prototype._finish = function () {
   assert(this instanceof Glob)
@@ -203,14 +252,12 @@ Glob.prototype._realpath = function () {
   if (n === 0)
     return this._finish()
 
-  var self = this
+  const next = () => {
+    if (--n === 0)
+      this._finish()
+  }
   for (var i = 0; i < this.matches.length; i++)
     this._realpathSet(i, next)
-
-  function next() {
-    if (--n === 0)
-      self._finish()
-  }
 }
 
 Glob.prototype._realpathSet = function (index, cb) {
@@ -219,28 +266,27 @@ Glob.prototype._realpathSet = function (index, cb) {
     return cb()
 
   var found = Object.keys(matchset)
-  var self = this
   var n = found.length
 
   if (n === 0)
     return cb()
 
-  var set = this.matches[index] = Object.create(null)
-  found.forEach(function (p, i) {
+  var set = this.matches[index] = Object.create(null) as MatchSet
+  found.forEach((p) => {
     // If there's a problem with the stat, then it means that
     // one or more of the links in the realpath couldn't be
     // resolved.  just return the abs value in that case.
-    p = self._makeAbs(p)
-    rp.realpath(p, self.realpathCache, function (er, real) {
+    p = this._makeAbs(p)
+    rp.realpath(p, this.realpathCache, (er, real) => {
       if (!er)
-        set[real] = true
+        set[real!] = true
       else if (er.syscall === 'stat')
         set[p] = true
       else
-        self.emit('error', er) // srsly wtf right here
+        this.emit('error', er) // srsly wtf right here
 
       if (--n === 0) {
-        self.matches[index] = set
+        this.matches[index] = set
         cb()
       }
     })
@@ -365,9 +411,8 @@ Glob.prototype._process = function (pattern, index, inGlobStar, cb) {
 }
 
 Glob.prototype._processReaddir = function (prefix, read, abs, remain, index, inGlobStar, cb) {
-  var self = this
-  this._readdir(abs, inGlobStar, function (er, entries) {
-    return self._processReaddir2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
+  this._readdir(abs, inGlobStar, (er, entries) => {
+    return this._processReaddir2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
   })
 }
 
@@ -379,12 +424,12 @@ Glob.prototype._processReaddir2 = function (prefix, read, abs, remain, index, in
 
   // It will only match dot entries if it starts with a dot, or if
   // dot is set.  Stuff like @(.foo|.bar) isn't allowed.
-  var pn = remain[0]
+  var pn = remain[0] as RegExp & { _glob: string }
   var negate = !!this.minimatch.negate
   var rawGlob = pn._glob
   var dotOk = this.dot || rawGlob.charAt(0) === '.'
 
-  var matchedEntries = []
+  var matchedEntries: string[] = []
   for (var i = 0; i < entries.length; i++) {
     var e = entries[i]
     if (e.charAt(0) !== '.' || dotOk) {
@@ -413,7 +458,7 @@ Glob.prototype._processReaddir2 = function (prefix, read, abs, remain, index, in
 
   if (remain.length === 1 && !this.mark && !this.stat) {
     if (!this.matches[index])
-      this.matches[index] = Object.create(null)
+      this.matches[index] = Object.create(null) as MatchSet
 
     for (var i = 0; i < len; i++) {
       var e = matchedEntries[i]
@@ -438,14 +483,13 @@ Glob.prototype._processReaddir2 = function (prefix, read, abs, remain, index, in
   remain.shift()
   for (var i = 0; i < len; i++) {
     var e = matchedEntries[i]
-    var newPattern
     if (prefix) {
       if (prefix !== '/')
         e = prefix + '/' + e
       else
         e = prefix + e
     }
-    this._process([e].concat(remain), index, inGlobStar, cb)
+    this._process(([e] as Pattern).concat(remain), index, inGlobStar, cb)
   }
   cb()
 }
@@ -470,7 +514,8 @@ Glob.prototype._emitMatch = function (index, e) {
   if (this.absolute)
     e = abs
 
-  if (this.matches[index][e])
+  const matches = this.matches[index]!
+  if (matches[e])
     return
 
   if (this.nodir) {
@@ -479,7 +524,7 @@ Glob.prototype._emitMatch = function (index, e) {
       return
   }
 
-  this.matches[index][e] = true
+  matches[e] = true
 
   var st = this.statCache[abs]
   if (st)
@@ -498,56 +543,53 @@ Glob.prototype._readdirInGlobStar = function (abs, cb) {
     return this._readdir(abs, false, cb)
 
   var lstatkey = 'lstat\0' + abs
-  var self = this
-  var lstatcb = inflight(lstatkey, lstatcb_)
-
-  if (lstatcb)
-    self.fs.lstat(abs, lstatcb)
-
-  function lstatcb_(er, lstat) {
+  const lstatcb_ = (er: FsError, lstat?: Stats) => {
     if (er && er.code === 'ENOENT')
       return cb()
 
     var isSym = lstat && lstat.isSymbolicLink()
-    self.symlinks[abs] = isSym
+    this.symlinks[abs] = isSym
 
     // If it's not a symlink or a dir, then it's definitely a regular file.
     // don't bother doing a readdir in that case.
     if (!isSym && lstat && !lstat.isDirectory()) {
-      self.cache[abs] = 'FILE'
+      this.cache[abs] = 'FILE'
       cb()
     } else
-      self._readdir(abs, false, cb)
+      this._readdir(abs, false, cb)
   }
+
+  var lstatcb = inflight(lstatkey, lstatcb_)
+  if (lstatcb)
+    this.fs.lstat(abs, lstatcb)
 }
 
 Glob.prototype._readdir = function (abs, inGlobStar, cb) {
   if (this.aborted)
     return
 
-  cb = inflight('readdir\0' + abs + '\0' + inGlobStar, cb)
-  if (!cb)
+  const pending = inflight('readdir\0' + abs + '\0' + inGlobStar, cb)
+  if (!pending)
     return
 
   //console.error('RD %j %j', +inGlobStar, abs)
   if (inGlobStar && !ownProp(this.symlinks, abs))
-    return this._readdirInGlobStar(abs, cb)
+    return this._readdirInGlobStar(abs, pending)
 
   if (ownProp(this.cache, abs)) {
     var c = this.cache[abs]
     if (!c || c === 'FILE')
-      return cb()
+      return pending()
 
     if (Array.isArray(c))
-      return cb(null, c)
+      return pending(null, c)
   }
 
-  var self = this
-  self.fs.readdir(abs, readdirCb(this, abs, cb))
+  this.fs.readdir(abs, readdirCb(this, abs, pending))
 }
 
-function readdirCb(self, abs, cb) {
-  return function (er, entries) {
+function readdirCb(self: AsyncGlob, abs: string, cb: ReaddirCallback) {
+  return function (er: FsError, entries: string[]) {
     if (er)
       self._readdirError(abs, er, cb)
     else
@@ -588,7 +630,7 @@ Glob.prototype._readdirError = function (f, er, cb) {
       var abs = this._makeAbs(f)
       this.cache[abs] = 'FILE'
       if (abs === this.cwdAbs) {
-        var error = new Error(er.code + ' invalid cwd ' + this.cwd)
+        var error: NodeJS.ErrnoException = new Error(er.code + ' invalid cwd ' + this.cwd)
         error.path = this.cwd
         error.code = er.code
         this.emit('error', error)
@@ -620,9 +662,8 @@ Glob.prototype._readdirError = function (f, er, cb) {
 }
 
 Glob.prototype._processGlobStar = function (prefix, read, abs, remain, index, inGlobStar, cb) {
-  var self = this
-  this._readdir(abs, inGlobStar, function (er, entries) {
-    self._processGlobStar2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
+  this._readdir(abs, inGlobStar, (er, entries) => {
+    this._processGlobStar2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
   })
 }
 
@@ -638,7 +679,7 @@ Glob.prototype._processGlobStar2 = function (prefix, read, abs, remain, index, i
   // test without the globstar, and with every child both below
   // and replacing the globstar.
   var remainWithoutGlobStar = remain.slice(1)
-  var gspref = prefix ? [prefix] : []
+  var gspref: Pattern = prefix ? [prefix] : []
   var noGlobStar = gspref.concat(remainWithoutGlobStar)
 
   // the noGlobStar pattern exits the inGlobStar state
@@ -670,9 +711,8 @@ Glob.prototype._processGlobStar2 = function (prefix, read, abs, remain, index, i
 Glob.prototype._processSimple = function (prefix, index, cb) {
   // XXX review this.  Shouldn't it be doing the mounting etc
   // before doing stat?  kinda weird?
-  var self = this
-  this._stat(prefix, function (er, exists) {
-    self._processSimple2(prefix, index, er, exists, cb)
+  this._stat(prefix, (er, exists) => {
+    this._processSimple2(prefix, index, er, exists, cb)
   })
 }
 Glob.prototype._processSimple2 = function (prefix, index, er, exists, cb) {
@@ -680,7 +720,7 @@ Glob.prototype._processSimple2 = function (prefix, index, er, exists, cb) {
   //console.error('ps2', prefix, exists)
 
   if (!this.matches[index])
-    this.matches[index] = Object.create(null)
+    this.matches[index] = Object.create(null) as MatchSet
 
   // If it doesn't exist, then just mark the lack of results
   if (!exists)
@@ -730,13 +770,12 @@ Glob.prototype._stat = function (f, cb) {
     // if we know it exists, but not what it is.
   }
 
-  var exists
   var stat = this.statCache[abs]
   if (stat !== undefined) {
     if (stat === false)
       return cb(null, stat)
     else {
-      var type = stat.isDirectory() ? 'DIR' : 'FILE'
+      var type: StatResult = stat.isDirectory() ? 'DIR' : 'FILE'
       if (needDir && type === 'FILE')
         return cb()
       else
@@ -744,25 +783,23 @@ Glob.prototype._stat = function (f, cb) {
     }
   }
 
-  var self = this
-  var statcb = inflight('stat\0' + abs, lstatcb_)
-  if (statcb)
-    self.fs.lstat(abs, statcb)
-
-  function lstatcb_(er, lstat) {
+  const lstatcb_ = (er: FsError, lstat?: Stats) => {
     if (lstat && lstat.isSymbolicLink()) {
       // If it's a symlink, then treat it as the target, unless
       // the target does not exist, then treat it as a file.
-      return self.fs.stat(abs, function (er, stat) {
+      return this.fs.stat(abs, (er, stat) => {
         if (er)
-          self._stat2(f, abs, null, lstat, cb)
+          this._stat2(f, abs, null, lstat, cb)
         else
-          self._stat2(f, abs, er, stat, cb)
+          this._stat2(f, abs, er, stat, cb)
       })
     } else {
-      self._stat2(f, abs, er, lstat, cb)
+      this._stat2(f, abs, er, lstat, cb)
     }
   }
+  var statcb = inflight('stat\0' + abs, lstatcb_)
+  if (statcb)
+    this.fs.lstat(abs, statcb)
 }
 
 Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
@@ -777,7 +814,7 @@ Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
   if (abs.slice(-1) === '/' && stat && !stat.isDirectory())
     return cb(null, false, stat)
 
-  var c = true
+  var c: StatResult = true
   if (stat)
     c = stat.isDirectory() ? 'DIR' : 'FILE'
   this.cache[abs] = this.cache[abs] || c
@@ -787,3 +824,5 @@ Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
 
   return cb(null, c, stat)
 }
+
+export = glob

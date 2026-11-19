@@ -9,6 +9,7 @@ import fs from 'graceful-fs';
 import type { Stats } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import glob from './glob';
 import flatten from './lodash.flatten';
 import isPlainObject from './lodash.isplainobject';
 
@@ -53,7 +54,6 @@ declare const _: <Value>(values: Value[]) => LodashChain<Value>;
 const load = createRequire(__filename);
 const difference = load('./lodash.difference') as (left: string[], right: string[]) => string[];
 const union = load('./lodash.union') as (left: string[], right: string[]) => string[];
-const glob = load('./glob') as { sync(pattern: string, options: ExpandOptions): string[] };
 
 var pathSeparatorRe = /[\/\\]/g;
 
