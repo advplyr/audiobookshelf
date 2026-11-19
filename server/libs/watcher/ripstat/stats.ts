@@ -1,14 +1,27 @@
-"use strict";
 /* IMPORT */
-Object.defineProperty(exports, "__esModule", { value: true });
-const consts_1 = require("./consts");
+import * as constants from "./consts";
 /* HELPERS */
 const { floor } = Math;
 const toNumber = Number;
 /* STATS */
 class Stats {
+    declare dev: number;
+    declare mode: number;
+    declare nlink: number;
+    declare uid: number;
+    declare gid: number;
+    declare rdev: number;
+    declare blksize: number;
+    declare ino: number | bigint;
+    declare size: number;
+    declare blocks: number;
+    declare atimeMs: number;
+    declare mtimeMs: number;
+    declare ctimeMs: number;
+    declare birthtimeMs: number;
+
     /* CONSTRUCTOR */
-    constructor(stats) {
+    constructor(stats: ArrayLike<number | bigint>) {
         this.dev = toNumber(stats[0]);
         this.mode = toNumber(stats[1]);
         this.nlink = toNumber(stats[2]);
@@ -16,7 +29,7 @@ class Stats {
         this.gid = toNumber(stats[4]);
         this.rdev = toNumber(stats[5]);
         this.blksize = toNumber(stats[6]);
-        this.ino = (stats[7] <= consts_1.MAX_SAFE_INTEGER) ? toNumber(stats[7]) : stats[7];
+        this.ino = (stats[7] <= constants.MAX_SAFE_INTEGER) ? toNumber(stats[7]) : stats[7];
         this.size = toNumber(stats[8]);
         this.blocks = toNumber(stats[9]);
         this.atimeMs = (toNumber(stats[10]) * 1000) + floor(toNumber(stats[11]) / 1000000);
@@ -25,31 +38,31 @@ class Stats {
         this.birthtimeMs = (toNumber(stats[16]) * 1000) + floor(toNumber(stats[17]) / 1000000);
     }
     /* HELPERS */
-    _isMode(mode) {
-        return (this.mode & consts_1.S_IFMT) === mode;
+    _isMode(mode: number) {
+        return (this.mode & constants.S_IFMT) === mode;
     }
     /* API */
     isDirectory() {
-        return this._isMode(consts_1.S_IFDIR);
+        return this._isMode(constants.S_IFDIR);
     }
     isFile() {
-        return this._isMode(consts_1.S_IFREG);
+        return this._isMode(constants.S_IFREG);
     }
     isBlockDevice() {
-        return !consts_1.IS_WINDOWS && this._isMode(consts_1.S_IFBLK);
+        return !constants.IS_WINDOWS && this._isMode(constants.S_IFBLK);
     }
     isCharacterDevice() {
-        return this._isMode(consts_1.S_IFCHR);
+        return this._isMode(constants.S_IFCHR);
     }
     isSymbolicLink() {
-        return this._isMode(consts_1.S_IFLNK);
+        return this._isMode(constants.S_IFLNK);
     }
     isFIFO() {
-        return !consts_1.IS_WINDOWS && this._isMode(consts_1.S_IFIFO);
+        return !constants.IS_WINDOWS && this._isMode(constants.S_IFIFO);
     }
     isSocket() {
-        return !consts_1.IS_WINDOWS && this._isMode(consts_1.S_IFSOCK);
+        return !constants.IS_WINDOWS && this._isMode(constants.S_IFSOCK);
     }
 }
 /* EXPORT */
-exports.default = Stats;
+export default Stats;
