@@ -6,9 +6,9 @@
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
 
-var util = require('util');
+import { inherits } from 'node:util';
 
-const ERROR_CODES = {
+const ERROR_CODES: Record<string, string> = {
   'ABORTED': 'archive was aborted',
   'DIRECTORYDIRPATHREQUIRED': 'diretory dirpath argument must be a non-empty string value',
   'DIRECTORYFUNCTIONINVALIDDATA': 'invalid data returned by directory custom data function',
@@ -27,14 +27,19 @@ const ERROR_CODES = {
   'ENTRYNOTSUPPORTED': 'entry not supported'
 };
 
-function ArchiverError(code, data) {
+interface ArchiverError extends Error {
+  code: string;
+  data?: unknown;
+}
+
+const constructor: unknown = function ArchiverError(this: ArchiverError, code: string, data?: unknown) {
   Error.captureStackTrace(this, this.constructor);
-  //this.name = this.constructor.name;
   this.message = ERROR_CODES[code] || code;
   this.code = code;
   this.data = data;
-}
+};
 
-util.inherits(ArchiverError, Error);
+const ArchiverError = constructor as new (code: string, data?: unknown) => ArchiverError;
+inherits(ArchiverError, Error);
 
-exports = module.exports = ArchiverError;
+export = ArchiverError;

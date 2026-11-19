@@ -5,7 +5,7 @@
  * Licensed under the MIT license.
  * https://github.com/archiverjs/node-compress-commons/blob/master/LICENSE-MIT
  */
-module.exports = {
+export = {
     /**
      * Bits used for permissions (and sticky bit)
      */
