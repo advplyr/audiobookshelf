@@ -11,14 +11,18 @@
 module.exports.parse = (seriesString) => {
   if (!seriesString || typeof seriesString !== 'string') return null
 
+  // Tags often carry surrounding whitespace, e.g. "Name #2 "
+  const trimmed = seriesString.trim()
+  if (!trimmed) return null
   let sequence = null
-  let name = seriesString
+  let name = trimmed
   // Series sequence match any characters after " #" other than whitespace and another #
   //  e.g. "Name #1a" is valid. "Name #1#a" or "Name #1 a" is not valid.
-  const matchResults = seriesString.match(/ #([^#\s]+)$/) // Pull out sequence #
+  const matchResults = trimmed.match(/ #([^#\s]+)$/) // Pull out sequence #
   if (matchResults && matchResults.length && matchResults.length > 1) {
     sequence = matchResults[1] // Group 1
-    name = seriesString.replace(matchResults[0], '')
+    // Cut at the match itself: the same " #7" can also appear earlier in the name
+    name = trimmed.slice(0, matchResults.index).trim()
   }
   return {
     name,
