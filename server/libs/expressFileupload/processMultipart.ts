@@ -1,18 +1,44 @@
-const Busboy = require('../busboy');
-const UploadTimer = require('./uploadtimer');
-const fileFactory = require('./fileFactory');
-const memHandler = require('./memHandler');
-const tempFileHandler = require('./tempFileHandler');
-const processNested = require('./processNested');
+import type { Readable } from 'node:stream';
+import type { NextFunction, Request, Response } from 'express';
+import Busboy from '../busboy';
+import type { BusboyOptions } from '../busboy/types/config';
+import fileFactory from './fileFactory';
+import memHandler from './memHandler';
+import processNested from './processNested';
+import tempFileHandler from './tempFileHandler';
+import UploadTimer from './uploadtimer';
+import utilities from './utilities';
+
 const {
   isFunc,
   debugLog,
   buildFields,
   buildOptions,
   parseFileName
-} = require('./utilities');
+} = utilities;
 
 const waitFlushProperty = Symbol('wait flush property symbol');
+
+type Fields = Record<string, unknown>;
+type UploadRequest = Request & {
+  files?: Fields | null;
+  [waitFlushProperty]?: Promise<void>[];
+};
+type UploadOptions = BusboyOptions & {
+  debug?: boolean;
+  uploadTimeout?: number;
+  fileHandler?: unknown;
+  uriDecodeFileNames?: boolean;
+  safeFileNames?: boolean | RegExp;
+  preserveExtension?: boolean | number;
+  abortOnLimit?: boolean;
+  responseOnLimit?: string;
+  limitHandler?: false | ((req: Request, res: Response, next: NextFunction) => void);
+  createParentPath?: boolean;
+  parseNested?: boolean;
+  useTempFiles?: boolean;
+  tempFileDir: string;
+};
 
 /**
  * Processes multipart request
@@ -24,7 +50,7 @@ const waitFlushProperty = Symbol('wait flush property symbol');
  * @param  {Function} next    Express next method
  * @return {void}
  */
-module.exports = (options, req, res, next) => {
+export = (options: UploadOptions, req: UploadRequest, res: Response, next: NextFunction) => {
   req.files = null;
 
   // Build busboy options and init busboy instance.
@@ -32,7 +58,7 @@ module.exports = (options, req, res, next) => {
   const busboy = Busboy(busboyOptions);
 
   // Close connection with specified reason and http code, default: 400 Bad Request.
-  const closeConnection = (code, reason) => {
+  const closeConnection = (code?: number, reason?: string) => {
     req.unpipe(busboy);
     res.writeHead(code || 400, { Connection: 'close' });
     res.end(reason || 'Bad Request');
@@ -40,13 +66,13 @@ module.exports = (options, req, res, next) => {
 
   // Express proxies sometimes attach multipart data to a buffer
   if (req.body instanceof Buffer) {
-    req.body = Object.create(null);
+    req.body = Object.create(null) as Fields;
   }
   // Build multipart req.body fields
-  busboy.on('field', (field, val) => req.body = buildFields(req.body, field, val));
+  busboy.on('field', (field: string, val: unknown) => req.body = buildFields(req.body as Fields | null | undefined, field, val));
 
   // Build req.files fields
-  busboy.on('file', (field, file, info) => {
+  busboy.on('file', (field: string, file: Readable & { truncated: boolean }, info: { filename?: string; encoding: string; mimeType: string }) => {
     // Parse file name(cutting huge names, decoding, etc..).
     const { filename: name, encoding, mimeType: mime } = info;
     const filename = parseFileName(options, name);
@@ -88,12 +114,12 @@ module.exports = (options, req, res, next) => {
       // Close connection with 413 code and do cleanup if abortOnLimit set(default: false).
       if (options.abortOnLimit) {
         debugLog(options, `Aborting upload because of size limit ${field}->${filename}.`);
-        !isFunc(options.limitHandler) ? closeConnection(413, options.responseOnLimit) : '';
+        if (!isFunc(options.limitHandler)) closeConnection(413, options.responseOnLimit);
         cleanup();
       }
     });
 
-    file.on('data', (data) => {
+    file.on('data', (data: Buffer) => {
       uploadTimer.set(); // Refresh upload timer each time new data chunk came.
       dataHandler(data); // Handle new piece of data.
     });
@@ -152,7 +178,7 @@ module.exports = (options, req, res, next) => {
     }
 
     if (!req[waitFlushProperty]) return next();
-    Promise.all(req[waitFlushProperty])
+    void Promise.all(req[waitFlushProperty])
       .then(() => {
         delete req[waitFlushProperty];
         next();
