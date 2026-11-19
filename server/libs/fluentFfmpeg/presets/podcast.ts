@@ -1,7 +1,6 @@
-/*jshint node:true */
-'use strict';
+import type Ffmpeg from '../../fluentFfmpeg';
 
-exports.load = function(ffmpeg) {
+const load: Ffmpeg.PresetFunction = function(ffmpeg) {
   ffmpeg
     .format('m4v')
     .videoBitrate('512k')
@@ -14,3 +13,5 @@ exports.load = function(ffmpeg) {
       '+mixed_refs', '-me_method umh', '-subq 5', '-bufsize 2M', '-rc_eq \'blurCplx^(1-qComp)\'',
       '-qcomp 0.6', '-qmin 10', '-qmax 51', '-qdiff 4', '-level 13' ]);
 };
+
+export = { load };

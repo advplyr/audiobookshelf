@@ -1,7 +1,6 @@
-/*jshint node:true */
-'use strict';
+import type Ffmpeg from '../../fluentFfmpeg';
 
-exports.load = function(ffmpeg) {
+const load: Ffmpeg.PresetFunction = function(ffmpeg) {
   ffmpeg
     .format('avi')
     .videoBitrate('1024k')
@@ -12,3 +11,5 @@ exports.load = function(ffmpeg) {
     .audioCodec('libmp3lame')
     .outputOptions(['-vtag DIVX']);
 };
+
+export = { load };

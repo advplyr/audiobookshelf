@@ -1,7 +1,6 @@
-/*jshint node:true */
-'use strict';
+import type Ffmpeg from '../../fluentFfmpeg';
 
-exports.load = function(ffmpeg) {
+const load: Ffmpeg.PresetFunction = function(ffmpeg) {
   ffmpeg
     .format('flv')
     .flvmeta()
@@ -14,3 +13,5 @@ exports.load = function(ffmpeg) {
     .audioFrequency(22050)
     .audioChannels(2);
 };
+
+export = { load };
