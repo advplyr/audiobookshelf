@@ -1,5 +1,3 @@
-'use strict';
-
 //
 // used by busboy
 // Source: https://github.com/mscdex/streamsearch
@@ -9,7 +7,7 @@
   Based heavily on the Streaming Boyer-Moore-Horspool C++ implementation
   by Hongli Lai at: https://github.com/FooBarWidget/boyer-moore-horspool
 */
-function memcmp(buf1, pos1, buf2, pos2, num) {
+function memcmp(buf1: Buffer, pos1: number, buf2: Buffer, pos2: number, num: number) {
   for (let i = 0; i < num; ++i) {
     if (buf1[pos1 + i] !== buf2[pos2 + i])
       return false;
@@ -17,8 +15,19 @@ function memcmp(buf1, pos1, buf2, pos2, num) {
   return true;
 }
 
+type MatchCallback = (this: SBMH, matched: boolean, chunk: Buffer | undefined, start: number, end: number, safe: boolean) => void;
+
 class SBMH {
-  constructor(needle, cb) {
+  declare maxMatches: number;
+  declare matches: number;
+  declare _cb: MatchCallback;
+  declare _lookbehindSize: number;
+  declare _needle: Buffer;
+  declare _bufPos: number;
+  declare _lookbehind: Buffer;
+  declare _occ: number[];
+
+  constructor(needle: Buffer | string, cb: MatchCallback) {
     if (typeof cb !== 'function')
       throw new Error('Missing match callback');
 
@@ -100,8 +109,8 @@ class SBMH {
     this._bufPos = 0;
   }
 
-  push(chunk, pos) {
-    let result;
+  push(chunk: Buffer | string, pos?: number) {
+    let result: number | undefined;
     if (!Buffer.isBuffer(chunk))
       chunk = Buffer.from(chunk, 'latin1');
     const chunkLen = chunk.length;
@@ -119,7 +128,7 @@ class SBMH {
   }
 }
 
-function feed(self, data) {
+function feed(self: SBMH, data: Buffer) {
   const len = data.length;
   const needle = self._needle;
   const needleLen = needle.length;
@@ -257,7 +266,7 @@ function feed(self, data) {
   return len;
 }
 
-function matchNeedle(self, data, pos, len) {
+function matchNeedle(self: SBMH, data: Buffer, pos: number, len: number) {
   const lb = self._lookbehind;
   const lbSize = self._lookbehindSize;
   const needle = self._needle;
@@ -270,4 +279,4 @@ function matchNeedle(self, data, pos, len) {
   return true;
 }
 
-module.exports = SBMH;
+export = SBMH;
