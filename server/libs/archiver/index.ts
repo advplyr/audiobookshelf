@@ -5,23 +5,18 @@
  * @license [MIT]{@link https://github.com/archiverjs/node-archiver/blob/master/LICENSE}
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
-import { createRequire } from 'node:module';
-import type ArchiverApi from '../archiver';
 import type ZipStream from './zip-stream';
+import Archiver from './lib/core';
 import Zip from './lib/plugins/zip';
 import Json from './lib/plugins/json';
 
 type Options = ZipStream.Options & { statConcurrency?: number };
-type Format = { append: unknown; finalize: unknown };
+type Core = InstanceType<typeof Archiver>;
+type Format = Parameters<Core['setModule']>[0];
 interface FormatConstructor {
   new (options?: Options): Format;
   prototype: Format;
 }
-type Core = ArchiverApi.Archive & {
-  setFormat(format: string): void;
-  setModule(format: Format): void;
-};
-
 interface ArchiveFactory {
   (format: string, options?: Options): Core;
   create(format: string, options?: Options): Core;
@@ -29,7 +24,6 @@ interface ArchiveFactory {
   isRegisteredFormat(format: string): boolean;
 }
 
-const Archiver = createRequire(__filename)('./lib/core') as new (format: string, options?: Options) => Core;
 var formats: Partial<Record<string, FormatConstructor>> = {};
 
 /**

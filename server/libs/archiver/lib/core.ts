@@ -5,15 +5,132 @@
  * @license [MIT]{@link https://github.com/archiverjs/node-archiver/blob/master/LICENSE}
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
-var fs = require('fs');
-var glob = require('../readdir-glob');
-var async = require('../../async');
-var path = require('path');
-var util = require('../archiverUtils');
+import fs from 'node:fs';
+import type { Stats } from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import type { Stream, Transform as NodeTransform, TransformCallback, TransformOptions } from 'node:stream';
+import { inherits } from 'node:util';
+import util from '../archiverUtils';
+import glob from '../readdir-glob';
+import ArchiverError from './error';
 
-var inherits = require('util').inherits;
-var ArchiverError = require('./error');
-var Transform = require('../archiverUtils/readableStream').Transform;
+type CoreOptions = TransformOptions & { statConcurrency?: number };
+type ArchiveSource = Buffer | Stream;
+type QueueCallback = () => void;
+type EntryStats = Pick<Stats, 'isDirectory'> & Partial<Pick<Stats, 'size' | 'mode' | 'mtime'>>;
+type GlobOptions = Exclude<NonNullable<Parameters<typeof glob>[1]>, (...args: never[]) => unknown> & { cwd?: string };
+type DirectoryData = EntryData | ((entry: EntryData) => EntryData | false | null) | null;
+
+interface EntryData extends Record<string, unknown> {
+  type?: string;
+  name?: string | null;
+  date?: string | Date | null;
+  mode?: number | null;
+  prefix?: string | null;
+  sourcePath?: string | null;
+  stats?: EntryStats | false;
+  sourceType?: 'buffer' | 'stream';
+  linkname?: string;
+  callback?: () => void;
+}
+
+interface GlobMatch {
+  absolute: string;
+  relative: string;
+  stat?: EntryStats;
+}
+
+interface ArchiveTask {
+  source: ArchiveSource;
+  data: EntryData;
+  filepath?: string;
+}
+
+interface FileTask {
+  source: ArchiveSource | null;
+  data: EntryData & { name: string };
+  filepath: string;
+}
+
+interface Queue<Task> {
+  drain(callback: QueueCallback): void;
+  idle(): boolean;
+  kill(): void;
+  push(task: Task): void;
+}
+
+interface FormatModule {
+  append(source: ArchiveSource, data: EntryData, callback: (error?: Error | null) => void): void;
+  finalize?(): void;
+  end?(): void;
+  on(event: 'end', listener: () => void): void;
+  on(event: 'error', listener: (error: Error) => void): void;
+  pipe(destination: NodeJS.WritableStream): void;
+  unpipe(destination: NodeJS.WritableStream): void;
+  supports?: Record<string, boolean>;
+}
+
+interface Archive extends NodeTransform {
+  options: CoreOptions;
+  _format: string | false;
+  // The factory installs a module before any queue processing.
+  _module: FormatModule | false;
+  _pending: number;
+  _pointer: number;
+  _entriesCount: number;
+  _entriesProcessedCount: number;
+  _fsEntriesTotalBytes: number;
+  _fsEntriesProcessedBytes: number;
+  _queue: Queue<ArchiveTask>;
+  _statQueue: Queue<FileTask>;
+  _state: {
+    aborted: boolean;
+    finalize: boolean;
+    finalizing: boolean;
+    finalized: boolean;
+    modulePiped: boolean;
+    module?: boolean;
+  };
+  _task?: ArchiveTask | null;
+  _streams: unknown[];
+  _abort(): void;
+  _append(filepath: string, data?: EntryData | null): void;
+  _finalize(): void;
+  _maybeFinalize(): boolean;
+  _moduleAppend(source: ArchiveSource, data: EntryData, callback: QueueCallback): void;
+  _moduleFinalize(): void;
+  _modulePipe(): void;
+  _moduleSupports(key: string): boolean;
+  _moduleUnpipe(): void;
+  _normalizeEntryData(data?: EntryData | null, stats?: Stats): EntryData;
+  _onModuleError(error?: Error): void;
+  _onQueueDrain(): void;
+  _onQueueTask(task: ArchiveTask, callback: QueueCallback): void;
+  _onStatQueueTask(task: FileTask, callback: QueueCallback): void;
+  _shutdown(): void;
+  _transform(chunk: Buffer | string, encoding: BufferEncoding, callback: TransformCallback): void;
+  _updateQueueTaskWithStats(task: FileTask, stats: Stats): ArchiveTask | null;
+  abort(): this;
+  append(source: unknown, data?: EntryData | null): this;
+  directory(dirpath: string, destpath?: string | false, data?: DirectoryData): this;
+  file(filepath: string, data?: EntryData | null): this;
+  glob(pattern: string, options?: GlobOptions | null, data?: EntryData | null): this;
+  finalize(): Promise<void>;
+  setFormat(format: string): this;
+  setModule(module: FormatModule): this;
+  symlink(filepath: string, target: string, mode?: number): this;
+  pointer(): number;
+  use(plugin: unknown): this;
+}
+
+const load = createRequire(__filename);
+const async = load('../../async') as {
+  queue<Task>(worker: (task: Task, callback: QueueCallback) => void, concurrency: number): Queue<Task>;
+};
+const { Transform } = load('../archiverUtils/readableStream') as {
+  Transform: (this: Archive, options: TransformOptions) => void;
+};
 
 var win32 = process.platform === 'win32';
 
@@ -22,7 +139,7 @@ var win32 = process.platform === 'win32';
  * @param {String} format The archive format to use.
  * @param {(CoreOptions|TransformOptions)} options See also {@link ZipOptions} and {@link TarOptions}.
  */
-var Archiver = function (format, options) {
+const Archiver = function (this: Archive, format?: string | CoreOptions, options?: CoreOptions) {
   if (!(this instanceof Archiver)) {
     return new Archiver(format, options);
   }
@@ -32,12 +149,12 @@ var Archiver = function (format, options) {
     format = 'zip';
   }
 
-  options = this.options = util.defaults(options, {
+  const resolvedOptions = this.options = util.defaults(options, {
     highWaterMark: 1024 * 1024,
     statConcurrency: 4
   });
 
-  Transform.call(this, options);
+  Transform.call(this, resolvedOptions);
 
   this._format = false;
   this._module = false;
@@ -52,7 +169,7 @@ var Archiver = function (format, options) {
   this._queue = async.queue(this._onQueueTask.bind(this), 1);
   this._queue.drain(this._onQueueDrain.bind(this));
 
-  this._statQueue = async.queue(this._onStatQueueTask.bind(this), options.statConcurrency);
+  this._statQueue = async.queue(this._onStatQueueTask.bind(this), resolvedOptions.statConcurrency);
   this._statQueue.drain(this._onQueueDrain.bind(this));
 
   this._state = {
@@ -64,6 +181,10 @@ var Archiver = function (format, options) {
   };
 
   this._streams = [];
+} as unknown as {
+  (format?: string | CoreOptions, options?: CoreOptions): Archive;
+  new (format?: string | CoreOptions, options?: CoreOptions): Archive;
+  prototype: Archive;
 };
 
 inherits(Archiver, Transform);
@@ -95,27 +216,26 @@ Archiver.prototype._abort = function () {
 Archiver.prototype._append = function (filepath, data) {
   data = data || {};
 
-  var task = {
-    source: null,
-    filepath: filepath
-  };
-
   if (!data.name) {
     data.name = filepath;
   }
 
   data.sourcePath = filepath;
-  task.data = data;
+  const task: FileTask = {
+    source: null,
+    filepath: filepath,
+    data: data as FileTask['data']
+  };
   this._entriesCount++;
 
   if (data.stats && data.stats instanceof fs.Stats) {
-    task = this._updateQueueTaskWithStats(task, data.stats);
-    if (task) {
+    const readyTask = this._updateQueueTaskWithStats(task, data.stats);
+    if (readyTask) {
       if (data.stats.size) {
         this._fsEntriesTotalBytes += data.stats.size;
       }
 
-      this._queue.push(task);
+      this._queue.push(readyTask);
     }
   } else {
     this._statQueue.push(task);
@@ -176,7 +296,8 @@ Archiver.prototype._moduleAppend = function (source, data, callback) {
     return;
   }
 
-  this._module.append(source, data, function (err) {
+  const module = this._module as FormatModule;
+  module.append(source, data, function (this: Archive, err?: Error | null) {
     this._task = null;
 
     if (this._state.aborted) {
@@ -229,9 +350,9 @@ Archiver.prototype._moduleAppend = function (source, data, callback) {
  * @return void
  */
 Archiver.prototype._moduleFinalize = function () {
-  if (typeof this._module.finalize === 'function') {
+  if (this._module && typeof this._module.finalize === 'function') {
     this._module.finalize();
-  } else if (typeof this._module.end === 'function') {
+  } else if (this._module && typeof this._module.end === 'function') {
     this._module.end();
   } else {
     this.emit('error', new ArchiverError('NOENDMETHOD'));
@@ -245,8 +366,9 @@ Archiver.prototype._moduleFinalize = function () {
  * @return void
  */
 Archiver.prototype._modulePipe = function () {
-  this._module.on('error', this._onModuleError.bind(this));
-  this._module.pipe(this);
+  const module = this._module as FormatModule;
+  module.on('error', this._onModuleError.bind(this));
+  module.pipe(this);
   this._state.modulePiped = true;
 };
 
@@ -258,7 +380,7 @@ Archiver.prototype._modulePipe = function () {
  * @return {Boolean}
  */
 Archiver.prototype._moduleSupports = function (key) {
-  if (!this._module.supports || !this._module.supports[key]) {
+  if (!this._module || !this._module.supports || !this._module.supports[key]) {
     return false;
   }
 
@@ -272,7 +394,8 @@ Archiver.prototype._moduleSupports = function (key) {
  * @return void
  */
 Archiver.prototype._moduleUnpipe = function () {
-  this._module.unpipe(this);
+  const module = this._module as FormatModule;
+  module.unpipe(this);
   this._state.modulePiped = false;
 };
 
@@ -325,10 +448,12 @@ Archiver.prototype._normalizeEntryData = function (data, stats) {
       data.mode &= 4095
     }
   } else if (data.stats && data.mode === null) {
+    // The bitwise mask also handles directory entries without mode metadata.
+    const mode = data.stats.mode!;
     if (win32) {
-      data.mode = data.stats.mode & 511;
+      data.mode = mode & 511;
     } else {
-      data.mode = data.stats.mode & 4095;
+      data.mode = mode & 4095;
     }
 
     // stat isn't reliable on windows; force 0755 for dir
@@ -419,7 +544,7 @@ Archiver.prototype._onStatQueueTask = function (task, callback) {
     return;
   }
 
-  fs.lstat(task.filepath, function (err, stats) {
+  fs.lstat(task.filepath, function (this: Archive, err: NodeJS.ErrnoException | null, stats: Stats) {
     if (this._state.aborted) {
       setImmediate(callback);
       return;
@@ -437,14 +562,14 @@ Archiver.prototype._onStatQueueTask = function (task, callback) {
       return;
     }
 
-    task = this._updateQueueTaskWithStats(task, stats);
+    const readyTask = this._updateQueueTaskWithStats(task, stats);
 
-    if (task) {
+    if (readyTask) {
       if (stats.size) {
         this._fsEntriesTotalBytes += stats.size;
       }
 
-      this._queue.push(task);
+      this._queue.push(readyTask);
     }
 
     setImmediate(callback);
@@ -517,9 +642,10 @@ Archiver.prototype._updateQueueTaskWithStats = function (task, stats) {
     return null;
   }
 
-  task.data = this._normalizeEntryData(task.data, stats);
+  const readyTask = task as ArchiveTask;
+  readyTask.data = this._normalizeEntryData(task.data, stats);
 
-  return task;
+  return readyTask;
 };
 
 /**
@@ -620,46 +746,46 @@ Archiver.prototype.directory = function (dirpath, destpath, data) {
   } else if (typeof destpath !== 'string') {
     destpath = dirpath;
   }
+  const destination = destpath;
 
-  var dataFunction = false;
+  var dataFunction: ((entry: EntryData) => EntryData | false | null) | false = false;
   if (typeof data === 'function') {
     dataFunction = data;
     data = {};
   } else if (typeof data !== 'object') {
     data = {};
   }
+  const entryDefaults = data;
 
   var globOptions = {
     stat: true,
     dot: true
   };
 
-  function onGlobEnd() {
+  function onGlobEnd(this: Archive) {
     this._pending--;
     this._maybeFinalize();
   }
 
-  function onGlobError(err) {
+  function onGlobError(this: Archive, err: unknown) {
     this.emit('error', err);
   }
 
-  function onGlobMatch(match) {
+  function onGlobMatch(this: Archive, match: GlobMatch) {
     globber.pause();
 
-    var ignoreMatch = false;
-    var entryData = Object.assign({}, data);
-    entryData.name = match.relative;
-    entryData.prefix = destpath;
-    entryData.stats = match.stat;
-    entryData.callback = globber.resume.bind(globber);
+    const initialData: EntryData = Object.assign({}, entryDefaults);
+    initialData.name = match.relative;
+    initialData.prefix = destination;
+    initialData.stats = match.stat;
+    initialData.callback = globber.resume.bind(globber);
 
+    var entryData: EntryData | false | null = initialData;
     try {
       if (dataFunction) {
-        entryData = dataFunction(entryData);
+        entryData = dataFunction(initialData);
 
-        if (entryData === false) {
-          ignoreMatch = true;
-        } else if (typeof entryData !== 'object') {
+        if (entryData !== false && typeof entryData !== 'object') {
           throw new ArchiverError('DIRECTORYFUNCTIONINVALIDDATA', { dirpath: dirpath });
         }
       }
@@ -668,7 +794,7 @@ Archiver.prototype.directory = function (dirpath, destpath, data) {
       return;
     }
 
-    if (ignoreMatch) {
+    if (entryData === false) {
       globber.resume();
       return;
     }
@@ -730,16 +856,16 @@ Archiver.prototype.glob = function (pattern, options, data) {
     pattern: pattern
   });
 
-  function onGlobEnd() {
+  function onGlobEnd(this: Archive) {
     this._pending--;
     this._maybeFinalize();
   }
 
-  function onGlobError(err) {
+  function onGlobError(this: Archive, err: unknown) {
     this.emit('error', err);
   }
 
-  function onGlobMatch(match) {
+  function onGlobMatch(this: Archive, match: GlobMatch) {
     globber.pause();
     var entryData = Object.assign({}, data);
     entryData.callback = globber.resume.bind(globber);
@@ -786,18 +912,16 @@ Archiver.prototype.finalize = function () {
     this._finalize();
   }
 
-  var self = this;
+  return new Promise<void>((resolve, reject) => {
+    var errored: boolean | undefined;
 
-  return new Promise(function (resolve, reject) {
-    var errored;
-
-    self._module.on('end', function () {
+    (this._module as FormatModule).on('end', function () {
       if (!errored) {
         resolve();
       }
-    })
+    });
 
-    self._module.on('error', function (err) {
+    (this._module as FormatModule).on('error', function (err) {
       errored = true;
       reject(err);
     })
@@ -875,7 +999,7 @@ Archiver.prototype.symlink = function (filepath, target, mode) {
     return this;
   }
 
-  var data = {};
+  var data: EntryData = {};
   data.type = 'symlink';
   data.name = filepath.replace(/\\/g, '/');
   data.linkname = target.replace(/\\/g, '/');
@@ -915,7 +1039,7 @@ Archiver.prototype.use = function (plugin) {
   return this;
 };
 
-module.exports = Archiver;
+export = Archiver;
 
 /**
  * @typedef {Object} CoreOptions
