@@ -5,25 +5,63 @@
  * Licensed under the MIT license.
  * https://github.com/archiverjs/node-archiver/blob/master/LICENSE-MIT
  */
-var fs = require('graceful-fs');
-var path = require('path');
+import fs from 'graceful-fs';
+import type { Stats } from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 
-var flatten = require('./lodash.flatten')
-var difference = require('./lodash.difference');
-var union = require('./lodash.union');
-var isPlainObject = require('./lodash.isplainobject');
+type StatPredicate = {
+  [Key in keyof Stats]: Stats[Key] extends () => boolean ? Key : never;
+}[keyof Stats];
 
-var glob = require('./glob');
+interface ExpandOptions {
+  cwd?: string;
+  filter?: StatPredicate | ((filepath: string) => boolean);
+}
 
-var file = module.exports = {};
+interface MappingOptions extends ExpandOptions {
+  flatten?: boolean;
+  ext?: string;
+  rename?: (base: string | undefined, dest: string, options: MappingOptions) => string;
+}
+
+type Patterns = (string | string[])[];
+
+interface FileMappingInput extends MappingOptions {
+  src?: string | Patterns;
+  dest?: string;
+  expand?: boolean;
+  orig?: FileMappingInput;
+}
+
+interface FileMapping {
+  src: string[];
+  dest: string;
+}
+
+interface LodashChain<Value> {
+  chain(): LodashChain<Value>;
+  forEach(iteratee: (value: Value) => void): LodashChain<Value>;
+  map<Mapped>(iteratee: (value: Value) => Mapped | Mapped[]): { flatten(): { value(): Mapped[] } };
+}
+
+// Multi-task normalization expects Lodash to be supplied as a global.
+declare const _: <Value>(values: Value[]) => LodashChain<Value>;
+
+const load = createRequire(__filename);
+const flatten = load('./lodash.flatten') as (patterns: Patterns) => string[];
+const difference = load('./lodash.difference') as (left: string[], right: string[]) => string[];
+const union = load('./lodash.union') as (left: string[], right: string[]) => string[];
+const isPlainObject = load('./lodash.isplainobject') as (value: unknown) => value is ExpandOptions;
+const glob = load('./glob') as { sync(pattern: string, options: ExpandOptions): string[] };
 
 var pathSeparatorRe = /[\/\\]/g;
 
 // Process specified wildcard glob patterns or filenames against a
 // callback, excluding and uniquing files in the result set.
-var processPatterns = function (patterns, fn) {
+function processPatterns(patterns: Patterns, fn: (pattern: string) => string[]) {
   // Filepaths to return.
-  var result = [];
+  var result: string[] = [];
   // Iterate over flattened patterns array.
   flatten(patterns).forEach(function (pattern) {
     // If the first character is ! it should be omitted
@@ -41,22 +79,22 @@ var processPatterns = function (patterns, fn) {
     }
   });
   return result;
-};
+}
 
 // True if the file path exists.
-file.exists = function () {
-  var filepath = path.join.apply(path, arguments);
+function exists(...parts: string[]) {
+  var filepath = path.join(...parts);
   return fs.existsSync(filepath);
-};
+}
 
 // Return an array of all file paths that match the given wildcard patterns.
-file.expand = function (...args) {
+function expand(...args: (ExpandOptions | string | Patterns | undefined)[]) {
   // If the first argument is an options object, save those options to pass
   // into the File.prototype.glob.sync method.
-  var options = isPlainObject(args[0]) ? args.shift() : {};
+  var options = isPlainObject(args[0]) ? args.shift() as ExpandOptions : {};
   // Use the first argument if it's an Array, otherwise convert the arguments
   // object to an array and use that.
-  var patterns = Array.isArray(args[0]) ? args[0] : args;
+  var patterns = Array.isArray(args[0]) ? args[0] : args as Patterns;
   // Return empty set if there are no patterns or filepaths.
   if (patterns.length === 0) { return []; }
   // Return all matching filepaths.
@@ -73,26 +111,26 @@ file.expand = function (...args) {
           return options.filter(filepath);
         } else {
           // If the file is of the right type and exists, this should work.
-          return fs.statSync(filepath)[options.filter]();
+          return fs.statSync(filepath)[options.filter!]();
         }
-      } catch (e) {
+      } catch {
         // Otherwise, it's probably not the right type.
         return false;
       }
     });
   }
   return matches;
-};
+}
 
 // Build a multi task "files" object dynamically.
-file.expandMapping = function (patterns, destBase, options) {
-  options = Object.assign({
-    rename: function (destBase, destPath) {
+function expandMapping(patterns?: string | Patterns, destBase?: string, mappingOptions?: MappingOptions) {
+  const options = Object.assign({
+    rename: function (destBase: string | undefined, destPath: string) {
       return path.join(destBase || '', destPath);
     }
-  }, options);
-  var files = [];
-  var fileByDest = {};
+  }, mappingOptions);
+  var files: FileMapping[] = [];
+  var fileByDest: Record<string, FileMapping> = {};
   // Find all files matching pattern, using passed-in options.
   file.expand(options, patterns).forEach(function (src) {
     var destPath = src;
@@ -126,14 +164,13 @@ file.expandMapping = function (patterns, destBase, options) {
     }
   });
   return files;
-};
+}
 
 // reusing bits of grunt's multi-task source normalization
-file.normalizeFilesArray = function (data) {
-  var files = [];
+function normalizeFilesArray(data: FileMappingInput[]) {
+  var files: FileMappingInput[] = [];
 
   data.forEach(function (obj) {
-    var prop;
     if ('src' in obj || 'dest' in obj) {
       files.push(obj);
     }
@@ -151,7 +188,7 @@ file.normalizeFilesArray = function (data) {
     } else {
       obj.src = [obj.src];
     }
-  }).map(function (obj) {
+  }).map<FileMappingInput>(function (obj) {
     // Build options object, removing unwanted properties.
     var expandOptions = Object.assign({}, obj);
     delete expandOptions.src;
@@ -168,7 +205,8 @@ file.normalizeFilesArray = function (data) {
         result.src = mapObj.src;
         result.dest = mapObj.dest;
         // Remove unwanted properties.
-        ['expand', 'cwd', 'flatten', 'rename', 'ext'].forEach(function (prop) {
+        const removedProperties = ['expand', 'cwd', 'flatten', 'rename', 'ext'] as const;
+        removedProperties.forEach(function (prop) {
           delete result[prop];
         });
         return result;
@@ -181,20 +219,19 @@ file.normalizeFilesArray = function (data) {
     result.orig = Object.assign({}, obj);
 
     if ('src' in result) {
+      const getSource: (() => string[] | undefined) & { result?: string[] } = function fn() {
+        if (!('result' in getSource)) {
+          // If src is an array, flatten it. Otherwise, make it into an array.
+          var src = Array.isArray(obj.src) ? flatten(obj.src) : [obj.src] as Patterns;
+          // Expand src files, memoizing result.
+          getSource.result = file.expand(expandOptions, src);
+        }
+        return getSource.result;
+      };
       // Expose an expand-on-demand getter method as .src.
       Object.defineProperty(result, 'src', {
         enumerable: true,
-        get: function fn() {
-          var src;
-          if (!('result' in fn)) {
-            src = obj.src;
-            // If src is an array, flatten it. Otherwise, make it into an array.
-            src = Array.isArray(src) ? flatten(src) : [src];
-            // Expand src files, memoizing result.
-            fn.result = file.expand(expandOptions, src);
-          }
-          return fn.result;
-        }
+        get: getSource
       });
     }
 
@@ -206,4 +243,7 @@ file.normalizeFilesArray = function (data) {
   }).flatten().value();
 
   return files;
-};
+}
+
+const file = { exists, expand, expandMapping, normalizeFilesArray };
+export = file;
