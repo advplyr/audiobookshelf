@@ -2,10 +2,39 @@
  * Modified from https://github.com/nika-begiashvili/libarchivejs
  */
 
-const Path = require('path')
-const libarchive = require('./wasm-libarchive')
+import { createRequire } from 'node:module'
+import Path from 'node:path'
+import type { ArchiveEntry, ArchiveInput } from './protocol'
 
-const TYPE_MAP = {
+type CInput = { number: number; string: string | null }
+type COutput = { number: number; string: string; void: void }
+type CArgument = keyof CInput
+type CResult<Kind> = Kind extends keyof COutput ? COutput[Kind] : void
+
+interface ArchiveBindings {
+  getVersion(): string
+  openArchive(pointer: number, length: number, passphrase: string | null): number
+  getNextEntry(archive: number): number
+  getFileData(archive: number, size: number): number
+  skipEntry(archive: number): number
+  closeArchive(archive: number): void
+  getEntrySize(entry: number): number
+  getEntryName(entry: number): string
+  getEntryType(entry: number): number
+  getError(archive: number): string
+  entryIsEncrypted(entry: number): number
+  hasEncryptedEntries(archive: number): number
+  addPassphrase(archive: number, passphrase: string | null): number
+  string(value: string): number
+  malloc(size: number): number
+  free(pointer: number): void
+}
+
+const libarchive = createRequire(__filename)('./wasm-libarchive') as (settings: WasmModule) => {
+  then(callback: (module: WasmModule) => void): unknown
+}
+
+const TYPE_MAP: Record<number, string | undefined> = {
   32768: 'FILE',
   16384: 'DIR',
   40960: 'SYMBOLIC_LINK',
@@ -16,11 +45,19 @@ const TYPE_MAP = {
 }
 
 class ArchiveReader {
+  declare _wasmModule: WasmModule
+  declare _runCode: ArchiveBindings
+  declare _file: ArchiveInput
+  declare _passphrase: string | null
+  declare _filePtr: number | null
+  declare _fileLength: number
+  declare _archive: number | null
+
   /**
    * archive reader
    * @param {WasmModule} wasmModule emscripten module 
    */
-  constructor(wasmModule) {
+  constructor(wasmModule: WasmModule) {
     this._wasmModule = wasmModule
     this._runCode = wasmModule.runCode
     this._file = null
@@ -31,7 +68,7 @@ class ArchiveReader {
    * open archive, needs to closed manually
    * @param {File} file 
    */
-  open(file) {
+  open(file: ArchiveInput) {
     if (this._file !== null) {
       console.warn('Closing previous file')
       this.close()
@@ -46,8 +83,8 @@ class ArchiveReader {
    * close archive
    */
   close() {
-    this._runCode.closeArchive(this._archive)
-    this._wasmModule._free(this._filePtr)
+    this._runCode.closeArchive(this._archive!)
+    this._wasmModule._free(this._filePtr!)
     this._file = null
     this._filePtr = null
     this._archive = null
@@ -58,7 +95,7 @@ class ArchiveReader {
    * @returns {boolean|null} null if could not be determined
    */
   hasEncryptedData() {
-    this._archive = this._runCode.openArchive(this._filePtr, this._fileLength, this._passphrase)
+    this._archive = this._runCode.openArchive(this._filePtr!, this._fileLength, this._passphrase)
     this._runCode.getNextEntry(this._archive)
     const status = this._runCode.hasEncryptedEntries(this._archive)
     if (status === 0) {
@@ -74,7 +111,7 @@ class ArchiveReader {
    * set passphrase to be used with archive
    * @param {*} passphrase 
    */
-  setPassphrase(passphrase) {
+  setPassphrase(passphrase: string | null) {
     this._passphrase = passphrase
   }
 
@@ -83,14 +120,14 @@ class ArchiveReader {
    * @param {boolean} skipExtraction
    * @param {string} except don't skip this entry
    */
-  *entries(skipExtraction = false, except = null) {
-    this._archive = this._runCode.openArchive(this._filePtr, this._fileLength, this._passphrase)
+  *entries(skipExtraction = false, except: string | null = null): Generator<ArchiveEntry> {
+    this._archive = this._runCode.openArchive(this._filePtr!, this._fileLength, this._passphrase)
     let entry
     while (true) {
       entry = this._runCode.getNextEntry(this._archive)
       if (entry === 0) break
 
-      const entryData = {
+      const entryData: ArchiveEntry = {
         size: this._runCode.getEntrySize(entry),
         path: this._runCode.getEntryName(entry),
         type: TYPE_MAP[this._runCode.getEntryType(entry)],
@@ -116,9 +153,10 @@ class ArchiveReader {
     }
   }
 
-  _loadFile(fileBuffer, resolve, reject) {
+  _loadFile(fileBuffer: ArchiveInput, resolve: () => void, reject: (error: unknown) => void) {
     try {
-      const array = new Uint8Array(fileBuffer)
+      // The same constructor copies array-like input, views an ArrayBuffer, and accepts null.
+      const array = new Uint8Array(fileBuffer as ArrayBuffer)
       this._fileLength = array.length
       this._filePtr = this._runCode.malloc(this._fileLength)
       this._wasmModule.HEAP8.set(array, this._filePtr)
@@ -129,8 +167,9 @@ class ArchiveReader {
   }
 
   _promiseHandles() {
-    let resolve = null, reject = null
-    const promise = new Promise((_resolve, _reject) => {
+    let resolve!: () => void
+    let reject!: (error: unknown) => void
+    const promise = new Promise<void>((_resolve, _reject) => {
       resolve = _resolve
       reject = _reject
     })
@@ -140,17 +179,29 @@ class ArchiveReader {
 }
 
 class WasmModule {
+  declare preRun: (() => void)[]
+  declare postRun: (() => void)[]
+  declare totalDependencies: number
+  declare HEAP8: Int8Array
+  declare _free: (pointer: number) => void
+  declare allocate: (bytes: number[], type: string, allocator: number) => number
+  declare intArrayFromString: (value: string) => number[]
+  declare cwrap: <Args extends CArgument[], Kind extends 'number' | 'string' | null>(
+    name: string, returnType: Kind, argumentTypes: [...Args]
+  ) => (...args: { [Index in keyof Args]: CInput[Args[Index]] }) => CResult<Kind>
+  declare runCode: ArchiveBindings
+
   constructor() {
     this.preRun = []
     this.postRun = []
     this.totalDependencies = 0
   }
 
-  print(...text) {
+  print(...text: unknown[]) {
     console.log(text)
   }
 
-  printErr(...text) {
+  printErr(...text: unknown[]) {
     console.error(text)
   }
 
@@ -213,7 +264,7 @@ class WasmModule {
       // __LA_DECL int archive_read_add_passphrase(struct archive *, const char *);
       addPassphrase: this.cwrap('archive_read_add_passphrase', 'number', ['number', 'string']),
       //this.stringToUTF(str), //
-      string: (str) => this.allocate(this.intArrayFromString(str), 'i8', 0),
+      string: (str: string) => this.allocate(this.intArrayFromString(str), 'i8', 0),
       malloc: this.cwrap('malloc', 'number', ['number']),
       free: this.cwrap('free', null, ['number']),
     }
@@ -221,15 +272,17 @@ class WasmModule {
 
   monitorRunDependencies() { }
 
-  locateFile(path /* ,prefix */) {
+  locateFile(path: string /* ,prefix */) {
     const wasmFilepath = Path.join(__dirname, `../../../client/dist/libarchive/wasm-gen/${path}`)
     return wasmFilepath
   }
 }
 
-module.exports.getArchiveReader = (cb) => {
+const getArchiveReader = (cb: (reader: ArchiveReader) => void) => {
   libarchive(new WasmModule()).then((module) => {
     module.initFunctions()
     cb(new ArchiveReader(module))
   })
 }
+
+export = { getArchiveReader }
