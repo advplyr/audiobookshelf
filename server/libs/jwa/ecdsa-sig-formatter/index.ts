@@ -1,8 +1,7 @@
-'use strict';
+import { Buffer as SafeBuffer } from 'safe-buffer';
+import getParamBytesForAlg from './param-bytes-for-alg';
 
-var Buffer = require('safe-buffer').Buffer;
-
-var getParamBytesForAlg = require('./param-bytes-for-alg');
+const Buffer = SafeBuffer as unknown as typeof globalThis.Buffer;
 
 var MAX_OCTET = 0x80,
   CLASS_UNIVERSAL = 0,
@@ -12,14 +11,14 @@ var MAX_OCTET = 0x80,
   ENCODED_TAG_SEQ = (TAG_SEQ | PRIMITIVE_BIT) | (CLASS_UNIVERSAL << 6),
   ENCODED_TAG_INT = TAG_INT | (CLASS_UNIVERSAL << 6);
 
-function base64Url(base64) {
+function base64Url(base64: string) {
   return base64
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 }
 
-function signatureAsBuffer(signature) {
+function signatureAsBuffer(signature: unknown) {
   if (Buffer.isBuffer(signature)) {
     return signature;
   } else if ('string' === typeof signature) {
@@ -29,8 +28,8 @@ function signatureAsBuffer(signature) {
   throw new TypeError('ECDSA signature must be a Base64 string or a Buffer');
 }
 
-function derToJose(signature, alg) {
-  signature = signatureAsBuffer(signature);
+function derToJose(input: unknown, alg: string) {
+  var signature = signatureAsBuffer(input);
   var paramBytes = getParamBytesForAlg(alg);
 
   // the DER encoded param should at most be the param size, plus a padding
@@ -108,13 +107,10 @@ function derToJose(signature, alg) {
   }
   signature.copy(dst, offset, sOffset + Math.max(-sPadding, 0), sOffset + sLength);
 
-  dst = dst.toString('base64');
-  dst = base64Url(dst);
-
-  return dst;
+  return base64Url(dst.toString('base64'));
 }
 
-function countPadding(buf, start, stop) {
+function countPadding(buf: Buffer, start: number, stop: number) {
   var padding = 0;
   while (start + padding < stop && buf[start + padding] === 0) {
     ++padding;
@@ -128,8 +124,8 @@ function countPadding(buf, start, stop) {
   return padding;
 }
 
-function joseToDer(signature, alg) {
-  signature = signatureAsBuffer(signature);
+function joseToDer(input: unknown, alg: string) {
+  var signature = signatureAsBuffer(input);
   var paramBytes = getParamBytesForAlg(alg);
 
   var signatureBytes = signature.length;
@@ -181,7 +177,7 @@ function joseToDer(signature, alg) {
   return dst;
 }
 
-module.exports = {
+export = {
   derToJose: derToJose,
   joseToDer: joseToDer
 };

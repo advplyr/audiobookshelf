@@ -1,11 +1,14 @@
-/*jshint node:true */
-'use strict';
-var Buffer = require('buffer').Buffer; // browserify
-var SlowBuffer = require('buffer').SlowBuffer;
+import { createRequire } from 'node:module';
 
-module.exports = bufferEq;
+type Equal = (this: Buffer, other: unknown) => boolean;
+type BufferPrototype = Buffer & { equal?: Equal };
 
-function bufferEq(a, b) {
+const { Buffer, SlowBuffer } = createRequire(__filename)('buffer') as {
+  Buffer: typeof globalThis.Buffer & { prototype: BufferPrototype };
+  SlowBuffer: { prototype: BufferPrototype };
+};
+
+function bufferEq(a: unknown, b: unknown) {
 
   // shortcutting on type is necessary for correctness
   if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
@@ -39,3 +42,5 @@ bufferEq.restore = function () {
   Buffer.prototype.equal = origBufEqual;
   SlowBuffer.prototype.equal = origSlowBufEqual;
 };
+
+export = bufferEq;
