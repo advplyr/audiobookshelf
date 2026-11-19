@@ -247,12 +247,17 @@ class CollectionController {
       return res.status(400).send('Book already in collection')
     }
 
-    // Create collectionBook record
-    await Database.collectionBookModel.create({
-      collectionId: req.collection.id,
-      bookId: libraryItem.mediaId,
-      order: collectionBooks.length + 1
-    })
+    // Create collectionBook record. A second add can pass the check above and hit the unique pair.
+    try {
+      await Database.collectionBookModel.create({
+        collectionId: req.collection.id,
+        bookId: libraryItem.mediaId,
+        order: collectionBooks.length + 1
+      })
+    } catch (error) {
+      if (error.name !== 'SequelizeUniqueConstraintError') throw error
+      return res.status(400).send('Book already in collection')
+    }
     const jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
     if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
     res.json(jsonExpanded)
