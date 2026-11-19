@@ -1,4 +1,4 @@
-const balanced = require('../balancedMatch');
+import balanced from '../balancedMatch';
 
 const escSlash = '\0SLASH' + Math.random() + '\0';
 const escOpen = '\0OPEN' + Math.random() + '\0';
@@ -9,8 +9,8 @@ const escPeriod = '\0PERIOD' + Math.random() + '\0';
 /**
  * @return {number}
  */
-function numeric(str) {
-  return parseInt(str, 10) == str
+function numeric(str: string) {
+  return parseInt(str, 10) === Number(str)
     ? parseInt(str, 10)
     : str.charCodeAt(0);
 }
@@ -18,7 +18,7 @@ function numeric(str) {
 /**
  * @param {string} str
  */
-function escapeBraces(str) {
+function escapeBraces(str: string) {
   return str.split('\\\\').join(escSlash)
     .split('\\{').join(escOpen)
     .split('\\}').join(escClose)
@@ -29,7 +29,7 @@ function escapeBraces(str) {
 /**
  * @param {string} str
  */
-function unescapeBraces(str) {
+function unescapeBraces(str: string) {
   return str.split(escSlash).join('\\')
     .split(escOpen).join('{')
     .split(escClose).join('}')
@@ -43,11 +43,11 @@ function unescapeBraces(str) {
  * treated as individual members, like {a,{b,c},d}
  * @param {string} str
  */
-function parseCommaParts(str) {
+function parseCommaParts(str: string): string[] {
   if (!str)
     return [''];
 
-  const parts = [];
+  const parts: string[] = [];
   const m = balanced('{', '}', str);
 
   if (!m)
@@ -59,7 +59,7 @@ function parseCommaParts(str) {
   p[p.length - 1] += '{' + body + '}';
   const postParts = parseCommaParts(post);
   if (post.length) {
-    p[p.length - 1] += postParts.shift();
+    p[p.length - 1] += postParts.shift()!;
     p.push.apply(p, postParts);
   }
 
@@ -71,7 +71,7 @@ function parseCommaParts(str) {
 /**
  * @param {string} str
  */
-function expandTop(str) {
+function expandTop(str: string) {
   if (!str)
     return [];
 
@@ -91,14 +91,14 @@ function expandTop(str) {
 /**
  * @param {string} str
  */
-function embrace(str) {
+function embrace(str: string) {
   return '{' + str + '}';
 }
 
 /**
  * @param {string} el
  */
-function isPadded(el) {
+function isPadded(el: string) {
   return /^-?0\d/.test(el);
 }
 
@@ -106,7 +106,7 @@ function isPadded(el) {
  * @param {number} i
  * @param {number} y
  */
-function lte(i, y) {
+function lte(i: number, y: number) {
   return i <= y;
 }
 
@@ -114,7 +114,7 @@ function lte(i, y) {
  * @param {number} i
  * @param {number} y
  */
-function gte(i, y) {
+function gte(i: number, y: number) {
   return i >= y;
 }
 
@@ -122,9 +122,9 @@ function gte(i, y) {
  * @param {string} str
  * @param {boolean} [isTop]
  */
-function expand(str, isTop) {
+function expand(str: string, isTop?: boolean): string[] {
   /** @type {string[]} */
-  const expansions = [];
+  const expansions: string[] = [];
 
   const m = balanced('{', '}', str);
   if (!m) return [str];
@@ -154,7 +154,7 @@ function expand(str, isTop) {
       return [str];
     }
 
-    let n;
+    let n: string[];
     if (isSequence) {
       n = m.body.split(/\.\./);
     } else {
@@ -172,7 +172,7 @@ function expand(str, isTop) {
 
     // at this point, n is the parts, and we know it's not a comma set
     // with a single entry.
-    let N;
+    let N: string[];
 
     if (isSequence) {
       const x = numeric(n[0]);
@@ -232,4 +232,4 @@ function expand(str, isTop) {
   return expansions;
 }
 
-module.exports = expandTop;
+export = expandTop;
