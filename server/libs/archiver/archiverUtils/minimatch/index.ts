@@ -1,4 +1,49 @@
-const minimatch = module.exports = (p, pattern, options = {}) => {
+import expand from '../braceExpansion'
+
+interface Options {
+  nocomment?: boolean
+  nobrace?: boolean
+  nonull?: boolean
+  windowsPathsNoEscape?: boolean
+  allowWindowsEscape?: boolean
+  partial?: boolean
+  debug?: boolean
+  nonegate?: boolean
+  dot?: boolean
+  noglobstar?: boolean
+  nocase?: boolean
+  noext?: boolean
+  matchBase?: boolean
+  flipNegate?: boolean
+}
+
+type Filter = (path: string, index?: number, list?: string[]) => boolean
+type Matcher = ((path: string, pattern: string, options?: Options) => boolean) & {
+  Minimatch: typeof Minimatch
+  filter(pattern: string, options?: Options): Filter
+  defaults(options?: Options | null): Matcher
+  makeRe(pattern: string, options?: Options | null): RegExp | false
+  braceExpand(pattern: string, options?: Options): string[]
+  match(list: string[], pattern: string, options?: Options): string[]
+}
+
+type GlobRegExp = RegExp & { _glob?: string; _src?: string }
+type Segment = string | typeof GLOBSTAR | GlobRegExp
+type Part = Segment | false
+type Subparse = [source: string, hasMagic: boolean | undefined]
+
+interface PatternList {
+  type: keyof typeof plTypes
+  start: number
+  reStart: number
+  reEnd?: number
+  open: string
+  close: string
+}
+
+declare const module: { exports: unknown }
+
+const minimatch = (module.exports = (p: string, pattern: string, options: Options = {}) => {
   assertValidPattern(pattern)
 
   // shortcut: comments match nothing.
@@ -7,7 +52,7 @@ const minimatch = module.exports = (p, pattern, options = {}) => {
   }
 
   return new Minimatch(pattern, options).match(p)
-}
+}) as Matcher & { sep: string; GLOBSTAR: typeof GLOBSTAR }
 
 module.exports = minimatch
 
@@ -19,7 +64,6 @@ minimatch.sep = path.sep
 
 const GLOBSTAR = Symbol('globstar **')
 minimatch.GLOBSTAR = GLOBSTAR
-const expand = require('../braceExpansion')
 
 const plTypes = {
   '!': { open: '(?:(?!(?:', close: '))[^/]*?)' },
@@ -46,7 +90,7 @@ const twoStarDot = '(?:(?!(?:\\\/|^)(?:\\.{1,2})($|\\\/)).)*?'
 const twoStarNoDot = '(?:(?!(?:\\\/|^)\\.).)*?'
 
 // "abc" -> { a:true, b:true, c:true }
-const charSet = s => s.split('').reduce((set, c) => {
+const charSet = (s: string) => s.split('').reduce<Record<string, boolean>>((set, c) => {
   set[c] = true
   return set
 }, {})
@@ -61,12 +105,15 @@ const addPatternStartSet = charSet('[.(')
 const slashSplit = /\/+/
 
 minimatch.filter = (pattern, options = {}) =>
-  (p, i, list) => minimatch(p, pattern, options)
+  (p, i, list) => {
+    void list
+    return minimatch(p, pattern, options)
+  }
 
-const ext = (a, b = {}) => {
-  const t = {}
-  Object.keys(a).forEach(k => t[k] = a[k])
-  Object.keys(b).forEach(k => t[k] = b[k])
+const ext = (a: Options, b: Options | null = {}): Options => {
+  const t: Record<string, unknown> = {}
+  Object.keys(a).forEach(k => t[k] = (a as Record<string, unknown>)[k])
+  Object.keys(b!).forEach(k => t[k] = (b as Record<string, unknown>)[k])
   return t
 }
 
@@ -76,19 +123,20 @@ minimatch.defaults = def => {
   }
 
   const orig = minimatch
+  const defaults = def
 
-  const m = (p, pattern, options) => orig(p, pattern, ext(def, options))
+  const m = ((p: string, pattern: string, options?: Options) => orig(p, pattern, ext(defaults, options))) as Matcher
   m.Minimatch = class Minimatch extends orig.Minimatch {
-    constructor(pattern, options) {
-      super(pattern, ext(def, options))
+    constructor(pattern: string, options?: Options) {
+      super(pattern, ext(defaults, options))
     }
   }
-  m.Minimatch.defaults = options => orig.defaults(ext(def, options)).Minimatch
-  m.filter = (pattern, options) => orig.filter(pattern, ext(def, options))
-  m.defaults = options => orig.defaults(ext(def, options))
-  m.makeRe = (pattern, options) => orig.makeRe(pattern, ext(def, options))
-  m.braceExpand = (pattern, options) => orig.braceExpand(pattern, ext(def, options))
-  m.match = (list, pattern, options) => orig.match(list, pattern, ext(def, options))
+  m.Minimatch.defaults = options => orig.defaults(ext(defaults, options)).Minimatch
+  m.filter = (pattern, options) => orig.filter(pattern, ext(defaults, options))
+  m.defaults = options => orig.defaults(ext(defaults, options))
+  m.makeRe = (pattern, options) => orig.makeRe(pattern, ext(defaults, options))
+  m.braceExpand = (pattern, options) => orig.braceExpand(pattern, ext(defaults, options))
+  m.match = (list, pattern, options) => orig.match(list, pattern, ext(defaults, options))
 
   return m
 }
@@ -109,7 +157,7 @@ minimatch.defaults = def => {
 // a{b}c -> a{b}c
 minimatch.braceExpand = (pattern, options) => braceExpand(pattern, options)
 
-const braceExpand = (pattern, options = {}) => {
+const braceExpand = (pattern: string, options: Options = {}) => {
   assertValidPattern(pattern)
 
   // Thanks to Yeting Li <https://github.com/yetingli> for
@@ -123,7 +171,7 @@ const braceExpand = (pattern, options = {}) => {
 }
 
 const MAX_PATTERN_LENGTH = 1024 * 64
-const assertValidPattern = pattern => {
+const assertValidPattern = (pattern: string) => {
   if (typeof pattern !== 'string') {
     throw new TypeError('invalid pattern')
   }
@@ -159,11 +207,23 @@ minimatch.match = (list, pattern, options = {}) => {
 }
 
 // replace stuff like \* with *
-const globUnescape = s => s.replace(/\\(.)/g, '$1')
-const regExpEscape = s => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+const globUnescape = (s: string) => s.replace(/\\(.)/g, '$1')
+const regExpEscape = (s: string) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
 
 class Minimatch {
-  constructor(pattern, options) {
+  declare options: Options
+  declare set: Segment[][]
+  declare pattern: string
+  declare windowsPathsNoEscape: boolean
+  declare regexp: RegExp | false | null
+  declare negate: boolean
+  declare comment: boolean
+  declare empty: boolean
+  declare partial: boolean
+  declare globSet?: string[]
+  declare globParts?: string[][]
+
+  constructor(pattern: string, options?: Options | null) {
     assertValidPattern(pattern)
 
     if (!options) options = {}
@@ -186,6 +246,7 @@ class Minimatch {
     this.make()
   }
 
+  debug(...args: unknown[]): void
   debug() { }
 
   make() {
@@ -206,28 +267,28 @@ class Minimatch {
     this.parseNegate()
 
     // step 2: expand braces
-    let set = this.globSet = this.braceExpand()
+    const expanded = this.globSet = this.braceExpand()
 
     if (options.debug) this.debug = (...args) => console.error(...args)
 
-    this.debug(this.pattern, set)
+    this.debug(this.pattern, expanded)
 
     // step 3: now we have a set, so turn each one into a series of path-portion
     // matching patterns.
     // These will be regexps, except in the case of "**", which is
     // set to the GLOBSTAR object for globstar behavior,
     // and will not contain any / characters
-    set = this.globParts = set.map(s => s.split(slashSplit))
+    const parts = this.globParts = expanded.map(s => s.split(slashSplit))
 
-    this.debug(this.pattern, set)
+    this.debug(this.pattern, parts)
 
     // glob --> regexps
-    set = set.map((s, si, set) => s.map(this.parse, this))
+    const parsed = parts.map(s => s.map(this.parse.bind(this)))
 
-    this.debug(this.pattern, set)
+    this.debug(this.pattern, parsed)
 
     // filter out everything that didn't compile properly.
-    set = set.filter(s => s.indexOf(false) === -1)
+    const set = parsed.filter((s): s is Segment[] => s.indexOf(false) === -1)
 
     this.debug(this.pattern, set)
 
@@ -255,7 +316,7 @@ class Minimatch {
   // Partial means, if you run out of file before you run
   // out of pattern, then that's fine, as long as all
   // the parts match.
-  matchOne(file, pattern, partial) {
+  matchOne(file: string[], pattern: Part[], partial?: boolean): boolean | undefined {
     var options = this.options
 
     this.debug('matchOne',
@@ -413,7 +474,9 @@ class Minimatch {
     return braceExpand(this.pattern, this.options)
   }
 
-  parse(pattern, isSub) {
+  parse(pattern: string, isSub: typeof SUBPARSE): Part | Subparse
+  parse(pattern: string, isSub?: number): Part
+  parse(pattern: string, isSub?: typeof SUBPARSE | number): Part | Subparse {
     assertValidPattern(pattern)
 
     const options = this.options
@@ -428,18 +491,18 @@ class Minimatch {
     if (pattern === '') return ''
 
     let re = ''
-    let hasMagic = !!options.nocase
+    let hasMagic: boolean | undefined = !!options.nocase
     let escaping = false
     // ? => one single character
-    const patternListStack = []
-    const negativeLists = []
-    let stateChar
+    const patternListStack: PatternList[] = []
+    const negativeLists: PatternList[] = []
+    let stateChar: keyof typeof plTypes | false | undefined
     let inClass = false
     let reClassStart = -1
     let classStart = -1
     let cs
-    let pl
-    let sp
+    let pl: PatternList | undefined
+    let sp: [string | undefined, boolean | undefined]
     // . and .. never match anything that doesn't start with .,
     // even when options.dot is set.
     const patternStart = pattern.charAt(0) === '.' ? '' // anything
@@ -561,7 +624,7 @@ class Minimatch {
 
           clearStateChar()
           hasMagic = true
-          pl = patternListStack.pop()
+          pl = patternListStack.pop()!
           // negation is (?:(?!js)[^/]*)
           // The others are (?:<pattern>)<type>
           re += pl.close
@@ -619,9 +682,9 @@ class Minimatch {
           cs = pattern.substring(classStart + 1, i)
           try {
             RegExp('[' + cs + ']')
-          } catch (er) {
+          } catch {
             // not a valid class!
-            sp = this.parse(cs, SUBPARSE)
+            sp = this.parse(cs, SUBPARSE) as typeof sp
             re = re.substr(0, reClassStart) + '\\[' + sp[0] + '\\]'
             hasMagic = hasMagic || sp[1]
             inClass = false
@@ -656,7 +719,7 @@ class Minimatch {
       // the contents of the would-be class to re-translate
       // any characters that were passed through as-is
       cs = pattern.substr(classStart + 1)
-      sp = this.parse(cs, SUBPARSE)
+      sp = this.parse(cs, SUBPARSE) as typeof sp
       re = re.substr(0, reClassStart) + '\\[' + sp[0]
       hasMagic = hasMagic || sp[1]
     }
@@ -672,7 +735,7 @@ class Minimatch {
       tail = re.slice(pl.reStart + pl.open.length)
       this.debug('setting tail', re, pl)
       // maybe some even number of \, then maybe 1 \, followed by a |
-      tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, (_, $1, $2) => {
+      tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, (_, $1: string, $2: string) => {
         /* istanbul ignore else - should already be done */
         if (!$2) {
           // the | isn't already escaped, so escape it.
@@ -717,9 +780,9 @@ class Minimatch {
       const nl = negativeLists[n]
 
       const nlBefore = re.slice(0, nl.reStart)
-      const nlFirst = re.slice(nl.reStart, nl.reEnd - 8)
+      const nlFirst = re.slice(nl.reStart, nl.reEnd! - 8)
       let nlAfter = re.slice(nl.reEnd)
-      const nlLast = re.slice(nl.reEnd - 8, nl.reEnd) + nlAfter
+      const nlLast = re.slice(nl.reEnd! - 8, nl.reEnd) + nlAfter
 
       // Handle nested stuff like *(*.js|!(*.json)), where open parens
       // mean that we should *not* include the ) in the bit that is considered
@@ -764,7 +827,7 @@ class Minimatch {
         _glob: pattern,
         _src: re,
       })
-    } catch (er) /* istanbul ignore next - should be impossible */ {
+    } catch /* istanbul ignore next - should be impossible */ {
       // If it was an invalid regular expression, then it can't match
       // anything.  This trick looks for a character after the end of
       // the string, which is of course impossible, except in multi-line
@@ -802,34 +865,34 @@ class Minimatch {
     // if it's in the middle, append (\/|\/twoStar\/) to previous
     // then filter out GLOBSTAR symbols
     let re = set.map(pattern => {
-      pattern = pattern.map(p =>
+      const regexpParts = pattern.map(p =>
         typeof p === 'string' ? regExpEscape(p)
           : p === GLOBSTAR ? GLOBSTAR
             : p._src
-      ).reduce((set, p) => {
+      ).reduce<(string | typeof GLOBSTAR | undefined)[]>((set, p) => {
         if (!(set[set.length - 1] === GLOBSTAR && p === GLOBSTAR)) {
           set.push(p)
         }
         return set
       }, [])
-      pattern.forEach((p, i) => {
-        if (p !== GLOBSTAR || pattern[i - 1] === GLOBSTAR) {
+      regexpParts.forEach((p, i) => {
+        if (p !== GLOBSTAR || regexpParts[i - 1] === GLOBSTAR) {
           return
         }
         if (i === 0) {
-          if (pattern.length > 1) {
-            pattern[i + 1] = '(?:\\\/|' + twoStar + '\\\/)?' + pattern[i + 1]
+          if (regexpParts.length > 1) {
+            regexpParts[i + 1] = '(?:\\\/|' + twoStar + '\\\/)?' + (regexpParts[i + 1] as string | undefined)
           } else {
-            pattern[i] = twoStar
+            regexpParts[i] = twoStar
           }
-        } else if (i === pattern.length - 1) {
-          pattern[i - 1] += '(?:\\\/|' + twoStar + ')?'
+        } else if (i === regexpParts.length - 1) {
+          regexpParts[i - 1] = (regexpParts[i - 1] as string | undefined) + '(?:\\\/|' + twoStar + ')?'
         } else {
-          pattern[i - 1] += '(?:\\\/|\\\/' + twoStar + '\\\/)' + pattern[i + 1]
-          pattern[i + 1] = GLOBSTAR
+          regexpParts[i - 1] = (regexpParts[i - 1] as string | undefined) + '(?:\\\/|\\\/' + twoStar + '\\\/)' + (regexpParts[i + 1] as string | undefined)
+          regexpParts[i + 1] = GLOBSTAR
         }
       })
-      return pattern.filter(p => p !== GLOBSTAR).join('/')
+      return regexpParts.filter(p => p !== GLOBSTAR).join('/')
     }).join('|')
 
     // must match entire pattern
@@ -841,13 +904,13 @@ class Minimatch {
 
     try {
       this.regexp = new RegExp(re, flags)
-    } catch (ex) /* istanbul ignore next - should be impossible */ {
+    } catch /* istanbul ignore next - should be impossible */ {
       this.regexp = false
     }
     return this.regexp
   }
 
-  match(f, partial = this.partial) {
+  match(f: string, partial = this.partial) {
     this.debug('match', f, this.pattern)
     // short-circuit in the case of busted things.
     // comments, etc.
@@ -864,8 +927,8 @@ class Minimatch {
     }
 
     // treat the test path as a set of pathparts.
-    f = f.split(slashSplit)
-    this.debug(this.pattern, 'split', f)
+    const pathParts = f.split(slashSplit)
+    this.debug(this.pattern, 'split', pathParts)
 
     // just ONE of the pattern sets in this.set needs to match
     // in order for it to be valid.  If negating, then just one
@@ -876,15 +939,15 @@ class Minimatch {
     this.debug(this.pattern, 'set', set)
 
     // Find the basename of the path by looking for the last non-empty segment
-    let filename
-    for (let i = f.length - 1; i >= 0; i--) {
-      filename = f[i]
+    let filename!: string
+    for (let i = pathParts.length - 1; i >= 0; i--) {
+      filename = pathParts[i]
       if (filename) break
     }
 
     for (let i = 0; i < set.length; i++) {
       const pattern = set[i]
-      let file = f
+      let file = pathParts
       if (options.matchBase && pattern.length === 1) {
         file = [filename]
       }
@@ -901,9 +964,11 @@ class Minimatch {
     return this.negate
   }
 
-  static defaults(def) {
+  static defaults(def?: Options | null): typeof Minimatch {
     return minimatch.defaults(def).Minimatch
   }
 }
 
 minimatch.Minimatch = Minimatch
+
+export = minimatch
