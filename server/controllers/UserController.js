@@ -37,9 +37,9 @@ class UserController {
     const users = allUsers.map((u) => u.toOldJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
+      const latestSessions = await Database.playbackSessionModel.getLatestOldPlaybackSessionPerUser()
       for (const user of users) {
-        const userSessions = await Database.getPlaybackSessions({ userId: user.id })
-        user.latestSession = userSessions.sort((a, b) => b.updatedAt - a.updatedAt).shift() || null
+        user.latestSession = latestSessions.find((session) => session.userId === user.id) || null
       }
     }
 
