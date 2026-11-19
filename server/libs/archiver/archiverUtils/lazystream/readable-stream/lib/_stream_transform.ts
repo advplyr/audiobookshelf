@@ -61,21 +61,31 @@
 // would be consumed, and then the rest would wait (un-transformed) until
 // the results of the previous transformed chunk were consumed.
 
-'use strict';
+import { createRequire } from 'node:module';
+import type { Transform as NodeTransform, TransformCallback, TransformOptions } from 'node:stream';
+import { inherits } from 'node:util';
 
-module.exports = Transform;
+type WriteCallback = (error?: Error | null) => void;
 
-var Duplex = require('./_stream_duplex');
+interface TransformStream extends NodeTransform {
+  _readableState: { needReadable: boolean; reading: boolean; sync: boolean; length: number; highWaterMark: number };
+  _writableState: { length: number };
+  _transformState: {
+    afterTransform: TransformCallback;
+    needTransform: boolean;
+    transforming: boolean;
+    writecb: WriteCallback | null;
+    writechunk: unknown;
+    writeencoding: BufferEncoding | null;
+  };
+}
 
-/*<replacement>*/
-var util = require('util')
-// var util = Object.create(require('core-util-is'));
-// util.inherits = require('inherits');
-/*</replacement>*/
+const Duplex = createRequire(__filename)('./_stream_duplex') as {
+  (this: TransformStream, options?: TransformOptions): void;
+  prototype: NodeTransform;
+};
 
-util.inherits(Transform, Duplex);
-
-function afterTransform(er, data) {
+function afterTransform(this: TransformStream, er?: Error | null, data?: unknown) {
   var ts = this._transformState;
   ts.transforming = false;
 
@@ -100,7 +110,7 @@ function afterTransform(er, data) {
   }
 }
 
-function Transform(options) {
+const Transform = function (this: TransformStream, options?: TransformOptions) {
   if (!(this instanceof Transform)) return new Transform(options);
 
   Duplex.call(this, options);
@@ -130,21 +140,25 @@ function Transform(options) {
 
   // When the writable side finishes, then flush out anything remaining.
   this.on('prefinish', prefinish);
-}
+} as unknown as {
+  (options?: TransformOptions): TransformStream;
+  new (options?: TransformOptions): TransformStream;
+  prototype: TransformStream;
+};
 
-function prefinish() {
-  var _this = this;
+inherits(Transform, Duplex);
 
+function prefinish(this: TransformStream) {
   if (typeof this._flush === 'function') {
-    this._flush(function (er, data) {
-      done(_this, er, data);
+    this._flush((er, data) => {
+      done(this, er, data);
     });
   } else {
     done(this, null, null);
   }
 }
 
-Transform.prototype.push = function (chunk, encoding) {
+Transform.prototype.push = function (chunk: unknown, encoding?: BufferEncoding) {
   this._transformState.needTransform = false;
   return Duplex.prototype.push.call(this, chunk, encoding);
 };
@@ -159,11 +173,12 @@ Transform.prototype.push = function (chunk, encoding) {
 // Call `cb(err)` when you are done with this chunk.  If you pass
 // an error, then that'll put the hurt on the whole operation.  If you
 // never call cb(), then you'll never get another chunk.
-Transform.prototype._transform = function (chunk, encoding, cb) {
+Transform.prototype._transform = function (chunk: unknown, encoding: BufferEncoding, cb: WriteCallback) {
+  void cb;
   throw new Error('_transform() is not implemented');
 };
 
-Transform.prototype._write = function (chunk, encoding, cb) {
+Transform.prototype._write = function (chunk: unknown, encoding: BufferEncoding, cb: WriteCallback) {
   var ts = this._transformState;
   ts.writecb = cb;
   ts.writechunk = chunk;
@@ -177,12 +192,13 @@ Transform.prototype._write = function (chunk, encoding, cb) {
 // Doesn't matter what the args are here.
 // _transform does all the work.
 // That we got here means that the readable side wants more data.
-Transform.prototype._read = function (n) {
+Transform.prototype._read = function (n: number) {
+  void n;
   var ts = this._transformState;
 
   if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
     ts.transforming = true;
-    this._transform(ts.writechunk, ts.writeencoding, ts.afterTransform);
+    this._transform(ts.writechunk, ts.writeencoding!, ts.afterTransform);
   } else {
     // mark that we need a transform, so that any data that comes in
     // will get processed, now that we've asked for it.
@@ -191,15 +207,13 @@ Transform.prototype._read = function (n) {
 };
 
 Transform.prototype._destroy = function (err, cb) {
-  var _this2 = this;
-
-  Duplex.prototype._destroy.call(this, err, function (err2) {
+  Duplex.prototype._destroy.call(this, err, (err2) => {
     cb(err2);
-    _this2.emit('close');
+    this.emit('close');
   });
 };
 
-function done(stream, er, data) {
+function done(stream: TransformStream, er?: Error | null, data?: unknown) {
   if (er) return stream.emit('error', er);
 
   if (data != null) // single equals check for both `null` and `undefined`
@@ -213,3 +227,5 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
+
+export = Transform;

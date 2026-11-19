@@ -59,21 +59,32 @@
 // However, even in such a pathological case, only a single written chunk
 // would be consumed, and then the rest would wait (un-transformed) until
 // the results of the previous transformed chunk were consumed.
-'use strict'
+import { createRequire } from 'node:module'
+import type { Transform as NodeTransform, TransformOptions } from 'node:stream'
 
-const { ObjectSetPrototypeOf, Symbol } = require('../../ours/primordials')
+type WriteCallback = (error?: Error | null) => void
 
-module.exports = Transform
+interface TransformStream extends NodeTransform {
+  _readableState: { sync: boolean; length: number; highWaterMark: number }
+  _writableState: { ended: boolean }
+  [kCallback]: WriteCallback | null
+}
 
-const { ERR_METHOD_NOT_IMPLEMENTED } = require('../../ours/errors').codes
+const load = createRequire(__filename)
+const { ObjectSetPrototypeOf, Symbol } = load('../../ours/primordials') as {
+  ObjectSetPrototypeOf: typeof Object.setPrototypeOf
+  Symbol: typeof globalThis.Symbol
+}
+const { ERR_METHOD_NOT_IMPLEMENTED } = (load('../../ours/errors') as {
+  codes: { ERR_METHOD_NOT_IMPLEMENTED: new (method: string) => Error }
+}).codes
+const Duplex = load('./duplex') as {
+  (this: TransformStream, options?: TransformOptions): void
+  prototype: NodeTransform
+}
+const kCallback: unique symbol = Symbol('kCallback') as typeof kCallback
 
-const Duplex = require('./duplex')
-
-ObjectSetPrototypeOf(Transform.prototype, Duplex.prototype)
-ObjectSetPrototypeOf(Transform, Duplex)
-const kCallback = Symbol('kCallback')
-
-function Transform(options) {
+const Transform = function (this: TransformStream, options?: TransformOptions) {
   if (!(this instanceof Transform)) return new Transform(options)
   Duplex.call(this, options) // We have implemented the _read method, and done the other things
   // that Readable wants before the first _read call, so unset the
@@ -91,9 +102,16 @@ function Transform(options) {
   // implementing _final we continue supporting this unfortunate use case.
 
   this.on('prefinish', prefinish)
+} as unknown as {
+  (options?: TransformOptions): TransformStream
+  new (options?: TransformOptions): TransformStream
+  prototype: TransformStream
 }
 
-function final(cb) {
+ObjectSetPrototypeOf(Transform.prototype, Duplex.prototype)
+ObjectSetPrototypeOf(Transform, Duplex)
+
+function final(this: TransformStream, cb?: WriteCallback) {
   if (typeof this._flush === 'function' && !this.destroyed) {
     this._flush((er, data) => {
       if (er) {
@@ -125,7 +143,7 @@ function final(cb) {
   }
 }
 
-function prefinish() {
+function prefinish(this: TransformStream) {
   if (this._final !== final) {
     final.call(this)
   }
@@ -133,11 +151,12 @@ function prefinish() {
 
 Transform.prototype._final = final
 
-Transform.prototype._transform = function (chunk, encoding, callback) {
+Transform.prototype._transform = function (chunk: unknown, encoding: BufferEncoding, callback: WriteCallback) {
+  void callback
   throw new ERR_METHOD_NOT_IMPLEMENTED('_transform()')
 }
 
-Transform.prototype._write = function (chunk, encoding, callback) {
+Transform.prototype._write = function (chunk: unknown, encoding: BufferEncoding, callback: WriteCallback) {
   const rState = this._readableState
   const wState = this._writableState
   const length = rState.length
@@ -173,3 +192,5 @@ Transform.prototype._read = function () {
     callback()
   }
 }
+
+export = Transform
