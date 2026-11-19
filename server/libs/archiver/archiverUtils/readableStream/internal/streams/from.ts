@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module'
-import type { Readable as NodeReadable, ReadableOptions } from 'node:stream'
+import type { DuplexOptions, Readable as NodeReadable } from 'node:stream'
 import primordials from '../../ours/primordials'
 
 type SyncIterator = Iterator<unknown, unknown, unknown>
@@ -18,7 +18,9 @@ const { ERR_INVALID_ARG_TYPE, ERR_STREAM_NULL_VALUES } = (createRequire(__filena
   }
 }).codes
 
-function from<Readable extends ReadableStream>(Readable: new (options: ReadableOptions) => Readable, iterable: unknown, opts?: ReadableOptions) {
+type StreamOptions = DuplexOptions & { writable?: boolean }
+
+function from<Readable extends ReadableStream>(Readable: new (options: StreamOptions) => Readable, iterable: unknown, opts?: StreamOptions) {
   let iterator: SourceIterator
 
   if (typeof iterable === 'string' || iterable instanceof Buffer) {

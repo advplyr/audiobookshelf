@@ -1,8 +1,36 @@
-'use strict'
+import bufferModule from 'node:buffer'
+import { createRequire } from 'node:module'
+import type { Duplex as NodeDuplex } from 'node:stream'
+import LegacyAbortController from '../../../../../watcher/aborter/controller'
+import errors from '../../ours/errors'
+import primordials from '../../ours/primordials'
+import util from '../../ours/util'
+import teardown from './destroy'
+import Duplex from './duplex'
+import eos from './end-of-stream'
+import from from './from'
+import utils from './utils'
 
-const abortControllerModule = require('../../../../../watcher/aborter/controller')
+type DuplexOptions = NonNullable<ConstructorParameters<typeof Duplex>[0]>
+type Callback = (error?: Error | null) => unknown
+type Endpoint = Parameters<typeof eos>[0] & NonNullable<Parameters<typeof teardown.destroyer>[0]> & {
+  readableObjectMode?: boolean
+  writableObjectMode?: boolean
+  read?: () => unknown
+  write?: (chunk: unknown, encoding: BufferEncoding) => boolean
+  end?: () => void
+}
 
-const bufferModule = require('buffer')
+interface Pair {
+  readable?: Endpoint | false
+  writable?: Endpoint | false
+}
+
+type Then = (this: unknown, resolve: (value: unknown) => void, reject: (error: Error) => void) => unknown
+type Signal = { aborted: boolean; reason?: unknown }
+type Body = (chunks: AsyncIterable<unknown>, options: { signal: Signal }) => unknown
+type Controller = new () => { signal: Signal; abort(): void }
+type Probe = Parameters<typeof utils.isReadableNodeStream>[0]
 
 const {
   isReadable,
@@ -12,40 +40,32 @@ const {
   isReadableNodeStream,
   isWritableNodeStream,
   isDuplexNodeStream
-} = require('./utils')
-
-const eos = require('./end-of-stream')
+} = utils
 
 const {
   AbortError,
   codes: { ERR_INVALID_ARG_TYPE, ERR_INVALID_RETURN_VALUE }
-} = require('../../ours/errors')
-
-const { destroyer } = require('./destroy')
-
-const Duplex = require('./duplex')
-
-const Readable = require('./readable')
-
-const { createDeferredPromise } = require('../../ours/util')
-
-const from = require('./from')
+} = errors
+const { destroyer } = teardown
+const Readable = createRequire(__filename)('./readable') as { wrap: (stream: Endpoint) => Endpoint }
 
 const Blob = globalThis.Blob || bufferModule.Blob
 const isBlob =
   typeof Blob !== 'undefined'
-    ? function isBlob(b) {
+    ? function isBlob(b: unknown): b is InstanceType<typeof Blob> {
       return b instanceof Blob
     }
-    : function isBlob(b) {
+    : function isBlob(b: unknown): b is InstanceType<typeof Blob> {
+      void b
       return false
     }
-const AbortController = globalThis.AbortController || abortControllerModule.AbortController
+const legacyController: typeof LegacyAbortController & { AbortController?: Controller } = LegacyAbortController
+const AbortController = globalThis.AbortController || legacyController.AbortController
 
-const { FunctionPrototypeCall } = require('../../ours/primordials') // This is needed for pre node 17.
+const { FunctionPrototypeCall } = primordials // This is needed for pre node 17.
 
 class Duplexify extends Duplex {
-  constructor(options) {
+  constructor(options?: DuplexOptions) {
     super(options) // https://github.com/nodejs/node/pull/34385
 
     if ((options === null || options === undefined ? undefined : options.readable) === false) {
@@ -63,20 +83,21 @@ class Duplexify extends Duplex {
   }
 }
 
-module.exports = function duplexify(body, name) {
-  if (isDuplexNodeStream(body)) {
-    return body
+function duplexify(body: unknown, name?: string): NodeDuplex {
+  const stream = body as Endpoint
+  if (isDuplexNodeStream(stream)) {
+    return body as NodeDuplex
   }
 
-  if (isReadableNodeStream(body)) {
+  if (isReadableNodeStream(stream)) {
     return _duplexify({
-      readable: body
+      readable: stream
     })
   }
 
-  if (isWritableNodeStream(body)) {
+  if (isWritableNodeStream(stream)) {
     return _duplexify({
-      writable: body
+      writable: stream
     })
   }
 
@@ -95,7 +116,7 @@ module.exports = function duplexify(body, name) {
   // }
 
   if (typeof body === 'function') {
-    const { value, write, final, destroy } = fromAsyncGen(body)
+    const { value, write, final, destroy } = fromAsyncGen(body as Body)
 
     if (isIterable(value)) {
       return from(Duplexify, value, {
@@ -107,16 +128,16 @@ module.exports = function duplexify(body, name) {
       })
     }
 
-    const then = value === null || value === undefined ? undefined : value.then
+    const then = (value as { then?: Then } | null | undefined)?.then
 
     if (typeof then === 'function') {
-      let d
+      let d: Duplexify | undefined
       const promise = FunctionPrototypeCall(
         then,
         value,
         (val) => {
           if (val != null) {
-            throw new ERR_INVALID_RETURN_VALUE('nully', 'body', val)
+            throw new ERR_INVALID_RETURN_VALUE!('nully', 'body', val)
           }
         },
         (err) => {
@@ -135,7 +156,8 @@ module.exports = function duplexify(body, name) {
               await promise
               process.nextTick(cb, null)
             } catch (err) {
-              process.nextTick(cb, err)
+              const failure = err as Error
+              process.nextTick(cb, failure)
             }
           })
         },
@@ -144,7 +166,7 @@ module.exports = function duplexify(body, name) {
       }))
     }
 
-    throw new ERR_INVALID_RETURN_VALUE('Iterable, AsyncIterable or AsyncFunction', name, value)
+    throw new ERR_INVALID_RETURN_VALUE!('Iterable, AsyncIterable or AsyncFunction', name, value)
   }
 
   if (isBlob(body)) {
@@ -165,25 +187,22 @@ module.exports = function duplexify(body, name) {
   //   return Duplexify.fromWeb(body);
   // }
 
+  const pair = body as Pair | null | undefined
   if (
-    typeof (body === null || body === undefined ? undefined : body.writable) === 'object' ||
-    typeof (body === null || body === undefined ? undefined : body.readable) === 'object'
+    typeof pair?.writable === 'object' ||
+    typeof pair?.readable === 'object'
   ) {
     const readable =
-      body !== null && body !== undefined && body.readable
-        ? isReadableNodeStream(body === null || body === undefined ? undefined : body.readable)
-          ? body === null || body === undefined
-            ? undefined
-            : body.readable
-          : duplexify(body.readable)
+      pair?.readable
+        ? isReadableNodeStream(pair.readable)
+          ? pair.readable
+          : duplexify(pair.readable)
         : undefined
     const writable =
-      body !== null && body !== undefined && body.writable
-        ? isWritableNodeStream(body === null || body === undefined ? undefined : body.writable)
-          ? body === null || body === undefined
-            ? undefined
-            : body.writable
-          : duplexify(body.writable)
+      pair?.writable
+        ? isWritableNodeStream(pair.writable)
+          ? pair.writable
+          : duplexify(pair.writable)
         : undefined
     return _duplexify({
       readable,
@@ -191,19 +210,19 @@ module.exports = function duplexify(body, name) {
     })
   }
 
-  const then = body === null || body === undefined ? undefined : body.then
+  const then = (body as { then?: Then } | null | undefined)?.then
 
   if (typeof then === 'function') {
-    let d
+    let d: Duplexify | undefined
     FunctionPrototypeCall(
       then,
       body,
       (val) => {
         if (val != null) {
-          d.push(val)
+          d!.push(val)
         }
 
-        d.push(null)
+        d!.push(null)
       },
       (err) => {
         destroyer(d, err)
@@ -217,7 +236,7 @@ module.exports = function duplexify(body, name) {
     }))
   }
 
-  throw new ERR_INVALID_ARG_TYPE(
+  throw new ERR_INVALID_ARG_TYPE!(
     name,
     [
       'Blob',
@@ -234,8 +253,17 @@ module.exports = function duplexify(body, name) {
   )
 }
 
-function fromAsyncGen(fn) {
-  let { promise, resolve } = createDeferredPromise()
+interface PendingChunk {
+  chunk?: unknown
+  done: boolean
+  cb: Callback
+}
+
+function fromAsyncGen(fn: Body) {
+  let { promise, resolve }: {
+    promise: Promise<PendingChunk> | null
+    resolve: ((chunk: PendingChunk) => void) | null
+  } = util.createDeferredPromise<PendingChunk>()
   const ac = new AbortController()
   const signal = ac.signal
   const value = fn(
@@ -250,7 +278,7 @@ function fromAsyncGen(fn) {
           throw new AbortError(undefined, {
             cause: signal.reason
           })
-          ; ({ promise, resolve } = createDeferredPromise())
+          ; ({ promise, resolve } = util.createDeferredPromise<PendingChunk>())
         yield chunk
       }
     })(),
@@ -261,46 +289,46 @@ function fromAsyncGen(fn) {
   return {
     value,
 
-    write(chunk, encoding, cb) {
+    write(this: void, chunk: unknown, encoding: BufferEncoding, cb: Callback) {
       const _resolve = resolve
       resolve = null
 
-      _resolve({
+      _resolve!({
         chunk,
         done: false,
         cb
       })
     },
 
-    final(cb) {
+    final(this: void, cb: Callback) {
       const _resolve = resolve
       resolve = null
 
-      _resolve({
+      _resolve!({
         done: true,
         cb
       })
     },
 
-    destroy(err, cb) {
+    destroy(this: void, err: Error | null, cb: Callback) {
       ac.abort()
       cb(err)
     }
   }
 }
 
-function _duplexify(pair) {
+function _duplexify(pair: Pair) {
   const r = pair.readable && typeof pair.readable.read !== 'function' ? Readable.wrap(pair.readable) : pair.readable
   const w = pair.writable
-  let readable = !!isReadable(r)
-  let writable = !!isWritable(w)
-  let ondrain
-  let onfinish
-  let onreadable
-  let onclose
-  let d
+  let readable = !!isReadable(r as Probe)
+  let writable = !!isWritable(w as Probe)
+  let ondrain: Callback | null | undefined
+  let onfinish: Callback | null | undefined
+  let onreadable: (() => void) | null | undefined
+  let onclose: Callback | null | undefined
+  let d: Duplexify
 
-  function onfinished(err) {
+  function onfinished(err?: Error) {
     const cb = onclose
     onclose = null
 
@@ -317,25 +345,26 @@ function _duplexify(pair) {
 
   d = new Duplexify({
     // TODO (ronag): highWaterMark?
-    readableObjectMode: !!(r !== null && r !== undefined && r.readableObjectMode),
-    writableObjectMode: !!(w !== null && w !== undefined && w.writableObjectMode),
+    readableObjectMode: !!(r !== null && r !== undefined && (r as Endpoint).readableObjectMode),
+    writableObjectMode: !!(w !== null && w !== undefined && (w as Endpoint).writableObjectMode),
     readable,
     writable
   })
 
   if (writable) {
-    eos(w, (err) => {
+    const output = w as Endpoint
+    eos(output, (err) => {
       writable = false
 
       if (err) {
-        destroyer(r, err)
+        destroyer(r as Endpoint, err)
       }
 
       onfinished(err)
     })
 
-    d._write = function (chunk, encoding, callback) {
-      if (w.write(chunk, encoding)) {
+    d._write = function (chunk: unknown, encoding, callback) {
+      if (output.write!(chunk, encoding)) {
         callback()
       } else {
         ondrain = callback
@@ -343,18 +372,18 @@ function _duplexify(pair) {
     }
 
     d._final = function (callback) {
-      w.end()
+      output.end!()
       onfinish = callback
     }
 
-    w.on('drain', function () {
+    output.on('drain', function () {
       if (ondrain) {
         const cb = ondrain
         ondrain = null
         cb()
       }
     })
-    w.on('finish', function () {
+    output.on('finish', function () {
       if (onfinish) {
         const cb = onfinish
         onfinish = null
@@ -364,32 +393,34 @@ function _duplexify(pair) {
   }
 
   if (readable) {
-    eos(r, (err) => {
+    const input = r as Endpoint
+    eos(input, (err) => {
       readable = false
 
       if (err) {
-        destroyer(r, err)
+        destroyer(input, err)
       }
 
       onfinished(err)
     })
-    r.on('readable', function () {
+    input.on('readable', function () {
       if (onreadable) {
         const cb = onreadable
         onreadable = null
         cb()
       }
     })
-    r.on('end', function () {
+    input.on('end', function () {
       d.push(null)
     })
 
     d._read = function () {
       while (true) {
-        const buf = r.read()
+        const buf = input.read!()
 
         if (buf === null) {
-          onreadable = d._read
+          // This read hook takes no size argument.
+          onreadable = (d as unknown as { _read: () => void })._read
           return
         }
 
@@ -413,10 +444,12 @@ function _duplexify(pair) {
       callback(err)
     } else {
       onclose = callback
-      destroyer(w, err)
-      destroyer(r, err)
+      destroyer(w as Endpoint, err)
+      destroyer(r as Endpoint, err)
     }
   }
 
   return d
 }
+
+export = duplexify

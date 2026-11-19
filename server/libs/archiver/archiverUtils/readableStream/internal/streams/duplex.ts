@@ -78,7 +78,7 @@ const Duplex = function (this: DuplexStream, options?: DuplexOptions) {
 } as unknown as {
   (options?: DuplexOptions): DuplexStream
   new (options?: DuplexOptions): DuplexStream
-  prototype: DuplexStream & Record<string, unknown>
+  prototype: DuplexStream
   from(body: unknown): NodeDuplex
   fromWeb: typeof NodeDuplex.fromWeb
   toWeb: typeof NodeDuplex.toWeb
@@ -88,10 +88,11 @@ ObjectSetPrototypeOf(Duplex.prototype, Readable.prototype)
 ObjectSetPrototypeOf(Duplex, Readable)
 {
   const keys = ObjectKeys(Writable.prototype) // Allow the keys array to be GC'ed.
+  const methods = Duplex.prototype as unknown as Record<string, unknown>
 
   for (let i = 0; i < keys.length; i++) {
     const method = keys[i]
-    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method]
+    if (!methods[method]) methods[method] = Writable.prototype[method]
   }
 }
 
