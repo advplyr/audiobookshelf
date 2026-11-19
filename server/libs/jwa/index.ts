@@ -3,11 +3,18 @@
 // Source: https://github.com/auth0/node-jwa
 //
 
-var bufferEqual = require('./buffer-equal-constant-time');
-var Buffer = require('safe-buffer').Buffer;
-var crypto = require('crypto');
-var formatEcdsa = require('./ecdsa-sig-formatter');
-var util = require('util');
+import type { KeyLike, SignJsonWebKeyInput, SignKeyObjectInput, SignPrivateKeyInput, VerifyKeyObjectInput, VerifyPublicKeyInput } from 'node:crypto';
+import crypto from 'node:crypto';
+import util from 'node:util';
+import { Buffer as SafeBuffer } from 'safe-buffer';
+import bufferEqual from './buffer-equal-constant-time';
+import formatEcdsa from './ecdsa-sig-formatter';
+
+const Buffer = SafeBuffer as unknown as typeof globalThis.Buffer;
+
+type PublicKey = KeyLike;
+type PrivateKey = KeyLike | SignKeyObjectInput | SignPrivateKeyInput | SignJsonWebKeyInput;
+type KeyFields = { type?: unknown; asymmetricKeyType?: unknown; export?: unknown };
 
 var MSG_INVALID_ALGORITHM = '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".'
 var MSG_INVALID_SECRET = 'secret must be a string or buffer';
@@ -20,7 +27,7 @@ if (supportsKeyObjects) {
   MSG_INVALID_SECRET += 'or a KeyObject';
 }
 
-function checkIsPublicKey(key) {
+function checkIsPublicKey(key: unknown): asserts key is PublicKey {
   if (Buffer.isBuffer(key)) {
     return;
   }
@@ -37,20 +44,20 @@ function checkIsPublicKey(key) {
     throw typeError(MSG_INVALID_VERIFIER_KEY);
   }
 
-  if (typeof key.type !== 'string') {
+  if (typeof (key as KeyFields).type !== 'string') {
     throw typeError(MSG_INVALID_VERIFIER_KEY);
   }
 
-  if (typeof key.asymmetricKeyType !== 'string') {
+  if (typeof (key as KeyFields).asymmetricKeyType !== 'string') {
     throw typeError(MSG_INVALID_VERIFIER_KEY);
   }
 
-  if (typeof key.export !== 'function') {
+  if (typeof (key as KeyFields).export !== 'function') {
     throw typeError(MSG_INVALID_VERIFIER_KEY);
   }
 };
 
-function checkIsPrivateKey(key) {
+function checkIsPrivateKey(key: unknown): asserts key is PrivateKey {
   if (Buffer.isBuffer(key)) {
     return;
   }
@@ -66,13 +73,13 @@ function checkIsPrivateKey(key) {
   throw typeError(MSG_INVALID_SIGNER_KEY);
 };
 
-function checkIsSecretKey(key) {
+function checkIsSecretKey(key: unknown): asserts key is KeyLike {
   if (Buffer.isBuffer(key)) {
     return;
   }
 
   if (typeof key === 'string') {
-    return key;
+    return;
   }
 
   if (!supportsKeyObjects) {
@@ -83,24 +90,24 @@ function checkIsSecretKey(key) {
     throw typeError(MSG_INVALID_SECRET);
   }
 
-  if (key.type !== 'secret') {
+  if ((key as KeyFields).type !== 'secret') {
     throw typeError(MSG_INVALID_SECRET);
   }
 
-  if (typeof key.export !== 'function') {
+  if (typeof (key as KeyFields).export !== 'function') {
     throw typeError(MSG_INVALID_SECRET);
   }
 }
 
-function fromBase64(base64) {
+function fromBase64(base64: string) {
   return base64
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 }
 
-function toBase64(base64url) {
-  base64url = base64url.toString();
+function toBase64(input: unknown) {
+  var base64url = (input as { toString: () => string }).toString();
 
   var padding = 4 - base64url.length % 4;
   if (padding !== 4) {
@@ -114,103 +121,101 @@ function toBase64(base64url) {
     .replace(/_/g, '/');
 }
 
-function typeError(template) {
-  var args = [].slice.call(arguments, 1);
-  var errMsg = util.format.bind(util, template).apply(null, args);
+function typeError(template: string, ...args: unknown[]) {
+  var errMsg = util.format(template, ...args);
   return new TypeError(errMsg);
 }
 
-function bufferOrString(obj) {
+function bufferOrString(obj: unknown): obj is string | Buffer {
   return Buffer.isBuffer(obj) || typeof obj === 'string';
 }
 
-function normalizeInput(thing) {
-  if (!bufferOrString(thing))
-    thing = JSON.stringify(thing);
-  return thing;
+function normalizeInput(thing: unknown) {
+  return bufferOrString(thing) ? thing : JSON.stringify(thing);
 }
 
-function createHmacSigner(bits) {
-  return function sign(thing, secret) {
+function createHmacSigner(bits: string) {
+  return function sign(thing: unknown, secret: unknown) {
     checkIsSecretKey(secret);
-    thing = normalizeInput(thing);
+    var input = normalizeInput(thing);
     var hmac = crypto.createHmac('sha' + bits, secret);
-    var sig = (hmac.update(thing), hmac.digest('base64'))
+    var sig = (hmac.update(input), hmac.digest('base64'))
     return fromBase64(sig);
   }
 }
 
-function createHmacVerifier(bits) {
-  return function verify(thing, signature, secret) {
+function createHmacVerifier(bits: string) {
+  return function verify(thing: unknown, signature: unknown, secret: unknown) {
     var computedSig = createHmacSigner(bits)(thing, secret);
-    return bufferEqual(Buffer.from(signature), Buffer.from(computedSig));
+    return bufferEqual(Buffer.from(signature as string | Buffer), Buffer.from(computedSig));
   }
 }
 
-function createKeySigner(bits) {
-  return function sign(thing, privateKey) {
+function createKeySigner(bits: string) {
+  return function sign(thing: unknown, privateKey: unknown) {
     checkIsPrivateKey(privateKey);
-    thing = normalizeInput(thing);
+    var input = normalizeInput(thing);
     // Even though we are specifying "RSA" here, this works with ECDSA
     // keys as well.
     var signer = crypto.createSign('RSA-SHA' + bits);
-    var sig = (signer.update(thing), signer.sign(privateKey, 'base64'));
+    var sig = (signer.update(input), signer.sign(privateKey, 'base64'));
     return fromBase64(sig);
   }
 }
 
-function createKeyVerifier(bits) {
-  return function verify(thing, signature, publicKey) {
+function createKeyVerifier(bits: string) {
+  return function verify(thing: unknown, signature: unknown, publicKey: unknown) {
     checkIsPublicKey(publicKey);
-    thing = normalizeInput(thing);
-    signature = toBase64(signature);
+    var input = normalizeInput(thing);
+    var base64 = toBase64(signature);
     var verifier = crypto.createVerify('RSA-SHA' + bits);
-    verifier.update(thing);
-    return verifier.verify(publicKey, signature, 'base64');
+    verifier.update(input);
+    return verifier.verify(publicKey, base64, 'base64');
   }
 }
 
-function createPSSKeySigner(bits) {
-  return function sign(thing, privateKey) {
+function createPSSKeySigner(bits: string) {
+  return function sign(thing: unknown, privateKey: unknown) {
     checkIsPrivateKey(privateKey);
-    thing = normalizeInput(thing);
+    var input = normalizeInput(thing);
     var signer = crypto.createSign('RSA-SHA' + bits);
-    var sig = (signer.update(thing), signer.sign({
+    var sig = (signer.update(input), signer.sign({
+      // OpenSSL handles the original key value inside the PSS options object.
       key: privateKey,
       padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
       saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST
-    }, 'base64'));
+    } as SignKeyObjectInput | SignPrivateKeyInput, 'base64'));
     return fromBase64(sig);
   }
 }
 
-function createPSSKeyVerifier(bits) {
-  return function verify(thing, signature, publicKey) {
+function createPSSKeyVerifier(bits: string) {
+  return function verify(thing: unknown, signature: unknown, publicKey: unknown) {
     checkIsPublicKey(publicKey);
-    thing = normalizeInput(thing);
-    signature = toBase64(signature);
+    var input = normalizeInput(thing);
+    var base64 = toBase64(signature);
     var verifier = crypto.createVerify('RSA-SHA' + bits);
-    verifier.update(thing);
+    verifier.update(input);
     return verifier.verify({
       key: publicKey,
       padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
       saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST
-    }, signature, 'base64');
+    } as VerifyKeyObjectInput | VerifyPublicKeyInput, base64, 'base64');
   }
 }
 
-function createECDSASigner(bits) {
+function createECDSASigner(bits: string) {
   var inner = createKeySigner(bits);
-  return function sign() {
-    var signature = inner.apply(null, arguments);
+  return function sign(...args: Parameters<typeof inner>) {
+    var signature = inner.apply(null, args);
     signature = formatEcdsa.derToJose(signature, 'ES' + bits);
     return signature;
   };
 }
 
-function createECDSAVerifer(bits) {
+function createECDSAVerifer(bits: string) {
   var inner = createKeyVerifier(bits);
-  return function verify(thing, signature, publicKey) {
+  return function verify(thing: unknown, signature: unknown, publicKey: unknown) {
     signature = formatEcdsa.joseToDer(signature, 'ES' + bits).toString('base64');
     var result = inner(thing, signature, publicKey);
     return result;
@@ -224,12 +229,13 @@ function createNoneSigner() {
 }
 
 function createNoneVerifier() {
-  return function verify(thing, signature) {
+  return function verify(thing: unknown, signature: unknown) {
+    void thing;
     return signature === '';
   }
 }
 
-module.exports = function jwa(algorithm) {
+export = function jwa(algorithm: string) {
   var signerFactories = {
     hs: createHmacSigner,
     rs: createKeySigner,
@@ -247,7 +253,7 @@ module.exports = function jwa(algorithm) {
   var match = algorithm.match(/^(RS|PS|ES|HS)(256|384|512)$|^(none)$/);
   if (!match)
     throw typeError(MSG_INVALID_ALGORITHM, algorithm);
-  var algo = (match[1] || match[3]).toLowerCase();
+  var algo = (match[1] || match[3]).toLowerCase() as keyof typeof signerFactories;
   var bits = match[2];
 
   return {
