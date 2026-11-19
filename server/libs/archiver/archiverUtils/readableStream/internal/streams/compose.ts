@@ -1,7 +1,7 @@
-import { createRequire } from 'node:module'
 import errors from '../../ours/errors'
 import teardown from './destroy'
 import Duplex from './duplex'
+import pipelineApi from './pipeline'
 import utils from './utils'
 
 type StreamCallback = (error?: Error | null) => void
@@ -11,11 +11,10 @@ interface PipelineEndpoint extends Destroyable {
   writableObjectMode?: boolean
   write(chunk: unknown, encoding: BufferEncoding): boolean
   end(): void
-  read(): unknown
   on(event: string, listener: () => void): void
 }
 
-const { pipeline } = createRequire(__filename)('./pipeline') as { pipeline: (streams: unknown[], callback: StreamCallback) => PipelineEndpoint }
+const { pipeline } = pipelineApi
 const { destroyer } = teardown
 const { isNodeStream, isReadable, isWritable } = utils
 
@@ -138,7 +137,7 @@ function compose(...streams: unknown[]) {
 
     d._read = function () {
       while (true) {
-        const buf = tail.read()
+        const buf = tail.read!()
 
         if (buf === null) {
           // The composed stream's read hook takes no size argument.

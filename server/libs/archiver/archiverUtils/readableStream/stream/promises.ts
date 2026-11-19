@@ -1,5 +1,5 @@
-import { createRequire } from 'node:module'
 import eos from '../internal/streams/end-of-stream'
+import pipelineApi from '../internal/streams/pipeline'
 import streamUtils from '../internal/streams/utils'
 import primordials from '../ours/primordials'
 
@@ -9,13 +9,10 @@ interface PipelineOptions {
 }
 
 const { ArrayPrototypePop, Promise } = primordials
-const load = createRequire(__filename)
 
 const { isIterable, isNodeStream } = streamUtils
 
-const { pipelineImpl: pl } = load('../internal/streams/pipeline') as {
-  pipelineImpl: (streams: unknown[], callback: (error: Error | null, value?: unknown) => void, options: PipelineOptions) => void
-}
+const { pipelineImpl: pl } = pipelineApi
 
 const { finished } = eos
 

@@ -1,34 +1,64 @@
 // Ported from https://github.com/mafintosh/pump with
 // permission from the author, Mathias Buus (@mafintosh).
-'use strict'
+import { createRequire } from 'node:module'
+import LegacyAbortController from '../../../../../watcher/aborter/controller'
+import errors from '../../ours/errors'
+import primordials from '../../ours/primordials'
+import util from '../../ours/util'
+import validators from '../validators'
+import destroyImpl from './destroy'
+import Duplex from './duplex'
+import eos from './end-of-stream'
+import utils from './utils'
 
-const abortControllerModule = require('../../../../../watcher/aborter/controller')
+type Failure = Parameters<typeof errors.aggregateTwoErrors>[0]
+type Finish = (error?: Failure) => void
+type PipelineCallback = (error?: Failure, value?: unknown) => void
+type AsyncSequence = Iterable<unknown> | AsyncIterable<unknown>
+type StreamProbe = Parameters<typeof utils.isReadableNodeStream>[0]
+type Signal = Pick<AbortSignal, 'aborted'> & {
+  addEventListener(event: 'abort', callback: () => void): void
+  removeEventListener(event: 'abort', callback: () => void): void
+}
 
-const { ArrayIsArray, Promise, SymbolAsyncIterator } = require('../../ours/primordials')
+interface PipelineOptions {
+  signal?: Signal
+  end?: boolean
+}
 
-const eos = require('./end-of-stream')
+type Endpoint = Parameters<typeof eos>[0] & NonNullable<Parameters<typeof destroyImpl.destroyer>[0]> & NodeJS.WritableStream & {
+  pipe(destination: Endpoint, options: { end: boolean }): unknown
+  write(chunk: unknown): boolean
+  read?(): unknown
+  end(): void
+  off(event: string, listener: Finish): void
+  writableNeedDrain?: boolean
+  writableObjectMode?: boolean
+}
 
-const { once } = require('../../ours/util')
+type Source = (options: { signal: Signal }) => unknown
+type Stage = (source: AsyncSequence, options: { signal: Signal }) => unknown
+type Then = (this: unknown, resolve: (value: unknown) => void, reject: (error: Error) => void) => unknown
 
-const destroyImpl = require('./destroy')
-
-const Duplex = require('./duplex')
+const { ArrayIsArray, Promise, SymbolAsyncIterator } = primordials
 
 const {
   aggregateTwoErrors,
   codes: { ERR_INVALID_ARG_TYPE, ERR_INVALID_RETURN_VALUE, ERR_MISSING_ARGS, ERR_STREAM_DESTROYED },
   AbortError
-} = require('../../ours/errors')
+} = errors
 
-const { validateFunction, validateAbortSignal } = require('../validators')
+const validateFunction: typeof validators.validateFunction = validators.validateFunction
+const { isIterable, isReadable, isReadableNodeStream, isNodeStream } = utils
 
-const { isIterable, isReadable, isReadableNodeStream, isNodeStream } = require('./utils')
+type ControllerConstructor = new () => { signal: Signal; abort(): void }
+const legacyController: typeof LegacyAbortController & { AbortController?: ControllerConstructor } = LegacyAbortController
+const AbortController = globalThis.AbortController || legacyController.AbortController
+const load = createRequire(__filename)
+let PassThrough: typeof import('./passthrough') | undefined
+let Readable: { prototype: Record<symbol, (this: unknown) => AsyncIterableIterator<unknown>> } | undefined
 
-const AbortController = globalThis.AbortController || abortControllerModule.AbortController
-let PassThrough
-let Readable
-
-function destroyer(stream, reading, writing) {
+function destroyer(stream: Endpoint, reading: boolean, writing: boolean) {
   let finished = false
   stream.on('close', () => {
     finished = true
@@ -44,47 +74,47 @@ function destroyer(stream, reading, writing) {
     }
   )
   return {
-    destroy: (err) => {
+    destroy: (err: Failure) => {
       if (finished) return
       finished = true
-      destroyImpl.destroyer(stream, err || new ERR_STREAM_DESTROYED('pipe'))
+      destroyImpl.destroyer(stream, err || new ERR_STREAM_DESTROYED!('pipe'))
     },
     cleanup
   }
 }
 
-function popCallback(streams) {
+function popCallback(streams: unknown[]) {
   // Streams should never be an empty array. It should always contain at least
   // a single stream. Therefore optimize for the average case instead of
   // checking for length === 0 as well.
   validateFunction(streams[streams.length - 1], 'streams[stream.length - 1]')
-  return streams.pop()
+  return streams.pop() as PipelineCallback
 }
 
-function makeAsyncIterable(val) {
+function makeAsyncIterable(val: unknown): AsyncSequence {
   if (isIterable(val)) {
-    return val
-  } else if (isReadableNodeStream(val)) {
+    return val as AsyncSequence
+  } else if (isReadableNodeStream(val as StreamProbe)) {
     // Legacy streams are not Iterable.
     return fromReadable(val)
   }
 
-  throw new ERR_INVALID_ARG_TYPE('val', ['Readable', 'Iterable', 'AsyncIterable'], val)
+  throw new ERR_INVALID_ARG_TYPE!('val', ['Readable', 'Iterable', 'AsyncIterable'], val)
 }
 
-async function* fromReadable(val) {
+async function* fromReadable(val: unknown) {
   if (!Readable) {
-    Readable = require('./readable')
+    Readable = load('./readable') as NonNullable<typeof Readable>
   }
 
   yield* Readable.prototype[SymbolAsyncIterator].call(val)
 }
 
-async function pump(iterable, writable, finish, { end }) {
-  let error
-  let onresolve = null
+async function pump(iterable: AsyncSequence, writable: Endpoint, finish: Finish, { end }: { end: boolean }) {
+  let error: Failure
+  let onresolve: (() => void) | null = null
 
-  const resume = (err) => {
+  const resume = (err?: Failure) => {
     if (err) {
       error = err
     }
@@ -97,7 +127,7 @@ async function pump(iterable, writable, finish, { end }) {
   }
 
   const wait = () =>
-    new Promise((resolve, reject) => {
+    new Promise<void>((resolve, reject) => {
       if (error) {
         reject(error)
       } else {
@@ -138,24 +168,25 @@ async function pump(iterable, writable, finish, { end }) {
     await wait()
     finish()
   } catch (err) {
-    finish(error !== err ? aggregateTwoErrors(error, err) : err)
+    const failure = err as Failure
+    finish(error !== failure ? aggregateTwoErrors(error, failure) : failure)
   } finally {
     cleanup()
     writable.off('drain', resume)
   }
 }
 
-function pipeline(...streams) {
-  return pipelineImpl(streams, once(popCallback(streams)))
+function pipeline(...streams: unknown[]) {
+  return pipelineImpl(streams, util.once(popCallback(streams)))
 }
 
-function pipelineImpl(streams, callback, opts) {
+function pipelineImpl(streams: unknown[], callback: PipelineCallback, opts?: PipelineOptions | null) {
   if (streams.length === 1 && ArrayIsArray(streams[0])) {
     streams = streams[0]
   }
 
   if (streams.length < 2) {
-    throw new ERR_MISSING_ARGS('streams')
+    throw new ERR_MISSING_ARGS!('streams')
   }
 
   const ac = new AbortController()
@@ -163,24 +194,24 @@ function pipelineImpl(streams, callback, opts) {
   const outerSignal = opts === null || opts === undefined ? undefined : opts.signal // Need to cleanup event listeners if last stream is readable
   // https://github.com/nodejs/node/issues/35452
 
-  const lastStreamCleanup = []
-  validateAbortSignal(outerSignal, 'options.signal')
+  const lastStreamCleanup: (() => void)[] = []
+  validators.validateAbortSignal(outerSignal, 'options.signal')
 
   function abort() {
     finishImpl(new AbortError())
   }
 
-  outerSignal === null || outerSignal === undefined ? undefined : outerSignal.addEventListener('abort', abort)
-  let error
-  let value
-  const destroys = []
+  outerSignal?.addEventListener('abort', abort)
+  let error: Failure
+  let value: unknown
+  const destroys: ((error: Failure) => void)[] = []
   let finishCount = 0
 
-  function finish(err) {
+  function finish(err?: Failure) {
     finishImpl(err, --finishCount === 0)
   }
 
-  function finishImpl(err, final) {
+  function finishImpl(err?: Failure, final?: boolean) {
     if (err && (!error || error.code === 'ERR_STREAM_PREMATURE_CLOSE')) {
       error = err
     }
@@ -190,10 +221,10 @@ function pipelineImpl(streams, callback, opts) {
     }
 
     while (destroys.length) {
-      destroys.shift()(error)
+      destroys.shift()!(error)
     }
 
-    outerSignal === null || outerSignal === undefined ? undefined : outerSignal.removeEventListener('abort', abort)
+    outerSignal?.removeEventListener('abort', abort)
     ac.abort()
 
     if (final) {
@@ -205,10 +236,11 @@ function pipelineImpl(streams, callback, opts) {
     }
   }
 
-  let ret
+  let ret: unknown
 
   for (let i = 0; i < streams.length; i++) {
     const stream = streams[i]
+    const endpoint = stream as Endpoint
     const reading = i < streams.length - 1
     const writing = i > 0
     const end = reading || (opts === null || opts === undefined ? undefined : opts.end) !== false
@@ -216,58 +248,56 @@ function pipelineImpl(streams, callback, opts) {
 
     if (isNodeStream(stream)) {
       if (end) {
-        const { destroy, cleanup } = destroyer(stream, reading, writing)
+        const { destroy, cleanup } = destroyer(endpoint, reading, writing)
         destroys.push(destroy)
 
-        if (isReadable(stream) && isLastStream) {
+        if (isReadable(endpoint) && isLastStream) {
           lastStreamCleanup.push(cleanup)
         }
       } // Catch stream errors that occur after pipe/pump has completed.
 
-      function onError(err) {
+      function onError(err: Failure) {
         if (err && err.name !== 'AbortError' && err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
           finish(err)
         }
       }
 
-      stream.on('error', onError)
+      endpoint.on('error', onError)
 
-      if (isReadable(stream) && isLastStream) {
+      if (isReadable(endpoint) && isLastStream) {
         lastStreamCleanup.push(() => {
-          stream.removeListener('error', onError)
+          endpoint.removeListener('error', onError)
         })
       }
     }
 
     if (i === 0) {
       if (typeof stream === 'function') {
-        ret = stream({
+        ret = (stream as Source)({
           signal
         })
 
         if (!isIterable(ret)) {
-          throw new ERR_INVALID_RETURN_VALUE('Iterable, AsyncIterable or Stream', 'source', ret)
+          throw new ERR_INVALID_RETURN_VALUE!('Iterable, AsyncIterable or Stream', 'source', ret)
         }
-      } else if (isIterable(stream) || isReadableNodeStream(stream)) {
+      } else if (isIterable(stream) || isReadableNodeStream(endpoint)) {
         ret = stream
       } else {
         ret = Duplex.from(stream)
       }
     } else if (typeof stream === 'function') {
-      ret = makeAsyncIterable(ret)
-      ret = stream(ret, {
+      const source = makeAsyncIterable(ret)
+      ret = (stream as Stage)(source, {
         signal
       })
 
       if (reading) {
         if (!isIterable(ret, true)) {
-          throw new ERR_INVALID_RETURN_VALUE('AsyncIterable', `transform[${i - 1}]`, ret)
+          throw new ERR_INVALID_RETURN_VALUE!('AsyncIterable', `transform[${i - 1}]`, ret)
         }
       } else {
-        var _ret
-
         if (!PassThrough) {
-          PassThrough = require('./passthrough')
+          PassThrough = load('./passthrough') as typeof import('./passthrough')
         } // If the last argument to pipeline is not a stream
         // we must create a proxy stream so that pipeline(...)
         // always returns a stream which can be further
@@ -278,7 +308,7 @@ function pipelineImpl(streams, callback, opts) {
         }) // Handle Promises/A+ spec, `then` could be a getter that throws on
         // second use.
 
-        const then = (_ret = ret) === null || _ret === undefined ? undefined : _ret.then
+        const then = (ret as { then?: Then } | null | undefined)?.then
 
         if (typeof then === 'function') {
           finishCount++
@@ -304,15 +334,15 @@ function pipelineImpl(streams, callback, opts) {
           )
         } else if (isIterable(ret, true)) {
           finishCount++
-          pump(ret, pt, finish, {
+          void pump(ret as AsyncSequence, pt, finish, {
             end
           })
         } else {
-          throw new ERR_INVALID_RETURN_VALUE('AsyncIterable or Promise', 'destination', ret)
+          throw new ERR_INVALID_RETURN_VALUE!('AsyncIterable or Promise', 'destination', ret)
         }
 
         ret = pt
-        const { destroy, cleanup } = destroyer(ret, false, true)
+        const { destroy, cleanup } = destroyer(pt, false, true)
         destroys.push(destroy)
 
         if (isLastStream) {
@@ -320,22 +350,22 @@ function pipelineImpl(streams, callback, opts) {
         }
       }
     } else if (isNodeStream(stream)) {
-      if (isReadableNodeStream(ret)) {
+      if (isReadableNodeStream(ret as StreamProbe)) {
         finishCount += 2
-        const cleanup = pipe(ret, stream, finish, {
+        const cleanup = pipe(ret as Endpoint, endpoint, finish, {
           end
         })
 
-        if (isReadable(stream) && isLastStream) {
+        if (isReadable(endpoint) && isLastStream) {
           lastStreamCleanup.push(cleanup)
         }
       } else if (isIterable(ret)) {
         finishCount++
-        pump(ret, stream, finish, {
+        void pump(ret as AsyncSequence, endpoint, finish, {
           end
         })
       } else {
-        throw new ERR_INVALID_ARG_TYPE('val', ['Readable', 'Iterable', 'AsyncIterable'], ret)
+        throw new ERR_INVALID_ARG_TYPE!('val', ['Readable', 'Iterable', 'AsyncIterable'], ret)
       }
 
       ret = stream
@@ -351,10 +381,10 @@ function pipelineImpl(streams, callback, opts) {
     process.nextTick(abort)
   }
 
-  return ret
+  return ret as Endpoint
 }
 
-function pipe(src, dst, finish, { end }) {
+function pipe(src: Endpoint, dst: Endpoint, finish: Finish, { end }: { end: boolean }) {
   src.pipe(dst, {
     end
   })
@@ -379,7 +409,7 @@ function pipe(src, dst, finish, { end }) {
 
       if (
         err &&
-        err.code === 'ERR_STREAM_PREMATURE_CLOSE' &&
+        (err as NodeJS.ErrnoException).code === 'ERR_STREAM_PREMATURE_CLOSE' &&
         rState &&
         rState.ended &&
         !rState.errored &&
@@ -409,7 +439,7 @@ function pipe(src, dst, finish, { end }) {
   )
 }
 
-module.exports = {
+export = {
   pipelineImpl,
   pipeline
 }

@@ -24,7 +24,7 @@ type StreamEvents = Pick<EventEmitter, 'emit' | 'once' | 'listenerCount'>
 
 interface LegacyStream extends StreamProbe, StreamEvents, RequestLike {
   [kDestroyed]?: boolean
-  destroy?: (error?: Failure) => unknown
+  destroy?(error?: Failure): unknown
   close?: () => unknown
   req?: (RequestLike & { upgradeOrConnect?: unknown }) | null
   socket?: unknown
