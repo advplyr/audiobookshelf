@@ -139,11 +139,11 @@ const util = {
   },
 
   types: {
-    isAsyncFunction(fn: unknown) {
+    isAsyncFunction(this: void, fn: unknown) {
       return fn instanceof AsyncFunction
     },
 
-    isArrayBufferView(arr: unknown) {
+    isArrayBufferView(this: void, arr: unknown) {
       return ArrayBuffer.isView(arr)
     }
   },

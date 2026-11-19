@@ -3,6 +3,7 @@
 import { createRequire } from 'node:module'
 import primordials from '../../ours/primordials'
 import util from '../../ours/util'
+import validators from '../validators'
 import streamUtils from './utils'
 
 type StreamProbe = NonNullable<Parameters<typeof streamUtils.isDestroyed>[0]>
@@ -30,12 +31,6 @@ interface FinishedOptions {
   signal?: Signal
 }
 
-interface Validators {
-  validateAbortSignal(signal: unknown, name: string): void
-  validateFunction(callback: unknown, name: string): asserts callback is Callback
-  validateObject(value: unknown, name: string): void
-}
-
 const load = createRequire(__filename)
 const { AbortError, codes } = load('../../ours/errors') as {
   AbortError: new (message?: string, options?: ErrorOptions) => Error
@@ -45,8 +40,8 @@ const { AbortError, codes } = load('../../ours/errors') as {
   }
 }
 const { ERR_INVALID_ARG_TYPE, ERR_STREAM_PREMATURE_CLOSE } = codes
-const validators: Validators = load('../validators') as Validators
 const { Promise } = primordials
+const validateFunction: typeof validators.validateFunction = validators.validateFunction
 
 const {
   isClosed,
@@ -85,7 +80,7 @@ function eos(stream: WatchedStream, optionsOrCallback: FinishedOptions | Callbac
   }
 
   const resolvedOptions = options
-  validators.validateFunction(callback, 'callback')
+  validateFunction(callback, 'callback')
   validators.validateAbortSignal(resolvedOptions.signal, 'options.signal')
   let complete = util.once(callback)
   const readable =
