@@ -1,14 +1,12 @@
-/*jshint node:true*/
-'use strict';
-
-var utils = require('../utils');
-
+import type Ffmpeg from '../../fluentFfmpeg';
+import utils from '../utils';
+import type { CommandWithMediaOutput, MediaFilter } from './types';
 
 /*
  *! Audio-related methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Disable audio in the output
    *
@@ -18,7 +16,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withNoAudio =
-  proto.noAudio = function() {
+  proto.noAudio = function(this: CommandWithMediaOutput) {
     this._currentOutput.audio.clear();
     this._currentOutput.audioFilters.clear();
     this._currentOutput.audio('-an');
@@ -38,7 +36,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withAudioCodec =
-  proto.audioCodec = function(codec) {
+  proto.audioCodec = function(this: CommandWithMediaOutput, codec: string) {
     this._currentOutput.audio('-acodec', codec);
 
     return this;
@@ -56,7 +54,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withAudioBitrate =
-  proto.audioBitrate = function(bitrate) {
+  proto.audioBitrate = function(this: CommandWithMediaOutput, bitrate: string | number) {
     this._currentOutput.audio('-b:a', ('' + bitrate).replace(/k?$/, 'k'));
     return this;
   };
@@ -73,7 +71,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withAudioChannels =
-  proto.audioChannels = function(channels) {
+  proto.audioChannels = function(this: CommandWithMediaOutput, channels: number) {
     this._currentOutput.audio('-ac', channels);
     return this;
   };
@@ -90,7 +88,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withAudioFrequency =
-  proto.audioFrequency = function(freq) {
+  proto.audioFrequency = function(this: CommandWithMediaOutput, freq: number) {
     this._currentOutput.audio('-ar', freq);
     return this;
   };
@@ -107,7 +105,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withAudioQuality =
-  proto.audioQuality = function(quality) {
+  proto.audioQuality = function(this: CommandWithMediaOutput, quality: number) {
     this._currentOutput.audio('-aq', quality);
     return this;
   };
@@ -163,16 +161,12 @@ module.exports = function(proto) {
   proto.withAudioFilter =
   proto.withAudioFilters =
   proto.audioFilter =
-  proto.audioFilters = function(filters) {
-    if (arguments.length > 1) {
-      filters = [].slice.call(arguments);
-    }
+  proto.audioFilters = function(this: CommandWithMediaOutput, filters: MediaFilter | MediaFilter[], ...more: MediaFilter[]) {
+    const list = more.length ? [filters, ...more] : Array.isArray(filters) ? filters : [filters];
 
-    if (!Array.isArray(filters)) {
-      filters = [filters];
-    }
-
-    this._currentOutput.audioFilters(utils.makeFilterStrings(filters));
+    this._currentOutput.audioFilters(utils.makeFilterStrings(list));
     return this;
   };
-};
+}
+
+export = install;

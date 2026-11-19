@@ -1,14 +1,12 @@
-/*jshint node:true*/
-'use strict';
-
-var utils = require('../utils');
-
+import type Ffmpeg from '../../fluentFfmpeg';
+import utils from '../utils';
+import type { CommandWithMediaOutput, MediaFilter } from './types';
 
 /*
  *! Video-related methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Disable video in the output
    *
@@ -19,7 +17,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withNoVideo =
-  proto.noVideo = function() {
+  proto.noVideo = function(this: CommandWithMediaOutput) {
     this._currentOutput.video.clear();
     this._currentOutput.videoFilters.clear();
     this._currentOutput.video('-vn');
@@ -39,7 +37,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withVideoCodec =
-  proto.videoCodec = function(codec) {
+  proto.videoCodec = function(this: CommandWithMediaOutput, codec: string) {
     this._currentOutput.video('-vcodec', codec);
     return this;
   };
@@ -57,7 +55,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.withVideoBitrate =
-  proto.videoBitrate = function(bitrate, constant) {
+  proto.videoBitrate = function(this: CommandWithMediaOutput, bitrate: string | number, constant?: boolean) {
     bitrate = ('' + bitrate).replace(/k?$/, 'k');
 
     this._currentOutput.video('-b:v', bitrate);
@@ -123,16 +121,10 @@ module.exports = function(proto) {
   proto.withVideoFilter =
   proto.withVideoFilters =
   proto.videoFilter =
-  proto.videoFilters = function(filters) {
-    if (arguments.length > 1) {
-      filters = [].slice.call(arguments);
-    }
+  proto.videoFilters = function(this: CommandWithMediaOutput, filters: MediaFilter | MediaFilter[], ...more: MediaFilter[]) {
+    const list = more.length ? [filters, ...more] : Array.isArray(filters) ? filters : [filters];
 
-    if (!Array.isArray(filters)) {
-      filters = [filters];
-    }
-
-    this._currentOutput.videoFilters(utils.makeFilterStrings(filters));
+    this._currentOutput.videoFilters(utils.makeFilterStrings(list));
 
     return this;
   };
@@ -159,7 +151,7 @@ module.exports = function(proto) {
   proto.fpsOutput =
   proto.FPSOutput =
   proto.fps =
-  proto.FPS = function(fps) {
+  proto.FPS = function(this: CommandWithMediaOutput, fps: number) {
     this._currentOutput.video('-r', fps);
     return this;
   };
@@ -177,8 +169,10 @@ module.exports = function(proto) {
    */
   proto.takeFrames =
   proto.withFrames =
-  proto.frames = function(frames) {
+  proto.frames = function(this: CommandWithMediaOutput, frames: number) {
     this._currentOutput.video('-vframes', frames);
     return this;
   };
-};
+}
+
+export = install;
