@@ -725,4 +725,8 @@ function install(proto: CapabilitiesPrototype) {
   };
 }
 
+declare namespace install {
+  export type Prototype = CapabilitiesPrototype;
+}
+
 export = install;

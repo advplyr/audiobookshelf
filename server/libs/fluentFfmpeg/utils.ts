@@ -409,12 +409,12 @@ var utils = {
    *
    * @param {Number} maxLines maximum number of lines to store (<= 0 for unlimited)
    */
-  linesRing: function (maxLines: number) {
+  linesRing: function (maxLines: number | undefined) {
     var cbs: Array<(line: string) => void> = [];
     var lines: string[] = [];
     var current: string | null = null;
     var closed = false
-    var max = maxLines - 1;
+    var max = Number(maxLines) - 1;
 
     function emit(line: string) {
       cbs.forEach(function (cb) { cb(line); });

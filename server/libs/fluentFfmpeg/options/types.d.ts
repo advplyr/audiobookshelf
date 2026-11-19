@@ -13,8 +13,10 @@ export interface MediaArguments<Value = string | number> {
 export interface CommandInputStream {
   readable: boolean;
   pause(): unknown;
+  resume(): unknown;
   pipe(target: NodeJS.WritableStream): unknown;
   unpipe(target?: NodeJS.WritableStream): unknown;
+  on(event: 'error', listener: (error: Error) => void): unknown;
 }
 
 export interface CommandInput {

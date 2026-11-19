@@ -3,6 +3,7 @@ import type { CommandInput, CommandInputStream } from './options/types';
 
 interface ProbeFields {
   [key: string]: string | number | ProbeFields | undefined;
+  duration?: string | number;
   tags?: ProbeFields;
   disposition?: ProbeFields;
 }
@@ -289,6 +290,11 @@ function install(proto: ProbePrototype) {
       });
     });
   };
+}
+
+declare namespace install {
+  export type Data = ProbeData;
+  export type Prototype = ProbePrototype;
 }
 
 export = install;
