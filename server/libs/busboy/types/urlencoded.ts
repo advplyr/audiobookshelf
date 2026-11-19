@@ -1,11 +1,28 @@
-'use strict';
+import { Writable } from 'node:stream';
+import utils from '../utils.js';
+import type { ContentType, Latin1Buffer, ParserConfig } from './config';
 
-const { Writable } = require('stream');
-
-const { getDecoder } = require('../utils.js');
+const { getDecoder } = utils;
 
 class URLEncoded extends Writable {
-  constructor(cfg) {
+  declare charset: string;
+  declare fieldSizeLimit: number;
+  declare fieldsLimit: number;
+  declare fieldNameSizeLimit: number;
+  declare _inKey: boolean;
+  declare _keyTrunc: boolean;
+  declare _valTrunc: boolean;
+  declare _bytesKey: number;
+  declare _bytesVal: number;
+  declare _fields: number;
+  declare _key: string | undefined;
+  declare _val: string | undefined;
+  declare _byte: number;
+  declare _lastPos: number;
+  declare _encode: number;
+  declare _decoder: ReturnType<typeof getDecoder>;
+
+  constructor(cfg: ParserConfig) {
     const streamOpts = {
       autoDestroy: true,
       emitClose: true,
@@ -48,12 +65,13 @@ class URLEncoded extends Writable {
     this._decoder = getDecoder(charset);
   }
 
-  static detect(conType) {
+  static detect(conType: ContentType) {
     return (conType.type === 'application'
             && conType.subtype === 'x-www-form-urlencoded');
   }
 
-  _write(chunk, enc, cb) {
+  _write(chunk: Latin1Buffer, enc: BufferEncoding, cb: (error?: Error | null) => void) {
+    void enc;
     if (this._fields >= this.fieldsLimit)
       return cb();
 
@@ -87,7 +105,7 @@ main:
               if (this._lastPos < i)
                 this._key += chunk.latin1Slice(this._lastPos, i);
               this._lastPos = ++i;
-              this._key = this._decoder(this._key, this._encode);
+              this._key = this._decoder(this._key as string, this._encode);
               this._encode = 0;
               this._inKey = false;
               continue main;
@@ -95,7 +113,7 @@ main:
               if (this._lastPos < i)
                 this._key += chunk.latin1Slice(this._lastPos, i);
               this._lastPos = ++i;
-              this._key = this._decoder(this._key, this._encode);
+              this._key = this._decoder(this._key as string, this._encode);
               this._encode = 0;
               if (this._bytesKey > 0) {
                 this.emit(
@@ -159,7 +177,7 @@ main:
                 this._val += chunk.latin1Slice(this._lastPos, i);
               this._lastPos = ++i;
               this._inKey = true;
-              this._val = this._decoder(this._val, this._encode);
+              this._val = this._decoder(this._val as string, this._encode);
               this._encode = 0;
               if (this._bytesKey > 0 || this._bytesVal > 0) {
                 this.emit(
@@ -217,14 +235,14 @@ main:
     cb();
   }
 
-  _final(cb) {
+  _final(cb: (error?: Error | null) => void) {
     if (this._byte !== -2)
       return cb(new Error('Malformed urlencoded form'));
     if (!this._inKey || this._bytesKey > 0 || this._bytesVal > 0) {
       if (this._inKey)
-        this._key = this._decoder(this._key, this._encode);
+        this._key = this._decoder(this._key as string, this._encode);
       else
-        this._val = this._decoder(this._val, this._encode);
+        this._val = this._decoder(this._val as string, this._encode);
       this.emit(
         'field',
         this._key,
@@ -239,7 +257,7 @@ main:
   }
 }
 
-function readPctEnc(self, chunk, pos, len) {
+function readPctEnc(self: URLEncoded, chunk: Latin1Buffer, pos: number, len: number) {
   if (pos >= len)
     return len;
 
@@ -287,7 +305,7 @@ function readPctEnc(self, chunk, pos, len) {
   return pos;
 }
 
-function skipKeyBytes(self, chunk, pos, len) {
+function skipKeyBytes(self: URLEncoded, chunk: Latin1Buffer, pos: number, len: number) {
   // Skip bytes if we've truncated
   if (self._bytesKey > self.fieldNameSizeLimit) {
     if (!self._keyTrunc) {
@@ -307,7 +325,7 @@ function skipKeyBytes(self, chunk, pos, len) {
   return pos;
 }
 
-function skipValBytes(self, chunk, pos, len) {
+function skipValBytes(self: URLEncoded, chunk: Latin1Buffer, pos: number, len: number) {
   // Skip bytes if we've truncated
   if (self._bytesVal > self.fieldSizeLimit) {
     if (!self._valTrunc) {
@@ -326,7 +344,6 @@ function skipValBytes(self, chunk, pos, len) {
   return pos;
 }
 
-/* eslint-disable no-multi-spaces */
 const HEX_VALUES = [
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -345,6 +362,4 @@ const HEX_VALUES = [
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 ];
-/* eslint-enable no-multi-spaces */
-
-module.exports = URLEncoded;
+export = URLEncoded;
