@@ -3,7 +3,7 @@
  */
 
 import { parentPort } from 'node:worker_threads'
-import type { ArchiveRequest, ArchiveResponse } from './protocol'
+import type { ArchiveRequest, ArchiveResponse, ExtractedEntry } from './protocol'
 import archiveModule from './wasm-module'
 
 const { getArchiveReader } = archiveModule
@@ -44,7 +44,7 @@ const onMessage: (msg: ArchiveRequest) => unknown = async (msg) => {
       case 'EXTRACT_SINGLE_FILE':
         for (const entry of reader!.entries(true, msg.target)) {
           if (entry.fileData) {
-            postMessage({ type: 'FILE', entry })
+            postMessage({ type: 'FILE', entry: entry as ExtractedEntry })
           }
         }
         break

@@ -8,14 +8,12 @@ import ArchiveRuntime from '../libs/libarchive/archive'
 import { isWritable } from './fileUtils'
 import { sanitizePath } from '../libs/archiver/archiverUtils'
 
-// Describe only the worker operations consumed here, keeping its JS in the build.
+// Preserve the existing extractor result types at the worker boundary.
 type LibArchive = {
   getFilesArray(): Promise<Array<{ file: { _path: string } | string; path: string }>>
   extractSingleFile(path: string): Promise<{ fileData: Uint8Array } | undefined>
   close(): void
 }
-// The runtime forwards even null buffers to its worker; its JSDoc omits that case.
-const Archive: { open(buffer: Buffer | null): unknown } = ArchiveRuntime
 
 /**
  * Sanitize a path from an archive
@@ -167,9 +165,7 @@ class CbzComicBookExtractor extends AbstractComicBookExtractor {
 
   async open() {
     const buffer = await this.getBuffer()
-    // The embedded JS documents a synchronous return, but open() resolves a worker-backed archive.
-    const archive: unknown = await Archive.open(buffer)
-    this.archive = archive as LibArchive
+    this.archive = (await ArchiveRuntime.open(buffer)) as unknown as LibArchive
     Logger.debug(`[CbzComicBookExtractor] Opened comic book "${this.comicPath}"`)
   }
 
