@@ -8,10 +8,10 @@
 
 import { createRequire } from 'node:module';
 import type { Transform as NodeTransform, TransformCallback, TransformOptions } from 'node:stream';
+import crc32 from '../crc32';
 
 const load = createRequire(__filename);
 const { Transform } = load('../archiverUtils/readableStream') as { Transform: typeof NodeTransform };
-const crc32 = load('../crc32') as { buf(chunk: Buffer, seed: number | Buffer): number };
 
 class CRC32Stream extends Transform {
   declare checksum: number | Buffer;

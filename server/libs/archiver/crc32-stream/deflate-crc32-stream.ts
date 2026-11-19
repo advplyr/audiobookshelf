@@ -6,12 +6,11 @@
  * https://github.com/archiverjs/node-crc32-stream/blob/master/LICENSE-MIT
  */
 
-import { createRequire } from 'node:module';
 import { DeflateRaw } from 'node:zlib';
 import type { ZlibOptions } from 'node:zlib';
 import type { TransformCallback } from 'node:stream';
 
-const crc32 = createRequire(__filename)('../crc32') as { buf(chunk: Buffer, seed: number | Buffer): number };
+import crc32 from '../crc32';
 
 class DeflateCRC32Stream extends DeflateRaw {
   declare checksum: number | Buffer;
