@@ -1,4 +1,12 @@
-'use strict';
+import type { EventEmitter } from 'node:events';
+
+type Callback = (error?: Error | null) => void;
+
+interface LegacyStream extends Pick<EventEmitter, 'emit'> {
+  _readableState?: { destroyed: boolean; reading: boolean; ended: boolean; endEmitted: boolean };
+  _writableState?: { destroyed: boolean; ended: boolean; ending: boolean; finished: boolean; errorEmitted: boolean };
+  _destroy(error: Error | null, callback: Callback): void;
+}
 
 /*<replacement>*/
 
@@ -7,9 +15,7 @@ var pna = process
 /*</replacement>*/
 
 // undocumented cb() API, needed for core, not for public API
-function destroy(err, cb) {
-  var _this = this;
-
+function destroy<Stream extends LegacyStream>(this: Stream, err?: Error | null, cb?: Callback): Stream {
   var readableDestroyed = this._readableState && this._readableState.destroyed;
   var writableDestroyed = this._writableState && this._writableState.destroyed;
 
@@ -34,11 +40,11 @@ function destroy(err, cb) {
     this._writableState.destroyed = true;
   }
 
-  this._destroy(err || null, function (err) {
+  this._destroy(err || null, (err) => {
     if (!cb && err) {
-      pna.nextTick(emitErrorNT, _this, err);
-      if (_this._writableState) {
-        _this._writableState.errorEmitted = true;
+      pna.nextTick(emitErrorNT, this, err);
+      if (this._writableState) {
+        this._writableState.errorEmitted = true;
       }
     } else if (cb) {
       cb(err);
@@ -48,7 +54,7 @@ function destroy(err, cb) {
   return this;
 }
 
-function undestroy() {
+function undestroy(this: LegacyStream) {
   if (this._readableState) {
     this._readableState.destroyed = false;
     this._readableState.reading = false;
@@ -65,11 +71,11 @@ function undestroy() {
   }
 }
 
-function emitErrorNT(self, err) {
+function emitErrorNT(self: LegacyStream, err: Error) {
   self.emit('error', err);
 }
 
-module.exports = {
+export = {
   destroy: destroy,
   undestroy: undestroy
 };
