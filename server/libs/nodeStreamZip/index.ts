@@ -3,12 +3,78 @@
  * Portions copyright https://github.com/cthackers/adm-zip | https://raw.githubusercontent.com/cthackers/adm-zip/master/LICENSE
  */
 
-let fs = require('fs');
-const util = require('util');
-const path = require('path');
-const events = require('events');
-const zlib = require('zlib');
-const stream = require('stream');
+import nodeFs from 'node:fs';
+import util from 'node:util';
+import path from 'node:path';
+import events from 'node:events';
+import zlib from 'node:zlib';
+import stream from 'node:stream';
+
+type FileSystem = Pick<typeof nodeFs, 'open' | 'fstat' | 'read' | 'readSync' | 'close' | 'createWriteStream' | 'mkdir' | 'stat'>;
+let fs: FileSystem = nodeFs;
+
+interface ZipConfig {
+  file?: string
+  fd?: number
+  storeEntries?: boolean
+  chunkSize?: number
+  nameEncoding?: string
+  skipEntryNameValidation?: boolean
+}
+
+type ArchiveEntries = Record<string, ZipEntry>;
+type EntryInput = string | ZipEntry;
+type ZipError = Error | null | undefined;
+type Completion = (error?: ZipError) => void;
+type ReadCallback = (error: ZipError, bytesRead: number) => void;
+type ExtractCallback = (error?: ZipError, count?: number) => void;
+type OpenEntryCallback = (...result: [error: Error, entry?: ZipEntry] | [error: undefined, entry: ZipEntry]) => void;
+type StreamCallback = (...result: [error: Error] | [error: null, data: stream.Readable]) => void;
+
+interface ZipInstance extends Omit<events.EventEmitter, 'emit'> {
+  readonly ready: boolean
+  comment: string | null
+  entriesCount: number
+  centralDirectory: CentralDirectoryHeader
+  entry(name: string): ZipEntry | undefined
+  entries(): ArchiveEntries
+  stream(entry: EntryInput, callback: StreamCallback): void
+  entryDataSync(entry: EntryInput): Buffer
+  openEntry(entry: EntryInput, callback: OpenEntryCallback, sync?: boolean): void
+  extract(entry: EntryInput | null | undefined, outPath: string, callback: ExtractCallback): void
+  close(callback?: Completion): void
+  emit(event: string | symbol, ...args: unknown[]): boolean | undefined
+}
+
+interface ZipConstructor {
+  new (config: ZipConfig): ZipInstance
+  async: typeof StreamZipAsync
+  debug?: boolean
+  debugLog(...args: unknown[]): void
+  setFs(customFs: FileSystem): void
+}
+
+interface DirectorySearch {
+  win: FileWindowBuffer
+  totalReadLength: number
+  minPos: number
+  lastPos: number
+  chunkSize: number
+  firstByte: number
+  sig: number
+  complete(): void
+  lastBufferPosition?: number
+  lastBytesRead?: number
+}
+
+interface EntriesRead {
+  win: FileWindowBuffer
+  pos: number
+  chunkSize: number
+  entriesLeft: number
+  entry?: ZipEntry | null
+  move?: boolean
+}
 
 const consts = {
   /* The local file header */
@@ -135,11 +201,16 @@ const consts = {
   EF_ZIP64_OR_16: 0xffff,
 };
 
-const StreamZip = function (config) {
-  let fd, fileSize, chunkSize, op, centralDirectory, closed;
+function initializeZip(that: ZipInstance, config: ZipConfig) {
+  let fd: number | null;
+  let fileSize: number;
+  let chunkSize: number;
+  let directorySearch: DirectorySearch | undefined;
+  let entryRead: EntriesRead;
+  let centralDirectory: CentralDirectoryHeader;
+  let closed: boolean | undefined;
   const ready = false,
-    that = this,
-    entries = config.storeEntries !== false ? {} : null,
+    entries: ArchiveEntries | null = config.storeEntries !== false ? {} : null,
     fileName = config.file,
     textDecoder = config.nameEncoding ? new TextDecoder(config.nameEncoding) : null;
 
@@ -150,7 +221,7 @@ const StreamZip = function (config) {
       fd = config.fd;
       readFile();
     } else {
-      fs.open(fileName, 'r', (err, f) => {
+      fs.open(fileName!, 'r', (err, f) => {
         if (err) {
           return that.emit('error', err);
         }
@@ -161,7 +232,7 @@ const StreamZip = function (config) {
   }
 
   function readFile() {
-    fs.fstat(fd, (err, stat) => {
+    fs.fstat(fd!, (err, stat) => {
       if (err) {
         return that.emit('error', err);
       }
@@ -175,10 +246,11 @@ const StreamZip = function (config) {
     });
   }
 
-  function readUntilFoundCallback(err, bytesRead) {
+  function readUntilFoundCallback(err: unknown, bytesRead: number) {
     if (err || !bytesRead) {
       return that.emit('error', err || new Error('Archive read error'));
     }
+    const op = directorySearch!;
     let pos = op.lastPos;
     let bufferPosition = pos - op.win.position;
     const buffer = op.win.buffer;
@@ -208,8 +280,8 @@ const StreamZip = function (config) {
 
   function readCentralDirectory() {
     const totalReadLength = Math.min(consts.ENDHDR + consts.MAXFILECOMMENT, fileSize);
-    op = {
-      win: new FileWindowBuffer(fd),
+    const op = directorySearch = {
+      win: new FileWindowBuffer(fd!),
       totalReadLength,
       minPos: fileSize - totalReadLength,
       lastPos: fileSize,
@@ -222,8 +294,9 @@ const StreamZip = function (config) {
   }
 
   function readCentralDirectoryComplete() {
+    const op = directorySearch!;
     const buffer = op.win.buffer;
-    const pos = op.lastBufferPosition;
+    const pos = op.lastBufferPosition!;
     try {
       centralDirectory = new CentralDirectoryHeader();
       centralDirectory.read(buffer.slice(pos, pos + consts.ENDHDR));
@@ -248,7 +321,7 @@ const StreamZip = function (config) {
       ) {
         readZip64CentralDirectoryLocator();
       } else {
-        op = {};
+        directorySearch = undefined;
         readEntries();
       }
     } catch (err) {
@@ -257,12 +330,13 @@ const StreamZip = function (config) {
   }
 
   function readZip64CentralDirectoryLocator() {
+    const op = directorySearch!;
     const length = consts.ENDL64HDR;
-    if (op.lastBufferPosition > length) {
-      op.lastBufferPosition -= length;
+    if (op.lastBufferPosition! > length) {
+      op.lastBufferPosition = op.lastBufferPosition! - length;
       readZip64CentralDirectoryLocatorComplete();
     } else {
-      op = {
+      const search = directorySearch = {
         win: op.win,
         totalReadLength: length,
         minPos: op.win.position - length,
@@ -272,18 +346,19 @@ const StreamZip = function (config) {
         sig: consts.ENDL64SIG,
         complete: readZip64CentralDirectoryLocatorComplete,
       };
-      op.win.read(op.lastPos - op.chunkSize, op.chunkSize, readUntilFoundCallback);
+      search.win.read(search.lastPos - search.chunkSize, search.chunkSize, readUntilFoundCallback);
     }
   }
 
   function readZip64CentralDirectoryLocatorComplete() {
+    const op = directorySearch!;
     const buffer = op.win.buffer;
     const locHeader = new CentralDirectoryLoc64Header();
     locHeader.read(
-      buffer.slice(op.lastBufferPosition, op.lastBufferPosition + consts.ENDL64HDR)
+      buffer.slice(op.lastBufferPosition, op.lastBufferPosition! + consts.ENDL64HDR)
     );
     const readLength = fileSize - locHeader.headerOffset;
-    op = {
+    const search = directorySearch = {
       win: op.win,
       totalReadLength: readLength,
       minPos: locHeader.headerOffset,
@@ -293,25 +368,26 @@ const StreamZip = function (config) {
       sig: consts.END64SIG,
       complete: readZip64CentralDirectoryComplete,
     };
-    op.win.read(fileSize - op.chunkSize, op.chunkSize, readUntilFoundCallback);
+    search.win.read(fileSize - search.chunkSize, search.chunkSize, readUntilFoundCallback);
   }
 
   function readZip64CentralDirectoryComplete() {
+    const op = directorySearch!;
     const buffer = op.win.buffer;
     const zip64cd = new CentralDirectoryZip64Header();
-    zip64cd.read(buffer.slice(op.lastBufferPosition, op.lastBufferPosition + consts.END64HDR));
+    zip64cd.read(buffer.slice(op.lastBufferPosition, op.lastBufferPosition! + consts.END64HDR));
     that.centralDirectory.volumeEntries = zip64cd.volumeEntries;
     that.centralDirectory.totalEntries = zip64cd.totalEntries;
     that.centralDirectory.size = zip64cd.size;
     that.centralDirectory.offset = zip64cd.offset;
     that.entriesCount = zip64cd.volumeEntries;
-    op = {};
+    directorySearch = undefined;
     readEntries();
   }
 
   function readEntries() {
-    op = {
-      win: new FileWindowBuffer(fd),
+    const op = entryRead = {
+      win: new FileWindowBuffer(fd!),
       pos: centralDirectory.offset,
       chunkSize,
       entriesLeft: centralDirectory.volumeEntries,
@@ -319,10 +395,11 @@ const StreamZip = function (config) {
     op.win.read(op.pos, Math.min(chunkSize, fileSize - op.pos), readEntriesCallback);
   }
 
-  function readEntriesCallback(err, bytesRead) {
+  function readEntriesCallback(err: unknown, bytesRead: number) {
     if (err || !bytesRead) {
       return that.emit('error', err || new Error('Entries read error'));
     }
+    const op = entryRead;
     let bufferPos = op.pos - op.win.position;
     let entry = op.entry;
     const buffer = op.win.buffer;
@@ -367,33 +444,32 @@ const StreamZip = function (config) {
     if (!entries) {
       throw new Error('storeEntries disabled');
     }
+    return entries;
   }
 
-  Object.defineProperty(this, 'ready', {
+  Object.defineProperty(that, 'ready', {
     get() {
       return ready;
     },
   });
 
-  this.entry = function (name) {
-    checkEntriesExist();
-    return entries[name];
+  that.entry = function (name) {
+    return checkEntriesExist()[name];
   };
 
-  this.entries = function () {
-    checkEntriesExist();
-    return entries;
+  that.entries = function () {
+    return checkEntriesExist();
   };
 
-  this.stream = function (entry, callback) {
+  that.stream = function (entry, callback) {
     return this.openEntry(
       entry,
-      (err, entry) => {
-        if (err) {
+      (...[err, entry]) => {
+        if (err !== undefined) {
           return callback(err);
         }
         const offset = dataOffset(entry);
-        let entryStream = new EntryDataReaderStream(fd, offset, entry.compressedSize);
+        let entryStream: stream.Readable = new EntryDataReaderStream(fd!, offset, entry.compressedSize);
         if (entry.method === consts.STORED) {
           // nothing to do
         } else if (entry.method === consts.DEFLATED) {
@@ -412,50 +488,52 @@ const StreamZip = function (config) {
     );
   };
 
-  this.entryDataSync = function (entry) {
-    let err = null;
-    this.openEntry(
+  function throwIfError(error: ZipError) {
+    if (error) throw error;
+  }
+
+  that.entryDataSync = function (entry) {
+    const read = { error: null as ZipError };
+    let openedEntry: ZipEntry | undefined;
+    that.openEntry(
       entry,
-      (e, en) => {
-        err = e;
-        entry = en;
+      (...[e, en]) => {
+        read.error = e;
+        openedEntry = en;
       },
       true
     );
-    if (err) {
-      throw err;
-    }
-    let data = Buffer.alloc(entry.compressedSize);
-    new FsRead(fd, data, 0, entry.compressedSize, dataOffset(entry), (e) => {
-      err = e;
+    throwIfError(read.error);
+    const zipEntry = openedEntry!; // openEntry calls back inline in synchronous mode.
+    let data: Buffer = Buffer.alloc(zipEntry.compressedSize);
+    new FsRead(fd!, data, 0, zipEntry.compressedSize, dataOffset(zipEntry), (e) => {
+      read.error = e;
     }).read(true);
-    if (err) {
-      throw err;
-    }
-    if (entry.method === consts.STORED) {
+    throwIfError(read.error);
+    if (zipEntry.method === consts.STORED) {
       // nothing to do
-    } else if (entry.method === consts.DEFLATED || entry.method === consts.ENHANCED_DEFLATED) {
+    } else if (zipEntry.method === consts.DEFLATED || zipEntry.method === consts.ENHANCED_DEFLATED) {
       data = zlib.inflateRawSync(data);
     } else {
-      throw new Error('Unknown compression method: ' + entry.method);
+      throw new Error('Unknown compression method: ' + zipEntry.method);
     }
-    if (data.length !== entry.size) {
+    if (data.length !== zipEntry.size) {
       throw new Error('Invalid size');
     }
-    if (canVerifyCrc(entry)) {
-      const verify = new CrcVerify(entry.crc, entry.size);
+    if (canVerifyCrc(zipEntry)) {
+      const verify = new CrcVerify(zipEntry.crc, zipEntry.size);
       verify.data(data);
     }
     return data;
   };
 
-  this.openEntry = function (entry, callback, sync) {
+  that.openEntry = function (entry, callback, sync) {
     if (typeof entry === 'string') {
-      checkEntriesExist();
-      entry = entries[entry];
-      if (!entry) {
+      const found = checkEntriesExist()[entry];
+      if (!found) {
         return callback(new Error('Entry not found'));
       }
+      entry = found;
     }
     if (!entry.isFile) {
       return callback(new Error('Entry is not file'));
@@ -468,34 +546,39 @@ const StreamZip = function (config) {
       if (err) {
         return callback(err);
       }
-      let readEx;
+      let readEx: Error | undefined;
       try {
         entry.readDataHeader(buffer);
         if (entry.encrypted) {
           readEx = new Error('Entry encrypted');
         }
       } catch (ex) {
-        readEx = ex;
+        readEx = ex as Error;
       }
-      callback(readEx, entry);
+      if (readEx) {
+        callback(readEx, entry);
+      } else {
+        callback(undefined, entry);
+      }
     }).read(sync);
   };
 
-  function dataOffset(entry) {
+  function dataOffset(entry: ZipEntry) {
     return entry.offset + consts.LOCHDR + entry.fnameLen + entry.extraLen;
   }
 
-  function canVerifyCrc(entry) {
+  function canVerifyCrc(entry: ZipEntry) {
     // if bit 3 (0x08) of the general-purpose flags field is set, then the CRC-32 and file sizes are not known when the header is written
     return (entry.flags & 0x8) !== 0x8;
   }
 
-  function extract(entry, outPath, callback) {
-    that.stream(entry, (err, stm) => {
-      if (err) {
+  function extract(entry: EntryInput, outPath: string, callback: Completion) {
+    that.stream(entry, (...[err, stm]) => {
+      if (err !== null) {
         callback(err);
       } else {
-        let fsStm, errThrown;
+        let fsStm: nodeFs.WriteStream | undefined;
+        let errThrown: Error | undefined;
         stm.on('error', (err) => {
           errThrown = err;
           if (fsStm) {
@@ -510,7 +593,7 @@ const StreamZip = function (config) {
             return callback(err);
           }
           if (errThrown) {
-            fs.close(fd, () => {
+            fs.close(fd!, () => {
               callback(errThrown);
             });
             return;
@@ -528,12 +611,11 @@ const StreamZip = function (config) {
     });
   }
 
-  function createDirectories(baseDir, dirs, callback) {
+  function createDirectories(baseDir: string, dirs: string[][], callback: Completion) {
     if (!dirs.length) {
       return callback();
     }
-    let dir = dirs.shift();
-    dir = path.join(baseDir, path.join(...dir));
+    const dir = path.join(baseDir, path.join(...dirs.shift()!));
     fs.mkdir(dir, { recursive: true }, (err) => {
       if (err && err.code !== 'EEXIST') {
         return callback(err);
@@ -542,11 +624,11 @@ const StreamZip = function (config) {
     });
   }
 
-  function extractFiles(baseDir, baseRelPath, files, callback, extractedCount) {
+  function extractFiles(baseDir: string, baseRelPath: string, files: ZipEntry[], callback: ExtractCallback, extractedCount: number) {
     if (!files.length) {
       return callback(null, extractedCount);
     }
-    const file = files.shift();
+    const file = files.shift()!;
     const targetPath = path.join(baseDir, file.name.replace(baseRelPath, ''));
     extract(file, targetPath, (err) => {
       if (err) {
@@ -556,8 +638,9 @@ const StreamZip = function (config) {
     });
   }
 
-  this.extract = function (entry, outPath, callback) {
-    let entryName = entry || '';
+  that.extract = function (entry, outPath, callback) {
+    // For a ZipEntry object, the original code uses its string coercion in directory lookups.
+    let entryName = (entry || '') as string;
     if (typeof entry === 'string') {
       entry = this.entry(entry);
       if (entry) {
@@ -569,9 +652,9 @@ const StreamZip = function (config) {
       }
     }
     if (!entry || entry.isDirectory) {
-      const files = [],
-        dirs = [],
-        allDirs = {};
+      const files: ZipEntry[] = [],
+        dirs: string[][] = [],
+        allDirs: Record<string, boolean> = {};
       for (const e in entries) {
         if (
           Object.prototype.hasOwnProperty.call(entries, e) &&
@@ -618,17 +701,18 @@ const StreamZip = function (config) {
         extractFiles(outPath, entryName, files, callback, 0);
       }
     } else {
+      const file = entry;
       fs.stat(outPath, (err, stat) => {
         if (stat && stat.isDirectory()) {
-          extract(entry, path.join(outPath, path.basename(entry.name)), callback);
+          extract(file, path.join(outPath, path.basename(file.name)), callback);
         } else {
-          extract(entry, outPath, callback);
+          extract(file, outPath, callback);
         }
       });
     }
   };
 
-  this.close = function (callback) {
+  that.close = function (callback) {
     if (closed || !fd) {
       closed = true;
       if (callback) {
@@ -645,13 +729,18 @@ const StreamZip = function (config) {
     }
   };
 
-  const originalEmit = events.EventEmitter.prototype.emit;
-  this.emit = function (...args) {
+  const originalEmit = Reflect.get(events.EventEmitter.prototype, 'emit') as events.EventEmitter['emit'];
+  that.emit = function (event, ...args) {
     if (!closed) {
-      return originalEmit.call(this, ...args);
+      return originalEmit.call(this, event, ...args);
     }
   };
-};
+}
+
+// The prototype and static members are attached below, matching the CommonJS constructor.
+const StreamZip = function StreamZip(this: ZipInstance, config: ZipConfig) {
+  initializeZip(this, config);
+} as unknown as ZipConstructor;
 
 StreamZip.setFs = function (customFs) {
   fs = customFs;
@@ -659,7 +748,6 @@ StreamZip.setFs = function (customFs) {
 
 StreamZip.debugLog = (...args) => {
   if (StreamZip.debug) {
-    // eslint-disable-next-line no-console
     console.log(...args);
   }
 };
@@ -668,8 +756,10 @@ util.inherits(StreamZip, events.EventEmitter);
 
 const propZip = Symbol('zip');
 
-StreamZip.async = class StreamZipAsync extends events.EventEmitter {
-  constructor(config) {
+class StreamZipAsync extends events.EventEmitter {
+  declare [propZip]: Promise<ZipInstance>;
+
+  constructor(config: ZipConfig) {
     super();
 
     const zip = new StreamZip(config);
@@ -694,7 +784,7 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
     return this[propZip].then((zip) => zip.comment);
   }
 
-  async entry(name) {
+  async entry(name: string) {
     const zip = await this[propZip];
     return zip.entry(name);
   }
@@ -704,11 +794,11 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
     return zip.entries();
   }
 
-  async stream(entry) {
+  async stream(entry: EntryInput) {
     const zip = await this[propZip];
-    return new Promise((resolve, reject) => {
-      zip.stream(entry, (err, stm) => {
-        if (err) {
+    return new Promise<stream.Readable>((resolve, reject) => {
+      zip.stream(entry, (...[err, stm]) => {
+        if (err !== null) {
           reject(err);
         } else {
           resolve(stm);
@@ -717,11 +807,11 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
     });
   }
 
-  async entryData(entry) {
+  async entryData(entry: EntryInput) {
     const stm = await this.stream(entry);
-    return new Promise((resolve, reject) => {
-      const data = [];
-      stm.on('data', (chunk) => data.push(chunk));
+    return new Promise<Buffer>((resolve, reject) => {
+      const data: Buffer[] = [];
+      stm.on('data', (chunk: Buffer) => data.push(chunk));
       stm.on('end', () => {
         resolve(Buffer.concat(data));
       });
@@ -732,9 +822,9 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
     });
   }
 
-  async extract(entry, outPath) {
+  async extract(entry: EntryInput | null | undefined, outPath: string) {
     const zip = await this[propZip];
-    return new Promise((resolve, reject) => {
+    return new Promise<number | undefined>((resolve, reject) => {
       zip.extract(entry, outPath, (err, res) => {
         if (err) {
           reject(err);
@@ -747,7 +837,7 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
 
   async close() {
     const zip = await this[propZip];
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       zip.close((err) => {
         if (err) {
           reject(err);
@@ -757,10 +847,19 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
       });
     });
   }
-};
+}
+
+StreamZip.async = StreamZipAsync;
 
 class CentralDirectoryHeader {
-  read(data) {
+  declare volumeEntries: number;
+  declare totalEntries: number;
+  declare size: number;
+  declare offset: number;
+  declare commentLength: number;
+  declare headerOffset: number;
+
+  read(data: Buffer) {
     if (data.length !== consts.ENDHDR || data.readUInt32LE(0) !== consts.ENDSIG) {
       throw new Error('Invalid central directory');
     }
@@ -778,7 +877,9 @@ class CentralDirectoryHeader {
 }
 
 class CentralDirectoryLoc64Header {
-  read(data) {
+  declare headerOffset: number;
+
+  read(data: Buffer) {
     if (data.length !== consts.ENDL64HDR || data.readUInt32LE(0) !== consts.ENDL64SIG) {
       throw new Error('Invalid zip64 central directory locator');
     }
@@ -788,7 +889,12 @@ class CentralDirectoryLoc64Header {
 }
 
 class CentralDirectoryZip64Header {
-  read(data) {
+  declare volumeEntries: number;
+  declare totalEntries: number;
+  declare size: number;
+  declare offset: number;
+
+  read(data: Buffer) {
     if (data.length !== consts.END64HDR || data.readUInt32LE(0) !== consts.END64SIG) {
       throw new Error('Invalid central directory');
     }
@@ -804,7 +910,27 @@ class CentralDirectoryZip64Header {
 }
 
 class ZipEntry {
-  readHeader(data, offset) {
+  declare verMade: number;
+  declare version: number;
+  declare flags: number;
+  declare method: number;
+  declare time: number;
+  declare crc: number;
+  declare compressedSize: number;
+  declare size: number;
+  declare fnameLen: number;
+  declare extraLen: number;
+  declare comLen: number;
+  declare diskStart: number;
+  declare inattr: number;
+  declare attr: number;
+  declare offset: number;
+  declare headerOffset: number;
+  declare name: string;
+  declare isDirectory: boolean;
+  declare comment: string|null;
+
+  readHeader(data: Buffer, offset: number) {
     // data should be 46 bytes and start with "PK 01 02"
     if (data.length < offset + consts.CENHDR || data.readUInt32LE(offset) !== consts.CENSIG) {
       throw new Error('Invalid entry header');
@@ -844,7 +970,7 @@ class ZipEntry {
     this.offset = data.readUInt32LE(offset + consts.CENOFF);
   }
 
-  readDataHeader(data) {
+  readDataHeader(data: Buffer) {
     // 30 bytes and should start with "PK\003\004"
     if (data.readUInt32LE(0) !== consts.LOCSIG) {
       throw new Error('Invalid local header');
@@ -878,7 +1004,7 @@ class ZipEntry {
     this.extraLen = data.readUInt16LE(consts.LOCEXT);
   }
 
-  read(data, offset, textDecoder) {
+  read(data: Buffer, offset: number, textDecoder: TextDecoder | null) {
     const nameData = data.slice(offset, (offset += this.fnameLen));
     this.name = textDecoder
       ? textDecoder.decode(new Uint8Array(nameData))
@@ -899,7 +1025,7 @@ class ZipEntry {
     }
   }
 
-  readExtra(data, offset) {
+  readExtra(data: Buffer, offset: number) {
     let signature, size;
     const maxPos = offset + this.extraLen;
     while (offset < maxPos) {
@@ -914,7 +1040,7 @@ class ZipEntry {
     }
   }
 
-  parseZip64Extra(data, offset, length) {
+  parseZip64Extra(data: Buffer, offset: number, length: number) {
     if (length >= 8 && this.size === consts.EF_ZIP64_OR_32) {
       this.size = readUInt64LE(data, offset);
       offset += 8;
@@ -946,7 +1072,16 @@ class ZipEntry {
 }
 
 class FsRead {
-  constructor(fd, buffer, offset, length, position, callback) {
+  declare fd: number;
+  declare buffer: Buffer;
+  declare offset: number;
+  declare length: number;
+  declare position: number;
+  declare callback: ReadCallback;
+  declare bytesRead: number;
+  declare waiting: boolean;
+
+  constructor(fd: number, buffer: Buffer, offset: number, length: number, position: number, callback: ReadCallback) {
     this.fd = fd;
     this.buffer = buffer;
     this.offset = offset;
@@ -957,7 +1092,7 @@ class FsRead {
     this.waiting = false;
   }
 
-  read(sync) {
+  read(sync?: boolean) {
     StreamZip.debugLog('read', this.position, this.bytesRead, this.length, this.offset);
     this.waiting = true;
     let err;
@@ -972,7 +1107,7 @@ class FsRead {
           this.position + this.bytesRead
         );
       } catch (e) {
-        err = e;
+        err = e as Error;
       }
       this.readCallback(sync, err, err ? bytesRead : null);
     } else {
@@ -987,7 +1122,7 @@ class FsRead {
     }
   }
 
-  readCallback(sync, err, bytesRead) {
+  readCallback(sync: boolean | undefined, err: ZipError, bytesRead: number | null) {
     if (typeof bytesRead === 'number') {
       this.bytesRead += bytesRead;
     }
@@ -1001,7 +1136,12 @@ class FsRead {
 }
 
 class FileWindowBuffer {
-  constructor(fd) {
+  declare position: number;
+  declare buffer: Buffer;
+  declare fd: number;
+  declare fsOp: FsRead|null|void;
+
+  constructor(fd: number) {
     this.position = 0;
     this.buffer = Buffer.alloc(0);
     this.fd = fd;
@@ -1014,7 +1154,7 @@ class FileWindowBuffer {
     }
   }
 
-  read(pos, length, callback) {
+  read(pos: number, length: number, callback: ReadCallback) {
     this.checkOp();
     if (this.buffer.length < length) {
       this.buffer = Buffer.alloc(length);
@@ -1023,7 +1163,7 @@ class FileWindowBuffer {
     this.fsOp = new FsRead(this.fd, this.buffer, 0, length, this.position, callback).read();
   }
 
-  expandLeft(length, callback) {
+  expandLeft(length: number, callback: ReadCallback) {
     this.checkOp();
     this.buffer = Buffer.concat([Buffer.alloc(length), this.buffer]);
     this.position -= length;
@@ -1033,7 +1173,7 @@ class FileWindowBuffer {
     this.fsOp = new FsRead(this.fd, this.buffer, 0, length, this.position, callback).read();
   }
 
-  expandRight(length, callback) {
+  expandRight(length: number, callback: ReadCallback) {
     this.checkOp();
     const offset = this.buffer.length;
     this.buffer = Buffer.concat([this.buffer, Buffer.alloc(length)]);
@@ -1047,7 +1187,7 @@ class FileWindowBuffer {
     ).read();
   }
 
-  moveRight(length, callback, shift) {
+  moveRight(length: number, callback: ReadCallback, shift?: number) {
     this.checkOp();
     if (shift) {
       this.buffer.copy(this.buffer, 0, shift);
@@ -1067,25 +1207,29 @@ class FileWindowBuffer {
 }
 
 class EntryDataReaderStream extends stream.Readable {
-  constructor(fd, offset, length) {
+  declare fd: number;
+  declare offset: number;
+  declare length: number;
+  declare pos: number;
+
+  constructor(fd: number, offset: number, length: number) {
     super();
     this.fd = fd;
     this.offset = offset;
     this.length = length;
     this.pos = 0;
-    this.readCallback = this.readCallback.bind(this);
   }
 
-  _read(n) {
+  _read(n: number) {
     const buffer = Buffer.alloc(Math.min(n, this.length - this.pos));
     if (buffer.length) {
-      fs.read(this.fd, buffer, 0, buffer.length, this.offset + this.pos, this.readCallback);
+      fs.read(this.fd, buffer, 0, buffer.length, this.offset + this.pos, (err, bytesRead, data) => this.readCallback(err, bytesRead, data));
     } else {
       this.push(null);
     }
   }
 
-  readCallback(err, bytesRead, buffer) {
+  readCallback(err: ZipError, bytesRead: number, buffer: Buffer) {
     this.pos += bytesRead;
     if (err) {
       this.emit('error', err);
@@ -1102,7 +1246,9 @@ class EntryDataReaderStream extends stream.Readable {
 }
 
 class EntryVerifyStream extends stream.Transform {
-  constructor(baseStm, crc, size) {
+  declare verify: CrcVerify;
+
+  constructor(baseStm: stream.Readable, crc: number, size: number) {
     super();
     this.verify = new CrcVerify(crc, size);
     baseStm.on('error', (e) => {
@@ -1110,19 +1256,24 @@ class EntryVerifyStream extends stream.Transform {
     });
   }
 
-  _transform(data, encoding, callback) {
+  _transform(data: Buffer, encoding: BufferEncoding, callback: stream.TransformCallback) {
     let err;
     try {
       this.verify.data(data);
     } catch (e) {
       err = e;
     }
-    callback(err, data);
+    callback(err as Error | undefined, data);
   }
 }
 
 class CrcVerify {
-  constructor(crc, size) {
+  declare crc: number;
+  declare size: number;
+  declare state: {crc:number;size:number};
+  declare static crcTable: number[] | undefined;
+
+  constructor(crc: number, size: number) {
     this.crc = crc;
     this.size = size;
     this.state = {
@@ -1131,7 +1282,7 @@ class CrcVerify {
     };
   }
 
-  data(data) {
+  data(data: Buffer) {
     const crcTable = CrcVerify.getCrcTable();
     let crc = this.state.crc;
     let off = 0;
@@ -1179,7 +1330,7 @@ class CrcVerify {
   }
 }
 
-function parseZipTime(timebytes, datebytes) {
+function parseZipTime(timebytes: number, datebytes: number) {
   const timebits = toBits(timebytes, 16);
   const datebits = toBits(datebytes, 16);
 
@@ -1195,7 +1346,7 @@ function parseZipTime(timebytes, datebytes) {
   return new Date(dt_str).getTime();
 }
 
-function toBits(dec, size) {
+function toBits(dec: number, size: number) {
   let b = (dec >>> 0).toString(2);
   while (b.length < size) {
     b = '0' + b;
@@ -1203,8 +1354,8 @@ function toBits(dec, size) {
   return b.split('');
 }
 
-function readUInt64LE(buffer, offset) {
+function readUInt64LE(buffer: Buffer, offset: number) {
   return buffer.readUInt32LE(offset + 4) * 0x0000000100000000 + buffer.readUInt32LE(offset);
 }
 
-module.exports = StreamZip;
+export = StreamZip;

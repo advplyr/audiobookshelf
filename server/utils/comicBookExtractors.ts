@@ -200,7 +200,7 @@ class CbzComicBookExtractor extends AbstractComicBookExtractor {
 }
 
 class CbzStreamZipComicBookExtractor extends AbstractComicBookExtractor {
-  archive: StreamZip.async | null
+  archive: InstanceType<typeof StreamZip.async> | null
 
   constructor(comicPath: string) {
     super(comicPath)

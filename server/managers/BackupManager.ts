@@ -14,8 +14,6 @@ import StreamZip from '../libs/nodeStreamZip'
 import type { Response } from 'express'
 import type ApiCacheManager from './ApiCacheManager'
 import type ServerSettings from '../objects/settings/ServerSettings'
-// ZIP entries contain size in the embedded implementation.
-type ZipReader = Omit<InstanceType<typeof StreamZip.async>, 'entries'> & { entries(): Promise<Record<string, { isDirectory: boolean; size: number }>> }
 type SqliteBackup = { step(pages: number): void; finish(): void; completed: boolean; failed: boolean; message?: string }
 type UploadRequest = { files: { file: { name: string; mv(path: string): Promise<void> } } }
 
@@ -134,7 +132,7 @@ class BackupManager {
       return res.status(500).send('Failed to move backup file into backups directory')
     }
 
-    const zip = new StreamZip.async({ file: tempPath }) as ZipReader
+    const zip = new StreamZip.async({ file: tempPath })
     let entries
     try {
       entries = await zip.entries()
@@ -215,7 +213,7 @@ class BackupManager {
   async requestApplyBackup(apiCacheManager: ApiCacheManager, backup: Backup, res: Response) {
     Logger.info(`[BackupManager] Applying backup at "${backup.fullPath}"`)
 
-    const zip = new StreamZip.async({ file: backup.fullPath! }) as ZipReader
+    const zip = new StreamZip.async({ file: backup.fullPath! })
 
     const entries = await zip.entries()
 
@@ -292,10 +290,10 @@ class BackupManager {
         if (filename.endsWith('.audiobookshelf')) {
           const fullFilePath = Path.join(this.backupPath, filename)
 
-          let zip: ZipReader | null = null
+          let zip: InstanceType<typeof StreamZip.async> | null = null
           let data: Buffer | null = null
           try {
-            zip = new StreamZip.async({ file: fullFilePath }) as ZipReader
+            zip = new StreamZip.async({ file: fullFilePath })
             const entries = await zip.entries()
 
             const detailsEntry = entries['details']
