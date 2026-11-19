@@ -17,14 +17,16 @@ var objectTag = '[object Object]';
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
  */
-function isHostObject(value) {
+function isHostObject(value: unknown) {
   // Many host objects are `Object` objects that can coerce to strings
   // despite having improperly defined `toString` methods.
   var result = false;
   if (value != null && typeof value.toString != 'function') {
     try {
-      result = !!(value + '');
-    } catch (e) { }
+      // The empty string keeps the original default coercion hint.
+      const coercible = value as string;
+      result = !!(coercible + '');
+    } catch { }
   }
   return result;
 }
@@ -37,15 +39,18 @@ function isHostObject(value) {
  * @param {Function} transform The argument transform.
  * @returns {Function} Returns the new function.
  */
-function overArg(func, transform) {
-  return function (arg) {
+function overArg<Input, Transformed, Result>(func: (arg: Transformed) => Result, transform: (arg: Input) => Transformed) {
+  return function (arg: Input) {
     return func(transform(arg));
   };
 }
 
 /** Used for built-in method references. */
-var funcProto = Function.prototype,
-  objectProto = Object.prototype;
+var funcProto = Function.prototype as { toString: (this: unknown) => string },
+  objectProto = Object.prototype as {
+    hasOwnProperty: (this: unknown, name: PropertyKey) => boolean;
+    toString: (this: unknown) => string;
+  };
 
 /** Used to resolve the decompiled source of functions. */
 var funcToString = funcProto.toString;
@@ -64,7 +69,10 @@ var objectCtorString = funcToString.call(Object);
 var objectToString = objectProto.toString;
 
 /** Built-in value references. */
-var getPrototype = overArg(Object.getPrototypeOf, Object);
+var getPrototype = overArg(
+  Object.getPrototypeOf as (value: object) => object | null,
+  Object as (value: unknown) => object
+);
 
 /**
  * Checks if `value` is object-like. A value is object-like if it's not `null`
@@ -90,7 +98,7 @@ var getPrototype = overArg(Object.getPrototypeOf, Object);
  * _.isObjectLike(null);
  * // => false
  */
-function isObjectLike(value) {
+function isObjectLike(value: unknown): value is object {
   return !!value && typeof value == 'object';
 }
 
@@ -122,7 +130,7 @@ function isObjectLike(value) {
  * _.isPlainObject(Object.create(null));
  * // => true
  */
-function isPlainObject(value) {
+function isPlainObject(value: unknown): value is Record<PropertyKey, unknown> {
   if (!isObjectLike(value) ||
     objectToString.call(value) != objectTag || isHostObject(value)) {
     return false;
@@ -131,9 +139,9 @@ function isPlainObject(value) {
   if (proto === null) {
     return true;
   }
-  var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
+  var Ctor = hasOwnProperty.call(proto, 'constructor') && (proto as { constructor?: unknown }).constructor;
   return (typeof Ctor == 'function' &&
     Ctor instanceof Ctor && funcToString.call(Ctor) == objectCtorString);
 }
 
-module.exports = isPlainObject;
+export = isPlainObject;

@@ -9,6 +9,8 @@ import fs from 'graceful-fs';
 import type { Stats } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import flatten from './lodash.flatten';
+import isPlainObject from './lodash.isplainobject';
 
 type StatPredicate = {
   [Key in keyof Stats]: Stats[Key] extends () => boolean ? Key : never;
@@ -49,10 +51,8 @@ interface LodashChain<Value> {
 declare const _: <Value>(values: Value[]) => LodashChain<Value>;
 
 const load = createRequire(__filename);
-const flatten = load('./lodash.flatten') as (patterns: Patterns) => string[];
 const difference = load('./lodash.difference') as (left: string[], right: string[]) => string[];
 const union = load('./lodash.union') as (left: string[], right: string[]) => string[];
-const isPlainObject = load('./lodash.isplainobject') as (value: unknown) => value is ExpandOptions;
 const glob = load('./glob') as { sync(pattern: string, options: ExpandOptions): string[] };
 
 var pathSeparatorRe = /[\/\\]/g;

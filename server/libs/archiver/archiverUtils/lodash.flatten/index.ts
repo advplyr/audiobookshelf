@@ -22,7 +22,17 @@ var freeGlobal = typeof global == 'object' && global && global.Object === Object
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 /** Used as a reference to the global object. */
-var root = freeGlobal || freeSelf || Function('return this')();
+var root = freeGlobal || freeSelf || globalThis;
+
+interface Flattenable {
+  readonly length?: number;
+  readonly [index: number]: unknown;
+}
+
+type Flattened<Value> = Value extends readonly (infer Item)[] ? Item
+  : Value extends IArguments ? unknown
+  : Value extends ArrayLike<infer Item> & { [Symbol.isConcatSpreadable]: true } ? Item
+  : Value;
 
 /**
  * Appends the elements of `values` to `array`.
@@ -32,19 +42,23 @@ var root = freeGlobal || freeSelf || Function('return this')();
  * @param {Array} values The values to append.
  * @returns {Array} Returns `array`.
  */
-function arrayPush(array, values) {
+function arrayPush(array: unknown[], values: Flattenable) {
   var index = -1,
     length = values.length,
     offset = array.length;
 
-  while (++index < length) {
+  while (++index < length!) {
     array[offset + index] = values[index];
   }
   return array;
 }
 
 /** Used for built-in method references. */
-var objectProto = Object.prototype;
+var objectProto = Object.prototype as {
+  hasOwnProperty: (this: unknown, name: PropertyKey) => boolean;
+  propertyIsEnumerable: (this: unknown, name: PropertyKey) => boolean;
+  toString: (this: unknown) => string;
+};
 
 /** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
@@ -72,14 +86,14 @@ var Symbol = root.Symbol,
  * @param {Array} [result=[]] The initial result value.
  * @returns {Array} Returns the new flattened array.
  */
-function baseFlatten(array, depth, predicate, isStrict, result) {
+function baseFlatten(array: Flattenable, depth: number, predicate?: (value: unknown) => value is Flattenable, isStrict?: boolean, result?: unknown[]): unknown[] {
   var index = -1,
     length = array.length;
 
-  predicate || (predicate = isFlattenable);
-  result || (result = []);
+  predicate = predicate || isFlattenable;
+  result = result || [];
 
-  while (++index < length) {
+  while (++index < length!) {
     var value = array[index];
     if (depth > 0 && predicate(value)) {
       if (depth > 1) {
@@ -102,9 +116,9 @@ function baseFlatten(array, depth, predicate, isStrict, result) {
  * @param {*} value The value to check.
  * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
  */
-function isFlattenable(value) {
+function isFlattenable(value: unknown): value is Flattenable {
   return isArray(value) || isArguments(value) ||
-    !!(spreadableSymbol && value && value[spreadableSymbol]);
+    !!(spreadableSymbol && value && (value as Record<symbol, unknown>)[spreadableSymbol]);
 }
 
 /**
@@ -121,9 +135,9 @@ function isFlattenable(value) {
  * _.flatten([1, [2, [3, [4]], 5]]);
  * // => [1, 2, [3, [4]], 5]
  */
-function flatten(array) {
+function flatten<Value>(array?: ArrayLike<Value> | null): Flattened<Value>[] {
   var length = array ? array.length : 0;
-  return length ? baseFlatten(array, 1) : [];
+  return length ? baseFlatten(array!, 1) as Flattened<Value>[] : [];
 }
 
 /**
@@ -144,7 +158,7 @@ function flatten(array) {
  * _.isArguments([1, 2, 3]);
  * // => false
  */
-function isArguments(value) {
+function isArguments(value: unknown) {
   // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
   return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
     (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
@@ -200,8 +214,8 @@ var isArray = Array.isArray;
  * _.isArrayLike(_.noop);
  * // => false
  */
-function isArrayLike(value) {
-  return value != null && isLength(value.length) && !isFunction(value);
+function isArrayLike(value: unknown) {
+  return value != null && isLength((value as { length?: unknown }).length) && !isFunction(value);
 }
 
 /**
@@ -229,7 +243,7 @@ function isArrayLike(value) {
  * _.isArrayLikeObject(_.noop);
  * // => false
  */
-function isArrayLikeObject(value) {
+function isArrayLikeObject(value: unknown) {
   return isObjectLike(value) && isArrayLike(value);
 }
 
@@ -250,7 +264,7 @@ function isArrayLikeObject(value) {
  * _.isFunction(/abc/);
  * // => false
  */
-function isFunction(value) {
+function isFunction(value: unknown) {
   // The use of `Object#toString` avoids issues with the `typeof` operator
   // in Safari 8-9 which returns 'object' for typed array and other constructors.
   var tag = isObject(value) ? objectToString.call(value) : '';
@@ -283,7 +297,7 @@ function isFunction(value) {
  * _.isLength('3');
  * // => false
  */
-function isLength(value) {
+function isLength(value: unknown) {
   return typeof value == 'number' &&
     value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 }
@@ -313,7 +327,7 @@ function isLength(value) {
  * _.isObject(null);
  * // => false
  */
-function isObject(value) {
+function isObject(value: unknown) {
   var type = typeof value;
   return !!value && (type == 'object' || type == 'function');
 }
@@ -342,8 +356,8 @@ function isObject(value) {
  * _.isObjectLike(null);
  * // => false
  */
-function isObjectLike(value) {
+function isObjectLike(value: unknown) {
   return !!value && typeof value == 'object';
 }
 
-module.exports = flatten;
+export = flatten;
