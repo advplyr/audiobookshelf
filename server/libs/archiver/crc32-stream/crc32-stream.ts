@@ -46,6 +46,7 @@ class CRC32Stream extends Transform {
     return this.digest('hex').toUpperCase();
   }
 
+  size(compressed?: boolean): number;
   size() {
     return this.rawSize;
   }

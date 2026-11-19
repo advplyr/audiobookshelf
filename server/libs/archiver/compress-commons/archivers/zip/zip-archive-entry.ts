@@ -28,6 +28,7 @@ interface ZipArchiveEntry extends InstanceType<typeof ArchiveEntry> {
   exattr: number;
   inattr: number;
   comment: string | null;
+  _offsets?: { file: number; data: number; contents: number };
 
   getCentralDirectoryExtra(): Buffer;
   getComment(): string;
