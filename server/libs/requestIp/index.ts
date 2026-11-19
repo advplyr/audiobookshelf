@@ -1,7 +1,7 @@
 // SOURCE: https://github.com/pbojinov/request-ip
 
-import { createRequire } from 'node:module';
 import type { Request, RequestHandler } from 'express';
+import is from './isJs';
 
 type HeaderValue = string | string[] | null | undefined;
 type Address = { remoteAddress?: string | null };
@@ -14,17 +14,6 @@ interface RequestLike {
   requestContext?: { identity?: { sourceIp?: string | null } | null } | null;
 }
 
-interface IsRuntime {
-  existy<Value>(value: Value): value is NonNullable<Value>;
-  ip<Value extends HeaderValue>(this: void, value: Value): value is NonNullable<Value>;
-  not: {
-    existy(value: unknown): boolean;
-    object(value: unknown): boolean;
-    string(value: unknown): boolean;
-  };
-}
-
-const is = createRequire(__filename)('./isJs') as IsRuntime;
 /**
  * Parse x-forwarded-for headers.
  *
