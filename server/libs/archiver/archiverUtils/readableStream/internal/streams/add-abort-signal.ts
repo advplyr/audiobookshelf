@@ -1,8 +1,10 @@
 import { createRequire } from 'node:module'
-import type { Duplex } from 'node:stream'
 import eos from './end-of-stream'
 
-type AbortableStream = Pick<Duplex, 'pipe' | 'destroy' | 'on' | 'removeListener'>
+type AbortableStream = Pick<Parameters<typeof eos>[0], 'on' | 'removeListener'> & {
+  pipe(...args: never[]): unknown
+  destroy(error?: Error): unknown
+}
 type Signal = Pick<AbortSignal, 'aborted' | 'addEventListener' | 'removeEventListener'> & { reason?: unknown }
 
 interface AbortSignalApi {
