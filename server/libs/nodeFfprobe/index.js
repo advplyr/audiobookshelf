@@ -8,7 +8,9 @@ const spawn = require('child_process').spawn
 module.exports = (function () {
   function doProbe(file) {
     return new Promise((resolve, reject) => {
-      let proc = spawn(module.exports.FFPROBE_PATH || 'ffprobe', ['-hide_banner', '-loglevel', 'fatal', '-show_error', '-show_format', '-show_streams', '-show_programs', '-show_chapters', '-show_private_data', '-print_format', 'json', file])
+      // -export_all: the MP4 demuxer only returns atoms it knows, so without it the movement
+      // atoms (©mvn, ©mvi) used for series and series sequence never reach the tags
+      let proc = spawn(module.exports.FFPROBE_PATH || 'ffprobe', ['-hide_banner', '-loglevel', 'fatal', '-show_error', '-show_format', '-show_streams', '-show_programs', '-show_chapters', '-show_private_data', '-export_all', '1', '-print_format', 'json', file])
       let probeData = []
       let errData = []
 
