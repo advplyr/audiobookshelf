@@ -22,7 +22,6 @@ type BcryptApi = {
 
 const LocalStrategy = LocalStrategyJs as LocalStrategyCtor
 const bcrypt = bcryptJs as BcryptApi
-const clientIp = requestIp as { getClientIp(req: Request): string | null }
 
 type PasswordChangeResult = { error: string } | { success: true }
 
@@ -89,7 +88,7 @@ class LocalAuthStrategy {
         return
       }
       // approve login
-      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${clientIp.getClientIp(req)}`)
+      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
 
       done(null, user)
       return
@@ -103,7 +102,7 @@ class LocalAuthStrategy {
     const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       // approve login
-      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${clientIp.getClientIp(req)}`)
+      Logger.info(`[LocalAuth] User "${user.username}" logged in from ip ${requestIp.getClientIp(req)}`)
 
       done(null, user)
       return
@@ -119,7 +118,7 @@ class LocalAuthStrategy {
    */
   logFailedLoginAttempt(req: Request, username: string | null, message: string) {
     if (!req || !username || !message) return
-    Logger.error(`[LocalAuth] Failed login attempt for username "${username}" from ip ${clientIp.getClientIp(req)} (${message})`)
+    Logger.error(`[LocalAuth] Failed login attempt for username "${username}" from ip ${requestIp.getClientIp(req)} (${message})`)
   }
 
   /**

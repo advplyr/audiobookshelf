@@ -1,10 +1,30 @@
 // SOURCE: https://github.com/pbojinov/request-ip
 
-"use strict";
+import { createRequire } from 'node:module';
+import type { Request, RequestHandler } from 'express';
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+type HeaderValue = string | string[] | null | undefined;
+type Address = { remoteAddress?: string | null };
 
-var is = require('./isJs');
+interface RequestLike {
+  headers?: Record<string, HeaderValue> | null;
+  connection?: (Address & { socket?: Address | null }) | null;
+  socket?: Address | null;
+  info?: Address | null;
+  requestContext?: { identity?: { sourceIp?: string | null } | null } | null;
+}
+
+interface IsRuntime {
+  existy<Value>(value: Value): value is NonNullable<Value>;
+  ip<Value extends HeaderValue>(this: void, value: Value): value is NonNullable<Value>;
+  not: {
+    existy(value: unknown): boolean;
+    object(value: unknown): boolean;
+    string(value: unknown): boolean;
+  };
+}
+
+const is = createRequire(__filename)('./isJs') as IsRuntime;
 /**
  * Parse x-forwarded-for headers.
  *
@@ -13,13 +33,13 @@ var is = require('./isJs');
  */
 
 
-function getClientIpFromXForwardedFor(value) {
+function getClientIpFromXForwardedFor(value: unknown): string | null | undefined {
   if (!is.existy(value)) {
     return null;
   }
 
   if (is.not.string(value)) {
-    throw new TypeError("Expected a string, got \"".concat(_typeof(value), "\""));
+    throw new TypeError(`Expected a string, got "${typeof value}"`);
   } // x-forwarded-for may return multiple IP addresses in the format:
   // "client IP, proxy 1 IP, proxy 2 IP"
   // Therefore, the right-most IP address is the IP address of the most recent proxy
@@ -28,7 +48,8 @@ function getClientIpFromXForwardedFor(value) {
   // Azure Web App's also adds a port for some reason, so we'll only use the first part (the IP)
 
 
-  var forwardedIps = value.split(',').map(function (e) {
+  // is.js also recognizes boxed strings, which expose the same split method.
+  var forwardedIps = (value as string).split(',').map(function (e) {
     var ip = e.trim();
 
     if (ip.includes(':')) {
@@ -50,11 +71,14 @@ function getClientIpFromXForwardedFor(value) {
  * Determine client IP address.
  *
  * @param req
- * @returns {string} ip - The IP address if known, defaulting to empty string if unknown.
+ * @returns {string|null} The IP address if known.
  */
 
 
-function getClientIp(req) {
+// Node supplies these IP headers as strings. Plain request adapters can supply arrays.
+function getClientIp(req: Request): string | null;
+function getClientIp(req: RequestLike): string | string[] | null;
+function getClientIp(req: RequestLike): string | string[] | null {
   // Server is probably behind a proxy.
   if (req.headers) {
     // Standard headers used by Amazon EC2, Heroku, and others.
@@ -146,7 +170,7 @@ function getClientIp(req) {
  */
 
 
-function mw(options) {
+function mw(options?: unknown): RequestHandler {
   // Defaults.
   var configuration = is.not.existy(options) ? {} : options; // Validation.
 
@@ -154,7 +178,7 @@ function mw(options) {
     throw new TypeError('Options must be an object!');
   }
 
-  var attributeName = configuration.attributeName || 'clientIp';
+  var attributeName = (configuration as { attributeName?: string }).attributeName || 'clientIp';
   return function (req, res, next) {
     var ip = getClientIp(req);
     Object.defineProperty(req, attributeName, {
@@ -167,7 +191,7 @@ function mw(options) {
   };
 }
 
-module.exports = {
+export = {
   getClientIpFromXForwardedFor: getClientIpFromXForwardedFor,
   getClientIp: getClientIp,
   mw: mw

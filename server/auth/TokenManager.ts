@@ -30,8 +30,6 @@ type JwtApi = {
 
 const jwt = jwtJs as JwtApi
 
-const clientIp = requestIp as { getClientIp(req: Request): string | null }
-
 // Loose claims: legacy access tokens omit type and exp, and later readers use the original decoded object.
 const bearerAccessTokenSchema = z.looseObject({
   userId: z.custom((value) => !!value),
@@ -224,7 +222,7 @@ class TokenManager {
    * Create tokens and session for a given user
    */
   async createTokensAndSession(user: TokenUser, req: Request) {
-    const ipAddress = clientIp.getClientIp(req)
+    const ipAddress = requestIp.getClientIp(req)
     const userAgent = req.headers['user-agent']
     const accessToken = this.generateTempAccessToken(user)
     const refreshToken = this.generateRefreshToken(user)

@@ -8,9 +8,7 @@ import Database from '../Database'
 import date from '../libs/dateAndTime'
 import fs from '../libs/fsExtra'
 import uaParserJs from '../libs/uaParser'
-import requestIpModule from '../libs/requestIp'
-const requestIp = requestIpModule as { getClientIp(request: Request): string | null }
-
+import requestIp from '../libs/requestIp'
 import { PlayMethod } from '../utils/constants'
 import type { Request, Response } from 'express'
 import type User from '../models/User'
