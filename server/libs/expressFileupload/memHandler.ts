@@ -1,5 +1,11 @@
-const crypto = require('crypto');
-const { debugLog } = require('./utilities');
+import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
+
+type DebugOptions = { debug?: boolean };
+
+const { debugLog } = createRequire(__filename)('./utilities') as {
+  debugLog: (options: DebugOptions, message: string) => boolean;
+};
 
 /**
  * memHandler - In memory upload handler
@@ -8,16 +14,16 @@ const { debugLog } = require('./utilities');
  * @param {String} filename
  * @returns {Object}
  */
-module.exports = (options, fieldname, filename) => {
-  const buffers = [];
-  const hash = crypto.createHash('md5');
+export = (options: DebugOptions, fieldname: string, filename: string) => {
+  const buffers: Buffer[] = [];
+  const hash = createHash('md5');
   let fileSize = 0;
   let completed = false;
 
   const getBuffer = () => Buffer.concat(buffers, fileSize);
 
   return {
-    dataHandler: (data) => {
+    dataHandler: (data: Buffer) => {
       if (completed === true) {
         debugLog(options, `Error: got ${fieldname}->${filename} data chunk for completed upload!`);
         return;

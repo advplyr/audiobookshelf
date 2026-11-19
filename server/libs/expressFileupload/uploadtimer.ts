@@ -1,17 +1,22 @@
 class UploadTimer {
+  declare timeout: number;
+  declare callback: () => void;
+  declare timer: NodeJS.Timeout | null;
+
   /**
    * @constructor
    * @param {number} timeout - timer timeout in msecs. 
    * @param {Function} callback - callback to run when timeout reached.
    */
-  constructor(timeout = 0, callback = () => {}) {
+  constructor(timeout = 0, callback: () => void = () => {}) {
     this.timeout = timeout;
     this.callback = callback;
     this.timer = null;
   }
 
   clear() {
-    clearTimeout(this.timer);
+    // Node treats a null timer as a no-op.
+    clearTimeout(this.timer!);
   }
 
   set() {
@@ -23,4 +28,4 @@ class UploadTimer {
   }
 }
 
-module.exports = UploadTimer;
+export = UploadTimer;
