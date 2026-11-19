@@ -5,11 +5,11 @@
 import { createRequire } from 'node:module'
 import Path from 'node:path'
 import type { ArchiveEntry, ArchiveInput } from './protocol'
+import type { LibarchiveRuntime, LoadLibarchive } from './wasm-runtime'
 
-type CInput = { number: number; string: string | null }
-type COutput = { number: number; string: string; void: void }
-type CArgument = keyof CInput
-type CResult<Kind> = Kind extends keyof COutput ? COutput[Kind] : void
+type ReadyModule = WasmModule & LibarchiveRuntime
+
+const libarchive = createRequire(__filename)('./wasm-libarchive') as LoadLibarchive
 
 interface ArchiveBindings {
   getVersion(): string
@@ -30,10 +30,6 @@ interface ArchiveBindings {
   free(pointer: number): void
 }
 
-const libarchive = createRequire(__filename)('./wasm-libarchive') as (settings: WasmModule) => {
-  then(callback: (module: WasmModule) => void): unknown
-}
-
 const TYPE_MAP: Record<number, string | undefined> = {
   32768: 'FILE',
   16384: 'DIR',
@@ -45,7 +41,7 @@ const TYPE_MAP: Record<number, string | undefined> = {
 }
 
 class ArchiveReader {
-  declare _wasmModule: WasmModule
+  declare _wasmModule: ReadyModule
   declare _runCode: ArchiveBindings
   declare _file: ArchiveInput
   declare _passphrase: string | null
@@ -57,7 +53,7 @@ class ArchiveReader {
    * archive reader
    * @param {WasmModule} wasmModule emscripten module 
    */
-  constructor(wasmModule: WasmModule) {
+  constructor(wasmModule: ReadyModule) {
     this._wasmModule = wasmModule
     this._runCode = wasmModule.runCode
     this._file = null
@@ -182,13 +178,6 @@ class WasmModule {
   declare preRun: (() => void)[]
   declare postRun: (() => void)[]
   declare totalDependencies: number
-  declare HEAP8: Int8Array
-  declare _free: (pointer: number) => void
-  declare allocate: (bytes: number[], type: string, allocator: number) => number
-  declare intArrayFromString: (value: string) => number[]
-  declare cwrap: <Args extends CArgument[], Kind extends 'number' | 'string' | null>(
-    name: string, returnType: Kind, argumentTypes: [...Args]
-  ) => (...args: { [Index in keyof Args]: CInput[Args[Index]] }) => CResult<Kind>
   declare runCode: ArchiveBindings
 
   constructor() {
@@ -205,7 +194,7 @@ class WasmModule {
     console.error(text)
   }
 
-  initFunctions() {
+  initFunctions(this: ReadyModule) {
     this.runCode = {
       // const char * get_version()
       getVersion: this.cwrap('get_version', 'string', []),
