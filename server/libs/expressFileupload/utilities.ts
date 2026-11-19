@@ -1,8 +1,15 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Readable } from 'node:stream';
 
-const fs = require('fs');
-const path = require('path');
-const { Readable } = require('stream');
+type FileCallback = (error?: NodeJS.ErrnoException | null) => void;
+type Fields = Record<string, unknown>;
+
+interface FileNameOptions {
+  uriDecodeFileNames?: boolean;
+  safeFileNames?: boolean | RegExp;
+  preserveExtension?: boolean | number;
+}
 
 // Parameters for safe file name parsing.
 const SAFE_FILE_NAME_REGEX = /[^\w-]/g;
@@ -19,10 +26,10 @@ let tempCounter = 0;
  * @param {string} msg - message to log.
  * @returns {boolean} - false if debug is off.
  */
-const debugLog = (options, msg) => {
+const debugLog = (options: { debug?: boolean } | null | undefined, msg: string | Error) => {
   const opts = options || {};
   if (!opts.debug) return false;
-  console.log(`Express-file-upload: ${msg}`); // eslint-disable-line
+  console.log(`Express-file-upload: ${msg}`);
   return true;
 };
 
@@ -40,22 +47,25 @@ const getTempFilename = (prefix = TEMP_PREFIX) => {
  * isFunc: Checks if argument is a function.
  * @returns {boolean} - Returns true if argument is a function.
  */
-const isFunc = func => func && func.constructor && func.call && func.apply ? true: false;
+const isFunc = (func: unknown): func is (...args: never[]) => unknown => {
+  const candidate = func as { constructor?: unknown; call?: unknown; apply?: unknown } | null | undefined;
+  return candidate && candidate.constructor && candidate.call && candidate.apply ? true : false;
+};
 
 /**
  * Set errorFunc to the same value as successFunc for callback mode.
  * @returns {Function}
  */
-const errorFunc = (resolve, reject) => isFunc(reject) ? reject : resolve;
+const errorFunc = (resolve: FileCallback, reject?: FileCallback) => isFunc(reject) ? reject : resolve;
 
 /**
  * Return a callback function for promise resole/reject args.
  * Ensures that callback is called only once.
  * @returns {Function}
  */
-const promiseCallback = (resolve, reject) => {
+const promiseCallback = (resolve: FileCallback, reject?: FileCallback) => {
   let hasFired = false;
-  return (err) => {
+  return (err?: NodeJS.ErrnoException | null) => {
     if (hasFired) {
       return;
     }
@@ -69,11 +79,11 @@ const promiseCallback = (resolve, reject) => {
  * Builds instance options from arguments objects(can't be arrow function).
  * @returns {Object} - result options.
  */
-const buildOptions = function() {
-  const result = {};
-  [...arguments].forEach(options => {
+const buildOptions = function(...sources: unknown[]) {
+  const result: Fields = {};
+  sources.forEach(options => {
     if (!options || typeof options !== 'object') return;
-    Object.keys(options).forEach(i => result[i] = options[i]);
+    Object.keys(options).forEach(i => result[i] = (options as Fields)[i]);
   });
   return result;
 };
@@ -88,7 +98,7 @@ const ARRAY_PROTOTYPE_KEYS = Object.getOwnPropertyNames(Array.prototype);
  * @param {Object} base - The object whose insertion we are checking
  * @param {string} key - The key that will be inserted
  */
-const isSafeFromPollution = (base, key) => {
+const isSafeFromPollution = (base: unknown, key: string) => {
   // We perform an instanceof check instead of Array.isArray as the former is more
   // permissive for cases in which the object as an Array prototype but was not constructed
   // via an Array constructor or literal.
@@ -105,10 +115,10 @@ const isSafeFromPollution = (base, key) => {
  * @param {any} value - field value.
  * @returns {Object}
  */
-const buildFields = (instance, field, value) => {
+const buildFields = (instance: Fields | null | undefined, field: string, value: unknown) => {
   // Do nothing if value is not set.
   if (value === null || value === undefined) return instance;
-  instance = instance || Object.create(null);
+  instance = instance || (Object.create(null) as Fields);
 
   if (!isSafeFromPollution(instance, field)) {
     return instance;
@@ -120,7 +130,7 @@ const buildFields = (instance, field, value) => {
   }
   // Array fields
   if (instance[field] instanceof Array) {
-    instance[field].push(value);
+    (instance[field] as unknown[]).push(value);
   } else {
     instance[field] = [instance[field], value];
   }
@@ -133,7 +143,7 @@ const buildFields = (instance, field, value) => {
  * @param {string} filePath
  * @returns {boolean}
  */
-const checkAndMakeDir = (fileUploadOptions, filePath) => {
+const checkAndMakeDir = (fileUploadOptions: { createParentPath?: boolean } | null | undefined, filePath: string) => {
   // Check upload options were set.
   if (!fileUploadOptions) return false;
   if (!fileUploadOptions.createParentPath) return false;
@@ -151,17 +161,17 @@ const checkAndMakeDir = (fileUploadOptions, filePath) => {
  * @param {string} file - Path to the file to delete.
  * @param {Function} callback
  */
-const deleteFile = (file, callback) => fs.unlink(file, callback);
+const deleteFile = (file: string, callback: FileCallback) => fs.unlink(file, callback);
 
 /**
  * Copy file via streams
  * @param {string} src - Path to the source file
  * @param {string} dst - Path to the destination file.
  */
-const copyFile = (src, dst, callback) => {
+const copyFile = (src: string, dst: string, callback: FileCallback) => {
   // cbCalled flag and runCb helps to run cb only once.
   let cbCalled = false;
-  let runCb = (err) => {
+  let runCb = (err?: NodeJS.ErrnoException) => {
     if (cbCalled) return;
     cbCalled = true;
     callback(err);
@@ -187,7 +197,7 @@ const copyFile = (src, dst, callback) => {
  * @param {string} dst - Path to the destination file.
  * @param {Function} callback - A callback function.
  */
-const moveFile = (src, dst, callback) => fs.rename(src, dst, err => (err
+const moveFile = (src: string, dst: string, callback: FileCallback) => fs.rename(src, dst, err => (err
   ? copyFile(src, dst, err => err ? callback(err) : deleteFile(src, callback))
   : callback()
 ));
@@ -197,13 +207,14 @@ const moveFile = (src, dst, callback) => fs.rename(src, dst, err => (err
  * @param {Buffer} buffer - buffer to save to a file.
  * @param {string} filePath - path to a file.
  */
-const saveBufferToFile = (buffer, filePath, callback) => {
+const saveBufferToFile = (buffer: unknown, filePath: string, callback: FileCallback) => {
   if (!Buffer.isBuffer(buffer)) {
     return callback(new Error('buffer variable should be type of Buffer!'));
   }
   // Setup readable stream from buffer.
-  let streamData = buffer;
-  let readStream = Readable();
+  let streamData: Buffer | null = buffer;
+  const createReadable = Readable as unknown as () => Readable;
+  let readStream = createReadable();
   readStream._read = () => {
     readStream.push(streamData);
     streamData = null;
@@ -228,7 +239,7 @@ const saveBufferToFile = (buffer, filePath, callback) => {
  * @param fileName {String} - file name to decode.
  * @returns {String}
  */
-const uriDecodeFileName = (opts, fileName) => {
+const uriDecodeFileName = (opts: FileNameOptions, fileName: string) => {
   return opts.uriDecodeFileNames ? decodeURIComponent(fileName) : fileName;
 };
 
@@ -238,8 +249,9 @@ const uriDecodeFileName = (opts, fileName) => {
  * @param {string} fileName - file name to parse.
  * @returns {Object} - { name, extension }.
  */
-const parseFileNameExtension = (preserveExtension, fileName) => {
-  const preserveExtensionLength = parseInt(preserveExtension);
+const parseFileNameExtension = (preserveExtension: FileNameOptions['preserveExtension'], fileName: string) => {
+  // parseInt coerces boolean and numeric options before applying the length rules.
+  const preserveExtensionLength = parseInt(preserveExtension as unknown as string);
   const result = {name: fileName, extension: ''};
   if (!preserveExtension && preserveExtensionLength !== 0) return result;
   // Define maximum extension length
@@ -250,7 +262,7 @@ const parseFileNameExtension = (preserveExtension, fileName) => {
   const nameParts = fileName.split('.');
   if (nameParts.length < 2) return result;
 
-  let extension = nameParts.pop();
+  let extension = nameParts.pop()!;
   if (
     extension.length > maxExtLength &&
     maxExtLength > 0
@@ -272,7 +284,7 @@ const parseFileNameExtension = (preserveExtension, fileName) => {
  * @param {string} fileName - Uploaded file name.
  * @returns {string}
  */
-const parseFileName = (opts, fileName) => {
+const parseFileName = (opts: FileNameOptions, fileName: unknown) => {
   // Check fileName argument
   if (!fileName || typeof fileName !== 'string') return getTempFilename();
   // Cut off file name if it's lenght more then 255.
@@ -292,7 +304,7 @@ const parseFileName = (opts, fileName) => {
   return name.replace(nameRegex, '').concat(extension);
 };
 
-module.exports = {
+export = {
   isFunc,
   debugLog,
   copyFile, // For testing purpose.

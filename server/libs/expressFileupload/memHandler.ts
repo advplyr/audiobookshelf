@@ -1,11 +1,7 @@
 import { createHash } from 'node:crypto';
-import { createRequire } from 'node:module';
+import utilities from './utilities';
 
-type DebugOptions = { debug?: boolean };
-
-const { debugLog } = createRequire(__filename)('./utilities') as {
-  debugLog: (options: DebugOptions, message: string) => boolean;
-};
+const { debugLog } = utilities;
 
 /**
  * memHandler - In memory upload handler
@@ -14,7 +10,7 @@ const { debugLog } = createRequire(__filename)('./utilities') as {
  * @param {String} filename
  * @returns {Object}
  */
-export = (options: DebugOptions, fieldname: string, filename: string) => {
+export = (options: Parameters<typeof debugLog>[0], fieldname: string, filename: string) => {
   const buffers: Buffer[] = [];
   const hash = createHash('md5');
   let fileSize = 0;
