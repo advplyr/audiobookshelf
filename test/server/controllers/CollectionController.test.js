@@ -6,7 +6,7 @@ const Database = require('../../../server/Database')
 const Logger = require('../../../server/Logger')
 const CollectionController = require('../../../server/controllers/CollectionController')
 
-describe('CollectionController.addBook', () => {
+describe('CollectionController', () => {
   /** @type {import('../../../server/models/Collection')} */
   let collection
   /** @type {import('../../../server/models/LibraryItem')} */
@@ -70,5 +70,44 @@ describe('CollectionController.addBook', () => {
     expect(res.body).to.equal('Book already in collection')
     const links = await Database.collectionBookModel.findAll({ where: { collectionId: collection.id, bookId: libraryItem.mediaId } })
     expect(links).to.have.lengthOf(1)
+  })
+
+  it('does not throw when a batch includes a book already in the collection', async () => {
+    const book = await Database.bookModel.create({ title: 'Second Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+    const secondItem = await Database.libraryItemModel.create({
+      path: '/test-lib/book-2',
+      isFile: false,
+      libraryFiles: [],
+      mediaId: book.id,
+      mediaType: 'book',
+      libraryId: libraryItem.libraryId,
+      libraryFolderId: libraryItem.libraryFolderId
+    })
+    sinon.stub(collection, 'getCollectionBooks').resolves([])
+    sinon.stub(collection, 'getOldJsonExpanded').resolves(null)
+
+    const res = {
+      statusCode: null,
+      body: null,
+      status(code) {
+        this.statusCode = code
+        return this
+      },
+      send(body) {
+        this.body = body
+        return this
+      },
+      json(body) {
+        this.body = body
+        return this
+      }
+    }
+
+    await CollectionController.addBatch({ body: { books: [libraryItem.id, secondItem.id] }, collection, user: { id: 'user-id' } }, res)
+
+    const existingLinks = await Database.collectionBookModel.findAll({ where: { collectionId: collection.id, bookId: libraryItem.mediaId } })
+    expect(existingLinks).to.have.lengthOf(1)
+    const newLinks = await Database.collectionBookModel.findAll({ where: { collectionId: collection.id, bookId: secondItem.mediaId } })
+    expect(newLinks).to.have.lengthOf(1)
   })
 })

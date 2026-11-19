@@ -363,7 +363,7 @@ class CollectionController {
 
     let jsonExpanded = null
     if (hasUpdated) {
-      await Database.collectionBookModel.bulkCreate(collectionBooksToAdd)
+      await Database.collectionBookModel.bulkCreate(collectionBooksToAdd, { ignoreDuplicates: true })
 
       jsonExpanded = await req.collection.getOldJsonExpanded(req.user)
       if (jsonExpanded) SocketAuthority.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
