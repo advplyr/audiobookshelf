@@ -6,14 +6,19 @@
  * https://github.com/archiverjs/node-crc32-stream/blob/master/LICENSE-MIT
  */
 
-'use strict';
+import { createRequire } from 'node:module';
+import { DeflateRaw } from 'node:zlib';
+import type { ZlibOptions } from 'node:zlib';
+import type { TransformCallback } from 'node:stream';
 
-const { DeflateRaw } = require('zlib');
-
-const crc32 = require('../crc32');
+const crc32 = createRequire(__filename)('../crc32') as { buf(chunk: Buffer, seed: number | Buffer): number };
 
 class DeflateCRC32Stream extends DeflateRaw {
-  constructor(options) {
+  declare checksum: number | Buffer;
+  declare rawSize: number;
+  declare compressedSize: number;
+
+  constructor(options?: ZlibOptions) {
     super(options);
 
     this.checksum = Buffer.allocUnsafe(4);
@@ -23,7 +28,7 @@ class DeflateCRC32Stream extends DeflateRaw {
     this.compressedSize = 0;
   }
 
-  push(chunk, encoding) {
+  override push(chunk: Buffer | Uint8Array | string | null, encoding?: BufferEncoding) {
     if (chunk) {
       this.compressedSize += chunk.length;
     }
@@ -31,7 +36,7 @@ class DeflateCRC32Stream extends DeflateRaw {
     return super.push(chunk, encoding);
   }
 
-  _transform(chunk, encoding, callback) {
+  override _transform(chunk: Buffer, encoding: BufferEncoding, callback: TransformCallback) {
     if (chunk) {
       this.checksum = crc32.buf(chunk, this.checksum) >>> 0;
       this.rawSize += chunk.length;
@@ -40,9 +45,11 @@ class DeflateCRC32Stream extends DeflateRaw {
     super._transform(chunk, encoding, callback)
   }
 
-  digest(encoding) {
+  digest(): Buffer;
+  digest(encoding: BufferEncoding): string;
+  digest(encoding?: BufferEncoding): Buffer | string {
     const checksum = Buffer.allocUnsafe(4);
-    checksum.writeUInt32BE(this.checksum >>> 0, 0);
+    checksum.writeUInt32BE(Number(this.checksum) >>> 0, 0);
     return encoding ? checksum.toString(encoding) : checksum;
   }
 
@@ -59,4 +66,4 @@ class DeflateCRC32Stream extends DeflateRaw {
   }
 }
 
-module.exports = DeflateCRC32Stream;
+export = DeflateCRC32Stream;
