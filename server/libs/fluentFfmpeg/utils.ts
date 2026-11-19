@@ -1,13 +1,42 @@
-/*jshint node:true*/
-'use strict';
+import os from 'node:os';
+import which from '../which';
+import type { EventEmitter } from 'node:events';
+import type { MediaArguments, MediaFilter } from './options/types';
 
-var isWindows = require('os').platform().match(/win(32|64)/);
-var which = require('../which');
+var isWindows = os.platform().match(/win(32|64)/);
 
 var nlRegexp = /\r\n|\r|\n/g;
 var streamRegexp = /^\[?(.*?)\]?$/;
 var filterEscapeRegexp = /[,]/;
-var whichCache = {};
+var whichCache: Record<string, string | undefined> = {};
+
+interface CodecData {
+  format: string;
+  audio: string;
+  video: string;
+  duration: string;
+  audio_details?: string[];
+  video_details?: string[];
+}
+
+interface CodecState {
+  inputStack: CodecData[];
+  inputIndex: number;
+  inInput: boolean;
+}
+
+interface ProgressData {
+  frames: number;
+  currentFps: number;
+  currentKbps: number;
+  targetSize: number;
+  timemark: string | undefined;
+  percent?: number;
+}
+
+type ProgressCommand = EventEmitter & {
+  _ffprobeData?: { format?: { duration?: string | number } };
+};
 
 /**
  * Parse progress line from ffmpeg stderr
@@ -16,8 +45,8 @@ var whichCache = {};
  * @return progress object
  * @private
  */
-function parseProgressLine(line) {
-  var progress = {};
+function parseProgressLine(line: string) {
+  var progress: Partial<Record<string, string>> = {};
 
   // Remove all spaces after = and trim
   line = line.replace(/=\s+/g, '=').trim();
@@ -40,7 +69,7 @@ function parseProgressLine(line) {
 }
 
 
-var utils = module.exports = {
+var utils = {
   isWindows: isWindows,
   streamRegexp: streamRegexp,
 
@@ -52,8 +81,8 @@ var utils = module.exports = {
    * @param {Object} dest destination object
    * @private
    */
-  copy: function (source, dest) {
-    Object.keys(source).forEach(function (key) {
+  copy: function <Source extends object>(source: Source, dest: Partial<Source>) {
+    (Object.keys(source) as Array<keyof Source>).forEach(function (key) {
       dest[key] = source[key];
     });
   },
@@ -71,52 +100,54 @@ var utils = module.exports = {
    *
    * @private
    */
-  args: function () {
-    var list = [];
+  args: function <Value = string | number>(): MediaArguments<Value> {
+    var list: Value[] = [];
 
     // Append argument(s) to the list
-    var argfunc = function () {
-      if (arguments.length === 1 && Array.isArray(arguments[0])) {
-        list = list.concat(arguments[0]);
+    var argfunc = function (...args: Value[] | [Value[]]) {
+      const first = args[0];
+      if (args.length === 1 && Array.isArray(first)) {
+        list = list.concat(first);
       } else {
-        list = list.concat([].slice.call(arguments));
+        // Multiple arguments are individual values. An array is accepted as a single argument.
+        list = list.concat(args as Value[]);
       }
     };
 
-    // Clear argument list
-    argfunc.clear = function () {
-      list = [];
-    };
+    return Object.assign(argfunc, {
+      // Clear argument list
+      clear: function () {
+        list = [];
+      },
 
-    // Return argument list
-    argfunc.get = function () {
-      return list;
-    };
+      // Return argument list
+      get: function () {
+        return list;
+      },
 
-    // Find argument 'arg' in list, and if found, return an array of the 'count' items that follow it
-    argfunc.find = function (arg, count) {
-      var index = list.indexOf(arg);
-      if (index !== -1) {
-        return list.slice(index + 1, index + 1 + (count || 0));
-      }
-    };
+      // Find argument 'arg' in list, and if found, return an array of the 'count' items that follow it
+      find: function (arg: Value, count?: number) {
+        var index = list.indexOf(arg);
+        if (index !== -1) {
+          return list.slice(index + 1, index + 1 + (count || 0));
+        }
+      },
 
-    // Find argument 'arg' in list, and if found, remove it as well as the 'count' items that follow it
-    argfunc.remove = function (arg, count) {
-      var index = list.indexOf(arg);
-      if (index !== -1) {
-        list.splice(index, (count || 0) + 1);
-      }
-    };
+      // Find argument 'arg' in list, and if found, remove it as well as the 'count' items that follow it
+      remove: function (arg: Value, count?: number) {
+        var index = list.indexOf(arg);
+        if (index !== -1) {
+          list.splice(index, (count || 0) + 1);
+        }
+      },
 
-    // Clone argument list
-    argfunc.clone = function () {
-      var cloned = utils.args();
-      cloned(list);
-      return cloned;
-    };
-
-    return argfunc;
+      // Clone argument list
+      clone: function () {
+        var cloned = utils.args<Value>();
+        cloned(list);
+        return cloned;
+      },
+    });
   },
 
 
@@ -134,7 +165,7 @@ var utils = module.exports = {
    * @return String[]
    * @private
    */
-  makeFilterStrings: function (filters) {
+  makeFilterStrings: function (filters: MediaFilter[]) {
     return filters.map(function (filterSpec) {
       if (typeof filterSpec === 'string') {
         return filterSpec;
@@ -161,23 +192,24 @@ var utils = module.exports = {
       filterString += filterSpec.filter;
 
       // Add options
-      if (filterSpec.options) {
-        if (typeof filterSpec.options === 'string' || typeof filterSpec.options === 'number') {
+      const options = filterSpec.options;
+      if (options) {
+        if (typeof options === 'string' || typeof options === 'number') {
           // Option string
-          filterString += '=' + filterSpec.options;
-        } else if (Array.isArray(filterSpec.options)) {
+          filterString += '=' + options;
+        } else if (Array.isArray(options)) {
           // Option array (unnamed options)
-          filterString += '=' + filterSpec.options.map(function (option) {
+          filterString += '=' + options.map(function (option) {
             if (typeof option === 'string' && option.match(filterEscapeRegexp)) {
               return '\'' + option + '\'';
             } else {
               return option;
             }
           }).join(':');
-        } else if (Object.keys(filterSpec.options).length) {
+        } else if (typeof options === 'object' && Object.keys(options).length) {
           // Option object (named options)
-          filterString += '=' + Object.keys(filterSpec.options).map(function (option) {
-            var value = filterSpec.options[option];
+          filterString += '=' + Object.keys(options).map(function (option) {
+            var value = options[option];
 
             if (typeof value === 'string' && value.match(filterEscapeRegexp)) {
               value = '\'' + value + '\'';
@@ -211,12 +243,12 @@ var utils = module.exports = {
    * @param {Function} callback callback with signature (err, path)
    * @private
    */
-  which: function (name, callback) {
+  which: function (name: string, callback: (error: null, result?: string) => void) {
     if (name in whichCache) {
       return callback(null, whichCache[name]);
     }
 
-    which(name, function (err, result) {
+    void which(name, function (err, result) {
       if (err) {
         // Treat errors as not found
         return callback(null, whichCache[name] = '');
@@ -233,7 +265,7 @@ var utils = module.exports = {
    * @return Number
    * @private
    */
-  timemarkToSeconds: function (timemark) {
+  timemarkToSeconds: function (timemark: string | number) {
     if (typeof timemark === 'number') {
       return timemark;
     }
@@ -271,7 +303,7 @@ var utils = module.exports = {
    * @return {Boolean} true if codec data is complete (and event was emitted), false otherwise
    * @private
    */
-  extractCodecData: function (command, stderrLine, codecsObject) {
+  extractCodecData: function (command: EventEmitter, stderrLine: string, codecsObject: Partial<CodecState>) {
     var inputPattern = /Input #[0-9]+, ([^ ]+),/;
     var durPattern = /Duration\: ([^,]+)/;
     var audioPattern = /Audio\: (.*)/;
@@ -283,15 +315,17 @@ var utils = module.exports = {
       codecsObject.inInput = false;
     }
 
-    var inputStack = codecsObject.inputStack;
-    var inputIndex = codecsObject.inputIndex;
-    var inInput = codecsObject.inInput;
+    // The parser initializes these fields together when it sees a new state object.
+    const state = codecsObject as CodecState;
+    var inputStack = state.inputStack;
+    var inputIndex = state.inputIndex;
+    var inInput = state.inInput;
 
     var format, dur, audio, video;
 
     if (format = stderrLine.match(inputPattern)) {
       inInput = codecsObject.inInput = true;
-      inputIndex = codecsObject.inputIndex = codecsObject.inputIndex + 1;
+      inputIndex = state.inputIndex = state.inputIndex + 1;
 
       inputStack[inputIndex] = { format: format[1], audio: '', video: '', duration: '' };
     } else if (inInput && (dur = stderrLine.match(durPattern))) {
@@ -307,7 +341,7 @@ var utils = module.exports = {
     } else if (/Output #\d+/.test(stderrLine)) {
       inInput = codecsObject.inInput = false;
     } else if (/Stream mapping:|Press (\[q\]|ctrl-c) to stop/.test(stderrLine)) {
-      command.emit.apply(command, ['codecData'].concat(inputStack));
+      command.emit('codecData', ...inputStack);
       return true;
     }
 
@@ -322,16 +356,16 @@ var utils = module.exports = {
    * @param {String} stderrLine ffmpeg stderr data
    * @private
    */
-  extractProgress: function (command, stderrLine) {
+  extractProgress: function (command: ProgressCommand, stderrLine: string) {
     var progress = parseProgressLine(stderrLine);
 
     if (progress) {
       // build progress report object
-      var ret = {
-        frames: parseInt(progress.frame, 10),
-        currentFps: parseInt(progress.fps, 10),
+      var ret: ProgressData = {
+        frames: parseInt(String(progress.frame), 10),
+        currentFps: parseInt(String(progress.fps), 10),
         currentKbps: progress.bitrate ? parseFloat(progress.bitrate.replace('kbits/s', '')) : 0,
-        targetSize: parseInt(progress.size || progress.Lsize, 10),
+        targetSize: parseInt(String(progress.size || progress.Lsize), 10),
         timemark: progress.time
       };
 
@@ -339,7 +373,7 @@ var utils = module.exports = {
       if (command._ffprobeData && command._ffprobeData.format && command._ffprobeData.format.duration) {
         var duration = Number(command._ffprobeData.format.duration);
         if (!isNaN(duration))
-          ret.percent = (utils.timemarkToSeconds(ret.timemark) / duration) * 100;
+          ret.percent = (utils.timemarkToSeconds(ret.timemark!) / duration) * 100;
       }
       command.emit('progress', ret);
     }
@@ -353,9 +387,9 @@ var utils = module.exports = {
    * @return {String}
    * @private
    */
-  extractError: function (stderr) {
+  extractError: function (stderr: string) {
     // Only return the last stderr lines that don't start with a space or a square bracket
-    return stderr.split(nlRegexp).reduce(function (messages, message) {
+    return stderr.split(nlRegexp).reduce<string[]>(function (messages, message) {
       if (message.charAt(0) === ' ' || message.charAt(0) === '[') {
         return [];
       } else {
@@ -373,37 +407,37 @@ var utils = module.exports = {
    * - close() : prevents further append() calls and does a last call to callbacks
    * - callback(cb) : calls cb for each line (incl. those already in the ring)
    *
-   * @param {Numebr} maxLines maximum number of lines to store (<= 0 for unlimited)
+   * @param {Number} maxLines maximum number of lines to store (<= 0 for unlimited)
    */
-  linesRing: function (maxLines) {
-    var cbs = [];
-    var lines = [];
-    var current = null;
+  linesRing: function (maxLines: number) {
+    var cbs: Array<(line: string) => void> = [];
+    var lines: string[] = [];
+    var current: string | null = null;
     var closed = false
     var max = maxLines - 1;
 
-    function emit(line) {
+    function emit(line: string) {
       cbs.forEach(function (cb) { cb(line); });
     }
 
     return {
-      callback: function (cb) {
+      callback: function (cb: (line: string) => void) {
         lines.forEach(function (l) { cb(l); });
         cbs.push(cb);
       },
 
-      append: function (str) {
+      append: function (str: string | Buffer) {
         if (closed) return;
-        if (str instanceof Buffer) str = '' + str;
+        if (str instanceof Buffer) str = str.toString();
         if (!str || str.length === 0) return;
 
-        var newLines = str.split(nlRegexp);
+        var newLines = (str as string).split(nlRegexp);
 
         if (newLines.length === 1) {
           if (current !== null) {
             current = current + newLines.shift();
           } else {
-            current = newLines.shift();
+            current = newLines.shift()!;
           }
         } else {
           if (current !== null) {
@@ -412,7 +446,7 @@ var utils = module.exports = {
             lines.push(current);
           }
 
-          current = newLines.pop();
+          current = newLines.pop()!;
 
           newLines.forEach(function (l) {
             emit(l);
@@ -452,3 +486,5 @@ var utils = module.exports = {
     };
   }
 };
+
+export = utils;

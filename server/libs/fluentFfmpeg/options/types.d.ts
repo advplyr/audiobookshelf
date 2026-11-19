@@ -4,6 +4,10 @@ export interface MediaArguments<Value = string | number> {
   (...args: Value[]): void;
   (args: Value[]): void;
   clear(): void;
+  get(): Value[];
+  find(arg: Value, count?: number): Value[] | undefined;
+  remove(arg: Value, count?: number): void;
+  clone(): MediaArguments<Value>;
 }
 
 export interface CommandInput {
@@ -51,5 +55,7 @@ export type MediaFilter = string | {
   filter: string;
   inputs?: string | string[];
   outputs?: string | string[];
-  options?: unknown;
+  options?: FilterValue | FilterValue[] | Record<string, FilterValue>;
 };
+
+type FilterValue = string | number | boolean | null | undefined;

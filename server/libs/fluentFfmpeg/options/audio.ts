@@ -162,7 +162,7 @@ function install(proto: Ffmpeg.FfmpegCommand) {
   proto.withAudioFilters =
   proto.audioFilter =
   proto.audioFilters = function(this: CommandWithMediaOutput, filters: MediaFilter | MediaFilter[], ...more: MediaFilter[]) {
-    const list = more.length ? [filters, ...more] : Array.isArray(filters) ? filters : [filters];
+    const list = more.length ? [filters as MediaFilter, ...more] : Array.isArray(filters) ? filters : [filters];
 
     this._currentOutput.audioFilters(utils.makeFilterStrings(list));
     return this;
