@@ -1,14 +1,14 @@
-/*jshint node:true*/
-'use strict';
+import type Ffmpeg from '../../fluentFfmpeg';
+import utils from '../utils';
+import type { CommandWithInput, CommandWithMediaOutput, MediaArguments, MediaFilter } from './types';
 
-var utils = require('../utils');
-
+type CommandWithFilterGraph = Ffmpeg.FfmpegCommand & { _complexFilters: MediaArguments };
 
 /*
  *! Custom options methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Add custom input option(s)
    *
@@ -38,23 +38,15 @@ module.exports = function(proto) {
   proto.withInputOption =
   proto.withInputOptions =
   proto.inputOption =
-  proto.inputOptions = function(options) {
+  proto.inputOptions = function(this: CommandWithInput, options: string | string[], ...more: string[]) {
     if (!this._currentInput) {
       throw new Error('No input specified');
     }
 
-    var doSplit = true;
+    const doSplit = more.length === 0;
+    const optionList = doSplit && Array.isArray(options) ? options : [options as string, ...more];
 
-    if (arguments.length > 1) {
-      options = [].slice.call(arguments);
-      doSplit = false;
-    }
-
-    if (!Array.isArray(options)) {
-      options = [options];
-    }
-
-    this._currentInput.options(options.reduce(function(options, option) {
+    this._currentInput.options(optionList.reduce<string[]>(function(options, option) {
       var split = String(option).split(' ');
 
       if (doSplit && split.length === 2) {
@@ -97,19 +89,11 @@ module.exports = function(proto) {
   proto.withOption =
   proto.withOptions =
   proto.outputOption =
-  proto.outputOptions = function(options) {
-    var doSplit = true;
+  proto.outputOptions = function(this: CommandWithMediaOutput, options: string | string[], ...more: string[]) {
+    const doSplit = more.length === 0;
+    const optionList = doSplit && Array.isArray(options) ? options : [options as string, ...more];
 
-    if (arguments.length > 1) {
-      options = [].slice.call(arguments);
-      doSplit = false;
-    }
-
-    if (!Array.isArray(options)) {
-      options = [options];
-    }
-
-    this._currentOutput.options(options.reduce(function(options, option) {
+    this._currentOutput.options(optionList.reduce<string[]>(function(options, option) {
       var split = String(option).split(' ');
 
       if (doSplit && split.length === 2) {
@@ -189,7 +173,7 @@ module.exports = function(proto) {
    * @return FfmpegCommand
    */
   proto.filterGraph =
-  proto.complexFilter = function(spec, map) {
+  proto.complexFilter = function(this: CommandWithFilterGraph, spec: MediaFilter | MediaFilter[], map?: string | string[]) {
     this._complexFilters.clear();
 
     if (!Array.isArray(spec)) {
@@ -199,9 +183,8 @@ module.exports = function(proto) {
     this._complexFilters('-filter_complex', utils.makeFilterStrings(spec).join(';'));
 
     if (Array.isArray(map)) {
-      var self = this;
-      map.forEach(function(streamSpec) {
-        self._complexFilters('-map', streamSpec.replace(utils.streamRegexp, '[$1]'));
+      map.forEach((streamSpec) => {
+        this._complexFilters('-map', streamSpec.replace(utils.streamRegexp, '[$1]'));
       });
     } else if (typeof map === 'string') {
       this._complexFilters('-map', map.replace(utils.streamRegexp, '[$1]'));
@@ -209,4 +192,6 @@ module.exports = function(proto) {
 
     return this;
   };
-};
+}
+
+export = install;
