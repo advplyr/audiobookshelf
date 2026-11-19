@@ -141,12 +141,12 @@ function aggregateTwoErrors(innerError: CodedError | null | undefined, outerErro
 class AbortError extends Error {
   declare code: string
 
-  constructor(message = 'The operation was aborted', options?: ErrorOptions | null) {
+  constructor(message: unknown = 'The operation was aborted', options?: ErrorOptions | null) {
     if (options !== undefined && typeof options !== 'object') {
       throw new codes.ERR_INVALID_ARG_TYPE!('options', 'Object', options)
     }
 
-    super(message, options as ErrorOptions | undefined)
+    super(message as string, options as ErrorOptions | undefined)
     this.code = 'ABORT_ERR'
     this.name = 'AbortError'
   }

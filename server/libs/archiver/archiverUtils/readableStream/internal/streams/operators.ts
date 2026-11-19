@@ -1,19 +1,31 @@
-'use strict'
+import type { Readable } from 'node:stream'
+import LegacyAbortController from '../../../../../watcher/aborter/controller'
+import errors from '../../ours/errors'
+import primordials from '../../ours/primordials'
+import validators from '../validators'
+import eos from './end-of-stream'
 
-const abortControllerModule = require('../../../../../watcher/aborter/controller')
+type OperatorStream = AsyncIterable<unknown> & Pick<Readable, 'destroy' | 'once' | 'on' | 'removeListener'>
+type Signal = Pick<AbortSignal, 'aborted' | 'addEventListener' | 'removeEventListener'> & { reason?: unknown }
+type Controller = new () => { signal: Signal; abort(): void }
+type CallbackOptions = { signal: Signal }
+type Iteratee = (value: unknown, options: CallbackOptions) => unknown
+type Reducer = (initialValue: unknown, value: unknown, options: CallbackOptions) => unknown
+type Options = { signal?: Signal; concurrency?: number }
 
-const AbortController = globalThis.AbortController || abortControllerModule.AbortController
+const legacyController: typeof LegacyAbortController & { AbortController?: Controller } = LegacyAbortController
+const AbortController = globalThis.AbortController || legacyController.AbortController
 
 const {
   codes: { ERR_INVALID_ARG_TYPE, ERR_MISSING_ARGS, ERR_OUT_OF_RANGE },
   AbortError
-} = require('../../ours/errors')
+} = errors
 
-const { validateAbortSignal, validateInteger, validateObject } = require('../validators')
+const { validateAbortSignal, validateInteger, validateObject } = validators
 
-const kWeakHandler = require('../../ours/primordials').Symbol('kWeak')
+const kWeakHandler = primordials.Symbol('kWeak')
 
-const { finished } = require('./end-of-stream')
+const { finished } = eos
 
 const {
   ArrayPrototypePush,
@@ -24,37 +36,36 @@ const {
   PromiseReject,
   PromisePrototypeCatch,
   Symbol
-} = require('../../ours/primordials')
+} = primordials
 
 const kEmpty = Symbol('kEmpty')
 const kEof = Symbol('kEof')
 
-function map(fn, options) {
+function map(this: OperatorStream, fn: Iteratee, options?: Options | null) {
   if (typeof fn !== 'function') {
-    throw new ERR_INVALID_ARG_TYPE('fn', ['Function', 'AsyncFunction'], fn)
+    throw new ERR_INVALID_ARG_TYPE!('fn', ['Function', 'AsyncFunction'], fn)
   }
 
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
   let concurrency = 1
 
-  if ((options === null || options === undefined ? undefined : options.concurrency) != null) {
+  if (options?.concurrency != null) {
     concurrency = MathFloor(options.concurrency)
   }
 
   validateInteger(concurrency, 'concurrency', 1)
-  return async function* map() {
-    var _options$signal, _options$signal2
+  return async function* map(this: OperatorStream) {
+    var _options$signal
 
     const ac = new AbortController()
-    const stream = this
-    const queue = []
+    const queue: unknown[] = []
     const signal = ac.signal
     const signalOpt = {
       signal
@@ -72,24 +83,18 @@ function map(fn, options) {
       abort()
     }
 
-    options === null || options === undefined
-      ? undefined
-      : (_options$signal2 = options.signal) === null || _options$signal2 === undefined
-        ? undefined
-        : _options$signal2.addEventListener('abort', abort)
-    let next
-    let resume
+    options?.signal?.addEventListener('abort', abort)
+    let next: (() => void) | null | undefined
+    let resume: (() => void) | null | undefined
     let done = false
 
     function onDone() {
       done = true
     }
 
-    async function pump() {
+    const pump = async () => {
       try {
-        for await (let val of stream) {
-          var _val
-
+        for await (let val of this) {
           if (done) {
             return
           }
@@ -101,15 +106,16 @@ function map(fn, options) {
           try {
             val = fn(val, signalOpt)
           } catch (err) {
-            val = PromiseReject(err)
+            val = PromiseReject(err as Error)
           }
 
           if (val === kEmpty) {
             continue
           }
 
-          if (typeof ((_val = val) === null || _val === undefined ? undefined : _val.catch) === 'function') {
-            val.catch(onDone)
+          const pending = val as Promise<unknown> | null | undefined
+          if (typeof pending?.catch === 'function') {
+            void pending.catch(onDone)
           }
 
           queue.push(val)
@@ -120,7 +126,7 @@ function map(fn, options) {
           }
 
           if (!done && queue.length && queue.length >= concurrency) {
-            await new Promise((resolve) => {
+            await new Promise<void>((resolve) => {
               resume = resolve
             })
           }
@@ -128,12 +134,10 @@ function map(fn, options) {
 
         queue.push(kEof)
       } catch (err) {
-        const val = PromiseReject(err)
-        PromisePrototypeCatch(val, onDone)
+        const val = PromiseReject(err as Error)
+        void PromisePrototypeCatch(val, onDone)
         queue.push(val)
       } finally {
-        var _options$signal3
-
         done = true
 
         if (next) {
@@ -141,15 +145,11 @@ function map(fn, options) {
           next = null
         }
 
-        options === null || options === undefined
-          ? undefined
-          : (_options$signal3 = options.signal) === null || _options$signal3 === undefined
-            ? undefined
-            : _options$signal3.removeEventListener('abort', abort)
+        options?.signal?.removeEventListener('abort', abort)
       }
     }
 
-    pump()
+    void pump()
 
     try {
       while (true) {
@@ -176,7 +176,7 @@ function map(fn, options) {
           }
         }
 
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
           next = resolve
         })
       }
@@ -192,16 +192,16 @@ function map(fn, options) {
   }.call(this)
 }
 
-function asIndexedPairs(options = undefined) {
+function asIndexedPairs(this: OperatorStream, options: Options | null | undefined = undefined) {
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
-  return async function* asIndexedPairs() {
+  return async function* asIndexedPairs(this: OperatorStream) {
     let index = 0
 
     for await (const val of this) {
@@ -215,7 +215,7 @@ function asIndexedPairs(options = undefined) {
         _options$signal4.aborted
       ) {
         throw new AbortError({
-          cause: options.signal.reason
+          cause: options.signal!.reason
         })
       }
 
@@ -224,18 +224,18 @@ function asIndexedPairs(options = undefined) {
   }.call(this)
 }
 
-async function some(fn, options = undefined) {
-  // eslint-disable-next-line no-unused-vars
+async function some(this: OperatorStream, fn: Iteratee, options: Options | null | undefined = undefined) {
   for await (const unused of filter.call(this, fn, options)) {
+    void unused
     return true
   }
 
   return false
 }
 
-async function every(fn, options = undefined) {
+async function every(this: OperatorStream, fn: Iteratee, options: Options | null | undefined = undefined) {
   if (typeof fn !== 'function') {
-    throw new ERR_INVALID_ARG_TYPE('fn', ['Function', 'AsyncFunction'], fn)
+    throw new ERR_INVALID_ARG_TYPE!('fn', ['Function', 'AsyncFunction'], fn)
   } // https://en.wikipedia.org/wiki/De_Morgan%27s_laws
 
   return !(await some.call(
@@ -247,7 +247,7 @@ async function every(fn, options = undefined) {
   ))
 }
 
-async function find(fn, options) {
+async function find(this: OperatorStream, fn: Iteratee, options?: Options | null) {
   for await (const result of filter.call(this, fn, options)) {
     return result
   }
@@ -255,25 +255,27 @@ async function find(fn, options) {
   return undefined
 }
 
-async function forEach(fn, options) {
+async function forEach(this: OperatorStream, fn: Iteratee, options?: Options | null) {
   if (typeof fn !== 'function') {
-    throw new ERR_INVALID_ARG_TYPE('fn', ['Function', 'AsyncFunction'], fn)
+    throw new ERR_INVALID_ARG_TYPE!('fn', ['Function', 'AsyncFunction'], fn)
   }
 
-  async function forEachFn(value, options) {
+  async function forEachFn(value: unknown, options: CallbackOptions) {
     await fn(value, options)
     return kEmpty
-  } // eslint-disable-next-line no-unused-vars
-
-  for await (const unused of map.call(this, forEachFn, options));
-}
-
-function filter(fn, options) {
-  if (typeof fn !== 'function') {
-    throw new ERR_INVALID_ARG_TYPE('fn', ['Function', 'AsyncFunction'], fn)
   }
 
-  async function filterFn(value, options) {
+  for await (const unused of map.call(this, forEachFn, options)) {
+    void unused
+  }
+}
+
+function filter(this: OperatorStream, fn: Iteratee, options?: Options | null) {
+  if (typeof fn !== 'function') {
+    throw new ERR_INVALID_ARG_TYPE!('fn', ['Function', 'AsyncFunction'], fn)
+  }
+
+  async function filterFn(value: unknown, options: CallbackOptions) {
     if (await fn(value, options)) {
       return value
     }
@@ -285,25 +287,25 @@ function filter(fn, options) {
 } // Specific to provide better error to reduce since the argument is only
 // missing if the stream has no items in it - but the code is still appropriate
 
-class ReduceAwareErrMissingArgs extends ERR_MISSING_ARGS {
+class ReduceAwareErrMissingArgs extends ERR_MISSING_ARGS! {
   constructor() {
     super('reduce')
     this.message = 'Reduce of an empty stream requires an initial value'
   }
 }
 
-async function reduce(reducer, initialValue, options) {
+async function reduce(this: OperatorStream, reducer: Reducer, initialValue?: unknown, options?: Options | null) {
   var _options$signal5
 
   if (typeof reducer !== 'function') {
-    throw new ERR_INVALID_ARG_TYPE('reducer', ['Function', 'AsyncFunction'], reducer)
+    throw new ERR_INVALID_ARG_TYPE!('reducer', ['Function', 'AsyncFunction'], reducer)
   }
 
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
@@ -317,7 +319,7 @@ async function reduce(reducer, initialValue, options) {
     _options$signal5.aborted
   ) {
     const err = new AbortError(undefined, {
-      cause: options.signal.reason
+      cause: options.signal!.reason
     })
     this.once('error', () => { }) // The error is already propagated
 
@@ -374,16 +376,16 @@ async function reduce(reducer, initialValue, options) {
   return initialValue
 }
 
-async function toArray(options) {
+async function toArray(this: OperatorStream, options?: Options | null) {
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
-  const result = []
+  const result: unknown[] = []
 
   for await (const val of this) {
     var _options$signal7
@@ -396,7 +398,7 @@ async function toArray(options) {
       _options$signal7.aborted
     ) {
       throw new AbortError(undefined, {
-        cause: options.signal.reason
+        cause: options.signal!.reason
       })
     }
 
@@ -406,42 +408,42 @@ async function toArray(options) {
   return result
 }
 
-function flatMap(fn, options) {
+function flatMap(this: OperatorStream, fn: Iteratee, options?: Options | null) {
   const values = map.call(this, fn, options)
-  return async function* flatMap() {
+  return async function* flatMap(this: OperatorStream) {
     for await (const val of values) {
-      yield* val
+      yield* val as Iterable<unknown> | AsyncIterable<unknown>
     }
   }.call(this)
 }
 
-function toIntegerOrInfinity(number) {
+function toIntegerOrInfinity(value: unknown) {
   // We coerce here to align with the spec
   // https://github.com/tc39/proposal-iterator-helpers/issues/169
-  number = Number(number)
+  const number = Number(value)
 
   if (NumberIsNaN(number)) {
     return 0
   }
 
   if (number < 0) {
-    throw new ERR_OUT_OF_RANGE('number', '>= 0', number)
+    throw new ERR_OUT_OF_RANGE!('number', '>= 0', number)
   }
 
   return number
 }
 
-function drop(number, options = undefined) {
+function drop(this: OperatorStream, number: unknown, options: Options | null | undefined = undefined) {
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
-  number = toIntegerOrInfinity(number)
-  return async function* drop() {
+  let count = toIntegerOrInfinity(number)
+  return async function* drop(this: OperatorStream) {
     var _options$signal8
 
     if (
@@ -467,24 +469,24 @@ function drop(number, options = undefined) {
         throw new AbortError()
       }
 
-      if (number-- <= 0) {
+      if (count-- <= 0) {
         yield val
       }
     }
   }.call(this)
 }
 
-function take(number, options = undefined) {
+function take(this: OperatorStream, number: unknown, options: Options | null | undefined = undefined) {
   if (options != null) {
     validateObject(options, 'options')
   }
 
-  if ((options === null || options === undefined ? undefined : options.signal) != null) {
+  if (options?.signal != null) {
     validateAbortSignal(options.signal, 'options.signal')
   }
 
-  number = toIntegerOrInfinity(number)
-  return async function* take() {
+  let count = toIntegerOrInfinity(number)
+  return async function* take(this: OperatorStream) {
     var _options$signal10
 
     if (
@@ -510,7 +512,7 @@ function take(number, options = undefined) {
         throw new AbortError()
       }
 
-      if (number-- > 0) {
+      if (count-- > 0) {
         yield val
       } else {
         return
@@ -519,7 +521,7 @@ function take(number, options = undefined) {
   }.call(this)
 }
 
-module.exports.streamReturningOperators = {
+const streamReturningOperators = {
   asIndexedPairs,
   drop,
   filter,
@@ -527,7 +529,7 @@ module.exports.streamReturningOperators = {
   map,
   take
 }
-module.exports.promiseReturningOperators = {
+const promiseReturningOperators = {
   every,
   forEach,
   reduce,
@@ -535,3 +537,9 @@ module.exports.promiseReturningOperators = {
   some,
   find
 }
+
+declare const module: { exports: { streamReturningOperators: typeof streamReturningOperators; promiseReturningOperators: typeof promiseReturningOperators } }
+module.exports.streamReturningOperators = streamReturningOperators
+module.exports.promiseReturningOperators = promiseReturningOperators
+
+export = module.exports
