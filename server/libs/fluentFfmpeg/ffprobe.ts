@@ -1,27 +1,53 @@
-/*jshint node:true, laxcomma:true*/
-'use strict';
+import { spawn } from 'node:child_process';
+import type { CommandInput, CommandInputStream } from './options/types';
 
-var spawn = require('child_process').spawn;
+interface ProbeFields {
+  [key: string]: string | number | ProbeFields | undefined;
+  tags?: ProbeFields;
+  disposition?: ProbeFields;
+}
 
+interface ProbeData {
+  streams: ProbeFields[];
+  format: ProbeFields;
+  chapters: ProbeFields[];
+}
 
-function legacyTag(key) { return key.match(/^TAG:/); }
-function legacyDisposition(key) { return key.match(/^DISPOSITION:/); }
+type ProbeCallback = (error: Error | null, data?: ProbeData) => void;
+type ProbeArguments =
+  | [callback: ProbeCallback]
+  | [index: number, callback: ProbeCallback]
+  | [options: string[], callback: ProbeCallback]
+  | [index: number, options: string[], callback: ProbeCallback];
 
-function parseFfprobeOutput(out) {
+interface ProbePrototype {
+  ffprobe(...args: ProbeArguments): void;
+}
+
+interface ProbeCommand {
+  _currentInput?: CommandInput;
+  _inputs: CommandInput[];
+  _getFfprobePath(callback: (error: Error | null, path?: string) => void): void;
+}
+
+function legacyTag(key: string) { return key.match(/^TAG:/); }
+function legacyDisposition(key: string) { return key.match(/^DISPOSITION:/); }
+
+function parseFfprobeOutput(out: string): ProbeData {
   var lines = out.split(/\r\n|\r|\n/);
 
   lines = lines.filter(function (line) {
     return line.length > 0;
   });
 
-  var data = {
+  var data: ProbeData = {
     streams: [],
     format: {},
     chapters: []
   };
 
-  function parseBlock(name) {
-    var data = {};
+  function parseBlock(name: string) {
+    var data: ProbeFields = {};
 
     var line = lines.shift();
     while (typeof line !== 'undefined') {
@@ -67,7 +93,7 @@ function parseFfprobeOutput(out) {
 
 
 
-module.exports = function(proto) {
+function install(proto: ProbePrototype) {
   /**
    * A callback passed to the {@link FfmpegCommand#ffprobe} method.
    *
@@ -93,31 +119,33 @@ module.exports = function(proto) {
    * @param {FfmpegCommand~ffprobeCallback} callback callback function
    *
    */
-  proto.ffprobe = function() {
-    var input, index = null, options = [], callback;
+  proto.ffprobe = function(this: ProbeCommand, ...args: ProbeArguments) {
+    var input: CommandInput | undefined;
+    var index: number | null = null;
+    var options: string[] = [];
 
     // the last argument should be the callback
-    var callback = arguments[arguments.length - 1];
+    const callback = args[args.length - 1] as ProbeCallback;
 
     var ended = false
-    function handleCallback(err, data) {
+    function handleCallback(err: Error | null, data?: ProbeData) {
       if (!ended) {
         ended = true;
         callback(err, data);
       }
-    };
+    }
 
     // map the arguments to the correct variable names
-    switch (arguments.length) {
+    switch (args.length) {
       case 3:
-        index = arguments[0];
-        options = arguments[1];
+        index = args[0];
+        options = args[1];
         break;
       case 2:
-        if (typeof arguments[0] === 'number') {
-          index = arguments[0];
-        } else if (Array.isArray(arguments[0])) {
-          options = arguments[0];
+        if (typeof args[0] === 'number') {
+          index = args[0];
+        } else if (Array.isArray(args[0])) {
+          options = args[0];
         }
         break;
     }
@@ -137,6 +165,7 @@ module.exports = function(proto) {
       }
     }
 
+    const selectedInput = input;
     // Find ffprobe
     this._getFfprobePath(function(err, path) {
       if (err) {
@@ -151,32 +180,34 @@ module.exports = function(proto) {
       var stderrClosed = false;
 
       // Spawn ffprobe
-      var src = input.isStream ? 'pipe:0' : input.source;
+      // Stream inputs are piped, while file paths are passed directly to ffprobe.
+      var src = selectedInput.isStream ? 'pipe:0' : selectedInput.source as string;
       var ffprobe = spawn(path, ['-show_streams', '-show_format'].concat(options, src), {windowsHide: true});
 
-      if (input.isStream) {
+      if (selectedInput.isStream) {
+        const source = selectedInput.source as CommandInputStream;
         // Skip errors on stdin. These get thrown when ffprobe is complete and
         // there seems to be no way hook in and close stdin before it throws.
-        ffprobe.stdin.on('error', function(err) {
-          if (['ECONNRESET', 'EPIPE', 'EOF'].indexOf(err.code) >= 0) { return; }
+        ffprobe.stdin.on('error', function(err: NodeJS.ErrnoException) {
+          if (err.code !== undefined && ['ECONNRESET', 'EPIPE', 'EOF'].indexOf(err.code) >= 0) { return; }
           handleCallback(err);
         });
 
         // Once ffprobe's input stream closes, we need no more data from the
         // input
         ffprobe.stdin.on('close', function() {
-            input.source.pause();
-            input.source.unpipe(ffprobe.stdin);
+            source.pause();
+            source.unpipe(ffprobe.stdin);
         });
 
-        input.source.pipe(ffprobe.stdin);
+        source.pipe(ffprobe.stdin);
       }
 
       ffprobe.on('error', callback);
 
       // Ensure we wait for captured streams to end before calling callback
-      var exitError = null;
-      function handleExit(err) {
+      var exitError: Error | null = null;
+      function handleExit(err?: Error) {
         if (err) {
           exitError = err;
         }
@@ -199,10 +230,10 @@ module.exports = function(proto) {
               var legacyTagKeys = Object.keys(target).filter(legacyTag);
 
               if (legacyTagKeys.length) {
-                target.tags = target.tags || {};
+                const tags = target.tags = target.tags || {};
 
                 legacyTagKeys.forEach(function(tagKey) {
-                  target.tags[tagKey.substr(4)] = target[tagKey];
+                  tags[tagKey.substr(4)] = target[tagKey];
                   delete target[tagKey];
                 });
               }
@@ -210,10 +241,10 @@ module.exports = function(proto) {
               var legacyDispositionKeys = Object.keys(target).filter(legacyDisposition);
 
               if (legacyDispositionKeys.length) {
-                target.disposition = target.disposition || {};
+                const disposition = target.disposition = target.disposition || {};
 
                 legacyDispositionKeys.forEach(function(dispositionKey) {
-                  target.disposition[dispositionKey.substr(12)] = target[dispositionKey];
+                  disposition[dispositionKey.substr(12)] = target[dispositionKey];
                   delete target[dispositionKey];
                 });
               }
@@ -239,8 +270,8 @@ module.exports = function(proto) {
       });
 
       // Handle stdout/stderr streams
-      ffprobe.stdout.on('data', function(data) {
-        stdout += data;
+      ffprobe.stdout.on('data', function(data: Buffer | string) {
+        stdout += String(data);
       });
 
       ffprobe.stdout.on('close', function() {
@@ -248,8 +279,8 @@ module.exports = function(proto) {
         handleExit();
       });
 
-      ffprobe.stderr.on('data', function(data) {
-        stderr += data;
+      ffprobe.stderr.on('data', function(data: Buffer | string) {
+        stderr += String(data);
       });
 
       ffprobe.stderr.on('close', function() {
@@ -258,4 +289,6 @@ module.exports = function(proto) {
       });
     });
   };
-};
+}
+
+export = install;

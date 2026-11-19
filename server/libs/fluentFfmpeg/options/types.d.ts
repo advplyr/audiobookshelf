@@ -10,8 +10,15 @@ export interface MediaArguments<Value = string | number> {
   clone(): MediaArguments<Value>;
 }
 
+export interface CommandInputStream {
+  readable: boolean;
+  pause(): unknown;
+  pipe(target: NodeJS.WritableStream): unknown;
+  unpipe(target?: NodeJS.WritableStream): unknown;
+}
+
 export interface CommandInput {
-  source: string | { readable: boolean; pause(): unknown };
+  source: string | CommandInputStream;
   isFile?: boolean;
   isStream?: boolean;
   options: MediaArguments;
