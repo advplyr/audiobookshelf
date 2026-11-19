@@ -3,15 +3,55 @@
 // Source: https://github.com/Yqnn/node-readdir-glob
 //
 
-module.exports = readdirGlob;
+import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import type { Dirent, Stats } from 'node:fs';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 
-const fs = require('fs');
-const { EventEmitter } = require('events');
-const { Minimatch } = require('../archiverUtils/minimatch');
-const { resolve } = require('path');
+interface GlobOptions {
+  pattern?: string | string[];
+  dot?: boolean;
+  noglobstar?: boolean;
+  matchBase?: boolean;
+  nocase?: boolean;
+  ignore?: string | string[];
+  skip?: string | string[];
+  follow?: boolean;
+  stat?: boolean;
+  nodir?: boolean;
+  mark?: boolean;
+  silent?: boolean;
+  absolute?: boolean;
+}
 
-function readdir(dir, strict) {
-  return new Promise((resolve, reject) => {
+type GlobCallback = (error: unknown, matches?: string[]) => void;
+type MatcherOptions = Pick<GlobOptions, 'dot' | 'noglobstar' | 'matchBase' | 'nocase'>;
+type EntryStats = Stats | Dirent | Pick<Stats, 'isDirectory'>;
+type ShouldSkip = (relative: string) => boolean;
+
+interface Matcher {
+  match(path: string): boolean;
+}
+
+interface WalkEntry {
+  relative: string;
+  absolute: string;
+  stats: EntryStats;
+}
+
+interface GlobEvents {
+  match: [entry: Omit<WalkEntry, 'stats'> & { stat?: EntryStats }];
+  error: [error: unknown];
+  end: [];
+}
+
+const { Minimatch } = createRequire(__filename)('../archiverUtils/minimatch') as {
+  Minimatch: new (pattern: string, options: MatcherOptions) => Matcher;
+};
+
+function readdir(dir: string, strict: boolean) {
+  return new Promise<(Dirent | string)[]>((resolve, reject) => {
     fs.readdir(dir, { withFileTypes: true }, (err, files) => {
       if (err) {
         switch (err.code) {
@@ -39,8 +79,8 @@ function readdir(dir, strict) {
     });
   });
 }
-function stat(file, followSymlinks) {
-  return new Promise((resolve, reject) => {
+function stat(file: string, followSymlinks: boolean): Promise<Stats | null> {
+  return new Promise((resolve) => {
     const statFunc = followSymlinks ? fs.stat : fs.lstat;
     statFunc(file, (err, stats) => {
       if (err) {
@@ -64,25 +104,26 @@ function stat(file, followSymlinks) {
   });
 }
 
-async function* exploreWalkAsync(dir, path, followSymlinks, useStat, shouldSkip, strict) {
+async function* exploreWalkAsync(dir: string, path: string, followSymlinks: boolean, useStat: boolean, shouldSkip: ShouldSkip, strict: boolean): AsyncGenerator<WalkEntry> {
   let files = await readdir(path + dir, strict);
   for (const file of files) {
-    let name = file.name;
+    const dirent = typeof file === 'string' ? undefined : file;
+    let name = dirent?.name;
     if (name === undefined) {
       // undefined file.name means the `withFileTypes` options is not supported by node
       // we have to call the stat function to know if file is directory or not.
-      name = file;
+      name = file as string;
       useStat = true;
     }
     const filename = dir + '/' + name;
     const relative = filename.slice(1); // Remove the leading /
     const absolute = path + '/' + relative;
-    let stats = null;
+    let stats: EntryStats | null = null;
     if (useStat || followSymlinks) {
       stats = await stat(absolute, followSymlinks);
     }
-    if (!stats && file.name !== undefined) {
-      stats = file;
+    if (!stats && dirent?.name !== undefined) {
+      stats = dirent;
     }
     if (stats === null) {
       stats = { isDirectory: () => false };
@@ -98,12 +139,12 @@ async function* exploreWalkAsync(dir, path, followSymlinks, useStat, shouldSkip,
     }
   }
 }
-async function* explore(path, followSymlinks, useStat, shouldSkip) {
+async function* explore(path: string, followSymlinks: boolean, useStat: boolean, shouldSkip: ShouldSkip): AsyncGenerator<WalkEntry> {
   yield* exploreWalkAsync('', path, followSymlinks, useStat, shouldSkip, true);
 }
 
 
-function readOptions(options) {
+function readOptions(options: GlobOptions) {
   return {
     pattern: options.pattern,
     dot: !!options.dot,
@@ -122,8 +163,18 @@ function readOptions(options) {
   };
 }
 
-class ReaddirGlob extends EventEmitter {
-  constructor(cwd, options, cb) {
+class ReaddirGlob extends EventEmitter<GlobEvents> {
+  declare options: ReturnType<typeof readOptions>;
+  declare matchers: Matcher[];
+  declare ignoreMatchers: Matcher[];
+  declare skipMatchers: Matcher[];
+  declare iterator: AsyncGenerator<WalkEntry>;
+  declare paused: boolean;
+  declare inactive: boolean;
+  declare aborted: boolean;
+  declare _matches: string[];
+
+  constructor(cwd?: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback) {
     super();
     if (typeof options === 'function') {
       cb = options;
@@ -176,18 +227,19 @@ class ReaddirGlob extends EventEmitter {
     setTimeout(() => this._next(), 0);
   }
 
-  _shouldSkipDirectory(relative) {
+  _shouldSkipDirectory(relative: string) {
     //console.log(relative, this.skipMatchers.some(m => m.match(relative)));
     return this.skipMatchers.some(m => m.match(relative));
   }
 
-  _fileMatches(relative, isDirectory) {
+  _fileMatches(relative: string, isDirectory: boolean) {
     const file = relative + (isDirectory ? '/' : '');
     return (this.matchers.length === 0 || this.matchers.some(m => m.match(file)))
       && !this.ignoreMatchers.some(m => m.match(file))
       && (!this.options.nodir || !isDirectory);
   }
 
+  _next(iterator?: AsyncGenerator<WalkEntry>): void;
   _next() {
     if (!this.paused && !this.aborted) {
       this.iterator.next()
@@ -212,10 +264,10 @@ class ReaddirGlob extends EventEmitter {
             this.emit('end');
           }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           this.abort();
           this.emit('error', err);
-          if (!err.code && !this.options.silent) {
+          if (!(err as { code?: unknown }).code && !this.options.silent) {
             console.error(err);
           }
         });
@@ -242,7 +294,9 @@ class ReaddirGlob extends EventEmitter {
 }
 
 
-function readdirGlob(pattern, options, cb) {
+function readdirGlob(pattern?: string, options?: GlobOptions | GlobCallback | null, cb?: GlobCallback) {
   return new ReaddirGlob(pattern, options, cb);
 }
 readdirGlob.ReaddirGlob = ReaddirGlob;
+
+export = readdirGlob;
