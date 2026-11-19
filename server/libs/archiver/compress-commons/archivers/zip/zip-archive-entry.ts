@@ -5,17 +5,68 @@
  * Licensed under the MIT license.
  * https://github.com/archiverjs/node-compress-commons/blob/master/LICENSE-MIT
  */
-var inherits = require('util').inherits;
-var normalizePath = require('../../../normalize-path');
+import { inherits } from 'node:util';
+import normalizePath from '../../../normalize-path';
+import ArchiveEntry from '../archive-entry';
+import GeneralPurposeBit from './general-purpose-bit';
+import UnixStat from './unix-stat';
+import constants from './constants';
+import zipUtil from './util';
 
-var ArchiveEntry = require('../archive-entry');
-var GeneralPurposeBit = require('./general-purpose-bit');
-var UnixStat = require('./unix-stat');
+interface ZipArchiveEntry extends InstanceType<typeof ArchiveEntry> {
+  platform: number;
+  method: number;
+  name: string | null;
+  size: number;
+  csize: number;
+  gpb: InstanceType<typeof GeneralPurposeBit>;
+  crc: number;
+  time: number;
+  minver: number;
+  mode: number;
+  extra: Buffer | null;
+  exattr: number;
+  inattr: number;
+  comment: string | null;
 
-var constants = require('./constants');
-var zipUtil = require('./util');
+  getCentralDirectoryExtra(): Buffer;
+  getComment(): string;
+  getCompressedSize(): number;
+  getCrc(): number;
+  getExternalAttributes(): number;
+  getExtra(): Buffer;
+  getGeneralPurposeBit(): InstanceType<typeof GeneralPurposeBit>;
+  getInternalAttributes(): number;
+  getLastModifiedDate(): Date | -1;
+  getLocalFileDataExtra(): Buffer;
+  getMethod(): number;
+  getName(): string | null;
+  getPlatform(): number;
+  getSize(): number;
+  getTime(): Date | -1;
+  getTimeDos(): number;
+  getUnixMode(): number;
+  getVersionNeededToExtract(): number;
+  setComment(comment: string): void;
+  setCompressedSize(size: number): void;
+  setCrc(crc: number): void;
+  setExternalAttributes(attr: number): void;
+  setExtra(extra: Buffer | null): void;
+  setGeneralPurposeBit(gpb: InstanceType<typeof GeneralPurposeBit>): void;
+  setInternalAttributes(attr: number): void;
+  setMethod(method: number): void;
+  setName(name: string, prependSlash?: boolean): void;
+  setPlatform(platform: number): void;
+  setSize(size: number): void;
+  setTime(time: Date, forceLocalTime?: boolean): void;
+  setUnixMode(mode: number): void;
+  setVersionNeededToExtract(version: number): void;
+  isDirectory(): boolean;
+  isUnixSymlink(): boolean;
+  isZip64(): boolean;
+}
 
-var ZipArchiveEntry = module.exports = function (name) {
+const constructor: unknown = function createEntry(this: ZipArchiveEntry, name?: string) {
   if (!(this instanceof ZipArchiveEntry)) {
     return new ZipArchiveEntry(name);
   }
@@ -44,6 +95,12 @@ var ZipArchiveEntry = module.exports = function (name) {
   }
 };
 
+// Keep the constructor callable with or without new.
+const ZipArchiveEntry = constructor as {
+  new (name?: string): ZipArchiveEntry;
+  (name?: string): ZipArchiveEntry;
+  prototype: ZipArchiveEntry;
+};
 inherits(ZipArchiveEntry, ArchiveEntry);
 
 /**
@@ -389,7 +446,7 @@ ZipArchiveEntry.prototype.setVersionNeededToExtract = function (minver) {
  * @returns {boolean}
  */
 ZipArchiveEntry.prototype.isDirectory = function () {
-  return this.getName().slice(-1) === '/';
+  return this.getName()!.slice(-1) === '/';
 };
 
 /**
@@ -411,3 +468,5 @@ ZipArchiveEntry.prototype.isUnixSymlink = function () {
 ZipArchiveEntry.prototype.isZip64 = function () {
   return this.csize > constants.ZIP64_MAGIC || this.size > constants.ZIP64_MAGIC;
 };
+
+export = ZipArchiveEntry;
