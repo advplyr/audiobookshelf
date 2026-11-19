@@ -1,8 +1,8 @@
 import type Ffmpeg from '../../fluentFfmpeg';
 
-export interface MediaArguments {
-  (...args: (string | number)[]): void;
-  (args: (string | number)[]): void;
+export interface MediaArguments<Value = string | number> {
+  (...args: Value[]): void;
+  (args: Value[]): void;
   clear(): void;
 }
 
@@ -27,12 +27,19 @@ export interface CommandOutput {
   audioFilters: MediaArguments;
   video: MediaArguments;
   videoFilters: MediaArguments;
-  sizeFilters: MediaArguments;
+  sizeFilters: MediaArguments<MediaFilter>;
   options: MediaArguments;
   target?: Parameters<Ffmpeg.FfmpegCommand['output']>[0];
   isFile?: boolean;
   flags: { flvmeta?: boolean };
   pipeopts?: PipeOptions;
+  sizeData?: VideoSizeData;
+}
+
+export interface VideoSizeData {
+  size?: string;
+  aspect?: number;
+  pad?: string | false;
 }
 
 export type CommandWithMediaOutput = Ffmpeg.FfmpegCommand & {

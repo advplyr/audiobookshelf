@@ -1,5 +1,5 @@
-/*jshint node:true*/
-'use strict';
+import type Ffmpeg from '../../fluentFfmpeg';
+import type { CommandOutput, CommandWithMediaOutput, MediaFilter, VideoSizeData } from './types';
 
 /*
  *! Size helpers
@@ -12,11 +12,11 @@
  * @param {Number} width output width
  * @param {Number} height output height
  * @param {Number} aspect video aspect ratio (without padding)
- * @param {Number} color padding color
+ * @param {String} color padding color
  * @return scale/pad filters
  * @private
  */
-function getScalePadFilters(width, height, aspect, color) {
+function getScalePadFilters(width: number, height: number, aspect: number, color: string): MediaFilter[] {
   /*
     let a be the input aspect ratio, A be the requested aspect ratio
 
@@ -65,7 +65,7 @@ function getScalePadFilters(width, height, aspect, color) {
  * @return filter string array
  * @private
  */
-function createSizeFilters(output, key, value) {
+function createSizeFilters<Key extends keyof VideoSizeData>(output: CommandOutput, key: Key, value: Required<VideoSizeData>[Key]): MediaFilter[] {
   // Store parameters
   var data = output.sizeData = output.sizeData || {};
   data[key] = value;
@@ -75,12 +75,14 @@ function createSizeFilters(output, key, value) {
     return [];
   }
 
+  // The size option stores a string whenever the key is present.
+  const size = data.size!;
   // Try to match the different size string formats
-  var fixedSize = data.size.match(/([0-9]+)x([0-9]+)/);
-  var fixedWidth = data.size.match(/([0-9]+)x\?/);
-  var fixedHeight = data.size.match(/\?x([0-9]+)/);
-  var percentRatio = data.size.match(/\b([0-9]{1,3})%/);
-  var width, height, aspect;
+  var fixedSize = size.match(/([0-9]+)x([0-9]+)/);
+  var fixedWidth = size.match(/([0-9]+)x\?/);
+  var fixedHeight = size.match(/\?x([0-9]+)/);
+  var percentRatio = size.match(/\b([0-9]{1,3})%/);
+  var width: number, height: number, aspect: number;
 
   if (percentRatio) {
     var ratio = Number(percentRatio[1]) / 100;
@@ -107,15 +109,16 @@ function createSizeFilters(output, key, value) {
   } else if (fixedWidth || fixedHeight) {
     if ('aspect' in data) {
       // Specified aspect ratio
-      width = fixedWidth ? fixedWidth[1] : Math.round(Number(fixedHeight[1]) * data.aspect);
-      height = fixedHeight ? fixedHeight[1] : Math.round(Number(fixedWidth[1]) / data.aspect);
+      aspect = data.aspect!;
+      width = fixedWidth ? Number(fixedWidth[1]) : Math.round(Number(fixedHeight?.[1]) * aspect);
+      height = fixedHeight ? Number(fixedHeight[1]) : Math.round(Number(fixedWidth?.[1]) / aspect);
 
       // Round to multiples of 2
       width = Math.round(width / 2) * 2;
       height = Math.round(height / 2) * 2;
 
       if (data.pad) {
-        return getScalePadFilters(width, height, data.aspect, data.pad);
+        return getScalePadFilters(width, height, aspect, data.pad);
       } else {
         // No autopad requested, rescale to target size
         return [{ filter: 'scale', options: { w: width, h: height }}];
@@ -136,13 +139,13 @@ function createSizeFilters(output, key, value) {
           filter: 'scale',
           options: {
             w: 'trunc(oh*a/2)*2',
-            h: Math.round(Number(fixedHeight[1]) / 2) * 2
+            h: Math.round(Number(fixedHeight?.[1]) / 2) * 2
           }
         }];
       }
     }
   } else {
-    throw new Error('Invalid size specified: ' + data.size);
+    throw new Error('Invalid size specified: ' + size);
   }
 }
 
@@ -151,7 +154,7 @@ function createSizeFilters(output, key, value) {
  *! Video size-related methods
  */
 
-module.exports = function(proto) {
+function install(proto: Ffmpeg.FfmpegCommand) {
   /**
    * Keep display aspect ratio
    *
@@ -168,7 +171,7 @@ module.exports = function(proto) {
   proto.keepPixelAspect = // Only for compatibility, this is not about keeping _pixel_ aspect ratio
   proto.keepDisplayAspect =
   proto.keepDisplayAspectRatio =
-  proto.keepDAR = function() {
+  proto.keepDAR = function(this: Ffmpeg.FfmpegCommand) {
     return this.videoFilters([
       {
         filter: 'scale',
@@ -205,7 +208,7 @@ module.exports = function(proto) {
    */
   proto.withSize =
   proto.setSize =
-  proto.size = function(size) {
+  proto.size = function(this: CommandWithMediaOutput, size: string) {
     var filters = createSizeFilters(this._currentOutput, 'size', size);
 
     this._currentOutput.sizeFilters.clear();
@@ -230,10 +233,11 @@ module.exports = function(proto) {
   proto.setAspect =
   proto.setAspectRatio =
   proto.aspect =
-  proto.aspectRatio = function(aspect) {
+  proto.aspectRatio = function(this: CommandWithMediaOutput, aspect: string | number) {
     var a = Number(aspect);
     if (isNaN(a)) {
-      var match = aspect.match(/^(\d+):(\d+)$/);
+      // Ratios that are not numbers are supplied as strings such as "16:9".
+      var match = (aspect as string).match(/^(\d+):(\d+)$/);
       if (match) {
         a = Number(match[1]) / Number(match[2]);
       } else {
@@ -269,7 +273,7 @@ module.exports = function(proto) {
   proto.withAutopad =
   proto.withAutoPad =
   proto.autoPad =
-  proto.autopad = function(pad, color) {
+  proto.autopad = function(this: CommandWithMediaOutput, pad?: boolean | string, color?: string) {
     // Allow autopad(color)
     if (typeof pad === 'string') {
       color = pad;
@@ -288,4 +292,6 @@ module.exports = function(proto) {
 
     return this;
   };
-};
+}
+
+export = install;
