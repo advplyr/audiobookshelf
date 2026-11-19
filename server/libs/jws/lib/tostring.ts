@@ -1,7 +1,6 @@
-/*global module*/
-var Buffer = require('buffer').Buffer;
+import { Buffer } from 'node:buffer';
 
-module.exports = function toString(obj) {
+export = function toString(obj: unknown): string | undefined {
   if (typeof obj === 'string')
     return obj;
   if (typeof obj === 'number' || Buffer.isBuffer(obj))
