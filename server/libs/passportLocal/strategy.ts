@@ -1,15 +1,45 @@
 /**
  * Module dependencies.
  */
-const passport = require('passport-strategy')
-const util = require('util')
+import { createRequire } from 'node:module'
+import { inherits } from 'node:util'
 
+interface CredentialsRequest {
+  body?: unknown
+  query?: unknown
+}
 
-function lookup(obj, field) {
+interface StrategyOptions {
+  usernameField?: string
+  passwordField?: string
+  passReqToCallback?: boolean
+}
+
+type Done = (error?: unknown, user?: unknown, info?: unknown) => void
+type Verify = (username: string, password: string, done: Done) => unknown
+type VerifyWithRequest<Request extends CredentialsRequest> = (req: Request, username: string, password: string, done: Done) => unknown
+
+interface LocalStrategy {
+  name: string
+  _usernameField: string
+  _passwordField: string
+  _passReqToCallback?: boolean
+  _verify: Verify | VerifyWithRequest<CredentialsRequest> | undefined
+  authenticate(req: CredentialsRequest, options?: { badRequestMessage?: string }): void
+  success(user: unknown, info?: unknown): void
+  fail(challenge?: unknown, status?: number): void
+  error(error: unknown): void
+}
+
+const passport = createRequire(__filename)('passport-strategy') as {
+  Strategy: (this: LocalStrategy) => void
+}
+
+function lookup(obj: unknown, field: string): unknown {
   if (!obj) { return null; }
   var chain = field.split(']').join('').split('[');
   for (var i = 0, len = chain.length; i < len; i++) {
-    var prop = obj[chain[i]];
+    var prop = (obj as Record<string, unknown>)[chain[i]];
     if (typeof (prop) === 'undefined') { return null; }
     if (typeof (prop) !== 'object') { return prop; }
     obj = prop;
@@ -50,7 +80,7 @@ function lookup(obj, field) {
  * @param {Function} verify
  * @api public
  */
-function Strategy(options, verify) {
+function Strategy(this: LocalStrategy, options: StrategyOptions | Verify, verify?: LocalStrategy['_verify']) {
   if (typeof options == 'function') {
     verify = options;
     options = {};
@@ -69,7 +99,14 @@ function Strategy(options, verify) {
 /**
  * Inherit from `passport.Strategy`.
  */
-util.inherits(Strategy, passport.Strategy);
+inherits(Strategy, passport.Strategy);
+
+const LocalStrategy = Strategy as unknown as {
+  new (verify: Verify): LocalStrategy
+  new (options: StrategyOptions & { passReqToCallback?: false }, verify: Verify): LocalStrategy
+  new <Request extends CredentialsRequest>(options: StrategyOptions & { passReqToCallback: true }, verify: VerifyWithRequest<Request>): LocalStrategy
+  prototype: LocalStrategy
+}
 
 /**
  * Authenticate request based on the contents of a form submission.
@@ -77,7 +114,7 @@ util.inherits(Strategy, passport.Strategy);
  * @param {Object} req
  * @api protected
  */
-Strategy.prototype.authenticate = function (req, options) {
+LocalStrategy.prototype.authenticate = function (req, options) {
   options = options || {};
   var username = lookup(req.body, this._usernameField)
   if (username === null) {
@@ -93,22 +130,20 @@ Strategy.prototype.authenticate = function (req, options) {
     return this.fail({ message: options.badRequestMessage || 'Missing credentials' }, 400);
   }
 
-  var self = this;
-
-  function verified(err, user, info) {
-    if (err) { return self.error(err); }
-    if (!user) { return self.fail(info); }
-    self.success(user, info);
+  const verified: Done = (err, user, info) => {
+    if (err) { return this.error(err); }
+    if (!user) { return this.fail(info); }
+    this.success(user, info);
   }
 
   try {
-    if (self._passReqToCallback) {
-      this._verify(req, username, password, verified);
+    if (this._passReqToCallback) {
+      (this._verify as VerifyWithRequest<CredentialsRequest>)(req, username as string, password as string, verified);
     } else {
-      this._verify(username, password, verified);
+      (this._verify as Verify)(username as string, password as string, verified);
     }
   } catch (ex) {
-    return self.error(ex);
+    return this.error(ex);
   }
 };
 
@@ -116,4 +151,4 @@ Strategy.prototype.authenticate = function (req, options) {
 /**
  * Expose `Strategy`.
  */
-module.exports = Strategy;
+export = LocalStrategy
