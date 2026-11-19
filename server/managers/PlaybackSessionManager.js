@@ -24,6 +24,9 @@ class PlaybackSessionManager {
 
     /** @type {PlaybackSession[]} */
     this.sessions = []
+
+    /** @type {Map<string, Promise<DeviceInfo>>} pending device find-or-create per user and device id */
+    this.deviceLookupQueue = new Map()
   }
 
   /**
@@ -56,14 +59,37 @@ class PlaybackSessionManager {
     const deviceInfo = new DeviceInfo()
     deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion, req.user?.id)
 
-    if (clientDeviceInfo?.deviceId) {
-      const existingDevice = await Database.deviceModel.getOldDeviceByDeviceId(clientDeviceInfo.deviceId)
-      if (existingDevice) {
-        if (existingDevice.update(deviceInfo)) {
-          await Database.deviceModel.updateFromOld(existingDevice)
-        }
-        return existingDevice
+    return this.queueDeviceLookup(`${req.user?.id}:${deviceInfo.deviceId}`, () => this.findOrCreateDevice(deviceInfo))
+  }
+
+  /**
+   * Run device find-or-create calls one at a time per key so concurrent requests cannot create duplicate rows
+   *
+   * @param {string} key
+   * @param {() => Promise<DeviceInfo>} task
+   * @returns {Promise<DeviceInfo>}
+   */
+  queueDeviceLookup(key, task) {
+    const pending = this.deviceLookupQueue.get(key) || Promise.resolve()
+    const result = pending.then(task)
+    const tail = result.catch(() => {}).then(() => {
+      if (this.deviceLookupQueue.get(key) === tail) this.deviceLookupQueue.delete(key)
+    })
+    this.deviceLookupQueue.set(key, tail)
+    return result
+  }
+
+  /**
+   * @param {DeviceInfo} deviceInfo
+   * @returns {Promise<DeviceInfo>}
+   */
+  async findOrCreateDevice(deviceInfo) {
+    const existingDevice = await Database.deviceModel.getOldDeviceByDeviceId(deviceInfo.deviceId)
+    if (existingDevice) {
+      if (existingDevice.update(deviceInfo)) {
+        await Database.deviceModel.updateFromOld(existingDevice)
       }
+      return existingDevice
     }
 
     await Database.deviceModel.createFromOld(deviceInfo)
