@@ -207,6 +207,10 @@ module.exports = {
         mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), {
           [Sequelize.Op.gt]: 1
         })
+      } else if (value === 'any') {
+        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), {
+          [Sequelize.Op.gt]: 0
+        })
       } else {
         mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 1)
       }
@@ -219,6 +223,21 @@ module.exports = {
         mediaWhere['ebookFile'] = {
           [Sequelize.Op.eq]: null
         }
+      } else if (value === 'any-ebook') {
+        // Primary ebook or at least one supplementary ebook
+        mediaWhere[Sequelize.Op.or] = [
+          {
+            ebookFile: {
+              [Sequelize.Op.not]: null
+            }
+          },
+          {
+            // Subquery so this works regardless of how the library item is joined (e.g. when collapsing series)
+            id: {
+              [Sequelize.Op.in]: Sequelize.literal(`(SELECT mediaId FROM libraryItems WHERE mediaType = 'book' AND libraryFiles LIKE '%"isSupplementary":true%')`)
+            }
+          }
+        ]
       }
     } else if (group === 'missing') {
       if (['asin', 'isbn', 'subtitle', 'publishedYear', 'description', 'publisher', 'language', 'cover'].includes(value)) {

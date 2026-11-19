@@ -411,6 +411,10 @@ export default {
     tracks() {
       return [
         {
+          id: 'any',
+          name: this.$strings.LabelTracksAny
+        },
+        {
           id: 'none',
           name: this.$strings.LabelTracksNone
         },
@@ -433,6 +437,10 @@ export default {
         {
           id: 'no-ebook',
           name: this.$strings.LabelMissingEbook
+        },
+        {
+          id: 'any-ebook',
+          name: this.$strings.LabelHasAnyEbook
         },
         {
           id: 'supplementary',
