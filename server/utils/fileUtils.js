@@ -1,5 +1,6 @@
 const axios = require('axios')
 const Path = require('path')
+const { pipeline } = require('stream')
 const ssrfFilter = require('ssrf-req-filter')
 const exec = require('child_process').exec
 const fs = require('../libs/fsExtra')
@@ -293,53 +294,71 @@ module.exports.getFilePathItemFromFileUpdate = (fileUpdate) => {
  * @param {string} url
  * @param {string} filepath path to download the file to
  * @param {Function} [contentTypeFilter] validate content type before writing
+ * @param {{maxBytes?: number, retryUserAgent?: boolean}} [options]
  * @returns {Promise}
  */
-module.exports.downloadFile = (url, filepath, contentTypeFilter = null) => {
-  return new Promise(async (resolve, reject) => {
-    Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+module.exports.downloadFile = (url, filepath, contentTypeFilter = null, options = {}) => {
+  let responseStream
+  let writer
+
+  const request = (retry = false) =>
     axios({
       url,
       method: 'GET',
       responseType: 'stream',
       headers: {
-        'User-Agent': 'audiobookshelf (+https://audiobookshelf.org)'
+        'User-Agent': retry ? 'audiobookshelf (+https://audiobookshelf.org; like iTMS)' : 'audiobookshelf (+https://audiobookshelf.org)'
       },
       timeout: 30000,
-      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url),
-      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter(url)
+      httpAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter('http:'),
+      httpsAgent: global.DisableSsrfRequestFilter?.(url) ? null : ssrfFilter('https:')
+    }).catch((error) => {
+      error.response?.data?.destroy?.()
+      if (!retry && options.retryUserAgent && [403, 404].includes(error.response?.status)) return request(true)
+      throw error
     })
-      .then((response) => {
-        // Validate content type
-        if (contentTypeFilter && !contentTypeFilter?.(response.headers?.['content-type'])) {
-          return reject(new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`))
+
+  Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+  return request()
+    .then((response) => {
+      responseStream = response.data
+      // Validate content type
+      if (contentTypeFilter && !contentTypeFilter(response.headers?.['content-type'])) {
+        responseStream.destroy()
+        throw new Error(`Invalid content type "${response.headers?.['content-type'] || ''}"`)
+      }
+
+      const totalSize = parseInt(response.headers['content-length'], 10)
+      let downloadedSize = 0
+      let lastProgress = 0
+      // Write to filepath
+      writer = fs.createWriteStream(filepath)
+
+      responseStream.on('data', (chunk) => {
+        downloadedSize += chunk.length
+        if (options.maxBytes && downloadedSize > options.maxBytes) {
+          responseStream.destroy(Object.assign(new Error('Download exceeds byte limit'), { code: 'MAX_BYTES' }))
+          return
         }
-
-        const totalSize = parseInt(response.headers['content-length'], 10)
-        let downloadedSize = 0
-
-        // Write to filepath
-        const writer = fs.createWriteStream(filepath)
-        response.data.pipe(writer)
-
-        let lastProgress = 0
-        response.data.on('data', (chunk) => {
-          downloadedSize += chunk.length
-          const progress = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0
-          if (progress >= lastProgress + 5) {
-            Logger.debug(`[fileUtils] File "${Path.basename(filepath)}" download progress: ${progress}% (${downloadedSize}/${totalSize} bytes)`)
-            lastProgress = progress
-          }
-        })
-
-        writer.on('finish', resolve)
-        writer.on('error', reject)
+        const progress = totalSize ? Math.round((downloadedSize / totalSize) * 100) : 0
+        if (progress >= lastProgress + 5) {
+          Logger.debug(`[fileUtils] File "${Path.basename(filepath)}" download progress: ${progress}% (${downloadedSize}/${totalSize} bytes)`)
+          lastProgress = progress
+        }
       })
-      .catch((err) => {
-        Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)
-        reject(err)
+
+      return new Promise((resolve, reject) => {
+        pipeline(responseStream, writer, (error) => (error ? reject(error) : resolve()))
       })
-  })
+    })
+    .catch(async (error) => {
+      responseStream?.destroy()
+      writer?.destroy()
+      if (writer && !writer.closed) await new Promise((resolve) => writer.once('close', resolve))
+      if (writer) await fs.remove(filepath)
+      Logger.debug(`[fileUtils] Failed to download file to "${filepath}": ${error.code || 'download failed'}`)
+      throw error
+    })
 }
 
 /**

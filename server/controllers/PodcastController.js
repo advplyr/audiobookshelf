@@ -8,12 +8,14 @@ const fs = require('../libs/fsExtra')
 const cron = require('../libs/nodeCron')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath } = require('../utils/fileUtils')
-const { validateUrl } = require('../utils/index')
+const { getFileTimestampsWithIno, filePathToPOSIX, isSameOrSubPath, encodeUriPath } = require('../utils/fileUtils')
+const { validateUrl, isUUID, reqSupportsWebp, clampPositiveInt } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const Scanner = require('../scanner/Scanner')
 const CoverManager = require('../managers/CoverManager')
+const EpisodeCoverManager = require('../managers/EpisodeCoverManager')
+const CacheManager = require('../managers/CacheManager')
 
 /**
  * @typedef RequestUserObject
@@ -487,6 +489,53 @@ class PodcastController {
     }
 
     res.json(episode.toOldJSON(req.libraryItem.id))
+  }
+
+  /**
+   * GET: /api/podcasts/:id/episode/:episodeId/cover
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
+  async getEpisodeCover(req, res) {
+    const { id, episodeId } = req.params
+    if (!isUUID(id) || !isUUID(episodeId)) return res.sendStatus(404)
+
+    const episode = await Database.podcastEpisodeModel.findByPk(episodeId, { attributes: ['id', 'podcastId', 'coverPath'] })
+    if (!episode) return res.sendStatus(404)
+    if (episode.coverPath && EpisodeCoverManager.getLibraryItemIdFromImagePath(episode.coverPath) !== id) return res.sendStatus(404)
+
+    if (!EpisodeCoverManager.isCurrentImagePath(id, episode.coverPath) || !(await fs.pathExists(episode.coverPath))) {
+      const item = await Database.libraryItemModel.findByPk(id, { attributes: ['id', 'mediaId', 'updatedAt'] })
+      if (!item || item.mediaId !== episode.podcastId || req.query.fallback === '0') return res.sendStatus(404)
+      const query = new URLSearchParams()
+      for (const [key, value] of Object.entries(req.query)) {
+        if (key !== 'fallback' && key !== 'ts' && typeof value === 'string') query.set(key, value)
+      }
+      query.set('ts', String(item.updatedAt.valueOf()))
+      res.set('Cache-Control', 'no-cache')
+      const basePath = global.RouterBasePath || ''
+      const prefix = basePath && req.originalUrl.startsWith(`${basePath}/`) ? basePath : ''
+      return res.redirect(302, `${prefix}/api/items/${id}/cover?${query}`)
+    }
+
+    const { width, height, format, raw } = req.query
+    const options = {
+      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
+      height: clampPositiveInt(height ? parseInt(height) : null, 4096),
+      width: clampPositiveInt(width ? parseInt(width) : null, 4096)
+    }
+    if (req.query.ts) res.set('Cache-Control', 'private, max-age=86400')
+    if (raw) {
+      if (global.XAccel) {
+        return res
+          .status(204)
+          .header({ 'X-Accel-Redirect': encodeUriPath(global.XAccel + episode.coverPath) })
+          .send()
+      }
+      return res.sendFile(Path.resolve(episode.coverPath))
+    }
+    return CacheManager.handleEpisodeCoverCache(res, id, episode.coverPath, options)
   }
 
   /**

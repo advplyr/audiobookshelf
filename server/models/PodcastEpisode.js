@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
+const Logger = require('../Logger')
 const libraryItemsPodcastFilters = require('../utils/queries/libraryItemsPodcastFilters')
 /**
  * @typedef ChapterObject
@@ -32,6 +33,10 @@ class PodcastEpisode extends Model {
     this.pubDate
     /** @type {string} */
     this.enclosureURL
+    /** @type {string|null} */
+    this.coverPath
+    /** @type {string|null} */
+    this.imageURL
     /** @type {BigInt} */
     this.enclosureSize
     /** @type {string} */
@@ -69,6 +74,7 @@ class PodcastEpisode extends Model {
       description: rssPodcastEpisode.description,
       pubDate: rssPodcastEpisode.pubDate,
       enclosureURL: rssPodcastEpisode.enclosure?.url || null,
+      imageURL: typeof rssPodcastEpisode.image === 'string' ? rssPodcastEpisode.image : null,
       enclosureSize: rssPodcastEpisode.enclosure?.length || null,
       enclosureType: rssPodcastEpisode.enclosure?.type || null,
       publishedAt: rssPodcastEpisode.publishedAt,
@@ -111,6 +117,8 @@ class PodcastEpisode extends Model {
         description: DataTypes.TEXT,
         pubDate: DataTypes.STRING,
         enclosureURL: DataTypes.STRING,
+        coverPath: DataTypes.STRING,
+        imageURL: DataTypes.STRING,
         enclosureSize: DataTypes.BIGINT,
         enclosureType: DataTypes.STRING,
         publishedAt: DataTypes.DATE,
@@ -143,6 +151,15 @@ class PodcastEpisode extends Model {
 
     PodcastEpisode.addHook('afterDestroy', async (instance) => {
       libraryItemsPodcastFilters.clearCountCache('podcastEpisode', 'afterDestroy')
+      if (instance.coverPath) {
+        const EpisodeCoverManager = require('../managers/EpisodeCoverManager')
+        const libraryItemId = EpisodeCoverManager.getLibraryItemIdFromImagePath(instance.coverPath)
+        if (libraryItemId) {
+          EpisodeCoverManager.releaseImage(libraryItemId, instance.coverPath, instance.podcastId).catch((error) => {
+            Logger.error('[EpisodeCoverManager] Release failed', error)
+          })
+        }
+      }
     })
 
     PodcastEpisode.addHook('afterCreate', async (instance) => {
@@ -217,6 +234,9 @@ class PodcastEpisode extends Model {
       subtitle: this.subtitle,
       description: this.description,
       enclosure,
+      coverPath: this.coverPath || null,
+      imageUrl: this.imageURL || null,
+      coverSource: this.extraData?.coverSource || null,
       guid: this.extraData?.guid || null,
       pubDate: this.pubDate,
       chapters: structuredClone(this.chapters),

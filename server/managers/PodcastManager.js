@@ -16,6 +16,7 @@ const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const TaskManager = require('./TaskManager')
 const CoverManager = require('../managers/CoverManager')
+const EpisodeCoverManager = require('../managers/EpisodeCoverManager')
 const NotificationManager = require('../managers/NotificationManager')
 
 const LibraryFile = require('../objects/files/LibraryFile')
@@ -260,7 +261,24 @@ class PodcastManager {
       NotificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
+    this.refreshEpisodeCover(libraryItem, podcastEpisode).catch((error) => {
+      Logger.warn('[PodcastManager] Episode cover acquisition failed', error)
+    })
+
     return true
+  }
+
+  /**
+   * Acquire downloaded episode artwork without blocking the download queue.
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')} episode
+   * @returns {Promise<void>}
+   */
+  async refreshEpisodeCover(libraryItem, episode) {
+    if (await EpisodeCoverManager.refreshEpisodeCover(libraryItem, episode)) {
+      const updatedItem = await Database.libraryItemModel.getExpandedById(libraryItem.id)
+      if (updatedItem) SocketAuthority.libraryItemEmitter('item_updated', updatedItem)
+    }
   }
 
   /**

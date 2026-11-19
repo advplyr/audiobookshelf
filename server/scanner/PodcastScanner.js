@@ -7,6 +7,7 @@ const Database = require('../Database')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const AudioFile = require('../objects/files/AudioFile')
 const CoverManager = require('../managers/CoverManager')
+const EpisodeCoverManager = require('../managers/EpisodeCoverManager')
 const LibraryFile = require('../objects/files/LibraryFile')
 const fsExtra = require('../libs/fsExtra')
 const PodcastEpisode = require('../models/PodcastEpisode')
@@ -32,8 +33,32 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
  * @property {boolean} explicit
  */
 
+const maxEpisodeCoversPerScan = 25
+
 class PodcastScanner {
   constructor() {}
+
+  /**
+   * Extract artwork from the newest eligible episodes within the scan budget.
+   * @param {import('../models/LibraryItem')} libraryItem
+   * @param {import('../models/PodcastEpisode')[]} episodes
+   * @param {import('./LibraryScan')} libraryScan
+   * @returns {Promise<void>}
+   */
+  async extractEpisodeCovers(libraryItem, episodes, libraryScan) {
+    let remaining = maxEpisodeCoversPerScan
+    const newestEpisodes = [...episodes].sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0))
+    for (const episode of newestEpisodes) {
+      if (!EpisodeCoverManager.isImageCodec(episode.audioFile?.embeddedCoverArt) && episode.extraData?.coverSource !== 'embedded') continue
+      if (remaining === 0) break
+      remaining--
+      try {
+        await EpisodeCoverManager.refreshEpisodeCover(libraryItem, episode, { embeddedOnly: true, force: true })
+      } catch (error) {
+        libraryScan.addLog(LogLevel.WARN, `Episode cover extraction failed for "${episode.title}"`, error)
+      }
+    }
+  }
 
   /**
    * @param {import('../models/LibraryItem')} existingLibraryItem
@@ -60,6 +85,7 @@ class PodcastScanner {
 
     // Track episode add/remove/update so item_updated includes the current episode list
     let hasEpisodeChanges = false
+    const episodesForCovers = []
 
     if (libraryItemData.hasAudioFileChanges || libraryItemData.audioLibraryFiles.length !== existingPodcastEpisodes.length) {
       // Filter out and destroy episodes that were removed.
@@ -121,6 +147,9 @@ class PodcastScanner {
             AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(podcastEpisode, libraryScan)
             libraryScan.addLog(LogLevel.INFO, `Podcast episode "${podcastEpisode.title}" keys changed [${podcastEpisode.changed()?.join(', ')}]`)
             await podcastEpisode.save()
+            if (podcastEpisode.extraData?.coverSource === 'embedded' || (!podcastEpisode.coverPath && EpisodeCoverManager.isImageCodec(audioFile.embeddedCoverArt))) {
+              episodesForCovers.push(podcastEpisode)
+            }
             hasEpisodeChanges = true
           }
         }
@@ -161,6 +190,7 @@ class PodcastScanner {
         libraryScan.addLog(LogLevel.INFO, `New Podcast episode "${newPodcastEpisode.title}" added`)
         await newPodcastEpisode.save()
         existingPodcastEpisodes.push(newPodcastEpisode)
+        episodesForCovers.push(newPodcastEpisode)
         hasEpisodeChanges = true
       }
     }
@@ -243,6 +273,7 @@ class PodcastScanner {
     }
 
     existingLibraryItem.media = media
+    await this.extractEpisodeCovers(existingLibraryItem, episodesForCovers, libraryScan)
 
     let libraryItemUpdated = false
 
@@ -363,6 +394,7 @@ class PodcastScanner {
       include: Database.podcastEpisodeModel
     })
 
+    await this.extractEpisodeCovers(libraryItem, libraryItem.media.podcastEpisodes, libraryScan)
     await this.saveMetadataFile(libraryItem, libraryScan)
     if (global.ServerSettings.storeMetadataWithItem) {
       libraryItem.changed('libraryFiles', true)
