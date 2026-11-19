@@ -1,13 +1,63 @@
-'use strict'
+import primordials from '../../ours/primordials'
 
-const { Symbol, SymbolAsyncIterator, SymbolIterator } = require('../../ours/primordials')
+const { Symbol, SymbolAsyncIterator, SymbolIterator } = primordials
 
-const kDestroyed = Symbol('kDestroyed')
-const kIsErrored = Symbol('kIsErrored')
-const kIsReadable = Symbol('kIsReadable')
-const kIsDisturbed = Symbol('kIsDisturbed')
+const kDestroyed: unique symbol = Symbol('kDestroyed') as typeof kDestroyed
+const kIsErrored: unique symbol = Symbol('kIsErrored') as typeof kIsErrored
+const kIsReadable: unique symbol = Symbol('kIsReadable') as typeof kIsReadable
+const kIsDisturbed: unique symbol = Symbol('kIsDisturbed') as typeof kIsDisturbed
 
-function isReadableNodeStream(obj, strict = false) {
+interface StreamState {
+  readable?: boolean
+  writable?: boolean
+  destroyed?: boolean
+  ended?: boolean
+  finished?: boolean
+  endEmitted?: boolean
+  errored?: Error | false | null
+  errorEmitted?: boolean
+  closed?: boolean
+  autoDestroy?: boolean
+  emitClose?: boolean
+  length?: number
+}
+
+interface StreamProbe {
+  _readableState?: StreamState | null
+  _writableState?: StreamState | null
+  pipe?: unknown
+  on?: unknown
+  pause?: unknown
+  resume?: unknown
+  write?: unknown
+  destroyed?: boolean
+  writableEnded?: boolean
+  writableFinished?: boolean
+  readableEnded?: boolean
+  readable?: boolean
+  writable?: boolean
+  readableErrored?: Error | false | null
+  writableErrored?: Error | false | null
+  closed?: boolean
+  readableDidRead?: boolean
+  readableAborted?: boolean
+  _closed?: boolean
+  _defaultKeepAlive?: boolean
+  _removedConnection?: boolean
+  _removedContLen?: boolean
+  _sent100?: boolean
+  _consuming?: boolean
+  _dumped?: boolean
+  req?: { upgradeOrConnect?: unknown } | null
+  [kDestroyed]?: boolean
+  [kIsErrored]?: Error | boolean | null
+  [kIsReadable]?: boolean | null
+  [kIsDisturbed]?: boolean | null
+}
+
+type StreamCandidate = StreamProbe | null | undefined
+
+function isReadableNodeStream(obj: StreamCandidate, strict = false): obj is StreamProbe {
   var _obj$_readableState
 
   return !!(
@@ -25,7 +75,7 @@ function isReadableNodeStream(obj, strict = false) {
   )
 }
 
-function isWritableNodeStream(obj) {
+function isWritableNodeStream(obj: StreamCandidate): obj is StreamProbe {
   var _obj$_writableState
 
   return !!(
@@ -41,7 +91,7 @@ function isWritableNodeStream(obj) {
   )
 }
 
-function isDuplexNodeStream(obj) {
+function isDuplexNodeStream(obj: StreamCandidate) {
   return !!(
     obj &&
     typeof obj.pipe === 'function' &&
@@ -51,7 +101,8 @@ function isDuplexNodeStream(obj) {
   )
 }
 
-function isNodeStream(obj) {
+function isNodeStream(value: unknown) {
+  const obj = value as StreamCandidate
   return (
     obj &&
     (obj._readableState ||
@@ -61,70 +112,71 @@ function isNodeStream(obj) {
   )
 }
 
-function isIterable(obj, isAsync) {
+function isIterable(value: unknown, isAsync?: boolean) {
+  const obj = value as Record<symbol, unknown> | null | undefined
   if (obj == null) return false
   if (isAsync === true) return typeof obj[SymbolAsyncIterator] === 'function'
   if (isAsync === false) return typeof obj[SymbolIterator] === 'function'
   return typeof obj[SymbolAsyncIterator] === 'function' || typeof obj[SymbolIterator] === 'function'
 }
 
-function isDestroyed(stream) {
-  if (!isNodeStream(stream)) return null
+function isDestroyed(stream: StreamCandidate) {
+  if (!stream || !isNodeStream(stream)) return null
   const wState = stream._writableState
   const rState = stream._readableState
   const state = wState || rState
   return !!(stream.destroyed || stream[kDestroyed] || (state !== null && state !== undefined && state.destroyed))
 } // Have been end():d.
 
-function isWritableEnded(stream) {
+function isWritableEnded(stream: StreamCandidate) {
   if (!isWritableNodeStream(stream)) return null
   if (stream.writableEnded === true) return true
   const wState = stream._writableState
   if (wState !== null && wState !== undefined && wState.errored) return false
-  if (typeof (wState === null || wState === undefined ? undefined : wState.ended) !== 'boolean') return null
+  if (typeof wState?.ended !== 'boolean') return null
   return wState.ended
 } // Have emitted 'finish'.
 
-function isWritableFinished(stream, strict) {
+function isWritableFinished(stream: StreamCandidate, strict?: boolean) {
   if (!isWritableNodeStream(stream)) return null
   if (stream.writableFinished === true) return true
   const wState = stream._writableState
   if (wState !== null && wState !== undefined && wState.errored) return false
-  if (typeof (wState === null || wState === undefined ? undefined : wState.finished) !== 'boolean') return null
+  if (typeof wState?.finished !== 'boolean') return null
   return !!(wState.finished || (strict === false && wState.ended === true && wState.length === 0))
 } // Have been push(null):d.
 
-function isReadableEnded(stream) {
+function isReadableEnded(stream: StreamCandidate) {
   if (!isReadableNodeStream(stream)) return null
   if (stream.readableEnded === true) return true
   const rState = stream._readableState
   if (!rState || rState.errored) return false
-  if (typeof (rState === null || rState === undefined ? undefined : rState.ended) !== 'boolean') return null
+  if (typeof rState.ended !== 'boolean') return null
   return rState.ended
 } // Have emitted 'end'.
 
-function isReadableFinished(stream, strict) {
+function isReadableFinished(stream: StreamCandidate, strict?: boolean) {
   if (!isReadableNodeStream(stream)) return null
   const rState = stream._readableState
   if (rState !== null && rState !== undefined && rState.errored) return false
-  if (typeof (rState === null || rState === undefined ? undefined : rState.endEmitted) !== 'boolean') return null
+  if (typeof rState?.endEmitted !== 'boolean') return null
   return !!(rState.endEmitted || (strict === false && rState.ended === true && rState.length === 0))
 }
 
-function isReadable(stream) {
+function isReadable(stream: StreamCandidate) {
   if (stream && stream[kIsReadable] != null) return stream[kIsReadable]
-  if (typeof (stream === null || stream === undefined ? undefined : stream.readable) !== 'boolean') return null
+  if (typeof stream?.readable !== 'boolean') return null
   if (isDestroyed(stream)) return false
   return isReadableNodeStream(stream) && stream.readable && !isReadableFinished(stream)
 }
 
-function isWritable(stream) {
-  if (typeof (stream === null || stream === undefined ? undefined : stream.writable) !== 'boolean') return null
+function isWritable(stream: StreamCandidate) {
+  if (typeof stream?.writable !== 'boolean') return null
   if (isDestroyed(stream)) return false
   return isWritableNodeStream(stream) && stream.writable && !isWritableEnded(stream)
 }
 
-function isFinished(stream, opts) {
+function isFinished(stream: StreamCandidate, opts?: { readable?: boolean; writable?: boolean } | null) {
   if (!isNodeStream(stream)) {
     return null
   }
@@ -144,10 +196,10 @@ function isFinished(stream, opts) {
   return true
 }
 
-function isWritableErrored(stream) {
+function isWritableErrored(stream: StreamCandidate) {
   var _stream$_writableStat, _stream$_writableStat2
 
-  if (!isNodeStream(stream)) {
+  if (!stream || !isNodeStream(stream)) {
     return null
   }
 
@@ -163,10 +215,10 @@ function isWritableErrored(stream) {
     : null
 }
 
-function isReadableErrored(stream) {
+function isReadableErrored(stream: StreamCandidate) {
   var _stream$_readableStat, _stream$_readableStat2
 
-  if (!isNodeStream(stream)) {
+  if (!stream || !isNodeStream(stream)) {
     return null
   }
 
@@ -182,8 +234,8 @@ function isReadableErrored(stream) {
     : null
 }
 
-function isClosed(stream) {
-  if (!isNodeStream(stream)) {
+function isClosed(stream: StreamCandidate) {
+  if (!stream || !isNodeStream(stream)) {
     return null
   }
 
@@ -211,7 +263,7 @@ function isClosed(stream) {
   return null
 }
 
-function isOutgoingMessage(stream) {
+function isOutgoingMessage(stream: StreamProbe) {
   return (
     typeof stream._closed === 'boolean' &&
     typeof stream._defaultKeepAlive === 'boolean' &&
@@ -220,11 +272,11 @@ function isOutgoingMessage(stream) {
   )
 }
 
-function isServerResponse(stream) {
+function isServerResponse(stream: StreamProbe) {
   return typeof stream._sent100 === 'boolean' && isOutgoingMessage(stream)
 }
 
-function isServerRequest(stream) {
+function isServerRequest(stream: StreamProbe) {
   var _stream$req
 
   return (
@@ -235,8 +287,8 @@ function isServerRequest(stream) {
   )
 }
 
-function willEmitClose(stream) {
-  if (!isNodeStream(stream)) return null
+function willEmitClose(stream: StreamCandidate) {
+  if (!stream || !isNodeStream(stream)) return null
   const wState = stream._writableState
   const rState = stream._readableState
   const state = wState || rState
@@ -245,7 +297,7 @@ function willEmitClose(stream) {
   )
 }
 
-function isDisturbed(stream) {
+function isDisturbed(stream: StreamCandidate) {
   var _stream$kIsDisturbed
 
   return !!(
@@ -256,7 +308,7 @@ function isDisturbed(stream) {
   )
 }
 
-function isErrored(stream) {
+function isErrored(stream: StreamCandidate) {
   var _ref,
     _ref2,
     _ref3,
@@ -299,7 +351,7 @@ function isErrored(stream) {
   )
 }
 
-module.exports = {
+export = {
   kDestroyed,
   isDisturbed,
   kIsDisturbed,

@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module'
 import type { finished as Finished } from 'node:stream/promises'
+import streamUtils from '../internal/streams/utils'
 import primordials from '../ours/primordials'
 
 interface PipelineOptions {
@@ -10,10 +11,7 @@ interface PipelineOptions {
 const { ArrayPrototypePop, Promise } = primordials
 const load = createRequire(__filename)
 
-const { isIterable, isNodeStream } = load('../internal/streams/utils') as {
-  isIterable: (value: unknown) => boolean
-  isNodeStream: (value: unknown) => boolean
-}
+const { isIterable, isNodeStream } = streamUtils
 
 const { pipelineImpl: pl } = load('../internal/streams/pipeline') as {
   pipelineImpl: (streams: unknown[], callback: (error: Error | null, value?: unknown) => void, options: PipelineOptions) => void
