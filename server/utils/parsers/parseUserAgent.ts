@@ -1,10 +1,4 @@
-import uaParserJs from '../../libs/uaParser'
-
-type UaResult = {
-  browser?: { name?: string; version?: string }
-  os?: { name?: string; version?: string }
-  device?: { type?: string; model?: string; vendor?: string }
-}
+import uaParser from '../../libs/uaParser'
 
 type DeviceInfo = {
   browserName?: string
@@ -23,7 +17,7 @@ type DeviceInfo = {
 function parseUserAgent(userAgent: string | null | undefined): DeviceInfo | null {
   if (!userAgent) return null
 
-  const ua = uaParserJs(userAgent) as UaResult
+  const ua = uaParser(userAgent)
   const deviceInfo: DeviceInfo = {
     browserName: ua?.browser?.name || undefined,
     browserVersion: ua?.browser?.version || undefined,
