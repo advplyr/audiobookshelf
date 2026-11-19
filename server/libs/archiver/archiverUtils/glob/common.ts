@@ -46,6 +46,7 @@ interface GlobPattern {
   match(path: string): boolean
   globSet: string[]
   set: (string | RegExp | symbol)[][]
+  negate?: boolean
   options: GlobOptions
 }
 
