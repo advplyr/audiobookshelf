@@ -1,10 +1,19 @@
-'use strict';
+type Params = Record<string, string | undefined>;
+type Decoder = (data: string | Buffer, hint: number) => string | undefined;
 
-function parseContentType(str) {
+// The Node Buffer methods used by the parser are absent from the public declarations.
+interface BufferSlices extends Buffer {
+  utf8Slice(start: number, end: number): string;
+  latin1Slice(start: number, end: number): string;
+  ucs2Slice(start: number, end: number): string;
+  base64Slice(start: number, end: number): string;
+}
+
+function parseContentType(str: string) {
   if (str.length === 0)
     return;
 
-  const params = Object.create(null);
+  const params = Object.create(null) as Params;
   let i = 0;
 
   // Parse type
@@ -45,7 +54,7 @@ function parseContentType(str) {
   return { type, subtype, params };
 }
 
-function parseContentTypeParams(str, i, params) {
+function parseContentTypeParams(str: string, i: number, params: Params) {
   while (i < str.length) {
     // Consume whitespace
     for (; i < str.length; ++i) {
@@ -160,11 +169,11 @@ function parseContentTypeParams(str, i, params) {
   return params;
 }
 
-function parseDisposition(str, defDecoder) {
+function parseDisposition(str: string, defDecoder: Decoder) {
   if (str.length === 0)
     return;
 
-  const params = Object.create(null);
+  const params = Object.create(null) as Params;
   let i = 0;
 
   for (; i < str.length; ++i) {
@@ -181,7 +190,7 @@ function parseDisposition(str, defDecoder) {
   return { type, params };
 }
 
-function parseDispositionParams(str, i, params, defDecoder) {
+function parseDispositionParams(str: string, i: number, params: Params, defDecoder: Decoder) {
   while (i < str.length) {
     // Consume whitespace
     for (; i < str.length; ++i) {
@@ -225,7 +234,7 @@ function parseDispositionParams(str, i, params, defDecoder) {
     if (i === str.length)
       return;
 
-    let value = '';
+    let value: string | undefined = '';
     let valueStart;
     let charset;
     //~ let lang;
@@ -381,7 +390,7 @@ function parseDispositionParams(str, i, params, defDecoder) {
   return params;
 }
 
-function getDecoder(charset) {
+function getDecoder(charset: string): Decoder {
   let lc;
   while (true) {
     switch (charset) {
@@ -418,7 +427,7 @@ function getDecoder(charset) {
   }
 }
 
-const decoders = {
+const decoders: Record<'utf8' | 'latin1' | 'utf16le' | 'base64' | 'other', Decoder> = {
   utf8: (data, hint) => {
     if (data.length === 0)
       return '';
@@ -431,52 +440,59 @@ const decoders = {
 
       data = Buffer.from(data, 'latin1');
     }
-    return data.utf8Slice(0, data.length);
+    return (data as BufferSlices).utf8Slice(0, data.length);
   },
 
   latin1: (data, hint) => {
+    void hint;
     if (data.length === 0)
       return '';
     if (typeof data === 'string')
       return data;
-    return data.latin1Slice(0, data.length);
+    return (data as BufferSlices).latin1Slice(0, data.length);
   },
 
   utf16le: (data, hint) => {
+    void hint;
     if (data.length === 0)
       return '';
     if (typeof data === 'string')
       data = Buffer.from(data, 'latin1');
-    return data.ucs2Slice(0, data.length);
+    return (data as BufferSlices).ucs2Slice(0, data.length);
   },
 
   base64: (data, hint) => {
+    void hint;
     if (data.length === 0)
       return '';
     if (typeof data === 'string')
       data = Buffer.from(data, 'latin1');
-    return data.base64Slice(0, data.length);
+    return (data as BufferSlices).base64Slice(0, data.length);
   },
 
   other: (data, hint) => {
+    void hint;
     if (data.length === 0)
       return '';
     if (typeof data === 'string')
       data = Buffer.from(data, 'latin1');
     try {
+      // The original arrow captures the CommonJS module receiver.
       const decoder = new TextDecoder(this);
       return decoder.decode(data);
-    } catch {}
+    } catch {
+      return undefined;
+    }
   },
 };
 
-function convertToUTF8(data, charset, hint) {
+function convertToUTF8(data: string | Buffer, charset: string, hint: number) {
   const decode = getDecoder(charset);
   if (decode)
     return decode(data, hint);
 }
 
-function basename(path) {
+function basename(path: unknown) {
   if (typeof path !== 'string')
     return '';
   for (let i = path.length - 1; i >= 0; --i) {
@@ -566,7 +582,6 @@ const EXTENDED_VALUE = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
 
-/* eslint-disable no-multi-spaces */
 const HEX_VALUES = [
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -585,9 +600,7 @@ const HEX_VALUES = [
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 ];
-/* eslint-enable no-multi-spaces */
-
-module.exports = {
+export = {
   basename,
   convertToUTF8,
   getDecoder,
