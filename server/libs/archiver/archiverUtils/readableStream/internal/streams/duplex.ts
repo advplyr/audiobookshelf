@@ -24,6 +24,9 @@
 // Writable.
 import { createRequire } from 'node:module'
 import type { Duplex as NodeDuplex, DuplexOptions as NodeDuplexOptions } from 'node:stream'
+import primordials from '../../ours/primordials'
+
+const { ObjectDefineProperties, ObjectGetOwnPropertyDescriptor, ObjectKeys, ObjectSetPrototypeOf } = primordials
 
 interface DuplexOptions extends NodeDuplexOptions {
   readable?: boolean
@@ -46,18 +49,6 @@ interface WebAdapters {
 }
 
 const load = createRequire(__filename)
-const {
-  ObjectDefineProperties,
-  ObjectGetOwnPropertyDescriptor,
-  ObjectKeys,
-  ObjectSetPrototypeOf
-} = load('../../ours/primordials') as {
-  ObjectDefineProperties: typeof Object.defineProperties
-  ObjectGetOwnPropertyDescriptor: typeof Object.getOwnPropertyDescriptor
-  ObjectKeys: typeof Object.keys
-  ObjectSetPrototypeOf: typeof Object.setPrototypeOf
-}
-
 const Readable = load('./readable') as StreamConstructor
 const Writable = load('./writable') as StreamConstructor
 

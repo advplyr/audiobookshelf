@@ -1,13 +1,12 @@
 import { createRequire } from 'node:module'
+import primordials from '../../ours/primordials'
+
+const { MathFloor, NumberIsInteger } = primordials
 
 type DuplexKey = 'readableHighWaterMark' | 'writableHighWaterMark'
 type WaterMarkOptions = Partial<Record<DuplexKey | 'highWaterMark', number | null>>
 
 const load = createRequire(__filename)
-const { MathFloor, NumberIsInteger } = load('../../ours/primordials') as {
-  MathFloor: typeof Math.floor
-  NumberIsInteger: typeof Number.isInteger
-}
 const { ERR_INVALID_ARG_VALUE } = (load('../../ours/errors') as {
   codes: { ERR_INVALID_ARG_VALUE: new (name: string, value: unknown) => Error }
 }).codes

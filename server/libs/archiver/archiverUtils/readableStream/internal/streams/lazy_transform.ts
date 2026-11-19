@@ -3,6 +3,9 @@
 // for the stream, one conventional and one non-conventional.
 import { createRequire } from 'node:module'
 import type { Transform, TransformOptions } from 'node:stream'
+import primordials from '../../ours/primordials'
+
+const { ObjectDefineProperties, ObjectDefineProperty, ObjectSetPrototypeOf } = primordials
 
 type StateName = '_readableState' | '_writableState'
 
@@ -13,12 +16,6 @@ interface LazyStream extends Transform {
 }
 
 const load = createRequire(__filename)
-const { ObjectDefineProperties, ObjectDefineProperty, ObjectSetPrototypeOf } = load('../../ours/primordials') as {
-  ObjectDefineProperties: typeof Object.defineProperties
-  ObjectDefineProperty: typeof Object.defineProperty
-  ObjectSetPrototypeOf: typeof Object.setPrototypeOf
-}
-
 const stream = load('../../stream') as {
   Transform: {
     (this: LazyStream, options?: TransformOptions): void

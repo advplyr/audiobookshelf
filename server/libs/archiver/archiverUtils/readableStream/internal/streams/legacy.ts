@@ -1,5 +1,7 @@
 import { EventEmitter as EE } from 'node:events'
-import { createRequire } from 'node:module'
+import primordials from '../../ours/primordials'
+
+const { ArrayIsArray, ObjectSetPrototypeOf } = primordials
 
 type EventEmitterOptions = ConstructorParameters<typeof EE>[0]
 type StreamListener = (this: EE, ...args: unknown[]) => void
@@ -21,11 +23,6 @@ interface LegacyStream extends EE {
   pause?(): unknown
   resume?(): unknown
   pipe<T extends LegacyDestination>(destination: T, options?: { end?: boolean }): T
-}
-
-const { ArrayIsArray, ObjectSetPrototypeOf } = createRequire(__filename)('../../ours/primordials') as {
-  ArrayIsArray: typeof Array.isArray
-  ObjectSetPrototypeOf: typeof Object.setPrototypeOf
 }
 
 const Stream = function (this: LegacyStream, opts?: EventEmitterOptions) {

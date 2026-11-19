@@ -23,9 +23,11 @@
 // Every written chunk gets output as-is.
 import { createRequire } from 'node:module'
 import type { PassThrough as PassThroughStream, TransformCallback, TransformOptions } from 'node:stream'
+import primordials from '../../ours/primordials'
+
+const { ObjectSetPrototypeOf } = primordials
 
 const load = createRequire(__filename)
-const { ObjectSetPrototypeOf } = load('../../ours/primordials') as { ObjectSetPrototypeOf: typeof Object.setPrototypeOf }
 const Transform = load('./transform') as {
   (this: PassThroughStream, options?: TransformOptions): void
   prototype: PassThroughStream

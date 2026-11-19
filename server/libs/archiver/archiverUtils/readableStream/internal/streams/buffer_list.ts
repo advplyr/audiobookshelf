@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module'
 import type { InspectOptions } from 'node:util'
+import primordials from '../../ours/primordials'
 
 interface Entry<Chunk> {
   data: Chunk
@@ -7,12 +8,7 @@ interface Entry<Chunk> {
 }
 
 const load = createRequire(__filename)
-const { StringPrototypeSlice, SymbolIterator, TypedArrayPrototypeSet, Uint8Array } = load('../../ours/primordials') as {
-  StringPrototypeSlice: (value: string, start: number, end?: number) => string
-  SymbolIterator: typeof Symbol.iterator
-  TypedArrayPrototypeSet: (target: Uint8Array, value: ArrayLike<number>, offset: number) => void
-  Uint8Array: Uint8ArrayConstructor
-}
+const { StringPrototypeSlice, SymbolIterator, TypedArrayPrototypeSet, Uint8Array } = primordials
 const { inspect } = load('../../ours/util') as Pick<typeof import('node:util'), 'inspect'>
 const customInspect: unique symbol = Symbol.for('nodejs.util.inspect.custom')
 

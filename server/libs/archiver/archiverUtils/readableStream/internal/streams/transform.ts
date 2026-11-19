@@ -61,6 +61,9 @@
 // the results of the previous transformed chunk were consumed.
 import { createRequire } from 'node:module'
 import type { Transform as NodeTransform, TransformOptions } from 'node:stream'
+import primordials from '../../ours/primordials'
+
+const { ObjectSetPrototypeOf, Symbol } = primordials
 
 type WriteCallback = (error?: Error | null) => void
 
@@ -71,10 +74,6 @@ interface TransformStream extends NodeTransform {
 }
 
 const load = createRequire(__filename)
-const { ObjectSetPrototypeOf, Symbol } = load('../../ours/primordials') as {
-  ObjectSetPrototypeOf: typeof Object.setPrototypeOf
-  Symbol: typeof globalThis.Symbol
-}
 const { ERR_METHOD_NOT_IMPLEMENTED } = (load('../../ours/errors') as {
   codes: { ERR_METHOD_NOT_IMPLEMENTED: new (method: string) => Error }
 }).codes
