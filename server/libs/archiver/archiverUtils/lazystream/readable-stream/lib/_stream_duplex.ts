@@ -24,7 +24,25 @@
 // prototypally inherits from Readable, and then parasitically from
 // Writable.
 
-'use strict';
+import { createRequire } from 'node:module';
+import type { Duplex as NodeDuplex, DuplexOptions as NodeDuplexOptions } from 'node:stream';
+import { inherits } from 'node:util';
+
+interface DuplexOptions extends NodeDuplexOptions {
+  readable?: boolean;
+  writable?: boolean;
+}
+
+interface DuplexStream extends NodeDuplex {
+  writable: boolean;
+  _readableState: { destroyed: boolean };
+  _writableState: { highWaterMark: number; ended: boolean; destroyed: boolean };
+}
+
+interface StreamConstructor {
+  (this: DuplexStream, options?: DuplexOptions): void;
+  prototype: Record<string, unknown>;
+}
 
 /*<replacement>*/
 
@@ -33,37 +51,19 @@ var pna = process
 /*</replacement>*/
 
 /*<replacement>*/
-var objectKeys = Object.keys || function (obj) {
-  var keys = [];
+var objectKeys = Object.keys || function (obj: object) {
+  var keys: string[] = [];
   for (var key in obj) {
     keys.push(key);
   } return keys;
 };
 /*</replacement>*/
 
-module.exports = Duplex;
+const load = createRequire(__filename);
+var Readable = load('./_stream_readable') as StreamConstructor;
+var Writable = load('./_stream_writable') as StreamConstructor;
 
-/*<replacement>*/
-var util = require('util')
-// var util = Object.create(require('core-util-is'));
-// util.inherits = require('inherits');
-/*</replacement>*/
-
-var Readable = require('./_stream_readable');
-var Writable = require('./_stream_writable');
-
-util.inherits(Duplex, Readable);
-
-{
-  // avoid scope creep, the keys array can then be collected
-  var keys = objectKeys(Writable.prototype);
-  for (var v = 0; v < keys.length; v++) {
-    var method = keys[v];
-    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
-  }
-}
-
-function Duplex(options) {
+const Duplex = function (this: DuplexStream, options?: DuplexOptions) {
   if (!(this instanceof Duplex)) return new Duplex(options);
 
   Readable.call(this, options);
@@ -77,6 +77,21 @@ function Duplex(options) {
   if (options && options.allowHalfOpen === false) this.allowHalfOpen = false;
 
   this.once('end', onend);
+} as unknown as {
+  (options?: DuplexOptions): DuplexStream;
+  new (options?: DuplexOptions): DuplexStream;
+  prototype: DuplexStream & Record<string, unknown>;
+};
+
+inherits(Duplex, Readable);
+
+{
+  // avoid scope creep, the keys array can then be collected
+  var keys = objectKeys(Writable.prototype);
+  for (var v = 0; v < keys.length; v++) {
+    var method = keys[v];
+    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
+  }
 }
 
 Object.defineProperty(Duplex.prototype, 'writableHighWaterMark', {
@@ -84,13 +99,13 @@ Object.defineProperty(Duplex.prototype, 'writableHighWaterMark', {
   // because otherwise some prototype manipulation in
   // userland will fail
   enumerable: false,
-  get: function () {
+  get: function (this: DuplexStream) {
     return this._writableState.highWaterMark;
   }
 });
 
 // the no-half-open enforcer
-function onend() {
+function onend(this: DuplexStream) {
   // if we allow half-open state, or if the writable side ended,
   // then we're ok.
   if (this.allowHalfOpen || this._writableState.ended) return;
@@ -100,18 +115,18 @@ function onend() {
   pna.nextTick(onEndNT, this);
 }
 
-function onEndNT(self) {
+function onEndNT(self: DuplexStream) {
   self.end();
 }
 
 Object.defineProperty(Duplex.prototype, 'destroyed', {
-  get: function () {
+  get: function (this: DuplexStream) {
     if (this._readableState === undefined || this._writableState === undefined) {
       return false;
     }
     return this._readableState.destroyed && this._writableState.destroyed;
   },
-  set: function (value) {
+  set: function (this: DuplexStream, value: boolean) {
     // we ignore the value if the stream
     // has not been initialized yet
     if (this._readableState === undefined || this._writableState === undefined) {
@@ -131,3 +146,5 @@ Duplex.prototype._destroy = function (err, cb) {
 
   pna.nextTick(cb, err);
 };
+
+export = Duplex;
