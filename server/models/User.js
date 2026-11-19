@@ -132,6 +132,8 @@ class User extends Model {
     canAccessAllLibraries: 'accessAllLibraries',
     canAccessAllTags: 'accessAllTags',
     canCreateEReader: 'createEreader',
+    canDownloadPodcastEpisodes: 'downloadPodcastEpisodes',
+    canAddPodcasts: 'addPodcasts',
     tagsAreDenylist: 'selectedTagsNotAccessible',
     // Direct mapping for array-based permissions
     allowedLibraries: 'librariesAccessible',
@@ -173,6 +175,8 @@ class User extends Model {
       delete: type === 'root',
       upload: type === 'root' || type === 'admin',
       createEreader: type === 'root' || type === 'admin',
+      downloadPodcastEpisodes: type === 'root' || type === 'admin',
+      addPodcasts: type === 'root' || type === 'admin',
       accessAllLibraries: true,
       accessAllTags: true,
       accessExplicitContent: type === 'root' || type === 'admin',
@@ -568,6 +572,12 @@ class User extends Model {
   }
   get canUpload() {
     return !!this.permissions?.upload && this.isActive
+  }
+  get canDownloadPodcastEpisodes() {
+    return this.isAdminOrUp ? this.isActive : !!this.permissions?.downloadPodcastEpisodes && this.isActive
+  }
+  get canAddPodcasts() {
+    return this.isAdminOrUp ? this.isActive : !!this.permissions?.addPodcasts && this.isActive
   }
   /** @type {string|null} */
   get authOpenIDSub() {

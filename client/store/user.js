@@ -56,6 +56,14 @@ export const getters = {
   getUserCanUpload: (state) => {
     return !!state.user?.permissions?.upload
   },
+  getUserCanDownloadPodcastEpisodes: (state) => {
+    if (state.user?.type === 'admin' || state.user?.type === 'root') return true
+    return !!state.user?.permissions?.downloadPodcastEpisodes
+  },
+  getUserCanAddPodcasts: (state) => {
+    if (state.user?.type === 'admin' || state.user?.type === 'root') return true
+    return !!state.user?.permissions?.addPodcasts
+  },
   getUserCanAccessAllLibraries: (state) => {
     return !!state.user?.permissions?.accessAllLibraries
   },
