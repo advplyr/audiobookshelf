@@ -148,7 +148,7 @@ class LibraryItem extends Model {
    * @returns {Promise<LibraryItemExpanded[]>}
    */
   static async findAllExpandedWhere(where = null) {
-    return this.findAll({
+    const libraryItems = await this.findAll({
       where,
       include: [
         {
@@ -169,10 +169,9 @@ class LibraryItem extends Model {
           ]
         },
         {
-          model: this.sequelize.models.podcast,
-          include: {
-            model: this.sequelize.models.podcastEpisode
-          }
+          // Episodes are loaded in a second query below. Joining them here repeats the whole
+          // libraryItems row (including libraryFiles) once per episode.
+          model: this.sequelize.models.podcast
         }
       ],
       order: [
@@ -181,6 +180,23 @@ class LibraryItem extends Model {
         [this.sequelize.models.book, this.sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
       ]
     })
+
+    const podcasts = libraryItems.filter((li) => li.mediaType === 'podcast' && li.media).map((li) => li.media)
+    if (podcasts.length) {
+      const podcastEpisodes = await this.sequelize.models.podcastEpisode.findAll({
+        where: { podcastId: podcasts.map((p) => p.id) }
+      })
+      const episodesByPodcastId = {}
+      for (const episode of podcastEpisodes) {
+        if (!episodesByPodcastId[episode.podcastId]) episodesByPodcastId[episode.podcastId] = []
+        episodesByPodcastId[episode.podcastId].push(episode)
+      }
+      for (const podcast of podcasts) {
+        podcast.podcastEpisodes = episodesByPodcastId[podcast.id] || []
+        podcast.dataValues.podcastEpisodes = podcast.podcastEpisodes
+      }
+    }
+    return libraryItems
   }
 
   /**
