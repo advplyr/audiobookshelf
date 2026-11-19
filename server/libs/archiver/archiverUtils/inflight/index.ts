@@ -1,24 +1,26 @@
-var wrappy = require('../wrappy')
-var reqs = Object.create(null)
-var once = require('../../../lodash.once')
+import wrappy from '../wrappy'
+import once from '../../../lodash.once'
 
-module.exports = wrappy(inflight)
+type Callback<Args extends unknown[]> = (...args: Args) => void
 
-function inflight(key, cb) {
-  if (reqs[key]) {
-    reqs[key].push(cb)
+// Each key groups callers that share the same callback arguments.
+const reqs = Object.create(null) as Record<string, unknown>
+
+function inflight<Args extends unknown[]>(key: string, cb: Callback<Args>): Callback<Args> | null {
+  const callbacks = reqs[key] as Callback<Args>[] | undefined
+  if (callbacks) {
+    callbacks.push(cb)
     return null
   } else {
     reqs[key] = [cb]
-    return makeres(key)
+    return makeres<Args>(key)
   }
 }
 
-function makeres(key) {
-  return once(function RES() {
-    var cbs = reqs[key]
+function makeres<Args extends unknown[]>(key: string) {
+  return once(function RES(...args: Args) {
+    var cbs = reqs[key] as Callback<Args>[]
     var len = cbs.length
-    var args = slice(arguments)
 
     // XXX It's somewhat ambiguous whether a new callback added in this
     // pass should be queued for later execution if something in the
@@ -45,10 +47,5 @@ function makeres(key) {
   })
 }
 
-function slice(args) {
-  var length = args.length
-  var array = []
-
-  for (var i = 0; i < length; i++) array[i] = args[i]
-  return array
-}
+const wrapped: typeof inflight = wrappy(inflight)
+export = wrapped
