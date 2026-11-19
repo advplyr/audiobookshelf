@@ -294,6 +294,7 @@ function install(proto: ProbePrototype) {
 
 declare namespace install {
   export type Data = ProbeData;
+  export type Callback = ProbeCallback;
   export type Prototype = ProbePrototype;
 }
 

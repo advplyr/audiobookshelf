@@ -1,5 +1,5 @@
 import type Ffmpeg from '../../fluentFfmpeg';
-import type { CommandOutput, CommandWithMediaOutput, MediaFilter, VideoSizeData } from './types';
+import type { CommandOutput, CommandWithMediaOutput, MediaFilterSpec, VideoSizeData } from './types';
 
 /*
  *! Size helpers
@@ -16,7 +16,7 @@ import type { CommandOutput, CommandWithMediaOutput, MediaFilter, VideoSizeData 
  * @return scale/pad filters
  * @private
  */
-function getScalePadFilters(width: number, height: number, aspect: number, color: string): MediaFilter[] {
+function getScalePadFilters(width: number, height: number, aspect: number, color: string): MediaFilterSpec[] {
   /*
     let a be the input aspect ratio, A be the requested aspect ratio
 
@@ -65,7 +65,7 @@ function getScalePadFilters(width: number, height: number, aspect: number, color
  * @return filter string array
  * @private
  */
-function createSizeFilters<Key extends keyof VideoSizeData>(output: CommandOutput, key: Key, value: Required<VideoSizeData>[Key]): MediaFilter[] {
+function createSizeFilters<Key extends keyof VideoSizeData>(output: CommandOutput, key: Key, value: Required<VideoSizeData>[Key]): MediaFilterSpec[] {
   // Store parameters
   var data = output.sizeData = output.sizeData || {};
   data[key] = value;

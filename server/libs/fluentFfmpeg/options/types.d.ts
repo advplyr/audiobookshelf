@@ -40,7 +40,7 @@ export interface CommandOutput {
   audioFilters: MediaArguments;
   video: MediaArguments;
   videoFilters: MediaArguments;
-  sizeFilters: MediaArguments<MediaFilter>;
+  sizeFilters: MediaArguments<MediaFilterSpec>;
   options: MediaArguments;
   target?: Parameters<Ffmpeg.FfmpegCommand['output']>[0];
   isFile?: boolean;
@@ -60,11 +60,13 @@ export type CommandWithMediaOutput = Ffmpeg.FfmpegCommand & {
   _currentOutput: CommandOutput;
 };
 
-export type MediaFilter = string | {
+export type MediaFilter = string | MediaFilterSpec;
+
+export interface MediaFilterSpec {
   filter: string;
   inputs?: string | string[];
   outputs?: string | string[];
   options?: FilterValue | FilterValue[] | Record<string, FilterValue>;
-};
+}
 
 type FilterValue = string | number | boolean | null | undefined;
