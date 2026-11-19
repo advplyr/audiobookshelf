@@ -3,20 +3,12 @@ import passport from 'passport'
 import LocalStrategy from '../libs/passportLocal'
 import Database from '../Database'
 import Logger from '../Logger'
-import bcryptJs from '../libs/bcryptjs'
+import bcrypt from '../libs/bcryptjs'
 import requestIp from '../libs/requestIp'
 import type User from '../models/User'
 
 type VerifyDone = (err: unknown, user?: User | null) => void
 type LocalStrategyInstance = InstanceType<typeof LocalStrategy>
-
-// The vendored bcrypt build is untyped JavaScript.
-type BcryptApi = {
-  compare(password: string, hash: string): Promise<boolean>
-  hash(password: string, rounds: number, callback: (err: Error | null, hash?: string) => void): void
-}
-
-const bcrypt = bcryptJs as BcryptApi
 
 type PasswordChangeResult = { error: string } | { success: true }
 
