@@ -1,28 +1,44 @@
-'use strict'
+import { createRequire } from 'node:module'
+import type { InspectOptions } from 'node:util'
 
-const { StringPrototypeSlice, SymbolIterator, TypedArrayPrototypeSet, Uint8Array } = require('../../ours/primordials')
+interface Entry<Chunk> {
+  data: Chunk
+  next: Entry<Chunk> | null
+}
 
-const { inspect } = require('../../ours/util')
+const load = createRequire(__filename)
+const { StringPrototypeSlice, SymbolIterator, TypedArrayPrototypeSet, Uint8Array } = load('../../ours/primordials') as {
+  StringPrototypeSlice: (value: string, start: number, end?: number) => string
+  SymbolIterator: typeof Symbol.iterator
+  TypedArrayPrototypeSet: (target: Uint8Array, value: ArrayLike<number>, offset: number) => void
+  Uint8Array: Uint8ArrayConstructor
+}
+const { inspect } = load('../../ours/util') as Pick<typeof import('node:util'), 'inspect'>
+const customInspect: unique symbol = Symbol.for('nodejs.util.inspect.custom')
 
-module.exports = class BufferList {
+class BufferList<Chunk = unknown> {
+  declare head: Entry<Chunk> | null
+  declare tail: Entry<Chunk> | null
+  declare length: number
+
   constructor() {
     this.head = null
     this.tail = null
     this.length = 0
   }
 
-  push(v) {
-    const entry = {
+  push(v: Chunk) {
+    const entry: Entry<Chunk> = {
       data: v,
       next: null
     }
-    if (this.length > 0) this.tail.next = entry
+    if (this.length > 0) this.tail!.next = entry
     else this.head = entry
     this.tail = entry
     ++this.length
   }
 
-  unshift(v) {
+  unshift(v: Chunk) {
     const entry = {
       data: v,
       next: this.head
@@ -34,9 +50,10 @@ module.exports = class BufferList {
 
   shift() {
     if (this.length === 0) return
-    const ret = this.head.data
+    const head = this.head!
+    const ret = head.data
     if (this.length === 1) this.head = this.tail = null
-    else this.head = this.head.next
+    else this.head = head.next
     --this.length
     return ret
   }
@@ -46,17 +63,17 @@ module.exports = class BufferList {
     this.length = 0
   }
 
-  join(s) {
+  join(s: string) {
     if (this.length === 0) return ''
     let p = this.head
-    let ret = '' + p.data
+    let ret = '' + p!.data
 
-    while ((p = p.next) !== null) ret += s + p.data
+    while ((p = p!.next) !== null) ret += s + p.data
 
     return ret
   }
 
-  concat(n) {
+  concat(this: BufferList<Uint8Array>, n: number) {
     if (this.length === 0) return Buffer.alloc(0)
     const ret = Buffer.allocUnsafe(n >>> 0)
     let p = this.head
@@ -71,13 +88,14 @@ module.exports = class BufferList {
     return ret
   } // Consumes a specified amount of bytes or characters from the buffered data.
 
-  consume(n, hasStrings) {
-    const data = this.head.data
+  consume(this: BufferList<Buffer | string>, n: number, hasStrings: boolean) {
+    const head = this.head!
+    const data = head.data
 
     if (n < data.length) {
       // `slice` is the same for buffers and strings.
       const slice = data.slice(0, n)
-      this.head.data = data.slice(n)
+      head.data = data.slice(n)
       return slice
     }
 
@@ -86,11 +104,11 @@ module.exports = class BufferList {
       return this.shift()
     } // Result spans more than one buffer.
 
-    return hasStrings ? this._getString(n) : this._getBuffer(n)
+    return hasStrings ? (this as BufferList<string>)._getString(n) : (this as BufferList<Buffer>)._getBuffer(n)
   }
 
   first() {
-    return this.head.data
+    return this.head!.data
   }
 
   *[SymbolIterator]() {
@@ -99,13 +117,14 @@ module.exports = class BufferList {
     }
   } // Consumes a specified amount of characters from the buffered data.
 
-  _getString(n) {
+  _getString(this: BufferList<string>, n: number) {
     let ret = ''
     let p = this.head
     let c = 0
 
     do {
-      const str = p.data
+      const node = p!
+      const str = node.data
 
       if (n > str.length) {
         ret += str
@@ -114,32 +133,34 @@ module.exports = class BufferList {
         if (n === str.length) {
           ret += str
           ++c
-          if (p.next) this.head = p.next
+          if (node.next) this.head = node.next
           else this.head = this.tail = null
         } else {
           ret += StringPrototypeSlice(str, 0, n)
-          this.head = p
-          p.data = StringPrototypeSlice(str, n)
+          this.head = node
+          node.data = StringPrototypeSlice(str, n)
         }
 
         break
       }
 
       ++c
-    } while ((p = p.next) !== null)
+      p = node.next
+    } while (p !== null)
 
     this.length -= c
     return ret
   } // Consumes a specified amount of bytes from the buffered data.
 
-  _getBuffer(n) {
+  _getBuffer(this: BufferList<Buffer>, n: number) {
     const ret = Buffer.allocUnsafe(n)
     const retLen = n
     let p = this.head
     let c = 0
 
     do {
-      const buf = p.data
+      const node = p!
+      const buf = node.data
 
       if (n > buf.length) {
         TypedArrayPrototypeSet(ret, buf, retLen - n)
@@ -148,25 +169,26 @@ module.exports = class BufferList {
         if (n === buf.length) {
           TypedArrayPrototypeSet(ret, buf, retLen - n)
           ++c
-          if (p.next) this.head = p.next
+          if (node.next) this.head = node.next
           else this.head = this.tail = null
         } else {
           TypedArrayPrototypeSet(ret, new Uint8Array(buf.buffer, buf.byteOffset, n), retLen - n)
-          this.head = p
-          p.data = buf.slice(n)
+          this.head = node
+          node.data = buf.slice(n)
         }
 
         break
       }
 
       ++c
-    } while ((p = p.next) !== null)
+      p = node.next
+    } while (p !== null)
 
     this.length -= c
     return ret
   } // Make sure the linked list only shows the minimal necessary information.
 
-  [Symbol.for('nodejs.util.inspect.custom')](_, options) {
+  [customInspect](_: number, options: InspectOptions) {
     return inspect(this, {
       ...options,
       // Only inspect one level.
@@ -176,3 +198,5 @@ module.exports = class BufferList {
     })
   }
 }
+
+export = BufferList
