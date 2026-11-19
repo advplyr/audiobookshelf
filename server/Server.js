@@ -15,6 +15,7 @@ const fileUtils = require('./utils/fileUtils')
 const { sweepUploadTempFiles } = require('./utils/fileUploadMiddleware')
 const { toNumber } = require('./utils/index')
 const { getRequestOrigin } = require('./utils/requestUtils')
+const { setStaticHeaders } = require('./utils/staticCache')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -399,7 +400,7 @@ class Server {
     if (!ReactClientPath) {
       // Static path to generated nuxt
       const distPath = Path.join(global.appRoot, '/client/dist')
-      router.use(express.static(distPath))
+      router.use(express.static(distPath, { setHeaders: setStaticHeaders(distPath) }))
 
       // Client dynamic routes
       const dynamicRoutes = [
