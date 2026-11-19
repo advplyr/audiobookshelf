@@ -7,12 +7,11 @@ import { randomBytes } from 'crypto'
 import Database from '../Database'
 import Logger from '../Logger'
 import requestIp from '../libs/requestIp'
-import jwtJs from '../libs/jsonwebtoken'
+import jwt from '../libs/jsonwebtoken'
 import { isRequestSecure } from '../utils/requestUtils'
 import type User from '../models/User'
 import type Session from '../models/Session'
 
-// The vendored jsonwebtoken build is untyped JavaScript. This names the sign and verify calls already used here.
 type JwtClaims = {
   userId?: string
   username?: string
@@ -22,13 +21,6 @@ type JwtClaims = {
   jti?: string
   [claim: string]: unknown
 }
-
-type JwtApi = {
-  sign(payload: object, secret: string | null | undefined, options?: { expiresIn?: number }): string
-  verify(token: string, secret: string | null | undefined, options?: { ignoreExpiration?: boolean }): JwtClaims
-}
-
-const jwt = jwtJs as JwtApi
 
 // Loose claims: legacy access tokens omit type and exp, and later readers use the original decoded object.
 const bearerAccessTokenSchema = z.looseObject({
@@ -152,7 +144,7 @@ class TokenManager {
   static validateAccessToken(token: string): JwtClaims | null {
     try {
       // Expiration is handled by the caller so expired API keys can be deactivated
-      return jwt.verify(token, TokenManager.TokenSecret, { ignoreExpiration: true })
+      return jwt.verify(token, TokenManager.TokenSecret, { ignoreExpiration: true }) as JwtClaims
     } catch {
       return null
     }
@@ -383,7 +375,7 @@ class TokenManager {
   async handleRefreshToken(refreshToken: string, req: Request, res: Response): Promise<RefreshResult> {
     try {
       // Verify the refresh token. Zod classifies the payload; the decoded object is what session lookup uses.
-      const decoded = jwt.verify(refreshToken, TokenManager.TokenSecret)
+      const decoded = jwt.verify(refreshToken, TokenManager.TokenSecret) as JwtClaims
       const parsedRefresh = refreshTokenSchema.safeParse(decoded)
 
       if (!parsedRefresh.success && decoded.type !== 'refresh') {

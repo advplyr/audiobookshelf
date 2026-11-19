@@ -1,32 +1,57 @@
-var timespan = require('./lib/timespan');
+import jws from '../jws';
+import once from '../lodash.once';
+import timespan from './lib/timespan';
+
 var PS_SUPPORTED = true
-var jws = require('../jws');
-var once = require('../lodash.once');
+interface SignOptions {
+  expiresIn?: number | string;
+  notBefore?: number | string;
+  audience?: string | string[];
+  algorithm?: string;
+  header?: Record<string, unknown>;
+  encoding?: BufferEncoding;
+  issuer?: string;
+  subject?: string;
+  jwtid?: string;
+  noTimestamp?: boolean;
+  keyid?: string;
+  mutatePayload?: boolean;
+}
+
+type Claims = Record<string, unknown>;
+type Validator = { isValid: (value: unknown) => unknown; message: string };
+type SignCallback = (error: unknown, token?: string) => unknown;
+
+interface Sign {
+  (payload: unknown, key: unknown, options?: SignOptions | null): string;
+  (payload: unknown, key: unknown, callback: SignCallback): void;
+  (payload: unknown, key: unknown, options: SignOptions | null | undefined, callback: SignCallback): void;
+}
 
 var SUPPORTED_ALGS = ['RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512', 'HS256', 'HS384', 'HS512', 'none'];
 if (PS_SUPPORTED) {
   SUPPORTED_ALGS.splice(3, 0, 'PS256', 'PS384', 'PS512');
 }
 
-function isPlainObject(value) {
+function isPlainObject(value: unknown): value is Claims {
   var type = typeof value;
   return !!value && type == 'object' && !Array.isArray(value);
 }
-function isInteger(val) {
-  return !isNaN(val) && val !== null && !String(val).includes('.')
+function isInteger(val: unknown) {
+  return !isNaN(val as number) && val !== null && !String(val).includes('.')
 }
-function isNumber(val) {
-  return !isNaN(val) && val !== null
+function isNumber(val: unknown) {
+  return !isNaN(val as number) && val !== null
 }
-function isString(val) {
+function isString(val: unknown): val is string {
   return typeof val == 'string'
 }
 
-var sign_options_schema = {
+var sign_options_schema: Record<string, Validator | undefined> = {
   expiresIn: { isValid: function (value) { return isInteger(value) || (isString(value) && value); }, message: '"expiresIn" should be a number of seconds or string representing a timespan' },
   notBefore: { isValid: function (value) { return isInteger(value) || (isString(value) && value); }, message: '"notBefore" should be a number of seconds or string representing a timespan' },
   audience: { isValid: function (value) { return isString(value) || Array.isArray(value); }, message: '"audience" must be a string or array' },
-  algorithm: { isValid: function (value) { return SUPPORTED_ALGS.includes(value); }, message: '"algorithm" must be a valid string enum value' },
+  algorithm: { isValid: function (value) { return SUPPORTED_ALGS.includes(value as string); }, message: '"algorithm" must be a valid string enum value' },
   header: { isValid: isPlainObject, message: '"header" must be an object' },
   encoding: { isValid: isString, message: '"encoding" must be a string' },
   issuer: { isValid: isString, message: '"issuer" must be a string' },
@@ -37,13 +62,13 @@ var sign_options_schema = {
   mutatePayload: { isValid: function (value) { return value === true || value === false; }, message: '"mutatePayload" must be a boolean' }
 };
 
-var registered_claims_schema = {
+var registered_claims_schema: Record<string, Validator | undefined> = {
   iat: { isValid: isNumber, message: '"iat" should be a number of seconds' },
   exp: { isValid: isNumber, message: '"exp" should be a number of seconds' },
   nbf: { isValid: isNumber, message: '"nbf" should be a number of seconds' }
 };
 
-function validate(schema, allowUnknown, object, parameterName) {
+function validate(schema: Record<string, Validator | undefined>, allowUnknown: boolean, object: unknown, parameterName: string) {
   if (!isPlainObject(object)) {
     throw new Error('Expected "' + parameterName + '" to be a plain object.');
   }
@@ -62,11 +87,11 @@ function validate(schema, allowUnknown, object, parameterName) {
     });
 }
 
-function validateOptions(options) {
+function validateOptions(options: unknown) {
   return validate(sign_options_schema, false, options, 'options');
 }
 
-function validatePayload(payload) {
+function validatePayload(payload: unknown) {
   return validate(registered_claims_schema, true, payload, 'payload');
 }
 
@@ -75,7 +100,7 @@ var options_to_payload = {
   'issuer': 'iss',
   'subject': 'sub',
   'jwtid': 'jti'
-};
+} as const;
 
 var options_for_objects = [
   'expiresIn',
@@ -85,9 +110,9 @@ var options_for_objects = [
   'issuer',
   'subject',
   'jwtid',
-];
+] as const;
 
-module.exports = function (payload, secretOrPrivateKey, options, callback) {
+export = (function (payload: unknown, secretOrPrivateKey: unknown, options?: SignOptions | SignCallback | null, callback?: SignCallback) {
   if (typeof options === 'function') {
     callback = options;
     options = {};
@@ -95,23 +120,24 @@ module.exports = function (payload, secretOrPrivateKey, options, callback) {
     options = options || {};
   }
 
+  const settings = options;
   var isObjectPayload = typeof payload === 'object' &&
     !Buffer.isBuffer(payload);
 
   var header = Object.assign({
-    alg: options.algorithm || 'HS256',
+    alg: settings.algorithm || 'HS256',
     typ: isObjectPayload ? 'JWT' : undefined,
-    kid: options.keyid
-  }, options.header);
+    kid: settings.keyid
+  }, settings.header);
 
-  function failure(err) {
+  function failure(err: unknown) {
     if (callback) {
       return callback(err);
     }
-    throw err;
+    throw err as Error;
   }
 
-  if (!secretOrPrivateKey && options.algorithm !== 'none') {
+  if (!secretOrPrivateKey && settings.algorithm !== 'none') {
     return failure(new Error('secretOrPrivateKey must have a value'));
   }
 
@@ -124,12 +150,12 @@ module.exports = function (payload, secretOrPrivateKey, options, callback) {
     catch (error) {
       return failure(error);
     }
-    if (!options.mutatePayload) {
+    if (!settings.mutatePayload) {
       payload = Object.assign({}, payload);
     }
   } else {
     var invalid_options = options_for_objects.filter(function (opt) {
-      return typeof options[opt] !== 'undefined';
+      return typeof settings[opt] !== 'undefined';
     });
 
     if (invalid_options.length > 0) {
@@ -137,78 +163,81 @@ module.exports = function (payload, secretOrPrivateKey, options, callback) {
     }
   }
 
-  if (typeof payload.exp !== 'undefined' && typeof options.expiresIn !== 'undefined') {
+  const claims = payload as Claims;
+  if (typeof claims.exp !== 'undefined' && typeof settings.expiresIn !== 'undefined') {
     return failure(new Error('Bad "options.expiresIn" option the payload already has an "exp" property.'));
   }
 
-  if (typeof payload.nbf !== 'undefined' && typeof options.notBefore !== 'undefined') {
+  if (typeof claims.nbf !== 'undefined' && typeof settings.notBefore !== 'undefined') {
     return failure(new Error('Bad "options.notBefore" option the payload already has an "nbf" property.'));
   }
 
   try {
-    validateOptions(options);
+    validateOptions(settings);
   }
   catch (error) {
     return failure(error);
   }
 
-  var timestamp = payload.iat || Math.floor(Date.now() / 1000);
+  var timestamp = (claims.iat || Math.floor(Date.now() / 1000)) as number;
 
-  if (options.noTimestamp) {
-    delete payload.iat;
+  if (settings.noTimestamp) {
+    // The original non-strict module ignored writes to read-only claims.
+    Reflect.deleteProperty(claims, 'iat');
   } else if (isObjectPayload) {
-    payload.iat = timestamp;
+    Reflect.set(claims, 'iat', timestamp);
   }
 
-  if (typeof options.notBefore !== 'undefined') {
+  if (typeof settings.notBefore !== 'undefined') {
     try {
-      payload.nbf = timespan(options.notBefore, timestamp);
+      Reflect.set(claims, 'nbf', timespan(settings.notBefore, timestamp));
     }
     catch (err) {
       return failure(err);
     }
-    if (typeof payload.nbf === 'undefined') {
+    if (typeof claims.nbf === 'undefined') {
       return failure(new Error('"notBefore" should be a number of seconds or string representing a timespan eg: "1d", "20h", 60'));
     }
   }
 
-  if (typeof options.expiresIn !== 'undefined' && typeof payload === 'object') {
+  if (typeof settings.expiresIn !== 'undefined' && typeof payload === 'object') {
     try {
-      payload.exp = timespan(options.expiresIn, timestamp);
+      Reflect.set(claims, 'exp', timespan(settings.expiresIn, timestamp));
     }
     catch (err) {
       return failure(err);
     }
-    if (typeof payload.exp === 'undefined') {
+    if (typeof claims.exp === 'undefined') {
       return failure(new Error('"expiresIn" should be a number of seconds or string representing a timespan eg: "1d", "20h", 60'));
     }
   }
 
-  Object.keys(options_to_payload).forEach(function (key) {
+  const claimOptions = Object.keys(options_to_payload) as (keyof typeof options_to_payload)[];
+  claimOptions.forEach(function (key) {
     var claim = options_to_payload[key];
-    if (typeof options[key] !== 'undefined') {
-      if (typeof payload[claim] !== 'undefined') {
+    if (typeof settings[key] !== 'undefined') {
+      if (typeof claims[claim] !== 'undefined') {
         return failure(new Error('Bad "options.' + key + '" option. The payload already has an "' + claim + '" property.'));
       }
-      payload[claim] = options[key];
+      Reflect.set(claims, claim, settings[key]);
     }
   });
 
-  var encoding = options.encoding || 'utf8';
+  var encoding = settings.encoding || 'utf8';
 
   if (typeof callback === 'function') {
-    callback = callback && once(callback);
+    const notify = once(callback);
 
     jws.createSign({
       header: header,
       privateKey: secretOrPrivateKey,
       payload: payload,
       encoding: encoding
-    }).once('error', callback)
-      .once('done', function (signature) {
-        callback(null, signature);
+    }).once('error', notify)
+      .once('done', function (signature: string) {
+        notify(null, signature);
       });
   } else {
     return jws.sign({ header: header, payload: payload, secret: secretOrPrivateKey, encoding: encoding });
   }
-};
+}) as Sign;
