@@ -312,7 +312,8 @@ export default {
       return this.bookItems
     },
     selectedItemSublist() {
-      return this.selected?.includes('.') ? this.selected.split('.')[0] : null
+      const group = this.selected?.includes('.') ? this.selected.split('.')[0] : null
+      return this.selectItems.some((i) => i.value === group && i.sublist) ? group : null
     },
     selectedSublistText() {
       if (!this.sublist) {

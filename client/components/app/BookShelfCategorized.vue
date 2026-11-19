@@ -18,13 +18,14 @@
       <template v-for="(shelf, index) in supportedShelves">
         <widgets-item-slider :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :type="shelf.type" class="bookshelf-row pl-8e my-6e" @selectEntity="(payload) => selectEntity(payload, index)">
           <h2 class="font-semibold text-gray-100">{{ $strings[shelf.labelStringKey] }}</h2>
+          <nuxt-link v-if="getShelfViewAllUrl(shelf)" :to="getShelfViewAllUrl(shelf)" class="text-sm text-gray-300 hover:text-white hover:underline ml-4e">{{ $strings.ButtonViewAll }}</nuxt-link>
         </widgets-item-slider>
       </template>
     </div>
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in supportedShelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :view-all-url="getShelfViewAllUrl(shelf)" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
   </div>
@@ -34,6 +35,7 @@
 export default {
   props: {
     search: Boolean,
+    searchQuery: String,
     results: {
       type: Object,
       default: () => {}
@@ -94,6 +96,12 @@ export default {
     }
   },
   methods: {
+    getShelfViewAllUrl(shelf) {
+      if (this.search && this.searchQuery && (shelf.type === 'book' || shelf.type === 'podcast')) {
+        return `/library/${this.currentLibraryId}/bookshelf?filter=search.${this.$encode(this.searchQuery)}`
+      }
+      return null
+    },
     selectEntity({ entity, shiftKey }, shelfIndex) {
       const shelf = this.shelves[shelfIndex]
       const entityShelfIndex = shelf.entities.findIndex((ent) => ent.id === entity.id)

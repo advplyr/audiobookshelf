@@ -41,6 +41,8 @@
         </div>
       </div>
 
+      <nuxt-link v-if="viewAllUrl" :to="viewAllUrl" class="absolute top-0 right-4e md:right-8e z-30 h-6e flex items-center text-sm text-gray-200 hover:text-white hover:underline">{{ $strings.ButtonViewAll }}</nuxt-link>
+
       <div class="bookshelfDividerCategorized h-6e w-full absolute top-0 left-0 right-0 z-20"></div>
     </div>
     <button v-show="canScrollLeft && !isScrolling" :aria-label="$strings.ButtonScrollLeft" class="hidden sm:flex absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-40" @click="scrollLeft">
@@ -60,7 +62,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    continueListeningShelf: Boolean
+    continueListeningShelf: Boolean,
+    viewAllUrl: String
   },
   data() {
     return {
