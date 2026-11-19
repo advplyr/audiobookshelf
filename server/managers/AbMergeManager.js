@@ -8,6 +8,7 @@ const Ffmpeg = require('../libs/fluentFfmpeg')
 const SocketAuthority = require('../SocketAuthority')
 const { isWritable, copyToExisting } = require('../utils/fileUtils')
 const TrackProgressMonitor = require('../objects/TrackProgressMonitor')
+const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 
 /**
  * @typedef AbMergeEncodeOptions
@@ -245,6 +246,17 @@ class AbMergeManager {
 
     // Remove ffmetadata file
     await fs.remove(task.data.ffmetadataPath)
+
+    // Rescan so the stored audio file data matches the new file.
+    // The watcher ignores change events, so it will not pick this up when the m4b keeps its filename.
+    // Rescanning single file library items is not supported
+    if (!libraryItem.isFile) {
+      try {
+        await LibraryItemScanner.scanLibraryItem(libraryItem.id)
+      } catch (error) {
+        Logger.error(`[AbMergeManager] Failed to rescan library item "${libraryItem.id}" after m4b encode`, error)
+      }
+    }
 
     task.setFinished()
     await this.removeTask(task, false)
