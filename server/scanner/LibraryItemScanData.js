@@ -221,12 +221,26 @@ class LibraryItemScanData {
     this.libraryFilesModified = []
     let libraryFilesAdded = this.libraryFiles.map(lf => lf)
 
+    // Match by path first for all files, then fall back to inode for files that were not matched.
+    // A scanned file is matched to at most one existing file, otherwise a file that replaced another one
+    // (same path, inode of a file that was moved onto it) would be kept twice. See #4415
+    // Duplicate records that already point at the same path (from before this fix) are removed.
+    const matchedByPath = new Map()
+    const claimedLibraryFiles = new Set()
     for (const existingLibraryFile of existingLibraryItem.libraryFiles) {
-      // Find matching library file using path first and fallback to using inode value
-      let matchingLibraryFile = this.libraryFiles.find(lf => lf.metadata.path === existingLibraryFile.metadata.path)
+      const fileWithPath = this.libraryFiles.find(lf => !claimedLibraryFiles.has(lf) && lf.metadata.path === existingLibraryFile.metadata.path)
+      if (fileWithPath) {
+        matchedByPath.set(existingLibraryFile, fileWithPath)
+        claimedLibraryFiles.add(fileWithPath)
+      }
+    }
+
+    for (const existingLibraryFile of existingLibraryItem.libraryFiles) {
+      let matchingLibraryFile = matchedByPath.get(existingLibraryFile)
       if (!matchingLibraryFile) {
-        matchingLibraryFile = this.libraryFiles.find(lf => lf.ino === existingLibraryFile.ino)
+        matchingLibraryFile = this.libraryFiles.find(lf => !claimedLibraryFiles.has(lf) && lf.ino === existingLibraryFile.ino)
         if (matchingLibraryFile) {
+          claimedLibraryFiles.add(matchingLibraryFile)
           libraryScan.addLog(LogLevel.INFO, `Library file with path "${existingLibraryFile.metadata.path}" not found, but found file with matching inode value "${existingLibraryFile.ino}" at path "${matchingLibraryFile.metadata.path}"`)
         }
       }
