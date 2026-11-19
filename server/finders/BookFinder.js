@@ -9,6 +9,7 @@ const CustomProviderAdapter = require('../providers/CustomProviderAdapter')
 const Logger = require('../Logger')
 const { levenshteinDistance, levenshteinSimilarity, escapeRegExp, isValidASIN } = require('../utils/index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
+const { getASIN } = require('../utils/scandir')
 
 class BookFinder {
   #providerResponseTimeout = 10000
@@ -390,11 +391,25 @@ class BookFinder {
     title = title.substring(0, MAX_INPUT_LENGTH)
     author = author?.substring(0, MAX_INPUT_LENGTH) || author
 
-    const isTitleAsin = isValidASIN(title.toUpperCase())
+    let isTitleAsin = isValidASIN(title.toUpperCase())
 
     let actualTitleQuery = title
     let actualAuthorQuery = author
-    books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+
+    // A title taken from a file or folder name can carry the ASIN in brackets, e.g.
+    // "A War in the Depths: A Progression Fantasy LitRPG [B0DKB3FPZC]" (Libation's default naming).
+    // Look that ASIN up first, and use the result only if its title agrees with the rest of the name.
+    if (provider.startsWith('audible') && !isTitleAsin && !isValidASIN(asin?.toUpperCase())) {
+      const asinBook = await this.searchByAsinInTitle(title, provider)
+      if (asinBook) {
+        books = [asinBook]
+        isTitleAsin = true
+      }
+    }
+
+    if (!books.length) {
+      books = await this.runSearch(actualTitleQuery, actualAuthorQuery, provider, asin, maxTitleDistance, maxAuthorDistance)
+    }
 
     if (!books.length && maxFuzzySearches > 0) {
       // Normalize title and author
@@ -448,6 +463,41 @@ class BookFinder {
       }
     }
     return books
+  }
+
+  /**
+   * Look up an ASIN given in brackets in a title, e.g. "Some Book: A Subtitle [B0DKB3FPZC]".
+   * The result is returned only if its title matches the rest of the name,
+   * so a stray 10-character code (an ISBN-10, a typo, another region's ASIN) is not trusted blindly.
+   *
+   * @param {string} title
+   * @param {string} provider audible provider, e.g. "audible" or "audible.uk"
+   * @returns {Promise<Object|null>}
+   */
+  async searchByAsinInTitle(title, provider) {
+    const [titleWithoutAsin, titleAsin] = getASIN(title)
+    if (!titleAsin) return null
+
+    let region = provider.includes('.') ? provider.split('.').pop() : ''
+    // asinSearch puts region into the request URL as is, so only allow known regions (as Audible.search does)
+    if (region && !this.audible.regionMap[region]) region = ''
+    const item = await this.audible.asinSearch(titleAsin, region, this.#providerResponseTimeout)
+    if (!item) {
+      Logger.debug(`[BookFinder] ASIN "${titleAsin}" from title not found`)
+      return null
+    }
+    const book = this.audible.cleanResult(item)
+
+    if (!titleMatchesAsinResult(titleWithoutAsin, book.title)) {
+      Logger.info(`[BookFinder] ASIN "${titleAsin}" from title is "${book.title}", which does not match "${titleWithoutAsin}"; falling back to title search`)
+      return null
+    }
+
+    if (book.description) {
+      book.description = htmlSanitizer.sanitize(book.description)
+      book.descriptionPlain = htmlSanitizer.stripAllTags(book.description)
+    }
+    return book
   }
 
   /**
@@ -681,6 +731,40 @@ function cleanTitleForCompares(title, keepSubtitle = false) {
   // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
   cleaned = cleaned.replace(/'/g, '')
   return replaceAccentedChars(cleaned).toLowerCase()
+}
+
+/**
+ * Normalize a title for a loose comparison: lowercase, no accents, letters and digits only.
+ *
+ * @param {string} title
+ * @returns {string}
+ */
+function normalizeTitleForAsinCheck(title) {
+  if (!title) return ''
+  return replaceAccentedChars(title)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
+/**
+ * Does the name an ASIN came from agree with the title that ASIN resolved to?
+ * Passes if the result's main title (without subtitle) appears as whole words in the name,
+ * or if the two main titles are nearly the same (allows for characters a filesystem replaced).
+ * A name that is only the bracketed ASIN has nothing to compare, so it passes.
+ *
+ * @param {string} nameWithoutAsin e.g. "A War in the Depths: A Progression Fantasy LitRPG"
+ * @param {string} resultTitle title returned for the ASIN
+ * @returns {boolean}
+ */
+function titleMatchesAsinResult(nameWithoutAsin, resultTitle) {
+  const name = normalizeTitleForAsinCheck(nameWithoutAsin)
+  if (!name) return true
+  const result = normalizeTitleForAsinCheck(cleanTitleForCompares(resultTitle))
+  if (!result) return false
+  if (` ${name} `.includes(` ${result} `)) return true
+  const nameMain = normalizeTitleForAsinCheck(cleanTitleForCompares(nameWithoutAsin))
+  return levenshteinSimilarity(nameMain, result) >= 0.8
 }
 
 function cleanAuthorForCompares(author) {
