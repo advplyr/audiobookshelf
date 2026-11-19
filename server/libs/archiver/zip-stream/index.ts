@@ -9,7 +9,7 @@ import { inherits } from 'node:util';
 import type { ZlibOptions } from 'node:zlib';
 import commons from '../compress-commons';
 import type ZipArchiveOutput from '../compress-commons/archivers/zip/zip-archive-output-stream';
-import runtimeUtils from '../archiverUtils';
+import util from '../archiverUtils';
 
 const { ZipArchiveOutputStream, ZipArchiveEntry } = commons;
 type Entry = InstanceType<typeof ZipArchiveEntry>;
@@ -42,12 +42,6 @@ interface ZipStream extends Omit<ZipArchiveOutput.Instance, 'entry' | 'options'>
   entry(source: unknown, data?: EntryData, callback?: EntryCallback): this | undefined;
   finalize(): void;
 }
-
-const util = runtimeUtils as {
-  defaults(data: EntryData | undefined, defaults: EntryData): EntryData;
-  dateify(date?: EntryDate): Date;
-  sanitizePath(path: string): string;
-};
 
 // ZipStream installs a different entry signature on the inherited prototype.
 const baseConstructor: unknown = ZipArchiveOutputStream;

@@ -6,7 +6,7 @@
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
 import ZipStream from '../../zip-stream';
-import runtimeUtils from '../../archiverUtils';
+import util from '../../archiverUtils';
 
 type Options = ZipStream.Options & { forceUTC?: boolean };
 type Engine = ZipStream.Instance;
@@ -21,10 +21,6 @@ interface ZipPlugin {
   pipe<Destination extends NodeJS.WritableStream>(destination: Destination, options?: { end?: boolean }): Destination;
   unpipe(...args: Parameters<Engine['unpipe']>): ReturnType<Engine['unpipe']>;
 }
-
-const util = runtimeUtils as {
-  defaults(options: Options | undefined, defaults: Options): Options;
-};
 
 /**
  * @constructor
