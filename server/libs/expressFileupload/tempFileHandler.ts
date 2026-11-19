@@ -1,27 +1,35 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import { createHash } from 'node:crypto';
+import { createWriteStream } from 'node:fs';
+import type { WriteStream } from 'node:fs';
+import path from 'node:path';
+import utilities from './utilities';
+
+interface TempFileOptions {
+  tempFileDir: string;
+  debug?: boolean;
+}
+
 const {
   debugLog,
   checkAndMakeDir,
   getTempFilename,
   deleteFile
-} = require('./utilities');
+} = utilities;
 
-module.exports = (options, fieldname, filename) => {
+export = (options: TempFileOptions, fieldname: string, filename: string) => {
   const dir = path.normalize(options.tempFileDir);
   const tempFilePath = path.join(dir, getTempFilename());
   checkAndMakeDir({ createParentPath: true }, tempFilePath);
 
   debugLog(options, `Temporary file path is ${tempFilePath}`);
- 
-  const hash = crypto.createHash('md5');
+
+  const hash = createHash('md5');
   let fileSize = 0;
   let completed = false;
 
   debugLog(options, `Opening write stream for ${fieldname}->${filename}...`);
-  const writeStream = fs.createWriteStream(tempFilePath);
-  const writePromise = new Promise((resolve, reject) => {
+  const writeStream = createWriteStream(tempFilePath);
+  const writePromise = new Promise<void>((resolve, reject) => {
     writeStream.on('finish', () => resolve());
     writeStream.on('error', (err) => {
       debugLog(options, `Error write temp file: ${err}`);
@@ -30,7 +38,7 @@ module.exports = (options, fieldname, filename) => {
   });
 
   return {
-    dataHandler: (data) => {
+    dataHandler: (data: Buffer) => {
       if (completed === true) {
         debugLog(options, `Error: got ${fieldname}->${filename} data chunk for completed upload!`);
         return;
@@ -46,7 +54,7 @@ module.exports = (options, fieldname, filename) => {
     complete: () => {
       completed = true;
       debugLog(options, `Upload ${fieldname}->${filename} completed, bytes:${fileSize}.`);
-      if (writeStream !== false) writeStream.end();
+      if ((writeStream as WriteStream | false) !== false) writeStream.end();
       // Return empty buff since data was uploaded into a temp file.
       return Buffer.concat([]);
     },
@@ -54,7 +62,7 @@ module.exports = (options, fieldname, filename) => {
       completed = true;
       debugLog(options, `Cleaning up temporary file ${tempFilePath}...`);
       writeStream.end();
-      deleteFile(tempFilePath, err => (err 
+      deleteFile(tempFilePath, err => (err
         ? debugLog(options, `Cleaning up temporary file ${tempFilePath} failed: ${err}`)
         : debugLog(options, `Cleaning up temporary file ${tempFilePath} done.`)
       ));
