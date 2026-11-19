@@ -37,12 +37,43 @@
  * [ 1, 2, 3 ]
  */
 
-function isObject(input) {
+type Converter = { convert(value: string | boolean): unknown }['convert']
+interface DefinitionInput {
+  name: string
+  type?: Converter
+  alias?: string
+  multiple?: boolean
+  lazyMultiple?: boolean
+  defaultOption?: boolean
+  defaultValue?: unknown
+  group?: string | readonly string[]
+}
+type DefinitionList = DefinitionInput | ArrayLike<DefinitionInput> | ReadonlySet<DefinitionInput>
+type Argument = string | { origArg: string; arg: string }
+interface ParseOptions {
+  argv?: unknown
+  caseInsensitive?: boolean
+  stopAtFirstUnknown?: boolean
+  partial?: boolean
+}
+interface ArgumentInfo {
+  event: 'set' | 'unknown_value' | 'unknown_option' | undefined
+  arg: string
+  name: string
+  value: string | boolean | null | undefined
+  def?: OptionDefinition
+  subArg?: string
+}
+type ArgumentReplacement<T> = T | ((value: T) => T[])
+type ParserError = Error & { value?: unknown; optionName?: string }
+type ParsedOptions = Record<string, unknown>
+
+function isObject(input: unknown): input is object {
   return typeof input === 'object' && input !== null
 }
 
-function isArrayLike(input) {
-  return isObject(input) && typeof input.length === 'number'
+function isArrayLike(input: unknown): input is ArrayLike<unknown> {
+  return isObject(input) && typeof (input as { length?: unknown }).length === 'number'
 }
 
 /**
@@ -50,7 +81,7 @@ function isArrayLike(input) {
  * @returns {Array}
  * @alias module:array-back
  */
-function arrayify(input) {
+function arrayify<T>(input: T | ArrayLike<T> | ReadonlySet<T> | undefined): T[] {
   if (Array.isArray(input)) {
     return input
   }
@@ -60,10 +91,10 @@ function arrayify(input) {
   }
 
   if (isArrayLike(input) || input instanceof Set) {
-    return Array.from(input)
+    return Array.from(input as ArrayLike<T> | ReadonlySet<T>)
   }
 
-  return [input]
+  return [input as T]
 }
 
 /**
@@ -95,12 +126,12 @@ function arrayify(input) {
  * [ 1, 2, 3 ]
  */
 
-function isObject$1(input) {
+function isObject$1(input: unknown): input is object {
   return typeof input === 'object' && input !== null
 }
 
-function isArrayLike$1(input) {
-  return isObject$1(input) && typeof input.length === 'number'
+function isArrayLike$1(input: unknown): input is ArrayLike<unknown> {
+  return isObject$1(input) && typeof (input as { length?: unknown }).length === 'number'
 }
 
 /**
@@ -108,14 +139,14 @@ function isArrayLike$1(input) {
  * @returns {Array}
  * @alias module:array-back
  */
-function arrayify$1(input) {
+function arrayify$1<T>(input: T | ArrayLike<T> | undefined): T[] {
   if (Array.isArray(input)) {
     return input
   } else {
     if (input === undefined) {
       return []
     } else if (isArrayLike$1(input)) {
-      return Array.prototype.slice.call(input)
+      return Array.prototype.slice.call(input) as T[]
     } else {
       return [input]
     }
@@ -150,22 +181,20 @@ function arrayify$1(input) {
  * @returns {array}
  * @alias module:find-replace
  */
-function findReplace(array, testFn) {
-  const found = [];
-  const replaceWiths = arrayify$1(arguments);
-  replaceWiths.splice(0, 2);
+function findReplace<T>(array: T[], testFn: ((value: T) => boolean) | RegExp, ...replaceWiths: ArgumentReplacement<T>[]) {
+  const found: { index: number; replaceWithValue: T[] }[] = [];
 
   arrayify$1(array).forEach((value, index) => {
-    let expanded = [];
+    let expanded: T[] = [];
     replaceWiths.forEach(replaceWith => {
       if (typeof replaceWith === 'function') {
-        expanded = expanded.concat(replaceWith(value));
+        expanded = expanded.concat((replaceWith as (value: T) => T[])(value));
       } else {
         expanded.push(replaceWith);
       }
     });
 
-    if (testFn(value)) {
+    if ((testFn as (value: T) => boolean)(value)) {
       found.push({
         index: index,
         replaceWithValue: expanded
@@ -174,8 +203,7 @@ function findReplace(array, testFn) {
   });
 
   found.reverse().forEach(item => {
-    const spliceArgs = [item.index, 1].concat(item.replaceWithValue);
-    array.splice.apply(array, spliceArgs);
+    array.splice(item.index, 1, ...item.replaceWithValue);
   });
 
   return array
@@ -205,22 +233,25 @@ const re = {
  * Array subclass encapsulating common operations on `process.argv`.
  * @static
  */
-class ArgvArray extends Array {
+const ArgumentArray: new (...args: unknown[]) => Argument[] = Array;
+
+class ArgvArray extends ArgumentArray {
   /**
    * Clears the array has loads the supplied input.
    * @param {string[]} argv - The argv list to load. Defaults to `process.argv`.
    */
-  load(argv) {
+  load(argv?: unknown) {
     this.clear();
+    let args: unknown[];
     if (argv && argv !== process.argv) {
-      argv = arrayify(argv);
+      args = arrayify(argv);
     } else {
       /* if no argv supplied, assume we are parsing process.argv */
-      argv = process.argv.slice(0);
+      args = process.argv.slice(0);
       const deleteCount = process.execArgv.some(isExecArg) ? 1 : 2;
-      argv.splice(0, deleteCount);
+      args.splice(0, deleteCount);
     }
-    argv.forEach(arg => this.push(String(arg)));
+    args.forEach(arg => this.push(String(arg)));
   }
 
   /**
@@ -234,14 +265,14 @@ class ArgvArray extends Array {
    * expand ``--option=value` style args.
    */
   expandOptionEqualsNotation() {
-    if (this.some(arg => re.optEquals.test(arg))) {
-      const expandedArgs = [];
+    if (this.some(arg => re.optEquals.test(arg as string))) {
+      const expandedArgs: string[] = [];
       this.forEach(arg => {
-        const matches = arg.match(re.optEquals);
+        const matches = (arg as string).match(re.optEquals);
         if (matches) {
           expandedArgs.push(matches[1], matches[2]);
         } else {
-          expandedArgs.push(arg);
+          expandedArgs.push(arg as string);
         }
       });
       this.clear();
@@ -254,7 +285,7 @@ class ArgvArray extends Array {
    */
   expandGetoptNotation() {
     if (this.hasCombinedShortOptions()) {
-      findReplace(this, re.combinedShort, expandCombinedShortArg);
+      findReplace(this, re.combinedShort, arg => expandCombinedShortArg(arg as string));
     }
   }
 
@@ -263,10 +294,10 @@ class ArgvArray extends Array {
    * @returns {boolean}
    */
   hasCombinedShortOptions() {
-    return this.some(arg => re.combinedShort.test(arg))
+    return this.some(arg => re.combinedShort.test(arg as string))
   }
 
-  static from(argv) {
+  static from(argv?: unknown) {
     const result = new this();
     result.load(argv);
     return result
@@ -279,7 +310,7 @@ class ArgvArray extends Array {
  * @returns {string[]}
  * @static
  */
-function expandCombinedShortArg(arg) {
+function expandCombinedShortArg(arg: string) {
   /* remove initial hypen */
   arg = arg.slice(1);
   return arg.split('').map(letter => '-' + letter)
@@ -291,7 +322,7 @@ function expandCombinedShortArg(arg) {
  * @returns {boolean}
  * @static
  */
-function isOptionEqualsNotation(arg) {
+function isOptionEqualsNotation(arg: string) {
   return re.optEquals.test(arg)
 }
 
@@ -301,7 +332,7 @@ function isOptionEqualsNotation(arg) {
  * @returns {boolean}
  * @static
  */
-function isOption(arg) {
+function isOption(arg: string) {
   return (re.short.test(arg) || re.long.test(arg)) && !re.optEquals.test(arg)
 }
 
@@ -311,7 +342,7 @@ function isOption(arg) {
  * @returns {boolean}
  * @static
  */
-function isLongOption(arg) {
+function isLongOption(arg: string) {
   return re.long.test(arg) && !isOptionEqualsNotation(arg)
 }
 
@@ -321,23 +352,23 @@ function isLongOption(arg) {
  * @returns {string}
  * @static
  */
-function getOptionName(arg) {
+function getOptionName(arg: string) {
   if (re.short.test(arg)) {
-    return arg.match(re.short)[1]
+    return arg.match(re.short)![1]
   } else if (isLongOption(arg)) {
-    return arg.match(re.long)[1]
+    return arg.match(re.long)![1]
   } else if (isOptionEqualsNotation(arg)) {
-    return arg.match(re.optEquals)[1].replace(/^--/, '')
+    return arg.match(re.optEquals)![1].replace(/^--/, '')
   } else {
     return null
   }
 }
 
-function isValue(arg) {
+function isValue(arg: string) {
   return !(isOption(arg) || re.combinedShort.test(arg) || re.optEquals.test(arg))
 }
 
-function isExecArg(arg) {
+function isExecArg(arg: string) {
   return ['--eval', '-e'].indexOf(arg) > -1 || arg.startsWith('--eval=')
 }
 
@@ -372,8 +403,8 @@ function isExecArg(arg) {
  * > t.isNumber(Infinity)
  * false
  */
-function isNumber(n) {
-  return !isNaN(parseFloat(n)) && isFinite(n)
+function isNumber(n: string) {
+  return !isNaN(parseFloat(n)) && isFinite(Number(n))
 }
 
 /**
@@ -402,7 +433,7 @@ function isNumber(n) {
  * > t.isPlainObject(function * () {})
  * false
  */
-function isPlainObject(input) {
+function isPlainObject(input: Argument): input is Exclude<Argument, string> {
   return input !== null && typeof input === 'object' && input.constructor === Object
 }
 
@@ -418,8 +449,8 @@ function isPlainObject(input) {
  *     // prints `true`
  * }
  */
-function isArrayLike$2(input) {
-  return isObject$2(input) && typeof input.length === 'number'
+function isArrayLike$2(input: unknown): input is ArrayLike<unknown> {
+  return isObject$2(input) && typeof (input as { length?: unknown }).length === 'number'
 }
 
 /**
@@ -428,7 +459,7 @@ function isArrayLike$2(input) {
  * @returns {boolean}
  * @static
  */
-function isObject$2(input) {
+function isObject$2(input: unknown): input is object {
   return typeof input === 'object' && input !== null
 }
 
@@ -438,7 +469,7 @@ function isObject$2(input) {
  * @returns {boolean}
  * @static
  */
-function isDefined(input) {
+function isDefined<T>(input: T | undefined): input is T {
   return typeof input !== 'undefined'
 }
 
@@ -448,7 +479,7 @@ function isDefined(input) {
  * @returns {boolean}
  * @static
  */
-function isString(input) {
+function isString(input: unknown) {
   return typeof input === 'string'
 }
 
@@ -458,7 +489,7 @@ function isString(input) {
  * @returns {boolean}
  * @static
  */
-function isBoolean(input) {
+function isBoolean(input: unknown) {
   return typeof input === 'boolean'
 }
 
@@ -468,7 +499,7 @@ function isBoolean(input) {
  * @returns {boolean}
  * @static
  */
-function isFunction(input) {
+function isFunction(input: unknown) {
   return typeof input === 'function'
 }
 
@@ -478,7 +509,7 @@ function isFunction(input) {
  * @returns {boolean}
  * @static
  */
-function isClass(input) {
+function isClass(input: unknown) {
   if (isFunction(input)) {
     return /^class /.test(Function.prototype.toString.call(input))
   } else {
@@ -492,7 +523,7 @@ function isClass(input) {
  * @returns {boolean}
  * @static
  */
-function isPrimitive(input) {
+function isPrimitive(input: unknown) {
   if (input === null) return true
   switch (typeof input) {
     case 'string':
@@ -512,10 +543,11 @@ function isPrimitive(input) {
  * @returns {boolean}
  * @static
  */
-function isPromise(input) {
+function isPromise(input: unknown) {
   if (input) {
     const isPromise = isDefined(Promise) && input instanceof Promise;
-    const isThenable = input.then && typeof input.then === 'function';
+    const thenable = input as { then?: unknown };
+    const isThenable = thenable.then && typeof thenable.then === 'function';
     return !!(isPromise || isThenable)
   } else {
     return false
@@ -561,18 +593,19 @@ function isPromise(input) {
  * > t.isIterable({ then: function () {} })
  * false
  */
-function isIterable(input) {
+function isIterable(input: unknown) {
   if (input === null || !isDefined(input)) {
     return false
   } else {
+    const iterable = input as { [Symbol.iterator]?: unknown; [Symbol.asyncIterator]?: unknown };
     return (
-      typeof input[Symbol.iterator] === 'function' ||
-      typeof input[Symbol.asyncIterator] === 'function'
+      typeof iterable[Symbol.iterator] === 'function' ||
+      typeof iterable[Symbol.asyncIterator] === 'function'
     )
   }
 }
 
-var t = {
+const t = {
   isNumber,
   isString,
   isBoolean,
@@ -597,8 +630,18 @@ var t = {
  * @alias module:option-definition
  * @typicalname option
  */
-class OptionDefinition {
-  constructor(definition) {
+class OptionDefinition implements DefinitionInput {
+  [key: string]: unknown
+  declare name: string
+  declare type: Converter
+  declare alias: string | undefined
+  declare multiple: boolean | undefined
+  declare lazyMultiple: boolean | undefined
+  declare defaultOption: boolean | undefined
+  declare defaultValue: unknown
+  declare group: string | readonly string[] | undefined
+
+  constructor(definition: DefinitionInput) {
     /**
     * The only required definition property is `name`, so the simplest working example is
     * ```js
@@ -831,7 +874,7 @@ class OptionDefinition {
 
     /* pick up any remaining properties */
     for (const prop in definition) {
-      if (!this[prop]) this[prop] = definition[prop];
+      if (!this[prop]) this[prop] = definition[prop as keyof DefinitionInput];
     }
   }
 
@@ -843,7 +886,7 @@ class OptionDefinition {
     return this.multiple || this.lazyMultiple
   }
 
-  static create(def) {
+  static create(def: DefinitionInput) {
     const result = new this(def);
     return result
   }
@@ -856,13 +899,15 @@ class OptionDefinition {
 /**
  * @alias module:option-definitions
  */
-class Definitions extends Array {
+const DefinitionArray: new (...args: unknown[]) => OptionDefinition[] = Array;
+
+class Definitions extends DefinitionArray {
   /**
    * validate option definitions
    * @param {boolean} [caseInsensitive=false] - whether arguments will be parsed in a case insensitive manner
    * @returns {string}
    */
-  validate(caseInsensitive) {
+  validate(caseInsensitive?: boolean) {
     const someHaveNoName = this.some(def => !def.name);
     if (someHaveNoName) {
       halt(
@@ -879,7 +924,7 @@ class Definitions extends Array {
       );
     }
 
-    let invalidOption;
+    let invalidOption: OptionDefinition | undefined;
 
     const numericAlias = this.some(def => {
       invalidOption = def;
@@ -888,7 +933,7 @@ class Definitions extends Array {
     if (numericAlias) {
       halt(
         'INVALID_DEFINITIONS',
-        'Invalid option definition: to avoid ambiguity an alias cannot be numeric [--' + invalidOption.name + ' alias is -' + invalidOption.alias + ']'
+        'Invalid option definition: to avoid ambiguity an alias cannot be numeric [--' + invalidOption!.name + ' alias is -' + invalidOption!.alias + ']'
       );
     }
 
@@ -945,7 +990,7 @@ class Definitions extends Array {
     if (defaultBoolean) {
       halt(
         'INVALID_DEFINITIONS',
-        `A boolean option ["${invalidOption.name}"] can not also be the defaultOption.`
+        `A boolean option ["${invalidOption!.name}"] can not also be the defaultOption.`
       );
     }
   }
@@ -956,12 +1001,12 @@ class Definitions extends Array {
    * @param {boolean} [caseInsensitive] whether to use case insensitive comparisons when finding the appropriate definition
    * @returns {Definition}
    */
-  get(arg, caseInsensitive) {
+  get(arg: string, caseInsensitive?: boolean) {
     if (isOption(arg)) {
       if (re.short.test(arg)) {
         const shortOptionName = getOptionName(arg);
         if (caseInsensitive) {
-          const lowercaseShortOptionName = shortOptionName.toLowerCase();
+          const lowercaseShortOptionName = shortOptionName!.toLowerCase();
           return this.find(def => t.isDefined(def.alias) && def.alias.toLowerCase() === lowercaseShortOptionName)
         } else {
           return this.find(def => def.alias === shortOptionName)
@@ -969,7 +1014,7 @@ class Definitions extends Array {
       } else {
         const optionName = getOptionName(arg);
         if (caseInsensitive) {
-          const lowercaseOptionName = optionName.toLowerCase();
+          const lowercaseOptionName = optionName!.toLowerCase();
           return this.find(def => def.name.toLowerCase() === lowercaseOptionName)
         } else {
           return this.find(def => def.name === optionName)
@@ -1000,29 +1045,30 @@ class Definitions extends Array {
     return this.filter(def => t.isDefined(def.defaultValue))
   }
 
-  static from(definitions, caseInsensitive) {
+  static from(definitions: DefinitionList | undefined, caseInsensitive?: boolean) {
     if (definitions instanceof this) return definitions
-    const result = super.from(arrayify(definitions), def => OptionDefinition.create(def));
+    // Array.from constructs the array using its receiver, here the Definitions subclass.
+    const result = Reflect.apply(Array.from, this, [arrayify(definitions), OptionDefinition.create.bind(OptionDefinition)]) as Definitions;
     result.validate(caseInsensitive);
     return result
   }
 }
 
-function halt(name, message) {
-  const err = new Error(message);
+function halt(name: string, message: string): never {
+  const err: ParserError = new Error(message);
   err.name = name;
   throw err
 }
 
-function containsValidGroup(def) {
-  return arrayify(def.group).some(group => group)
+function containsValidGroup(def: OptionDefinition) {
+  return arrayify<string>(def.group).some(group => group)
 }
 
-function hasDuplicates(array) {
-  const items = {};
+function hasDuplicates(array: (string | undefined)[]) {
+  const items: Record<string, boolean> = {};
   for (let i = 0; i < array.length; i++) {
     const value = array[i];
-    if (items[value]) {
+    if (items[value ?? 'undefined']) {
       return true
     } else {
       if (t.isDefined(value)) items[value] = true;
@@ -1045,7 +1091,11 @@ class ArgvParser {
    * @param {boolean} [options.stopAtFirstUnknown] -
    * @param {boolean} [options.caseInsensitive] - Arguments will be parsed in a case insensitive manner. Defaults to false.
    */
-  constructor(definitions, options) {
+  declare options: ParseOptions
+  declare definitions: Definitions
+  declare argv: ArgvArray
+
+  constructor(definitions: DefinitionList, options: ParseOptions) {
     this.options = Object.assign({}, options);
     /**
      * Option Definitions
@@ -1057,8 +1107,8 @@ class ArgvParser {
      */
     this.argv = ArgvArray.from(this.options.argv);
     if (this.argv.hasCombinedShortOptions()) {
-      findReplace(this.argv, re.combinedShort.test.bind(re.combinedShort), arg => {
-        arg = arg.slice(1);
+      findReplace(this.argv, arg => re.combinedShort.test(arg as string), token => {
+        const arg = (token as string).slice(1);
         return arg.split('').map(letter => ({ origArg: `-${arg}`, arg: '-' + letter }))
       });
     }
@@ -1067,13 +1117,13 @@ class ArgvParser {
   /**
    * Yields one `{ event, name, value, arg, def }` argInfo object for each arg in `process.argv` (or `options.argv`).
    */
-  *[Symbol.iterator]() {
+  *[Symbol.iterator](): Generator<ArgumentInfo> {
     const definitions = this.definitions;
 
     let def;
-    let value;
+    let value: ArgumentInfo['value'];
     let name;
-    let event;
+    let event: ArgumentInfo['event'];
     let singularDefaultSet = false;
     let unknownFound = false;
     let origArg;
@@ -1102,7 +1152,7 @@ class ArgvParser {
 
         /* handle --option-value notation */
       } else if (isOptionEqualsNotation(arg)) {
-        const matches = arg.match(re.optEquals);
+        const matches = arg.match(re.optEquals)!;
         def = definitions.get(matches[1], this.options.caseInsensitive);
         if (def) {
           if (def.isBoolean()) {
@@ -1136,7 +1186,7 @@ class ArgvParser {
       }
 
       name = def ? def.name : '_unknown';
-      const argInfo = { event, arg, name, value, def };
+      const argInfo: ArgumentInfo = { event, arg, name, value, def };
       if (origArg) {
         argInfo.subArg = arg;
         argInfo.arg = origArg;
@@ -1163,13 +1213,16 @@ class ArgvParser {
   }
 }
 
-const _value = new WeakMap();
+const _value = new WeakMap<Option, unknown>();
 
 /**
  * Encapsulates behaviour (defined by an OptionDefinition) when setting values
  */
 class Option {
-  constructor(definition) {
+  declare definition: OptionDefinition
+  declare state: 'set' | 'default' | null
+
+  constructor(definition: DefinitionInput) {
     this.definition = new OptionDefinition(definition);
     this.state = null; /* set or default */
     this.resetToDefault();
@@ -1179,16 +1232,16 @@ class Option {
     return _value.get(this)
   }
 
-  set(val) {
+  set(val: ArgumentInfo['value']) {
     this._set(val, 'set');
   }
 
-  _set(val, state) {
+  _set(val: ArgumentInfo['value'], state: 'set' | 'default') {
     const def = this.definition;
     if (def.isMultiple()) {
       /* don't add null or undefined to a multiple */
       if (val !== null && val !== undefined) {
-        const arr = this.get();
+        const arr = this.get() as unknown[];
         if (this.state === 'default') arr.length = 0;
         arr.push(def.type(val));
         this.state = state;
@@ -1196,7 +1249,7 @@ class Option {
     } else {
       /* throw if already set on a singlar defaultOption */
       if (!def.isMultiple() && this.state === 'set') {
-        const err = new Error(`Singular option already set [${this.definition.name}=${this.get()}]`);
+        const err: ParserError = new Error(`Singular option already set [${this.definition.name}=${String(this.get())}]`);
         err.name = 'ALREADY_SET';
         err.value = val;
         err.optionName = def.name;
@@ -1231,8 +1284,8 @@ class Option {
     this.state = 'default';
   }
 
-  static create(definition) {
-    definition = new OptionDefinition(definition);
+  static create(input: DefinitionInput) {
+    const definition = new OptionDefinition(input);
     if (definition.isBoolean()) {
       return FlagOption.create(definition)
     } else {
@@ -1242,11 +1295,11 @@ class Option {
 }
 
 class FlagOption extends Option {
-  set(val) {
+  set() {
     super.set(true);
   }
 
-  static create(def) {
+  static create(def: DefinitionInput) {
     return new this(def)
   }
 }
@@ -1254,8 +1307,10 @@ class FlagOption extends Option {
 /**
  * A map of { DefinitionNameString: Option }. By default, an Output has an `_unknown` property and any options with defaultValues.
  */
-class Output extends Map {
-  constructor(definitions) {
+class Output extends Map<string, Option> {
+  declare definitions: Definitions
+
+  constructor(definitions: DefinitionList) {
     super();
     /**
      * @type {OptionDefinitions}
@@ -1269,13 +1324,13 @@ class Output extends Map {
     }
   }
 
-  toObject(options) {
+  toObject(options?: { skipUnknown?: boolean }): ParsedOptions {
     options = options || {};
-    const output = {};
+    const output: ParsedOptions = {};
     for (const item of this) {
       const name = item[0];
       const option = item[1];
-      if (name === '_unknown' && !option.get().length) continue
+      if (name === '_unknown' && !(option.get() as unknown[]).length) continue
       output[name] = option.get();
     }
 
@@ -1285,12 +1340,12 @@ class Output extends Map {
 }
 
 class GroupedOutput extends Output {
-  toObject(options) {
-    const superOutputNoCamel = super.toObject({ skipUnknown: options.skipUnknown });
+  toObject(options?: { skipUnknown?: boolean }): ParsedOptions {
+    const superOutputNoCamel = super.toObject({ skipUnknown: options!.skipUnknown });
     const superOutput = super.toObject(options);
-    const unknown = superOutput._unknown;
+    const unknown = superOutput._unknown as string[] | undefined;
     delete superOutput._unknown;
-    const grouped = {
+    const grouped: ParsedOptions = {
       _all: superOutput
     };
     if (unknown && unknown.length) grouped._unknown = unknown;
@@ -1298,10 +1353,10 @@ class GroupedOutput extends Output {
     this.definitions.whereGrouped().forEach(def => {
       const name = def.name;
       const outputValue = superOutputNoCamel[def.name];
-      for (const groupName of arrayify(def.group)) {
+      for (const groupName of arrayify<string>(def.group)) {
         grouped[groupName] = grouped[groupName] || {};
         if (t.isDefined(outputValue)) {
-          grouped[groupName][name] = outputValue;
+          (grouped[groupName] as ParsedOptions)[name] = outputValue;
         }
       }
     });
@@ -1311,7 +1366,7 @@ class GroupedOutput extends Output {
       const outputValue = superOutputNoCamel[def.name];
       if (t.isDefined(outputValue)) {
         if (!grouped._none) grouped._none = {};
-        grouped._none[name] = outputValue;
+        (grouped._none as ParsedOptions)[name] = outputValue;
       }
     });
     return grouped
@@ -1347,10 +1402,10 @@ class GroupedOutput extends Output {
  *   - If a `Boolean` option is also set as the `defaultOption`.
  * @alias module:command-line-args
  */
-function commandLineArgs(optionDefinitions, options) {
+function commandLineArgs(definitions: DefinitionList | undefined, options?: ParseOptions) {
   options = options || {};
   if (options.stopAtFirstUnknown) options.partial = true;
-  optionDefinitions = Definitions.from(optionDefinitions, options.caseInsensitive);
+  const optionDefinitions = Definitions.from(definitions, options.caseInsensitive);
 
   const parser = new ArgvParser(optionDefinitions, {
     argv: options.argv,
@@ -1366,12 +1421,12 @@ function commandLineArgs(optionDefinitions, options) {
     const arg = argInfo.subArg || argInfo.arg;
     if (!options.partial) {
       if (argInfo.event === 'unknown_value') {
-        const err = new Error(`Unknown value: ${arg}`);
+        const err: ParserError = new Error(`Unknown value: ${arg}`);
         err.name = 'UNKNOWN_VALUE';
         err.value = arg;
         throw err
       } else if (argInfo.event === 'unknown_option') {
-        const err = new Error(`Unknown option: ${arg}`);
+        const err: ParserError = new Error(`Unknown option: ${arg}`);
         err.name = 'UNKNOWN_OPTION';
         err.optionName = arg;
         throw err
@@ -1380,9 +1435,9 @@ function commandLineArgs(optionDefinitions, options) {
 
     let option;
     if (output.has(argInfo.name)) {
-      option = output.get(argInfo.name);
+      option = output.get(argInfo.name)!;
     } else {
-      option = Option.create(argInfo.def);
+      option = Option.create(argInfo.def!);
       output.set(argInfo.name, option);
     }
 
@@ -1396,4 +1451,4 @@ function commandLineArgs(optionDefinitions, options) {
   return output.toObject({ skipUnknown: !options.partial })
 }
 
-module.exports = commandLineArgs;
+export = commandLineArgs;
