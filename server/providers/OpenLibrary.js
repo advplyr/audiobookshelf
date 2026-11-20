@@ -1,7 +1,23 @@
 const axios = require('axios').default
 
+/** Maximum number of results to request from Open Library search API */
+const SEARCH_LIMIT = 20
+/** Number of works-detail requests to send concurrently */
+const WORKS_BATCH_SIZE = 5
+/** Delay (ms) between each batch of works-detail requests */
+const WORKS_BATCH_DELAY_MS = 150
+
+/**
+ * Wait for a given number of milliseconds.
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 class OpenLibrary {
-  #responseTimeout = 10000
+  #responseTimeout = 30000
 
   constructor() {
     this.baseUrl = 'https://openlibrary.org'
@@ -38,12 +54,16 @@ class OpenLibrary {
     return lookupData
   }
 
-  async getWorksData(worksKey) {
-    var worksData = await this.get(`${worksKey}.json`)
+  async getWorksData(worksKey, timeout = this.#responseTimeout) {
+    var worksData = await this.get(`${worksKey}.json`, timeout)
     if (!worksData) {
+      // Return empty works data as a graceful fallback (e.g. 429 / 500 from Open Library)
       return {
-        errorMsg: 'Works Data Request failed',
-        errorCode: 500
+        id: worksKey.split('/').pop(),
+        key: worksKey,
+        covers: [],
+        first_publish_date: null,
+        description: null
       }
     }
     if (!worksData.covers) worksData.covers = []
@@ -74,8 +94,8 @@ class OpenLibrary {
     return null
   }
 
-  async cleanSearchDoc(doc) {
-    var worksData = await this.getWorksData(doc.key)
+  async cleanSearchDoc(doc, timeout = this.#responseTimeout) {
+    var worksData = await this.getWorksData(doc.key, timeout)
     return {
       title: doc.title,
       author: doc.author_name ? doc.author_name.join(', ') : null,
@@ -86,35 +106,62 @@ class OpenLibrary {
     }
   }
 
+  /**
+   * Process an array of async tasks in sequential batches with a delay between each batch.
+   * This avoids firing thousands of concurrent HTTP requests and triggering 429 rate limits.
+   * @template T
+   * @param {Array<() => Promise<T>>} tasks - Array of zero-argument async factory functions
+   * @param {number} batchSize - Number of tasks to run concurrently per batch
+   * @param {number} delayMs - Milliseconds to wait between batches
+   * @returns {Promise<T[]>}
+   */
+  async runInBatches(tasks, batchSize, delayMs) {
+    const results = []
+    for (let i = 0; i < tasks.length; i += batchSize) {
+      const batch = tasks.slice(i, i + batchSize)
+      const batchResults = await Promise.all(batch.map((fn) => fn()))
+      results.push(...batchResults)
+      if (i + batchSize < tasks.length) {
+        await sleep(delayMs)
+      }
+    }
+    return results
+  }
+
   async search(query) {
     var queryString = Object.keys(query)
       .map((key) => key + '=' + query[key])
       .join('&')
-    var lookupData = await this.get(`/search.json?${queryString}`)
+    var lookupData = await this.get(`/search.json?${queryString}&limit=${SEARCH_LIMIT}`)
     if (!lookupData) {
       return {
         errorCode: 404
       }
     }
-    var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
+    var tasks = lookupData.docs.map((d) => () => this.cleanSearchDoc(d, this.#responseTimeout))
+    var searchDocs = await this.runInBatches(tasks, WORKS_BATCH_SIZE, WORKS_BATCH_DELAY_MS)
     return searchDocs
   }
 
   /**
-   *
+   * Search Open Library by title.
+   * Results are capped at SEARCH_LIMIT to prevent mass parallel requests that trigger
+   * 429 Too Many Requests. Works-detail lookups are processed in small batches with
+   * a short delay between each batch.
    * @param {string} title
    * @param {number} timeout
    * @returns {Promise<Object[]>}
    */
   async searchTitle(title, timeout = this.#responseTimeout) {
     title = encodeURIComponent(title)
-    var lookupData = await this.get(`/search.json?title=${title}`, timeout)
+    var lookupData = await this.get(`/search.json?title=${title}&limit=${SEARCH_LIMIT}`, timeout)
     if (!lookupData) {
       return {
         errorCode: 404
       }
     }
-    var searchDocs = await Promise.all(lookupData.docs.map((d) => this.cleanSearchDoc(d)))
+    var tasks = lookupData.docs.map((d) => () => this.cleanSearchDoc(d, timeout))
+    var searchDocs = await this.runInBatches(tasks, WORKS_BATCH_SIZE, WORKS_BATCH_DELAY_MS)
     return searchDocs
   }
 }

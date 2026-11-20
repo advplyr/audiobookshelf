@@ -1,7 +1,4 @@
 {
-  "recommendations": [
-    "EditorConfig.EditorConfig",
-    "esbenp.prettier-vscode",
-    "octref.vetur"
-  ]
+  "recommendations": ["EditorConfig.EditorConfig", "esbenp.prettier-vscode", "octref.vetur"],
+  "unwantedRecommendations": ["Vue.volar", "Vue.vscode-typescript-vue-plugin"]
 }

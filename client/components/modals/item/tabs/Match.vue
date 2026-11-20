@@ -20,10 +20,15 @@
     <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
       <p>{{ $strings.MessageNoResults }}</p>
     </div>
-    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
-      <template v-for="(res, index) in searchResults">
+    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4" ref="matchList">
+      <template v-for="(res, index) in visibleResults">
         <cards-book-match-card :key="index" :book="res" :current-book-duration="currentBookDuration" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
+      <!-- Sentinel element watched by IntersectionObserver to trigger loading more results -->
+      <div ref="loadMoreSentinel" class="h-1" />
+      <div v-if="searchResults.length > visibleCount" class="text-center py-2 text-sm text-white/40">
+        {{ $strings.MessageLoading }}
+      </div>
     </div>
     <div v-if="selectedMatchOrig" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
       <div class="flex mb-4">
@@ -250,6 +255,7 @@ export default {
       lastSearch: null,
       provider: 'google',
       searchResults: [],
+      visibleCount: 20,
       hasSearched: false,
       selectedMatch: null,
       selectedMatchOrig: null,
@@ -363,6 +369,9 @@ export default {
     },
     tags() {
       return this.filterData.tags || []
+    },
+    visibleResults() {
+      return this.searchResults.slice(0, this.visibleCount)
     }
   },
   methods: {
@@ -423,7 +432,7 @@ export default {
       this.isProcessing = true
       this.lastSearch = searchQuery
       const searchEntity = this.isPodcast ? 'podcast' : 'books'
-      let results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
+      let results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 60000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })
@@ -444,8 +453,10 @@ export default {
       }
 
       this.searchResults = results || []
+      this.visibleCount = 20
       this.isProcessing = false
       this.hasSearched = true
+      this.$nextTick(() => this.setupScrollObserver())
     },
     initSelectedMatchUsage() {
       this.selectedMatchUsage = {
@@ -659,11 +670,34 @@ export default {
     clearSelectedMatch() {
       this.selectedMatch = null
       this.selectedMatchOrig = null
+    },
+    setupScrollObserver() {
+      this.teardownScrollObserver()
+      const sentinel = this.$refs.loadMoreSentinel
+      if (!sentinel) return
+      this._scrollObserver = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && this.visibleCount < this.searchResults.length) {
+            this.visibleCount = Math.min(this.visibleCount + 20, this.searchResults.length)
+          }
+        },
+        { root: this.$refs.matchList, threshold: 0.1 }
+      )
+      this._scrollObserver.observe(sentinel)
+    },
+    teardownScrollObserver() {
+      if (this._scrollObserver) {
+        this._scrollObserver.disconnect()
+        this._scrollObserver = null
+      }
     }
   },
   mounted() {
     // Fetch providers if not already loaded
     this.$store.dispatch('scanners/fetchProviders')
+  },
+  beforeDestroy() {
+    this.teardownScrollObserver()
   }
 }
 </script>
