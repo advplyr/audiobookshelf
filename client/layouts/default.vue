@@ -49,6 +49,13 @@ export default {
 
       this.$store.commit('globals/resetSelectedMediaItems', [])
       this.updateBodyClass()
+    },
+    '$store.state.streamLibraryItem'(newVal) {
+      if (newVal) {
+        document.body.classList.add('media-player')
+      } else {
+        document.body.classList.remove('media-player')
+      }
     }
   },
   computed: {
@@ -93,6 +100,7 @@ export default {
         const toastUpdateOptions = {
           content: content,
           options: {
+            toastClassName: 'toast-mb-48 lg:toast-mb-40',
             timeout: timeout,
             type: type,
             closeButton: false,
@@ -105,7 +113,13 @@ export default {
         }
         this.$toast.update(this.socketConnectionToastId, toastUpdateOptions, false)
       } else {
-        this.socketConnectionToastId = this.$toast[type](content, { position: 'bottom-center', timeout: timeout, closeButton: false, closeOnClick: timeout !== null })
+        this.socketConnectionToastId = this.$toast[type](content, {
+          toastClassName: 'toast-mb-48 lg:toast-mb-40',
+          position: 'bottom-center',
+          timeout: timeout,
+          closeButton: false,
+          closeOnClick: timeout !== null
+        })
       }
     },
     connect() {
