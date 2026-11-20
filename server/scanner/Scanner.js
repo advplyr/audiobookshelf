@@ -35,7 +35,7 @@ class Scanner {
    * @returns {Promise<{updated: boolean, libraryItem: Object}>}
    */
   async quickMatchLibraryItem(apiRouterCtx, libraryItem, options = {}) {
-    const provider = options.provider || 'google'
+    const provider = options.provider || 'audible'
     const searchTitle = options.title || libraryItem.media.title
     const searchAuthor = options.author || libraryItem.media.authorName
 

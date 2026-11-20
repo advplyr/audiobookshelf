@@ -107,7 +107,7 @@ export default {
       showLocalCovers: false,
       previewUpload: null,
       selectedFile: null,
-      provider: 'google',
+      provider: 'audible',
       currentSearchRequestId: null,
       searchInProgress: false,
       socketListenersActive: false
@@ -246,7 +246,7 @@ export default {
       else {
         // Migrate from 'all' to 'best' (only once)
         const migrationKey = 'book-cover-provider-migrated'
-        const currentProvider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
+        const currentProvider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'audible'
 
         if (!localStorage.getItem(migrationKey) && currentProvider === 'all') {
           localStorage.setItem('book-cover-provider', 'best')

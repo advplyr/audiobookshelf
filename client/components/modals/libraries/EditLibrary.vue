@@ -48,7 +48,7 @@ export default {
   data() {
     return {
       name: '',
-      provider: 'google',
+      provider: 'audible',
       icon: '',
       folders: [],
       showDirectoryPicker: false,
@@ -146,7 +146,7 @@ export default {
     },
     init() {
       this.name = this.library ? this.library.name : ''
-      this.provider = this.library ? this.library.provider : 'google'
+      this.provider = this.library ? this.library.provider : 'audible'
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
       this.icon = this.library ? this.library.icon : 'default'
       this.mediaType = this.library ? this.library.mediaType : 'book'

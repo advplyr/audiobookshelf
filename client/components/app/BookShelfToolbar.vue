@@ -225,7 +225,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     libraryProvider() {
-      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'audible'
     },
     currentLibraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']

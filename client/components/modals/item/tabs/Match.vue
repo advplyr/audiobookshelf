@@ -248,7 +248,7 @@ export default {
       searchTitle: null,
       searchAuthor: null,
       lastSearch: null,
-      provider: 'google',
+      provider: 'audible',
       searchResults: [],
       hasSearched: false,
       selectedMatch: null,
@@ -390,12 +390,12 @@ export default {
     },
     getDefaultBookProvider() {
       let provider = localStorage.getItem('book-provider')
-      if (!provider) return 'google'
+      if (!provider) return 'audible'
       // Validate book provider
       if (!this.$store.getters['scanners/checkBookProviderExists'](provider)) {
         console.error('Stored book provider does not exist', provider)
         localStorage.removeItem('book-provider')
-        return 'google'
+        return 'audible'
       }
       return provider
     },

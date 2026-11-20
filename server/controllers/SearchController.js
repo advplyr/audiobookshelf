@@ -85,7 +85,7 @@ class SearchController {
   async findBooks(req, res) {
     try {
       const query = req.query
-      const provider = getQueryParamAsString(query, 'provider', 'google')
+      const provider = getQueryParamAsString(query, 'provider', 'audible')
       const title = getQueryParamAsString(query, 'title', '')
       const author = getQueryParamAsString(query, 'author', '')
       const id = getQueryParamAsString(query, 'id', undefined)
@@ -116,7 +116,7 @@ class SearchController {
       const podcast = query.podcast === '1' || query.podcast === 1
       const title = getQueryParamAsString(query, 'title', '', true)
       const author = getQueryParamAsString(query, 'author', '')
-      const provider = getQueryParamAsString(query, 'provider', 'google')
+      const provider = getQueryParamAsString(query, 'provider', 'audible')
 
       let results = null
       if (podcast) results = await PodcastFinder.findCovers(title)
