@@ -396,17 +396,6 @@ class MeController {
    * @param {Response} res
    */
   async removeBookmark(req, res) {
-    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
-    if (!libraryItem) {
-      return res.sendStatus(404)
-    }
-
-    // Check if user has access to this library item
-    if (!req.user.checkCanAccessLibraryItem(libraryItem)) {
-      Logger.error(`[MeController] User "${req.user.username}" attempted to remove bookmark for library item "${req.params.id}" without access`)
-      return res.sendStatus(403)
-    }
-
     const time = Number(req.params.time)
     if (isNaN(time)) {
       return res.status(400).send('Invalid time')
@@ -415,6 +404,12 @@ class MeController {
     if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
+    }
+
+    const libraryItem = await Database.libraryItemModel.getExpandedById(req.params.id)
+    if (libraryItem && !req.user.checkCanAccessLibraryItem(libraryItem)) {
+      Logger.error(`[MeController] User "${req.user.username}" attempted to remove bookmark for library item "${req.params.id}" without access`)
+      return res.sendStatus(403)
     }
 
     await req.user.removeBookmark(req.params.id, time)
