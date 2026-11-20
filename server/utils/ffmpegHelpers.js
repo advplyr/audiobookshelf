@@ -1,5 +1,4 @@
 const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const ffmpgegUtils = require('../libs/fluentFfmpeg/utils')
 const fs = require('../libs/fsExtra')
@@ -125,8 +124,8 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
             'User-Agent': userAgent
           },
           timeout: global.PodcastDownloadTimeout,
-          httpAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : ssrfFilter(podcastEpisodeDownload.url),
-          httpsAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : ssrfFilter(podcastEpisodeDownload.url)
+          httpAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : global.getSsrfFilter(podcastEpisodeDownload.url),
+          httpsAgent: global.DisableSsrfRequestFilter?.(podcastEpisodeDownload.url) ? null : global.getSsrfFilter(podcastEpisodeDownload.url)
         })
 
         Logger.debug(`[ffmpegHelpers] Successfully connected with User-Agent: ${userAgent}`)
