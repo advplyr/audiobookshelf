@@ -505,7 +505,8 @@ export default {
     checkActiveElementIsInput() {
       const activeElement = document.activeElement
       const inputs = ['input', 'select', 'button', 'textarea', 'trix-editor']
-      return activeElement && inputs.some((i) => i === activeElement.tagName.toLowerCase())
+      return activeElement && (inputs.some((i) => i === activeElement.tagName.toLowerCase()) ||
+      activeElement.hasAttribute('data-hotkey-ignore'))
     },
     getHotkeyName(e) {
       var keyCode = e.keyCode || e.which
