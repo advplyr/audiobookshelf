@@ -8,6 +8,7 @@ const LibraryItemController = require('../../../server/controllers/LibraryItemCo
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
+const fs = require('../../../server/libs/fsExtra')
 
 describe('LibraryItemController', () => {
   /** @type {ApiRouter} */
@@ -297,6 +298,47 @@ describe('LibraryItemController', () => {
       }
       await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
       expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+  })
+
+  describe('getCover', () => {
+    let originalXAccel
+
+    beforeEach(() => {
+      originalXAccel = global.XAccel
+    })
+
+    afterEach(() => {
+      global.XAccel = originalXAccel
+    })
+
+    it('sets an encoded X-Accel-Redirect header for raw covers with percent characters', async () => {
+      const coverPath = '/Test 1% Book/cover.jpg'
+      global.XAccel = '/internal'
+
+      sinon.stub(Database.libraryItemModel, 'getCoverPath').resolves(coverPath)
+      sinon.stub(fs, 'pathExists').resolves(true)
+      sinon.stub(Logger, 'debug')
+
+      const fakeReq = {
+        params: { id: 'test-item-id' },
+        query: { raw: '1' }
+      }
+      const fakeRes = {
+        set: sinon.stub().returnsThis(),
+        sendStatus: sinon.spy(),
+        status: sinon.stub().returnsThis(),
+        header: sinon.stub().returnsThis(),
+        send: sinon.spy(),
+        sendFile: sinon.spy()
+      }
+
+      await LibraryItemController.getCover.bind(apiRouter)(fakeReq, fakeRes)
+
+      expect(fakeRes.status.calledWith(204)).to.be.true
+      expect(fakeRes.header.calledWith({ 'X-Accel-Redirect': '/internal/Test%201%25%20Book/cover.jpg' })).to.be.true
+      expect(fakeRes.send.calledOnce).to.be.true
+      expect(fakeRes.sendFile.notCalled).to.be.true
     })
   })
 })
