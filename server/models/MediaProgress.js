@@ -189,7 +189,9 @@ class MediaProgress extends Model {
    */
   async applyProgressUpdate(progressPayload) {
     if (!this.extraData) this.extraData = {}
-    if (progressPayload.isFinished !== undefined) {
+    // isFinished: false on an unfinished item is not a state change, handle it like a normal progress update
+    const isFinishedUpdate = progressPayload.isFinished !== undefined && (!!progressPayload.isFinished || !!this.isFinished)
+    if (isFinishedUpdate) {
       if (progressPayload.isFinished && !this.isFinished) {
         this.finishedAt = progressPayload.finishedAt || Date.now()
         this.extraData.progress = 1
@@ -203,13 +205,19 @@ class MediaProgress extends Model {
         delete progressPayload.finishedAt
         delete progressPayload.currentTime
       }
-    } else if (!isNaN(progressPayload.progress) && progressPayload.progress !== this.progress) {
+    } else if (!isNaN(progressPayload.progress) && progressPayload.progress !== this.extraData.progress) {
       // Old model stored progress on object
       this.extraData.progress = Math.min(1, Math.max(0, progressPayload.progress))
       this.changed('extraData', true)
     }
 
     this.set(progressPayload)
+
+    // Clients may send only currentTime (and duration), keep the stored progress in sync
+    if (!isFinishedUpdate && isNullOrNaN(progressPayload.progress) && this.duration && (this.changed('currentTime') || this.changed('duration'))) {
+      this.extraData.progress = this.progress
+      this.changed('extraData', true)
+    }
 
     // Reset hideFromContinueListening if the progress has changed
     if (this.changed('currentTime') && !progressPayload.hideFromContinueListening) {
