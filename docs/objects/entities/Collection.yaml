@@ -1,0 +1,55 @@
+components:
+  schemas:
+    collectionId:
+      type: string
+      description: The ID of the collection.
+      format: uuid
+    collection:
+      type: object
+      description: Base collection schema.
+      required: [id, libraryId, name, description, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/collectionId'
+        libraryId:
+          $ref: '../Library.yaml#/components/schemas/libraryId'
+        name:
+          type: string
+          description: The name of the collection.
+        description:
+          type: string
+          nullable: true
+          description: The description of the collection.
+        createdAt:
+          $ref: '../../schemas.yaml#/components/schemas/createdAt'
+        updatedAt:
+          $ref: '../../schemas.yaml#/components/schemas/updatedAt'
+    collectionPreviewItem:
+      type: object
+      required: [id, media]
+      properties:
+        id:
+          $ref: '../LibraryItem.yaml#/components/schemas/libraryItemId'
+        media:
+          type: object
+          required: [coverPath]
+          properties:
+            coverPath:
+              $ref: '../mediaTypes/Book.yaml#/components/schemas/bookCoverPath'
+    collectionSummary:
+      description: A compact collection representation with a visible book count and cover previews.
+      allOf:
+        - $ref: '#/components/schemas/collection'
+        - type: object
+          required: [numBooks, previewItems]
+          properties:
+            numBooks:
+              type: integer
+              minimum: 0
+              description: The number of books in the collection that are visible to the requesting user. This is zero for a persisted collection with no book memberships.
+            previewItems:
+              type: array
+              maxItems: 2
+              description: Up to two visible library items, in collection order, for displaying cover previews. This is empty for a persisted collection with no book memberships.
+              items:
+                $ref: '#/components/schemas/collectionPreviewItem'

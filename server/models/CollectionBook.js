@@ -30,7 +30,13 @@ class CollectionBook extends Model {
         sequelize,
         timestamps: true,
         updatedAt: false,
-        modelName: 'collectionBook'
+        modelName: 'collectionBook',
+        indexes: [
+          {
+            name: 'collection_books_collection_id_order_book_id',
+            fields: ['collectionId', 'order', 'bookId']
+          }
+        ]
       }
     )
 
