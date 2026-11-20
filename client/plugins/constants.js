@@ -3,7 +3,7 @@ const SupportedFileTypes = {
   audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'oga', 'mp4', 'aac', 'wma', 'aiff', 'aif','wav', 'webm', 'webma', 'mka', 'awb', 'caf', 'mpeg', 'mpg'],
   ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   info: ['nfo'],
-  text: ['txt'],
+  text: ['txt', 'm3u'],
   metadata: ['opf', 'abs', 'xml', 'json']
 }
 
