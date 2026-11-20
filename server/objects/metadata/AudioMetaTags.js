@@ -5,6 +5,7 @@ class AudioMetaTags {
     this.tagArtist = null
     this.tagArtistSort = null
     this.tagGenre = null
+    this.tagGenre1 = null
     this.tagTitle = null
     this.tagTitleSort = null
     this.tagSeries = null
@@ -113,6 +114,7 @@ class AudioMetaTags {
     this.tagArtist = metadata.tagArtist || null
     this.tagArtistSort = metadata.tagArtistSort || null
     this.tagGenre = metadata.tagGenre || null
+    this.tagGenre1 = metadata.tagGenre1 || null
     this.tagTitle = metadata.tagTitle || null
     this.tagTitleSort = metadata.tagTitleSort || null
     this.tagSeries = metadata.tagSeries || null
@@ -154,6 +156,7 @@ class AudioMetaTags {
     this.tagArtist = payload.file_tag_artist || null
     this.tagArtistSort = payload.file_tag_artistsort || null
     this.tagGenre = payload.file_tag_genre || null
+    this.tagGenre1 = payload.file_tag_genre1 || null
     this.tagTitle = payload.file_tag_title || null
     this.tagTitleSort = payload.file_tag_titlesort || null
     this.tagSeries = payload.file_tag_series || null
@@ -195,6 +198,7 @@ class AudioMetaTags {
       tagArtist: payload.file_tag_artist || null,
       tagArtistSort: payload.file_tag_artistsort || null,
       tagGenre: payload.file_tag_genre || null,
+      tagGenre1: payload.file_tag_genre1 || null,
       tagTitle: payload.file_tag_title || null,
       tagTitleSort: payload.file_tag_titlesort || null,
       tagSeries: payload.file_tag_series || null,
