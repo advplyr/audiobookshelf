@@ -107,7 +107,17 @@ class Device extends Model {
       },
       {
         sequelize,
-        modelName: 'device'
+        modelName: 'device',
+        indexes: [
+          {
+            name: 'devices_user_id',
+            fields: ['userId']
+          },
+          {
+            name: 'devices_device_id',
+            fields: ['deviceId']
+          }
+        ]
       }
     )
 

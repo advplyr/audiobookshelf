@@ -198,7 +198,17 @@ class PlaybackSession extends Model {
       },
       {
         sequelize,
-        modelName: 'playbackSession'
+        modelName: 'playbackSession',
+        indexes: [
+          {
+            name: 'playback_sessions_device_id',
+            fields: ['deviceId']
+          },
+          {
+            name: 'playback_sessions_user_id',
+            fields: ['userId']
+          }
+        ]
       }
     )
 
