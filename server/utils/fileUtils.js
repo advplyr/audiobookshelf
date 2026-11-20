@@ -199,7 +199,7 @@ module.exports.recurseFiles = async (path, relPathToReplace = null) => {
     ignoreFolders: true,
     extensions: true,
     deep: true,
-    realPath: true,
+    realPath: false,
     normalizePath: false
   }
   let list = await rra.list(path, options)
@@ -517,7 +517,15 @@ module.exports.getDirectoriesInPath = async (dirPath, level) => {
           Logger.debug(`Failed to lstat "${fullPath}"`, error)
           return null
         })
-        if (!lstat?.isDirectory()) return null
+        if (!lstat) return null
+
+        let isDir = lstat.isDirectory()
+        if (!isDir && lstat.isSymbolicLink()) {
+          // Follow symlink to check if target is a directory
+          const targetStat = await fs.stat(fullPath).catch(() => null)
+          isDir = targetStat?.isDirectory() ?? false
+        }
+        if (!isDir) return null
 
         return {
           path: this.filePathToPOSIX(fullPath),

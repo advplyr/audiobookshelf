@@ -66,7 +66,8 @@ describe('fileUtils', () => {
       // Stub fs.readdir
       readdirStub = sinon.stub(fs, 'readdir')
       readdirStub.callsFake((path, callback) => {
-        const contents = mockDirContents.get(path)
+        const normalizedPath = path.replace(/\/+$/, '')
+        const contents = mockDirContents.get(normalizedPath)
         if (contents) {
           callback(null, contents)
         } else {
