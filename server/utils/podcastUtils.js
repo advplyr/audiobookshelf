@@ -1,5 +1,5 @@
 const axios = require('axios')
-const ssrfFilter = require('ssrf-req-filter')
+const ssrfFilter = require('./ssrfRequestFilter')
 const Logger = require('../Logger')
 const { xmlToJSON, timestampToSeconds } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
