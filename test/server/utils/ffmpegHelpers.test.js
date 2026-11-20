@@ -4,9 +4,74 @@ const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('../../../server/libs/fsExtra')
 const EventEmitter = require('events')
 
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const { generateFFMetadata, addCoverAndMetadataToFile, getFFMetadataObject } = require('../../../server/utils/ffmpegHelpers')
 
 global.isWin = process.platform === 'win32'
+
+describe('getFFMetadataObject', () => {
+  function createLibraryItem(series) {
+    return {
+      media: {
+        title: 'Test Book',
+        authorName: 'Test Author',
+        series
+      }
+    }
+  }
+
+  it('should include series and series-part metadata', () => {
+    const libraryItem = createLibraryItem([
+      {
+        name: 'Test Series',
+        bookSeries: { sequence: '2' }
+      }
+    ])
+
+    const result = getFFMetadataObject(libraryItem, 1)
+
+    expect(result.grouping).to.equal('Test Series #2')
+    expect(result.series).to.equal('Test Series')
+    expect(result['series-part']).to.equal('2')
+  })
+
+  it('should include multiple series and series-part metadata', () => {
+    const libraryItem = createLibraryItem([
+      {
+        name: 'First Series',
+        bookSeries: { sequence: '2' }
+      },
+      {
+        name: 'Second Series',
+        bookSeries: { sequence: '5' }
+      }
+    ])
+
+    const result = getFFMetadataObject(libraryItem, 1)
+
+    expect(result.grouping).to.equal('First Series #2; Second Series #5')
+    expect(result.series).to.equal('First Series; Second Series')
+    expect(result['series-part']).to.equal('2; 5')
+  })
+
+  it('should only include grouping when multiple series do not all have a sequence', () => {
+    const libraryItem = createLibraryItem([
+      {
+        name: 'First Series',
+        bookSeries: { sequence: '2' }
+      },
+      {
+        name: 'Second Series',
+        bookSeries: { sequence: null }
+      }
+    ])
+
+    const result = getFFMetadataObject(libraryItem, 1)
+
+    expect(result.grouping).to.equal('First Series #2; Second Series')
+    expect(result).to.not.have.property('series')
+    expect(result).to.not.have.property('series-part')
+  })
+})
 
 describe('generateFFMetadata', () => {
   function createTestSetup() {
@@ -229,7 +294,7 @@ describe('addCoverAndMetadataToFile', () => {
     expect(ffmpegStub.outputOptions.callCount).to.equal(4)
     expect(ffmpegStub.outputOptions.getCall(0).args[0]).to.deep.equal(['-map 0:a', '-map_metadata 1', '-map_metadata 0', '-map_chapters 1', '-c copy'])
     expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-metadata track=1'])
-    expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-f mp4'])
+    expect(ffmpegStub.outputOptions.getCall(2).args[0]).to.deep.equal(['-f mp4', '-movflags use_metadata_tags'])
     expect(ffmpegStub.outputOptions.getCall(3).args[0]).to.deep.equal(['-map 2:v', '-disposition:v:0 attached_pic', '-metadata:s:v', 'title=Cover', '-metadata:s:v', 'comment=Cover'])
 
     expect(ffmpegStub.output.calledOnce).to.be.true
