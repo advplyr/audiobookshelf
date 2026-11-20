@@ -374,31 +374,45 @@ class UserController {
 
     // Todo: check if user is logged in and cancel streams
 
-    // Remove user playlists
-    const userPlaylists = await Database.playlistModel.findAll({
-      where: {
-        userId: user.id
-      }
-    })
-    for (const playlist of userPlaylists) {
-      await playlist.destroy()
-    }
-
-    // Set PlaybackSessions userId to null
-    const [sessionsUpdated] = await Database.playbackSessionModel.update(
-      {
-        userId: null
-      },
-      {
+    // Playlist removal, playback session detach and user removal succeed or fail together
+    const transaction = await Database.sequelize.transaction()
+    let userJson
+    try {
+      // Remove user playlists
+      const userPlaylists = await Database.playlistModel.findAll({
         where: {
           userId: user.id
-        }
+        },
+        transaction
+      })
+      for (const playlist of userPlaylists) {
+        await playlist.destroy({ transaction })
       }
-    )
-    Logger.info(`[UserController] Updated ${sessionsUpdated} playback sessions to remove user id`)
 
-    const userJson = user.toOldJSONForBrowser()
-    await user.destroy()
+      // Set PlaybackSessions userId to null
+      const [sessionsUpdated] = await Database.playbackSessionModel.update(
+        {
+          userId: null
+        },
+        {
+          where: {
+            userId: user.id
+          },
+          transaction
+        }
+      )
+      Logger.info(`[UserController] Updated ${sessionsUpdated} playback sessions to remove user id`)
+
+      userJson = user.toOldJSONForBrowser()
+      await user.destroy({ transaction })
+
+      await transaction.commit()
+    } catch (error) {
+      await transaction.rollback()
+      Logger.error(`[UserController] Failed to delete user "${user.username}"`, error)
+      return res.status(500).send('Failed to delete user')
+    }
+
     SocketAuthority.adminEmitter('user_removed', userJson)
     res.json({
       success: true
