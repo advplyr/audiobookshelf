@@ -515,6 +515,7 @@
   "LabelPermissionsCreateEreader": "Can Create Ereader",
   "LabelPermissionsDelete": "Can Delete",
   "LabelPermissionsDownload": "Can Download",
+  "LabelPermissionsDownloadPodcastEpisodes": "Can Download Podcast Episodes",
   "LabelPermissionsUpdate": "Can Update",
   "LabelPermissionsUpload": "Can Upload",
   "LabelPersonalYearReview": "Your Year in Review ({0})",
