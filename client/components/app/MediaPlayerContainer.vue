@@ -159,8 +159,7 @@ export default {
       return this.streamLibraryItem?.libraryId || null
     },
     totalDurationPretty() {
-      // Adjusted by playback rate
-      return this.$secondsToTimestamp(this.totalDuration / this.currentPlaybackRate)
+      return this.$secondsToTimestamp(this.totalDuration)
     },
     podcastAuthor() {
       if (!this.isPodcast) return null

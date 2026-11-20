@@ -132,9 +132,9 @@ export default {
     timeRemaining() {
       if (this.useChapterTrack && this.currentChapter) {
         var currChapTime = this.currentTime - this.currentChapter.start
-        return (this.currentChapterDuration - currChapTime) / this.playbackRate
+        return this.currentChapterDuration - currChapTime
       }
-      return (this.duration - this.currentTime) / this.playbackRate
+      return this.duration - this.currentTime
     },
     timeRemainingPretty() {
       if (this.timeRemaining < 0) {
@@ -309,7 +309,7 @@ export default {
         return
       }
       const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
-      ts.innerText = this.$secondsToTimestamp(time / this.playbackRate)
+      ts.innerText = this.$secondsToTimestamp(time)
     },
     setBufferTime(bufferTime) {
       if (this.$refs.trackbar) this.$refs.trackbar.setBufferTime(bufferTime)
@@ -326,10 +326,21 @@ export default {
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.setPlaybackRate(this.playbackRate)
+
+      const enableSmartSpeed = this.$store.getters['user/getUserSetting']('enableSmartSpeed')
+      const smartSpeedRatio = this.$store.getters['user/getUserSetting']('smartSpeedRatio')
+      if (this.playerHandler && this.playerHandler.isPlayingLocalItem) {
+        this.playerHandler.setSmartSpeed(enableSmartSpeed || false, smartSpeedRatio || 2.5)
+      }
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
         this.setPlaybackRate(settings.playbackRate)
+      }
+      if (this.playerHandler && this.playerHandler.isPlayingLocalItem && (settings.enableSmartSpeed !== undefined || settings.smartSpeedRatio !== undefined)) {
+        const enableSmartSpeed = settings.enableSmartSpeed !== undefined ? settings.enableSmartSpeed : this.$store.getters['user/getUserSetting']('enableSmartSpeed')
+        const smartSpeedRatio = settings.smartSpeedRatio !== undefined ? settings.smartSpeedRatio : this.$store.getters['user/getUserSetting']('smartSpeedRatio')
+        this.playerHandler.setSmartSpeed(enableSmartSpeed || false, smartSpeedRatio || 2.5)
       }
     },
     closePlayer() {
