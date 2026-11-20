@@ -96,7 +96,7 @@ export default {
       return this.store.state.libraries.currentLibraryId
     },
     libraryProvider() {
-      return this.store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+      return this.store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'audible'
     },
     sizeMultiplier() {
       return this.store.getters['user/getSizeMultiplier']

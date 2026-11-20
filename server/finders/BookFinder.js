@@ -23,7 +23,7 @@ class BookFinder {
     this.audiobookCovers = new AudiobookCovers()
     this.customProviderAdapter = new CustomProviderAdapter()
 
-    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+    this.providers = ['audible', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
     this.verbose = false
   }
@@ -580,9 +580,7 @@ class BookFinder {
 
     let books = []
 
-    if (provider === 'google') {
-      books = await this.getGoogleBooksResults(title, author)
-    } else if (provider.startsWith('audible')) {
+    if (provider.startsWith('audible')) {
       books = await this.getAudibleResults(title, author, asin, provider)
     } else if (provider === 'itunes') {
       books = await this.getiTunesAudiobooksResults(title)
@@ -592,8 +590,10 @@ class BookFinder {
       books = await this.getFantLabResults(title, author)
     } else if (provider === 'audiobookcovers') {
       books = await this.getAudiobookCoversResults(title)
-    } else {
+    } else if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
+    } else {
+      books = await this.getAudibleResults(title, author, asin, 'audible')
     }
 
     books.forEach((book) => {
@@ -615,8 +615,8 @@ class BookFinder {
         searchResults.push(...providerResults)
       }
     } else if (provider === 'best') {
-      // Best providers: google, fantlab, and audible.com
-      const bestProviders = ['google', 'fantlab', 'audible']
+      // Best providers: audible.com, fantlab, and openlibrary
+      const bestProviders = ['audible', 'fantlab', 'openlibrary']
       for (const providerString of bestProviders) {
         const providerResults = await this.search(null, providerString, title, author, options)
         Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)

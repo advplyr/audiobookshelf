@@ -76,7 +76,7 @@ export default {
       return this.libraryItem ? this.libraryItem.libraryId : null
     },
     libraryProvider() {
-      return this.$store.getters['libraries/getLibraryProvider'](this.libraryId) || 'google'
+      return this.$store.getters['libraries/getLibraryProvider'](this.libraryId) || 'audible'
     },
     isLibraryScanning() {
       if (!this.libraryId) return null

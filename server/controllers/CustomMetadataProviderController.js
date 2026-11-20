@@ -76,7 +76,7 @@ class CustomMetadataProviderController {
     const provider = req.customMetadataProvider
     const providerClientJson = provider.toClientJson()
 
-    const fallbackProvider = provider.mediaType === 'book' ? 'google' : 'itunes'
+    const fallbackProvider = provider.mediaType === 'book' ? 'audible' : 'itunes'
 
     await provider.destroy()
 

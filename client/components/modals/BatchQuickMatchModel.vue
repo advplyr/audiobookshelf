@@ -91,7 +91,7 @@ export default {
       return this.$store.state.scanners.bookProviders
     },
     libraryProvider() {
-      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'audible'
     }
   },
   methods: {

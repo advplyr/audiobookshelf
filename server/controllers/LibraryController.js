@@ -80,7 +80,7 @@ class LibraryController {
     const mediaType = req.body.mediaType || 'book'
     const newLibraryPayload = {
       name: req.body.name,
-      provider: req.body.provider || 'google',
+      provider: req.body.provider || 'audible',
       mediaType,
       icon: req.body.icon || 'database',
       settings: Database.libraryModel.getDefaultLibrarySettingsForMediaType(mediaType)

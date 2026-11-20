@@ -38,7 +38,7 @@ class ServerSettings {
     // Scanner
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
-    this.scannerCoverProvider = 'google'
+    this.scannerCoverProvider = 'audible'
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
 
@@ -116,7 +116,7 @@ class ServerSettings {
   construct(settings) {
     this.tokenSecret = settings.tokenSecret
     this.scannerFindCovers = !!settings.scannerFindCovers
-    this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
+    this.scannerCoverProvider = settings.scannerCoverProvider || 'audible'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher

@@ -115,7 +115,7 @@ export default {
     getNewLibraryData() {
       return {
         name: '',
-        provider: 'google',
+        provider: 'audible',
         folders: [],
         icon: 'database',
         mediaType: 'book',
