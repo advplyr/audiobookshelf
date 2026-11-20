@@ -359,7 +359,9 @@ class PodcastManager {
       Logger.debug(`[PodcastManager] No new episodes for "${libraryItem.media.title}"`)
     }
 
-    libraryItem.media.lastEpisodeCheck = new Date()
+    if (newEpisodes) {
+      libraryItem.media.lastEpisodeCheck = new Date()
+    }
     await libraryItem.media.save()
 
     libraryItem.changed('updatedAt', true)
@@ -412,7 +414,7 @@ class PodcastManager {
    *
    * @param {import('../models/LibraryItem')} libraryItem
    * @param {*} maxEpisodesToDownload
-   * @returns {Promise<import('../utils/podcastUtils').RssPodcastEpisode[]>}
+   * @returns {Promise<import('../utils/podcastUtils').RssPodcastEpisode[]|null>}
    */
   async checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload) {
     const lastEpisodeCheck = libraryItem.media.lastEpisodeCheck?.valueOf() || 0
@@ -420,6 +422,10 @@ class PodcastManager {
     Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.title}" - Last episode check: ${lastEpisodeCheckDate}`)
 
     const newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, lastEpisodeCheck, maxEpisodesToDownload)
+    if (!newEpisodes) {
+      return null
+    }
+
     if (newEpisodes?.length) {
       Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes, false)
@@ -435,7 +441,7 @@ class PodcastManager {
 
     SocketAuthority.libraryItemEmitter('item_updated', libraryItem)
 
-    return newEpisodes || []
+    return newEpisodes
   }
 
   async findEpisode(rssFeedUrl, searchTitle) {
