@@ -80,7 +80,8 @@ export default {
         subtitle: this.metadata.authors.map((au) => au.name).join(', '),
         caption: '',
         duration: this.media.duration || null,
-        coverPath: this.media.coverPath || null
+        coverPath: this.media.coverPath || null,
+        updatedAt: this.libraryItem.updatedAt
       }
 
       if (this.$store.getters['getIsMediaStreaming'](this.libraryItemId)) {

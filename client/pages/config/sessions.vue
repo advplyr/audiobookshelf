@@ -393,7 +393,8 @@ export default {
           subtitle: libraryItem.media.metadata.title,
           caption: episode.publishedAt ? this.$getString('LabelPublishedDate', [this.$formatDate(episode.publishedAt, this.dateFormat)]) : this.$strings.LabelUnknownPublishDate,
           duration: episode.audioFile.duration || null,
-          coverPath: libraryItem.media.coverPath || null
+          coverPath: libraryItem.media.coverPath || null,
+          updatedAt: libraryItem.updatedAt
         }
       } else {
         queueItem = {
@@ -404,7 +405,8 @@ export default {
           subtitle: libraryItem.media.metadata.authors.map((au) => au.name).join(', '),
           caption: '',
           duration: libraryItem.media.duration || null,
-          coverPath: libraryItem.media.coverPath || null
+          coverPath: libraryItem.media.coverPath || null,
+          updatedAt: libraryItem.updatedAt
         }
       }
 
