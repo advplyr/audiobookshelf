@@ -7,6 +7,7 @@ const Database = require('../Database')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const AudioFile = require('../objects/files/AudioFile')
 const CoverManager = require('../managers/CoverManager')
+const CacheManager = require('../managers/CacheManager')
 const LibraryFile = require('../objects/files/LibraryFile')
 const fsExtra = require('../libs/fsExtra')
 const PodcastEpisode = require('../models/PodcastEpisode')
@@ -190,6 +191,10 @@ class PodcastScanner {
           media.coverPath = coverPath
           media.changed('coverPath', true)
           hasMediaChanges = true
+        } else {
+          // Cover file was modified in place so the cached covers are stale
+          libraryScan.addLog(LogLevel.DEBUG, `Purging cover cache for podcast "${media.title}" because cover "${media.coverPath}" was modified`)
+          await CacheManager.purgeCoverCache(existingLibraryItem.id)
         }
       }
     }
