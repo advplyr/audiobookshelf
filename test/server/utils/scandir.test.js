@@ -49,4 +49,22 @@ describe('scanUtils', async () => {
       'Author/Series2/Book5/deeply/nested': ['cd 01/audiofile.mp3', 'cd 02/audiofile.mp3']
     })
   })
+
+  it('should include DAISY ncc.html changes when includeNonMediaFiles is enabled', async () => {
+    const filePath = 'Author/Book3/ncc.html'
+    const dirname = Path.dirname(filePath)
+    const fileItems = [
+      {
+        name: Path.basename(filePath),
+        reldirpath: dirname === '.' ? '' : dirname,
+        extension: Path.extname(filePath),
+        deep: filePath.split('/').length - 1
+      }
+    ]
+
+    const libraryItemGrouping = scanUtils.groupFileItemsIntoLibraryItemDirs('book', fileItems, false, true)
+    expect(libraryItemGrouping).to.deep.equal({
+      'Author/Book3': ['ncc.html']
+    })
+  })
 })
