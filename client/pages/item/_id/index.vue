@@ -785,6 +785,16 @@ export default {
     this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
     this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
+    const episodeId = this.$route.query.episodeId
+    if (episodeId) {
+      const episode = this.podcastEpisodes.find((ep) => ep.id === episodeId)
+      if (episode) {
+        this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+        this.$store.commit('globals/setSelectedEpisode', episode)
+        this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
+      }
+    }
+
     this.$eventBus.$on(`${this.libraryItem.id}_updated`, this.libraryItemUpdated)
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
     this.$root.socket.on('rss_feed_open', this.rssFeedOpen)

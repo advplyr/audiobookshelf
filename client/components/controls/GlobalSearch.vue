@@ -42,7 +42,7 @@
           <p v-if="episodeResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">{{ $strings.LabelEpisodes }}</p>
           <template v-for="item in episodeResults">
             <li :key="item.libraryItem.recentEpisode.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
-              <nuxt-link :to="`/item/${item.libraryItem.id}`">
+              <nuxt-link :to="`/item/${item.libraryItem.id}?episodeId=${item.libraryItem.recentEpisode.id}`">
                 <cards-episode-search-card :episode="item.libraryItem.recentEpisode" :library-item="item.libraryItem" />
               </nuxt-link>
             </li>
@@ -92,6 +92,12 @@
               </nuxt-link>
             </li>
           </template>
+          <li class="border-t border-white/10 mt-2 pt-1">
+            <button class="w-full text-left px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-black-400 rounded flex items-center gap-1" @click="submitSearch">
+              <span class="material-symbols" style="font-size: 1rem">search</span>
+              {{ $strings.ButtonSeeAllResultsFor || 'See all results for' }} "{{ lastSearch }}"
+            </button>
+          </li>
         </template>
       </ul>
     </div>
