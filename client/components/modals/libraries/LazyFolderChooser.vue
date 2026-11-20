@@ -154,7 +154,7 @@ export default {
     fetchDirs(path, level) {
       this.loadingDirs = true
       return this.$axios
-        .$get(`/api/filesystem?path=${path}&level=${level}`)
+        .$get(`/api/filesystem?path=${encodeURIComponent(path)}&level=${level}`)
         .then((data) => {
           console.log('Fetched directories', data.directories)
           this.isPosix = !!data.posix
