@@ -376,7 +376,7 @@ async function addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataF
         }
       })
       .on('error', (err, stdout, stderr) => {
-        if (err.message && err.message.includes('SIGKILL')) {
+        if (ffmpeg.cancelRequested && err.message && err.message.includes('SIGKILL')) {
           Logger.info(`[ffmpegHelpers] addCoverAndMetadataToFile Killed by User`)
           reject(new Error('FFMPEG_CANCELED'))
         } else {
@@ -504,7 +504,7 @@ async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFileP
       })
       .on('error', async (err, stdout, stderr) => {
         if (concatFilePath) await fs.remove(concatFilePath)
-        if (err.message && err.message.includes('SIGKILL')) {
+        if (ffmpeg.cancelRequested && err.message && err.message.includes('SIGKILL')) {
           Logger.info(`[ffmpegHelpers] Merge Audio Files Killed by User`)
           reject(new Error('FFMPEG_CANCELED'))
         } else {

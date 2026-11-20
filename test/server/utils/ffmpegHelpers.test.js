@@ -4,7 +4,7 @@ const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('../../../server/libs/fsExtra')
 const EventEmitter = require('events')
 
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const { generateFFMetadata, addCoverAndMetadataToFile, mergeAudioFiles } = require('../../../server/utils/ffmpegHelpers')
 
 global.isWin = process.platform === 'win32'
 
@@ -212,6 +212,38 @@ describe('addCoverAndMetadataToFile', () => {
     sinon.restore()
   })
 
+  it('should classify SIGKILL as user cancellation when metadata cancellation was requested', async () => {
+    ffmpegStub.cancelRequested = true
+    ffmpegStub.run = sinon.stub().callsFake(() => {
+      ffmpegStub.emit('error', new Error('ffmpeg was killed with signal SIGKILL'))
+    })
+
+    try {
+      await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
+      expect.fail('Expected an error to be thrown')
+    } catch (error) {
+      expect(error.message).to.equal('FFMPEG_CANCELED')
+    }
+
+    sinon.restore()
+  })
+
+  it('should preserve an unexpected SIGKILL while embedding metadata', async () => {
+    const ffmpegError = new Error('ffmpeg was killed with signal SIGKILL')
+    ffmpegStub.run = sinon.stub().callsFake(() => {
+      ffmpegStub.emit('error', ffmpegError, 'ffmpeg stdout', 'ffmpeg stderr')
+    })
+
+    try {
+      await addCoverAndMetadataToFile(audioFilePath, coverFilePath, metadataFilePath, track, mimeType, null, ffmpegStub, copyStub)
+      expect.fail('Expected an error to be thrown')
+    } catch (error) {
+      expect(error).to.equal(ffmpegError)
+    }
+
+    sinon.restore()
+  })
+
   it('should handle m4b embedding', async () => {
     // Arrange
     mimeType = 'audio/mp4'
@@ -245,5 +277,66 @@ describe('addCoverAndMetadataToFile', () => {
 
     // Restore the stub
     sinon.restore()
+  })
+})
+
+describe('mergeAudioFiles', () => {
+  function createFfmpegStub(error) {
+    const ffmpegStub = new EventEmitter()
+    ffmpegStub.input = sinon.stub().returnsThis()
+    ffmpegStub.inputOptions = sinon.stub().returnsThis()
+    ffmpegStub.outputOptions = sinon.stub().returnsThis()
+    ffmpegStub.output = sinon.stub().returnsThis()
+    ffmpegStub.run = sinon.stub().callsFake(() => {
+      ffmpegStub.emit('error', error, 'ffmpeg stdout', 'ffmpeg stderr')
+    })
+    return ffmpegStub
+  }
+
+  const audioTracks = [
+    {
+      metadata: {
+        ext: '.m4b',
+        path: '/path/to/audio/file.m4b'
+      }
+    }
+  ]
+
+  async function getMergeError(ffmpegStub) {
+    try {
+      await mergeAudioFiles(audioTracks, 60, '/path/to/cache', '/path/to/output.m4b', {}, null, ffmpegStub)
+      expect.fail('Expected an error to be thrown')
+    } catch (error) {
+      return error
+    }
+  }
+
+  it('should classify SIGKILL as user cancellation when cancellation was requested', async () => {
+    const ffmpegStub = createFfmpegStub(new Error('ffmpeg was killed with signal SIGKILL'))
+    ffmpegStub.cancelRequested = true
+
+    const error = await getMergeError(ffmpegStub)
+
+    expect(error.message).to.equal('FFMPEG_CANCELED')
+  })
+
+  it('should preserve an unexpected SIGKILL as an ffmpeg failure', async () => {
+    const ffmpegError = new Error('ffmpeg was killed with signal SIGKILL')
+    const ffmpegStub = createFfmpegStub(ffmpegError)
+
+    const error = await getMergeError(ffmpegStub)
+
+    expect(error).to.equal(ffmpegError)
+    expect(error.message).to.equal('ffmpeg was killed with signal SIGKILL')
+  })
+
+  it('should preserve an ordinary non-zero ffmpeg exit as an ffmpeg failure', async () => {
+    const ffmpegError = new Error('ffmpeg exited with code 1: invalid input')
+    const ffmpegStub = createFfmpegStub(ffmpegError)
+
+    const error = await getMergeError(ffmpegStub)
+
+    expect(error).to.equal(ffmpegError)
+    expect(error.message).to.equal('ffmpeg exited with code 1: invalid input')
   })
 })
