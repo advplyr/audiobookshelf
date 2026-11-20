@@ -76,15 +76,16 @@ class DeviceInfo {
   }
 
   // When client doesn't send a device id
+  // Not keyed on ip address since it changes between requests from the same device
   getTempDeviceId() {
-    const keys = [this.userId, this.browserName, this.browserVersion, this.osName, this.osVersion, this.clientVersion, this.manufacturer, this.model, this.sdkVersion, this.ipAddress].map((k) => k || '')
+    const keys = [this.userId, this.browserName, this.browserVersion, this.osName, this.osVersion, this.clientVersion, this.manufacturer, this.model, this.sdkVersion, this.clientName].map((k) => k || '')
     return 'temp-' + Buffer.from(keys.join('-'), 'utf-8').toString('base64')
   }
 
   setData(ip, ua, clientDeviceInfo, serverVersion, userId) {
     this.id = uuidv4()
     this.userId = userId
-    this.deviceId = clientDeviceInfo?.deviceId || this.id
+    this.deviceId = clientDeviceInfo?.deviceId || null
     this.ipAddress = ip || null
 
     this.browserName = ua?.browser.name || null
