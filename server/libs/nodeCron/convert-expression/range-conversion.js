@@ -1,6 +1,6 @@
 'use strict';
 module.exports = ( () => {
-    function replaceWithRange(expression, text, init, end) {
+    function replaceWithRange(text, init, end, step) {
 
         const numbers = [];
         let last = parseInt(end);
@@ -11,21 +11,25 @@ module.exports = ( () => {
             first = parseInt(end);
         }
 
-        for(let i = first; i <= last; i++) {
+        let increment = 1;
+        if(step !== undefined){
+            increment = parseInt(step);
+            // Leave an invalid step untouched so that the pattern validation rejects the expression.
+            if(isNaN(increment) || increment < 1){
+                return text;
+            }
+        }
+
+        for(let i = first; i <= last; i += increment) {
             numbers.push(i);
         }
 
-        return expression.replace(new RegExp(text, 'i'), numbers.join());
+        return numbers.join();
     }
 
     function convertRange(expression){
-        const rangeRegEx = /(\d+)-(\d+)/;
-        let match = rangeRegEx.exec(expression);
-        while(match !== null && match.length > 0){
-            expression = replaceWithRange(expression, match[0], match[1], match[2]);
-            match = rangeRegEx.exec(expression);
-        }
-        return expression;
+        const rangeRegEx = /(\d+)-(\d+)(?:\/(\d+)(?=$|,))?/g;
+        return expression.replace(rangeRegEx, (text, init, end, step) => replaceWithRange(text, init, end, step));
     }
 
     function convertAllRanges(expressions){
