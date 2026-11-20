@@ -6,6 +6,7 @@ const Logger = require('../Logger')
 /**
  * @typedef {Object} ApiKeyPermissions
  * @property {boolean} download
+ * @property {boolean} stream
  * @property {boolean} update
  * @property {boolean} delete
  * @property {boolean} upload
@@ -84,6 +85,7 @@ class ApiKey extends Model {
   static getDefaultPermissions() {
     return {
       download: true,
+      stream: true,
       update: true,
       delete: true,
       upload: true,
