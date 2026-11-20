@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, Op, literal } = require('sequelize')
 
 const oldPlaybackSession = require('../objects/PlaybackSession')
 
@@ -55,6 +55,28 @@ class PlaybackSession extends Model {
   static async getOldPlaybackSessions(where = null) {
     const playbackSessions = await this.findAll({
       where,
+      include: [
+        {
+          model: this.sequelize.models.device
+        }
+      ]
+    })
+    return playbackSessions.map((session) => this.getOldPlaybackSession(session))
+  }
+
+  /**
+   * Get the most recently updated playback session of each user
+   * Sessions with the same updatedAt are ordered by rowid, the order the table is scanned in
+   *
+   * @returns {Promise<oldPlaybackSession[]>}
+   */
+  static async getLatestOldPlaybackSessionPerUser() {
+    const playbackSessions = await this.findAll({
+      where: {
+        id: {
+          [Op.in]: literal('(SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY userId ORDER BY updatedAt DESC, rowid ASC) AS rowNum FROM playbackSessions WHERE userId IS NOT NULL) WHERE rowNum = 1)')
+        }
+      },
       include: [
         {
           model: this.sequelize.models.device
