@@ -155,17 +155,14 @@ class MeController {
    * @param {Response} res
    */
   async getListeningSessions(req, res) {
-    const listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
+    const page = Math.max(0, toNumber(req.query.page, 0))
+    const itemsPerPage = Math.max(1, toNumber(req.query.itemsPerPage, 10))
 
-    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
-    const page = toNumber(req.query.page, 0)
-
-    const start = page * itemsPerPage
-    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+    const { total, sessions } = await this.getUserListeningSessionsPageHelper(req.user.id, page, itemsPerPage)
 
     const payload = {
-      total: listeningSessions.length,
-      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      total,
+      numPages: Math.ceil(total / itemsPerPage),
       page,
       itemsPerPage,
       sessions
