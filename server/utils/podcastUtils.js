@@ -79,11 +79,11 @@ function extractFirstArrayItemString(json, key) {
   const item = extractFirstArrayItem(json, key)
   if (!item) return ''
   if (typeof item === 'object') {
-    if (item?.['_'] && typeof item['_'] === 'string') return item['_']
+    if (item?.['_'] && typeof item['_'] === 'string') return item['_'].trim()
 
-    return extractStringOrStringify(item)
+    return extractStringOrStringify(item).trim()
   }
-  return typeof item === 'string' ? item : ''
+  return typeof item === 'string' ? item.trim() : ''
 }
 
 function extractImage(channel) {
