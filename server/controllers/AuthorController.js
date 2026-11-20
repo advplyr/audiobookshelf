@@ -138,7 +138,9 @@ class AuthorController {
           id: {
             [sequelize.Op.not]: req.author.id
           },
-          name: payload.name,
+          name: {
+            [sequelize.Op.iLike]: payload.name
+          },
           libraryId: req.author.libraryId
         }
       })
