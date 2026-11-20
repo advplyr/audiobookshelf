@@ -89,6 +89,18 @@ class CustomProviderAdapter {
         })
         .filter((s) => s !== undefined)
     }
+    const firstStringOrUndefined = (value) => {
+      if (typeof value === 'string' || typeof value === 'number') return String(value)
+      if (Array.isArray(value)) return toStringOrUndefined(value.find((v) => typeof v === 'string' || typeof v === 'number'))
+      return undefined
+    }
+    const publishedYearFromDate = (value) => {
+      const date = toStringOrUndefined(value)
+      return date ? date.split('-')[0] : undefined
+    }
+    const toBooleanOrUndefined = (value) => {
+      return typeof value === 'boolean' ? value : undefined
+    }
     /**
      * Validates and dedupes tags/genres array
      * Can be comma separated string or array of strings
@@ -113,24 +125,53 @@ class CustomProviderAdapter {
 
     // re-map keys to throw out
     return matches.map((match) => {
-      const { title, subtitle, author, narrator, publisher, publishedYear, description, cover, isbn, asin, genres, tags, series, language, duration } = match
+      const {
+        title,
+        subtitle,
+        author,
+        authors,
+        narrator,
+        narrators,
+        publisher,
+        publishedYear,
+        publishDate,
+        description,
+        cover,
+        covers,
+        isbn,
+        asin,
+        genres,
+        tags,
+        series,
+        language,
+        duration,
+        explicit,
+        abridged,
+        region,
+        rating
+      } = match
 
       const payload = {
         title: toStringOrUndefined(title),
         subtitle: toStringOrUndefined(subtitle),
-        author: toStringOrUndefined(author),
-        narrator: toStringOrUndefined(narrator),
+        author: toStringOrUndefined(author ?? authors),
+        narrator: toStringOrUndefined(narrator ?? narrators),
         publisher: toStringOrUndefined(publisher),
-        publishedYear: toStringOrUndefined(publishedYear),
+        publishedYear: toStringOrUndefined(publishedYear) ?? publishedYearFromDate(publishDate),
         description: description && typeof description === 'string' ? htmlSanitizer.sanitize(description) : undefined,
-        cover: toStringOrUndefined(cover),
+        cover: toStringOrUndefined(cover) ?? firstStringOrUndefined(covers),
+        covers: validateTagsGenresArray(covers),
         isbn: toStringOrUndefined(isbn),
         asin: toStringOrUndefined(asin),
         genres: validateTagsGenresArray(genres),
         tags: validateTagsGenresArray(tags),
         series: validateSeriesArray(series),
         language: toStringOrUndefined(language),
-        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined
+        duration: !isNaN(duration) && duration !== null ? Number(duration) : undefined,
+        explicit: toBooleanOrUndefined(explicit),
+        abridged: toBooleanOrUndefined(abridged),
+        region: toStringOrUndefined(region),
+        rating: toStringOrUndefined(rating)
       }
 
       // Remove undefined values
