@@ -53,6 +53,10 @@ class Podcast extends Model {
     this.maxEpisodesToKeep
     /** @type {number} */
     this.maxNewEpisodesToDownload
+    /** @type {number} */
+    this.autoDownloadMinDuration
+    /** @type {string[]} */
+    this.autoDownloadExcludeTerms
     /** @type {string} */
     this.coverPath
     /** @type {string[]} */
@@ -113,6 +117,8 @@ class Podcast extends Model {
         lastEpisodeCheck: new Date(),
         maxEpisodesToKeep: 0,
         maxNewEpisodesToDownload: 3,
+        autoDownloadMinDuration: 0,
+        autoDownloadExcludeTerms: [],
         tags,
         genres
       },
@@ -151,6 +157,8 @@ class Podcast extends Model {
         lastEpisodeCheck: DataTypes.DATE,
         maxEpisodesToKeep: DataTypes.INTEGER,
         maxNewEpisodesToDownload: DataTypes.INTEGER,
+        autoDownloadMinDuration: DataTypes.INTEGER,
+        autoDownloadExcludeTerms: DataTypes.JSON,
         coverPath: DataTypes.STRING,
         tags: DataTypes.JSON,
         genres: DataTypes.JSON,
@@ -283,13 +291,21 @@ class Podcast extends Model {
       hasUpdates = true
     }
 
-    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload']
+    const numberKeys = ['maxEpisodesToKeep', 'maxNewEpisodesToDownload', 'autoDownloadMinDuration']
     numberKeys.forEach((key) => {
       if (typeof payload[key] === 'number' && payload[key] !== this[key]) {
         this[key] = payload[key]
         hasUpdates = true
       }
     })
+
+    if (Array.isArray(payload.autoDownloadExcludeTerms) && payload.autoDownloadExcludeTerms.every((t) => typeof t === 'string')) {
+      const excludeTerms = [...new Set(payload.autoDownloadExcludeTerms.map((t) => t.trim()).filter(Boolean))]
+      if (excludeTerms.join('\n') !== (this.autoDownloadExcludeTerms || []).join('\n')) {
+        this.autoDownloadExcludeTerms = excludeTerms
+        hasUpdates = true
+      }
+    }
 
     if (hasUpdates) {
       Logger.debug(`[Podcast] changed keys:`, this.changed())
@@ -397,6 +413,19 @@ class Podcast extends Model {
   }
 
   /**
+   * @param {import('../utils/podcastUtils').RssPodcastEpisode} feedEpisode
+   * @returns {boolean}
+   */
+  checkFeedEpisodePassesAutoDownloadFilters(feedEpisode) {
+    // Episodes without a parsable duration are kept so a missing itunes:duration never silently drops an episode
+    if (this.autoDownloadMinDuration > 0 && feedEpisode.durationSeconds && feedEpisode.durationSeconds < this.autoDownloadMinDuration) {
+      return false
+    }
+    const title = (feedEpisode.title || '').toLowerCase()
+    return !(this.autoDownloadExcludeTerms || []).some((term) => title.includes(term.toLowerCase()))
+  }
+
+  /**
    * Old model kept metadata in a separate object
    */
   oldMetadataToJSON() {
@@ -447,7 +476,9 @@ class Podcast extends Model {
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      autoDownloadMinDuration: this.autoDownloadMinDuration || 0,
+      autoDownloadExcludeTerms: [...(this.autoDownloadExcludeTerms || [])]
     }
   }
 
@@ -469,6 +500,8 @@ class Podcast extends Model {
       lastEpisodeCheck: this.lastEpisodeCheck?.valueOf() || null,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      autoDownloadMinDuration: this.autoDownloadMinDuration || 0,
+      autoDownloadExcludeTerms: [...(this.autoDownloadExcludeTerms || [])],
       size: this.size
     }
   }
