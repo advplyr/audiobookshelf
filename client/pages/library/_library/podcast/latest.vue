@@ -72,6 +72,11 @@
           </div>
           <div :key="index" v-if="index !== recentEpisodes.length" class="w-full h-px bg-white/10" />
         </template>
+        <div v-if="recentEpisodes.length && hasMore" class="flex justify-center pt-6">
+          <button class="h-9 px-5 border border-white/20 hover:bg-white/10 rounded-full text-sm font-semibold focus:outline-hidden" :disabled="processing" @click="loadMoreEpisodes">
+            {{ processing ? $strings.MessageLoading : $strings.LabelMore }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -100,8 +105,8 @@ export default {
     return {
       recentEpisodes: [],
       episodesProcessingMap: {},
-      totalEpisodes: 0,
       currentPage: 0,
+      hasMore: true,
       processing: false,
       openingItem: false
     }
@@ -248,16 +253,34 @@ export default {
       })
     },
     async loadRecentEpisodes(page = 0) {
+      if (this.processing) return
       this.processing = true
-      const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=50&page=${page}`).catch((error) => {
+      const limit = 50
+      const episodePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/recent-episodes?limit=${limit}&page=${page}`).catch((error) => {
         console.error('Failed to get recent episodes', error)
         this.$toast.error(this.$strings.ToastFailedToLoadData)
         return null
       })
       this.processing = false
-      this.recentEpisodes = episodePayload.episodes || []
-      this.totalEpisodes = episodePayload.total
+      if (!episodePayload) return
+      const newEpisodes = episodePayload.episodes || []
+      // Page 0 is the initial load/refresh (replace); subsequent pages append
+      this.recentEpisodes = page > 0 ? this.recentEpisodes.concat(newEpisodes) : newEpisodes
       this.currentPage = page
+      // The endpoint returns no total; a short page means we've reached the end
+      this.hasMore = newEpisodes.length >= limit
+    },
+    loadMoreEpisodes() {
+      if (this.processing || !this.hasMore) return
+      this.loadRecentEpisodes(this.currentPage + 1)
+    },
+    handleScroll(e) {
+      const el = e.target
+      if (!el || this.processing || !this.hasMore) return
+      // Within ~600px of the bottom, pull the next page
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 600) {
+        this.loadMoreEpisodes()
+      }
     },
     queueBtnClick(episode) {
       if (this.playerQueueEpisodeIdMap[episode.id]) {
@@ -281,6 +304,13 @@ export default {
   },
   mounted() {
     this.loadRecentEpisodes()
+    this.$nextTick(() => {
+      this.scrollContainer = document.getElementById('bookshelf')
+      if (this.scrollContainer) this.scrollContainer.addEventListener('scroll', this.handleScroll, { passive: true })
+    })
+  },
+  beforeDestroy() {
+    if (this.scrollContainer) this.scrollContainer.removeEventListener('scroll', this.handleScroll)
   }
 }
 </script>
