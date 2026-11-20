@@ -80,7 +80,15 @@ class SeriesController {
     }
     req.series.set(payload)
     if (req.series.changed()) {
-      await req.series.save()
+      try {
+        await req.series.save()
+      } catch (error) {
+        if (error.name === 'SequelizeUniqueConstraintError') {
+          Logger.warn(`[SeriesController] Series name already exists in library: ${payload.name}`)
+          return res.status(400).send('A series with that name already exists in this library')
+        }
+        throw error
+      }
       SocketAuthority.emitter('series_updated', req.series.toOldJSON())
     }
     res.json(req.series.toOldJSON())
