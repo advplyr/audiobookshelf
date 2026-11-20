@@ -5,6 +5,7 @@ const http = require('http')
 const util = require('util')
 const fs = require('./libs/fsExtra')
 const cookieParser = require('cookie-parser')
+const compression = require('compression')
 const axios = require('axios')
 
 const { version } = require('../package.json')
@@ -318,6 +319,9 @@ class Server {
     app.use(this.auth.ifAuthNeeded(passport.session()))
     // config passport.js
     await this.auth.initPassportJs()
+
+    // init compression middleware
+    app.use(compression({ level: 6, threshold: 1024 }))
 
     const router = express.Router()
 
