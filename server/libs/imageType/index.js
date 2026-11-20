@@ -6,6 +6,7 @@ const imageExts = new Set([
   'png',
   'gif',
   'webp',
+  'avif',
   'flif',
   'cr2',
   'tif',
