@@ -50,7 +50,7 @@ RUN case "$TARGETPLATFORM" in \
 RUN npm ci --omit=dev
 
 ### STAGE 3: Create minimal runtime image ###
-FROM node:24-alpine
+FROM node:24-alpine AS runtime
 
 ARG NUSQLITE3_DIR
 ARG NUSQLITE3_PATH
@@ -63,8 +63,7 @@ RUN apk add --no-cache --update \
 
 WORKDIR /app
 
-# Copy compiled frontend and server from build stages
-COPY --from=build-client /client/dist /app/client/dist
+# Copy compiled server from build stages
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 
@@ -80,3 +79,13 @@ ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
 ENTRYPOINT ["tini", "--"]
 CMD ["node", "dist-server/index.js"]
+
+### StAGE 4: Server only runtime ###
+FROM runtime AS server-only
+
+ENV DISABLE_WEB_UI=1
+
+### STAGE 5: Full runtime ###
+FROM runtime AS full
+
+COPY --from=build-client /client/dist /app/client/dist
