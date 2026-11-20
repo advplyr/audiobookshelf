@@ -68,9 +68,21 @@
       <p v-else-if="!searchInProgress && !coversFound.length" class="text-gray-300 py-4">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === coverPath ? 'border-yellow-300' : ''" @click="updateCover(cover)">
-          <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+          <covers-preview-cover :src="cover" :width="coverWidth" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
         </div>
       </template>
+    </div>
+
+    <div v-if="hasSearched && coversFound.length" class="absolute bottom-4 right-4 z-50">
+      <div aria-hidden="true" class="rounded-full py-1 bg-primary px-3 border border-black-100 text-center flex items-center shadow-lg backdrop-blur-sm bg-opacity-90">
+        <span role="button" class="material-symbols hover:text-yellow-300 cursor-pointer select-none" style="font-size: 1.1rem" aria-label="Decrease Cover Size" @click="coverWidth = Math.max(60, coverWidth - 20)"> remove </span>
+
+        <p class="px-4 font-mono select-none" style="font-size: 1rem">
+          {{ coverWidth }}
+        </p>
+
+        <span role="button" class="material-symbols hover:text-yellow-300 cursor-pointer select-none" style="font-size: 1.1rem" aria-label="Increase Cover Size" @click="coverWidth = Math.min(300, coverWidth + 20)"> add </span>
+      </div>
     </div>
 
     <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
@@ -110,7 +122,8 @@ export default {
       provider: 'google',
       currentSearchRequestId: null,
       searchInProgress: false,
-      socketListenersActive: false
+      socketListenersActive: false,
+      coverWidth: 80
     }
   },
   watch: {
