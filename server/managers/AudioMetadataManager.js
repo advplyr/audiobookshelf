@@ -229,7 +229,7 @@ class AudioMetadataMangaer {
 
       try {
         await ffmpegHelpers.addCoverAndMetadataToFile(af.path, task.data.coverPath, ffmetadataPath, af.index, task.data.mimeType, (progress) => {
-          SocketAuthority.adminEmitter('task_progress', { libraryItemId: task.data.libraryItemId, progress: cummulativeProgress + progress * audioFileRelativeDuration })
+          TaskManager.updateTaskProgress(task, cummulativeProgress + progress * audioFileRelativeDuration)
           SocketAuthority.adminEmitter('track_progress', { libraryItemId: task.data.libraryItemId, ino: af.ino, progress })
         })
         Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
