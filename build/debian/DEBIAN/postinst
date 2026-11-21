@@ -44,4 +44,10 @@ if [ ! -d "$ABS_LOG_DIR" ]; then
   chown -R 'audiobookshelf:audiobookshelf' "$ABS_LOG_DIR"
 fi
 
+# Startup rewrites the React client's base-path placeholder and Next writes its cache under .next.
+CLIENT_REACT_DIR="/usr/share/audiobookshelf/client-react"
+if [ -d "$CLIENT_REACT_DIR" ]; then
+  chown -R 'audiobookshelf:audiobookshelf' "$CLIENT_REACT_DIR"
+fi
+
 start_service 'audiobookshelf'

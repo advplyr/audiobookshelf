@@ -1,7 +1,7 @@
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
-### STAGE 0: Build client ###
+### STAGE 0: Build the Vue client. It is what the server serves unless REACT_CLIENT_PATH is set. ###
 FROM node:24-alpine AS build-client
 
 WORKDIR /client
@@ -9,7 +9,15 @@ COPY /client /client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
-### STAGE 1: Compile server on the builder CPU (avoid QEMU SIGILL from tsc on arm64) ###
+### STAGE 1: Fetch the pinned React client runtime so an operator can point REACT_CLIENT_PATH at it. ###
+FROM --platform=$BUILDPLATFORM node:24-alpine AS fetch-client
+
+WORKDIR /fetch
+COPY package.json /fetch/package.json
+COPY scripts/fetch-client-react-runtime.js /fetch/scripts/fetch-client-react-runtime.js
+RUN node scripts/fetch-client-react-runtime.js --out /out/client-react
+
+### STAGE 2: Compile server on the builder CPU (avoid QEMU SIGILL from tsc on arm64) ###
 FROM --platform=$BUILDPLATFORM node:24-alpine AS compile-server
 
 WORKDIR /server
@@ -17,7 +25,7 @@ COPY index.js package* tsconfig.server.json /server
 COPY /server /server/server
 RUN npm ci --include=dev --ignore-scripts && npm run build:server
 
-### STAGE 2: Install native server deps for the target arch ###
+### STAGE 3: Install native server deps for the target arch ###
 FROM node:24-alpine AS build-server
 
 ARG NUSQLITE3_DIR
@@ -49,7 +57,7 @@ RUN case "$TARGETPLATFORM" in \
 
 RUN npm ci --omit=dev
 
-### STAGE 3: Create minimal runtime image ###
+### STAGE 4: Create minimal runtime image ###
 FROM node:24-alpine
 
 ARG NUSQLITE3_DIR
@@ -63,8 +71,11 @@ RUN apk add --no-cache --update \
 
 WORKDIR /app
 
-# Copy compiled frontend and server from build stages
+# Vue client is served by default. client-react is unused until REACT_CLIENT_PATH points at it.
+# .next must be writable: startup rewrites the base-path placeholder and Next writes its cache there.
 COPY --from=build-client /client/dist /app/client/dist
+COPY --from=fetch-client /out/client-react /app/client-react
+RUN chmod -R a+rwX /app/client-react/.next
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 

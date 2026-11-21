@@ -13,6 +13,7 @@ on:
       - index.js
       - package.json
       - tsconfig.server.json
+      - scripts/fetch-client-react-runtime.js
 
 jobs:
   build:
@@ -42,12 +43,21 @@ jobs:
         run: npm ci && npm run build:server && npm prune --omit=dev
 
       - name: build binary
-        run: pkg --config package.json -t node24-linux-x64 -o audiobookshelf dist-server/index.js
+        run: pkg --config package.json -t node24-linux-x64 -o dist/pkg/audiobookshelf dist-server/index.js
 
       - name: run audiobookshelf
         run: |
-          ./audiobookshelf &
-          sleep 5
-
-      - name: test if server is available
-        run: curl -sf http://127.0.0.1:3333 | grep Audiobookshelf
+          ./dist/pkg/audiobookshelf &
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3333/healthcheck >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != 1 ]; then
+            echo "Server did not become healthy"
+            exit 1
+          fi
+          curl -sf http://127.0.0.1:3333 | grep Audiobookshelf

@@ -21,6 +21,7 @@ on:
       - package.json
       - tsconfig.server.json
       - Dockerfile
+      - scripts/fetch-client-react-runtime.js
 
 jobs:
   build:
