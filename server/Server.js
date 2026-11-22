@@ -10,6 +10,9 @@ const axios = require('axios')
 
 const { version } = require('../package.json')
 
+// Client served when CLIENT is unset. Set this to 'react' to make that the default.
+const DEFAULT_CLIENT = 'vue'
+
 // Utils
 const is = require('./libs/requestIp/isJs')
 const fileUtils = require('./utils/fileUtils')
@@ -441,8 +444,8 @@ class Server {
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
-    const ReactClientPath = process.env.REACT_CLIENT_PATH
-    if (!ReactClientPath) {
+    const client = (process.env.CLIENT || DEFAULT_CLIENT).trim().toLowerCase()
+    if (client !== 'react') {
       // Static path to generated nuxt
       const distPath = Path.join(global.appRoot, '/client/dist')
       router.use(express.static(distPath))
@@ -478,6 +481,10 @@ class Server {
       // when dir is an absolute drive path, so the manifest lookup becomes
       // cwd\D:\client\D:\client\.next\.... Run Next from the client directory
       // and pass a relative dir.
+      const ReactClientPath = process.env.REACT_CLIENT_PATH
+      if (!ReactClientPath) {
+        throw new Error('CLIENT=react requires REACT_CLIENT_PATH')
+      }
       const reactClientDir = Path.resolve(ReactClientPath)
       process.chdir(reactClientDir)
       Logger.info(`Using React client at ${reactClientDir}`)
@@ -614,3 +621,4 @@ class Server {
   }
 }
 module.exports = Server
+module.exports.DEFAULT_CLIENT = DEFAULT_CLIENT

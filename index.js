@@ -16,6 +16,7 @@ const Path = require('path')
 process.env.NODE_ENV = options.dev ? 'development' : process.env.NODE_ENV || 'production'
 
 const server = require('./server/Server')
+const { DEFAULT_CLIENT } = server
 global.appRoot = Path.basename(__dirname) === 'dist-server' ? Path.resolve(__dirname, '..') : __dirname
 
 const isDev = process.env.NODE_ENV !== 'production'
@@ -31,6 +32,8 @@ if (isDev || options['prod-with-dev-env']) {
   if (devEnv.AllowIframe) process.env.ALLOW_IFRAME = '1'
   if (devEnv.BackupPath) process.env.BACKUP_PATH = devEnv.BackupPath
   if (devEnv.ReactClientPath) process.env.REACT_CLIENT_PATH = devEnv.ReactClientPath
+  // dev.js Client selects the web client, same as the CLIENT env var.
+  if (devEnv.Client) process.env.CLIENT = devEnv.Client
   if (devEnv.AllowedDevOrigins) {
     process.env.ALLOWED_DEV_ORIGINS = Array.isArray(devEnv.AllowedDevOrigins) ? devEnv.AllowedDevOrigins.join(',') : String(devEnv.AllowedDevOrigins)
   }
@@ -48,6 +51,19 @@ const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve
 const SOURCE = options.source || process.env.SOURCE || 'debian'
 
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH ?? '/audiobookshelf'
+
+// CLIENT selects the web client. Unset uses DEFAULT_CLIENT.
+// react serves REACT_CLIENT_PATH, which each deployment sets.
+const client = (process.env.CLIENT || DEFAULT_CLIENT).trim().toLowerCase()
+if (client !== 'vue' && client !== 'react') {
+  console.error(`CLIENT must be vue or react. Got: ${process.env.CLIENT}`)
+  process.exit(1)
+}
+if (client === 'react' && !String(process.env.REACT_CLIENT_PATH || '').trim()) {
+  console.error('CLIENT=react requires REACT_CLIENT_PATH')
+  process.exit(1)
+}
+process.env.CLIENT = client
 
 console.log(`Running in ${process.env.NODE_ENV} mode.`)
 console.log(`Options: CONFIG_PATH=${CONFIG_PATH}, METADATA_PATH=${METADATA_PATH}, PORT=${PORT}, HOST=${HOST}, SOURCE=${SOURCE}, ROUTER_BASE_PATH=${ROUTER_BASE_PATH}`)
