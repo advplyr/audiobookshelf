@@ -1,7 +1,7 @@
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
-### STAGE 0: Build the Vue client. It is what the server serves unless REACT_CLIENT_PATH is set. ###
+### STAGE 0: Build the Vue client. It is what the server serves unless CLIENT=react. ###
 FROM node:24-alpine AS build-client
 
 WORKDIR /client
@@ -9,7 +9,7 @@ COPY /client /client
 RUN npm ci && npm cache clean --force
 RUN npm run generate
 
-### STAGE 1: Fetch the pinned React client runtime so an operator can point REACT_CLIENT_PATH at it. ###
+### STAGE 1: Fetch the pinned React client runtime. The server serves it when CLIENT=react. ###
 FROM --platform=$BUILDPLATFORM node:24-alpine AS fetch-client
 
 WORKDIR /fetch
@@ -71,7 +71,7 @@ RUN apk add --no-cache --update \
 
 WORKDIR /app
 
-# Vue client is served by default. client-react is unused until REACT_CLIENT_PATH points at it.
+# Vue client is served unless CLIENT=react. REACT_CLIENT_PATH is that runtime.
 # .next must be writable: startup rewrites the base-path placeholder and Next writes its cache there.
 COPY --from=build-client /client/dist /app/client/dist
 COPY --from=fetch-client /out/client-react /app/client-react
@@ -86,6 +86,7 @@ ENV NODE_ENV=production
 ENV CONFIG_PATH="/config"
 ENV METADATA_PATH="/metadata"
 ENV SOURCE="docker"
+ENV REACT_CLIENT_PATH="/app/client-react"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
