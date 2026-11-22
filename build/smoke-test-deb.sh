@@ -54,31 +54,27 @@ assert_client() {
 start_case() {
   local label="$1"
   local port="$2"
-  local react_path="${3:-}"
+  local client="${3:-}"
   local work log pid ready
   work="$(mktemp -d)"
   log="$work/server.log"
   mkdir -p "$work/home" "$work/config" "$work/metadata"
 
   echo ">>> $label"
-  if [ -n "$react_path" ]; then
-    env \
-      HOME="$work/home" \
-      HOST=127.0.0.1 \
-      PORT="$port" \
-      CONFIG_PATH="$work/config" \
-      METADATA_PATH="$work/metadata" \
-      REACT_CLIENT_PATH="$react_path" \
-      "$bin" >"$log" 2>&1 &
-  else
-    env -u REACT_CLIENT_PATH \
-      HOME="$work/home" \
-      HOST=127.0.0.1 \
-      PORT="$port" \
-      CONFIG_PATH="$work/config" \
-      METADATA_PATH="$work/metadata" \
-      "$bin" >"$log" 2>&1 &
+  # The package path is always set. CLIENT decides which client is served,
+  # including when the server default is no longer Vue.
+  if [ "$client" != vue ] && [ "$client" != react ]; then
+    echo "Smoke test client must be vue or react. Got: ${client:-<unset>}"
+    return 1
   fi
+  env REACT_CLIENT_PATH="$react_dir" \
+    HOME="$work/home" \
+    HOST=127.0.0.1 \
+    PORT="$port" \
+    CONFIG_PATH="$work/config" \
+    METADATA_PATH="$work/metadata" \
+    CLIENT="$client" \
+    "$bin" >"$log" 2>&1 &
   pid=$!
   pids+=("$pid")
 
@@ -101,23 +97,20 @@ start_case() {
     return 1
   fi
 
-  if [ -n "$react_path" ]; then
-    assert_client "$port" '/_next/' "$label" || {
-      tail -n 120 "$log" || true
-      return 1
-    }
-  else
-    assert_client "$port" '/_nuxt/' "$label" || {
-      tail -n 120 "$log" || true
-      return 1
-    }
+  local marker='/_nuxt/'
+  if [ "$client" = react ]; then
+    marker='/_next/'
   fi
+  assert_client "$port" "$marker" "$label" || {
+    tail -n 120 "$log" || true
+    return 1
+  }
 
   kill "$pid" >/dev/null 2>&1 || true
   wait "$pid" >/dev/null 2>&1 || true
   echo "$label ok"
 }
 
-start_case "Vue client" 18080
-start_case "React client" 18081 "$react_dir"
+start_case "Vue client" 18080 vue
+start_case "React client" 18081 react
 echo "Smoke test passed"
