@@ -473,12 +473,18 @@ class Server {
       ]
       dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
     } else {
-      // This is for using the experimental Next.js client
-      Logger.info(`Using React client at ${ReactClientPath}`)
+      // This is for using the Next.js client.
+      // Next joins process.cwd() with dir. On Windows, path.join does not reset
+      // when dir is an absolute drive path, so the manifest lookup becomes
+      // cwd\D:\client\D:\client\.next\.... Run Next from the client directory
+      // and pass a relative dir.
+      const reactClientDir = Path.resolve(ReactClientPath)
+      process.chdir(reactClientDir)
+      Logger.info(`Using React client at ${reactClientDir}`)
       allowPkgWithoutInspector()
-      const nextPath = Path.join(ReactClientPath, 'node_modules/next')
+      const nextPath = Path.join(reactClientDir, 'node_modules', 'next')
       const next = require(nextPath)
-      const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
+      const nextApp = next({ dev: Logger.isDev, dir: '.' })
       const handle = nextApp.getRequestHandler()
       await nextApp.prepare()
       const nextBasePath = getPreparedNextBasePath(nextApp)
