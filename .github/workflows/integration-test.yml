@@ -14,6 +14,7 @@ on:
       - package.json
       - tsconfig.server.json
       - scripts/fetch-client-react-runtime.js
+      - .github/workflows/integration-test.yml
 
 jobs:
   build:
@@ -45,19 +46,82 @@ jobs:
       - name: build binary
         run: pkg --config package.json -t node24-linux-x64 -o dist/pkg/audiobookshelf dist-server/index.js
 
+      - name: fetch the React client runtime
+        run: node scripts/fetch-client-react-runtime.js --out dist/pkg/client-react
+
       - name: run audiobookshelf
         run: |
-          ./dist/pkg/audiobookshelf &
-          ready=0
-          for _ in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:3333/healthcheck >/dev/null; then
-              ready=1
-              break
-            fi
-            sleep 2
-          done
-          if [ "$ready" != 1 ]; then
-            echo "Server did not become healthy"
+          set -euo pipefail
+          root="$(pwd)"
+          react_dir="$root/dist/pkg/client-react"
+          bin="$root/dist/pkg/audiobookshelf"
+          if [ ! -f "$react_dir/node_modules/next/package.json" ]; then
+            echo "React client runtime is missing: $react_dir"
             exit 1
           fi
-          curl -sf http://127.0.0.1:3333 | grep Audiobookshelf
+
+          pids=()
+          cleanup() {
+            local pid
+            for pid in "${pids[@]+"${pids[@]}"}"; do
+              kill "$pid" >/dev/null 2>&1 || true
+            done
+          }
+          trap cleanup EXIT
+
+          # CLIENT is passed for each run. An unset CLIENT follows the server
+          # default, so the Vue run would start serving React after that default changes.
+          start_case() {
+            local label="$1"
+            local port="$2"
+            local client="$3"
+            local marker="$4"
+            local work log pid ready page
+            work="$(mktemp -d)"
+            log="$work/server.log"
+            mkdir -p "$work/config" "$work/metadata"
+            echo ">>> $label"
+            env REACT_CLIENT_PATH="$react_dir" \
+              HOST=127.0.0.1 \
+              PORT="$port" \
+              CONFIG_PATH="$work/config" \
+              METADATA_PATH="$work/metadata" \
+              CLIENT="$client" \
+              "$bin" >"$log" 2>&1 &
+            pid=$!
+            pids+=("$pid")
+            ready=0
+            for _ in $(seq 1 60); do
+              if ! kill -0 "$pid" 2>/dev/null; then
+                echo "$label exited before it was healthy"
+                tail -n 80 "$log" || true
+                return 1
+              fi
+              if curl -sf --max-time 5 "http://127.0.0.1:${port}/healthcheck" >/dev/null; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != 1 ]; then
+              echo "$label did not become healthy"
+              tail -n 80 "$log" || true
+              return 1
+            fi
+            if ! page="$(curl -sfL --max-time 30 "http://127.0.0.1:${port}/")"; then
+              echo "$label did not return a page"
+              tail -n 80 "$log" || true
+              return 1
+            fi
+            if ! printf '%s' "$page" | grep -q "$marker"; then
+              echo "$label page did not contain $marker"
+              tail -n 80 "$log" || true
+              return 1
+            fi
+            kill "$pid" >/dev/null 2>&1 || true
+            wait "$pid" >/dev/null 2>&1 || true
+            echo "$label ok"
+          }
+
+          start_case "Vue client" 3333 vue '/_nuxt/'
+          start_case "React client" 3334 react '/_next/'
