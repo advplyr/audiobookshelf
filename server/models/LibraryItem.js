@@ -46,6 +46,8 @@ class LibraryItem extends Model {
     this.isMissing
     /** @type {boolean} */
     this.isInvalid
+    /** @type {boolean} */
+    this.excludeFromStats
     /** @type {Date} */
     this.mtime
     /** @type {Date} */
@@ -728,10 +730,11 @@ class LibraryItem extends Model {
         relPath: DataTypes.STRING,
         mediaId: DataTypes.UUID,
         mediaType: DataTypes.STRING,
-        isFile: DataTypes.BOOLEAN,
-        isMissing: DataTypes.BOOLEAN,
-        isInvalid: DataTypes.BOOLEAN,
-        mtime: DataTypes.DATE(6),
+          isFile: DataTypes.BOOLEAN,
+          isMissing: DataTypes.BOOLEAN,
+          isInvalid: DataTypes.BOOLEAN,
+          excludeFromStats: DataTypes.BOOLEAN,
+          mtime: DataTypes.DATE(6),
         ctime: DataTypes.DATE(6),
         birthtime: DataTypes.DATE(6),
         size: DataTypes.BIGINT,
@@ -1034,6 +1037,7 @@ class LibraryItem extends Model {
       ...this.toOldJSONMinified(),
       lastScan: this.lastScan?.valueOf(),
       scanVersion: this.lastScanVersion,
+      excludeFromStats: !!this.excludeFromStats,
       media: this.media.toOldJSONExpanded(this.id),
       // LibraryFile JSON includes a fileType property that may not be saved in libraryFiles column in the database
       libraryFiles: this.getLibraryFilesJson()

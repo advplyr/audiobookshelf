@@ -9,8 +9,9 @@ const Logger = require('../Logger')
  * @property {boolean} skipMatchingMediaWithIsbn
  * @property {string} autoScanCronExpression
  * @property {boolean} audiobooksOnly
- * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
- * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
+   * @property {boolean} hideSingleBookSeries Do not show series that only have 1 book
+   * @property {boolean} onlyShowLaterBooksInContinueSeries Skip showing books that are earlier than the max sequence read
+   * @property {boolean} excludeFromStats Exclude this library from the user's listening stats
  * @property {string[]} metadataPrecedence
  * @property {number} markAsFinishedTimeRemaining Time remaining in seconds to mark as finished. (defaults to 10s)
  * @property {number} markAsFinishedPercentComplete Percent complete to mark as finished (0-100). If this is set it will be used over markAsFinishedTimeRemaining.
@@ -61,7 +62,8 @@ class Library extends Model {
         autoScanCronExpression: null,
         podcastSearchRegion: 'us',
         markAsFinishedPercentComplete: null,
-        markAsFinishedTimeRemaining: 10
+        markAsFinishedTimeRemaining: 10,
+        excludeFromStats: false
       }
     } else {
       return {
@@ -76,7 +78,8 @@ class Library extends Model {
         onlyShowLaterBooksInContinueSeries: false,
         metadataPrecedence: this.defaultMetadataPrecedence,
         markAsFinishedPercentComplete: null,
-        markAsFinishedTimeRemaining: 10
+        markAsFinishedTimeRemaining: 10,
+        excludeFromStats: false
       }
     }
   }

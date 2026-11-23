@@ -20,6 +20,7 @@ const PlaylistController = require('../controllers/PlaylistController')
 const MeController = require('../controllers/MeController')
 const BackupController = require('../controllers/BackupController')
 const LibraryItemController = require('../controllers/LibraryItemController')
+const userStats = require('../utils/queries/userStats')
 const SeriesController = require('../controllers/SeriesController')
 const FileSystemController = require('../controllers/FileSystemController')
 const AuthorController = require('../controllers/AuthorController')
@@ -126,6 +127,7 @@ class ApiRouter {
     this.router.delete('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
     this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))
     this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
+    this.router.patch('/items/:id/exclude-from-stats', LibraryItemController.middleware.bind(this), LibraryItemController.updateExcludeFromStats.bind(this))
     this.router.patch('/items/:id/ebook/:fileid/status', LibraryItemController.middleware.bind(this), LibraryItemController.updateEbookFileStatus.bind(this))
 
     //
@@ -536,7 +538,10 @@ class ApiRouter {
   async getUserListeningStatsHelpers(userId) {
     const today = date.format(new Date(), 'YYYY-MM-DD')
 
-    const listeningSessions = await this.getUserListeningSessionsHelper(userId)
+    const excludedLibraryIds = await userStats.getStatsExcludedLibraryIds()
+    const excludedLibraryItems = await userStats.getStatsExcludedLibraryItemIds()
+
+    const listeningSessions = (await this.getUserListeningSessionsHelper(userId)).filter((s) => !userStats.isExcludedFromStats(s, excludedLibraryIds, excludedLibraryItems))
     const listeningStats = {
       totalTime: 0,
       items: {},
