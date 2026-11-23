@@ -448,6 +448,10 @@ class Server {
     if (client !== 'react') {
       // Static path to generated nuxt
       const distPath = Path.join(global.appRoot, '/client/dist')
+      const vueIndex = Path.join(distPath, 'index.html')
+      if (!fs.existsSync(vueIndex)) {
+        throw new Error(`CLIENT=vue requires the Vue client at ${vueIndex}`)
+      }
       router.use(express.static(distPath))
 
       // Client dynamic routes

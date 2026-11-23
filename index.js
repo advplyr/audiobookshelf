@@ -12,6 +12,7 @@ const optionDefinitions = [
 const commandLineArgs = require('./server/libs/commandLineArgs')
 const options = commandLineArgs(optionDefinitions)
 
+const fs = require('fs')
 const Path = require('path')
 process.env.NODE_ENV = options.dev ? 'development' : process.env.NODE_ENV || 'production'
 
@@ -62,6 +63,13 @@ if (client !== 'vue' && client !== 'react') {
 if (client === 'react' && !String(process.env.REACT_CLIENT_PATH || '').trim()) {
   console.error('CLIENT=react requires REACT_CLIENT_PATH')
   process.exit(1)
+}
+if (client === 'vue') {
+  const vueIndex = Path.join(global.appRoot, 'client', 'dist', 'index.html')
+  if (!fs.existsSync(vueIndex)) {
+    console.error(`CLIENT=vue requires the Vue client at ${vueIndex}`)
+    process.exit(1)
+  }
 }
 process.env.CLIENT = client
 
