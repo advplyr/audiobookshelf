@@ -129,7 +129,7 @@ class Auth {
           // Handle expiration manaully in order to disable api keys that are expired
           ignoreExpiration: true
         },
-        this.tokenManager.jwtAuthCheck.bind(this)
+        this.jwtAuthCheck.bind(this)
       )
     )
 
@@ -524,6 +524,27 @@ class Auth {
     })
   }
   // #endregion
+
+  /**
+   * Verify a JWT access token and return the associated user.
+   * Used as the verify callback for the passport JWT strategy.
+   *
+   * @param {Object} jwt_payload - decoded JWT payload
+   * @param {function} done - passport done callback
+   */
+  async jwtAuthCheck(jwt_payload, done) {
+    try {
+      if (jwt_payload.type === 'api') return done(null, false);
+      if (!TokenManager.isBearerAccessTokenPayload(jwt_payload)) return done(null, false);
+      if (jwt_payload.exp && jwt_payload.exp < Date.now() / 1000) return done(null, false);
+      const user = await Database.userModel.findByPk(jwt_payload.userId);
+      if (!user || !user.isActive) return done(null, false);
+      return done(null, user);
+    } catch (error) {
+      Logger.error(`[Auth] jwtAuthCheck error: ${error.message}`);
+      return done(null, false);
+    }
+  }
 }
 
 module.exports = Auth

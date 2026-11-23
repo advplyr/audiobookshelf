@@ -101,6 +101,26 @@ class LibraryItemController {
   }
 
   /**
+   * PATCH: /api/items/:id/exclude-from-stats
+   * Update the exclude from stats setting of a library item
+   *
+   * @this {import('../routers/ApiRouter')}
+   * @param {LibraryItemControllerRequest} req
+   * @param {Response} res
+   */
+  async updateExcludeFromStats(req, res) {
+    if (typeof req.body?.excludeFromStats !== 'boolean') {
+      Logger.error(`[LibraryItemController] Invalid request. "excludeFromStats" must be a boolean`)
+      return res.status(400).send('Invalid request. "excludeFromStats" must be a boolean')
+    }
+
+    const libraryItem = await req.libraryItem.update({ excludeFromStats: req.body.excludeFromStats })
+    Logger.debug(`[LibraryItemController] User "${req.user.username}" updated exclude from stats to ${req.body.excludeFromStats} for library item "${libraryItem.id}"`)
+
+    return res.json(libraryItem.toOldJSONExpanded())
+  }
+
+  /**
    * DELETE: /api/items/:id
    * Delete library item. Will delete from database and file system if hard delete is requested.
    * Optional query params:

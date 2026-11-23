@@ -6,6 +6,42 @@ const fsExtra = require('../../libs/fsExtra')
 
 module.exports = {
   /**
+   * Library ids with the library setting that excludes them from listening stats
+   * @returns {Promise<Set<string>>}
+   */
+  async getStatsExcludedLibraryIds() {
+    const libraries = await Database.libraryModel.findAll({ attributes: ['id', 'settings'] })
+    return new Set(libraries.filter((lib) => lib.librarySettings?.excludeFromStats).map((lib) => lib.id))
+  },
+
+  /**
+   * Library item ids and book ids that are excluded from listening stats
+   * @returns {Promise<{ libraryItemIds: Set<string>, bookIds: Set<string> }>}
+   */
+  async getStatsExcludedLibraryItemIds() {
+    const libraryItems = await Database.libraryItemModel.findAll({ where: { excludeFromStats: true }, attributes: ['id', 'mediaId', 'mediaType'] })
+    return {
+      libraryItemIds: new Set(libraryItems.map((li) => li.id)),
+      bookIds: new Set(libraryItems.filter((li) => li.mediaType === 'book').map((li) => li.mediaId))
+    }
+  },
+
+  /**
+   * Check if an entity (playback session or media progress) is excluded from listening stats
+   * @param {{ libraryId?: string, mediaItemId?: string, libraryItemId?: string, extraData?: Object, mediaItem?: { libraryItem?: { excludeFromStats?: boolean } } }} entity
+   * @param {Set<string>} excludedLibraryIds
+   * @param {{ libraryItemIds: Set<string>, bookIds: Set<string> }} excludedLibraryItems
+   * @returns {boolean}
+   */
+  isExcludedFromStats(entity, excludedLibraryIds, excludedLibraryItems) {
+    if (entity.libraryId && excludedLibraryIds.has(entity.libraryId)) return true
+    if (entity.mediaItem?.libraryItem?.excludeFromStats) return true
+    if (excludedLibraryItems.libraryItemIds.has(entity.libraryItemId || entity.extraData?.libraryItemId)) return true
+    if (excludedLibraryItems.bookIds.has(entity.mediaItemId)) return true
+    return false
+  },
+
+  /**
    *
    * @param {string} userId
    * @param {number} year YYYY
@@ -25,13 +61,15 @@ module.exports = {
         attributes: ['id', 'coverPath'],
         include: {
           model: Database.libraryItemModel,
-          attributes: ['id', 'mediaId', 'mediaType']
+          attributes: ['id', 'mediaId', 'mediaType', 'excludeFromStats']
         },
         required: false
       },
       order: Database.sequelize.random()
     })
-    return sessions
+    const excludedLibraryIds = await this.getStatsExcludedLibraryIds()
+    const excludedLibraryItems = await this.getStatsExcludedLibraryItemIds()
+    return sessions.filter((session) => !this.isExcludedFromStats(session, excludedLibraryIds, excludedLibraryItems))
   },
 
   /**
@@ -55,13 +93,15 @@ module.exports = {
         attributes: ['id', 'title', 'coverPath'],
         include: {
           model: Database.libraryItemModel,
-          attributes: ['id', 'mediaId', 'mediaType']
+          attributes: ['id', 'mediaId', 'mediaType', 'excludeFromStats']
         },
         required: true
       },
       order: Database.sequelize.random()
     })
-    return progresses
+    const excludedLibraryIds = await this.getStatsExcludedLibraryIds()
+    const excludedLibraryItems = await this.getStatsExcludedLibraryItemIds()
+    return progresses.filter((progress) => !this.isExcludedFromStats(progress, excludedLibraryIds, excludedLibraryItems))
   },
 
   /**
