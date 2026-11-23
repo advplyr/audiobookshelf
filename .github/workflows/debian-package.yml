@@ -1,13 +1,11 @@
 name: Debian package
 
-# Build the .deb, smoke-test it, and publish it to the apt archive. A tag
-# release is also created on the repository that runs this workflow. The apt
-# archive defaults to advplyr/audiobookshelf-ppa (the Pages URL already in
-# sources.list). Set APT_ARCHIVE_REPOSITORY when that repo moves, or to point a
-# test run at a scratch archive.
+# Build the .deb, smoke-test it, and publish it to the apt archive. The apt archive defaults to
+# advplyr/audiobookshelf-ppa (the Pages URL already in sources.list). Set
+# APT_ARCHIVE_REPOSITORY when that repo moves, or to point a test run at a
+# scratch archive.
 #
-# The GitHub Release upload uses the built-in github.token. Build and smoke-test
-# use none of the settings below.
+# Build and smoke-test use none of the settings below.
 #
 # apt-archive publish:
 #   secret PPA_REPO_TOKEN — contents write on the apt archive repo.
@@ -32,8 +30,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     outputs:
       version: ${{ steps.package.outputs.version }}
     steps:
@@ -75,20 +71,6 @@ jobs:
           path: dist/audiobookshelf_${{ steps.package.outputs.version }}_amd64.deb
           retention-days: 14
           if-no-files-found: error
-
-      - name: Upload the package to the GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          tag="${GITHUB_REF#refs/tags/}"
-          deb="dist/audiobookshelf_${{ steps.package.outputs.version }}_amd64.deb"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" "$deb" --clobber
-          else
-            gh release create "$tag" "$deb" --title "$tag" --notes "Debian package ${tag}"
-          fi
 
   publish-apt-archive:
     needs: build
