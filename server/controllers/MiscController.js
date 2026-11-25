@@ -63,6 +63,7 @@ class MiscController {
       if (error instanceof uploadPath.UploadError) {
         Logger.warn(`[MiscController] User "${req.user.username}" upload failed (${error.statusCode}): ${error.message}`)
         if (error.body) return res.status(error.statusCode).json(error.body)
+        res.type('text/plain')
         return res.status(error.statusCode).send(error.message)
       }
       return res.sendStatus(500)

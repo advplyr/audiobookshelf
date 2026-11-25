@@ -51,7 +51,12 @@ describe('upload path collisions', () => {
   function mockRes() {
     return {
       statusCode: 200,
+      contentType: undefined,
       body: undefined,
+      type(contentType) {
+        this.contentType = contentType
+        return this
+      },
       status(code) {
         this.statusCode = code
         return this
@@ -532,6 +537,23 @@ describe('upload path collisions', () => {
     expect(res.statusCode).to.equal(400)
     expect(res.body).to.equal('Invalid upload path')
     expect(await pathExists(Path.join(folder.path, 'NewAuthor'))).to.equal(false)
+  })
+
+  it('refuses a file name that sanitizes to empty as plain text', async () => {
+    const res = mockRes()
+    await MiscController.handleUpload(
+      uploadRequest({
+        files: {
+          0: fakeUploadFile('...', 'new-audio')
+        }
+      }),
+      res
+    )
+
+    expect(res.statusCode).to.equal(400)
+    expect(res.contentType).to.equal('text/plain')
+    expect(res.body).to.equal('Invalid file name')
+    expect(await pathExists(Path.join(folder.path, 'Author A'))).to.equal(false)
   })
 
   it('drops an author name that sanitizes to empty', async () => {
