@@ -4,6 +4,7 @@ const Logger = require('../Logger')
 const fs = require('../libs/fsExtra')
 const { toNumber } = require('../utils/index')
 const fileUtils = require('../utils/fileUtils')
+const uploadPath = require('../utils/uploadPath')
 const Database = require('../Database')
 
 /**
@@ -96,67 +97,44 @@ class FileSystemController {
       })
     }
 
-    // Check that library folder exists
-    const libraryFolder = await Database.libraryFolderModel.findOne({
-      where: {
-        path: folderPath
-      }
-    })
-
-    if (!libraryFolder) {
-      Logger.error(`[FileSystemController] Library folder not found: ${folderPath}`)
-      return res.sendStatus(404)
-    }
-
-    if (!req.user.checkCanAccessLibrary(libraryFolder.libraryId)) {
-      Logger.error(`[FileSystemController] User "${req.user.username}" attempting to check path exists for library "${libraryFolder.libraryId}" without access`)
-      return res.sendStatus(403)
-    }
-
-    let filepath = Path.join(libraryFolder.path, directory)
-    filepath = fileUtils.filePathToPOSIX(filepath)
-
-    // Ensure filepath is inside library folder (prevents directory traversal)
-    if (!fileUtils.isSameOrSubPath(libraryFolder.path, filepath)) {
-      Logger.error(`[FileSystemController] Filepath is not inside library folder: ${filepath}`)
-      return res.sendStatus(400)
-    }
-
-    if (await fs.pathExists(filepath)) {
-      return res.json({
-        exists: true
-      })
-    }
-
-    // Check if a library item exists in a subdirectory
-    // See: https://github.com/advplyr/audiobookshelf/issues/4146
-    const cleanedDirectory = directory.split('/').filter(Boolean).join('/')
-    if (cleanedDirectory.includes('/')) {
-      // Can only be 2 levels deep
-      const possiblePaths = []
-      const subdir = Path.dirname(directory)
-      possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, subdir)))
-      if (subdir.includes('/')) {
-        possiblePaths.push(fileUtils.filePathToPOSIX(Path.join(folderPath, Path.dirname(subdir))))
-      }
-
-      const libraryItem = await Database.libraryItemModel.findOne({
+    // Check that library folder exists. The lookup is inside the try: Express 4 does not answer a rejected async route.
+    try {
+      const libraryFolder = await Database.libraryFolderModel.findOne({
         where: {
-          path: possiblePaths
+          path: folderPath
         }
       })
 
-      if (libraryItem) {
+      if (!libraryFolder) {
+        Logger.error(`[FileSystemController] Library folder not found: ${folderPath}`)
+        return res.sendStatus(404)
+      }
+
+      if (!req.user.checkCanAccessLibrary(libraryFolder.libraryId)) {
+        Logger.error(`[FileSystemController] User "${req.user.username}" attempting to check path exists for library "${libraryFolder.libraryId}" without access`)
+        return res.sendStatus(403)
+      }
+
+      // Same rules as POST /api/upload: the directory itself, then a library item in a parent folder.
+      // See: https://github.com/advplyr/audiobookshelf/issues/4146
+      const existing = await uploadPath.checkUploadDirectory(libraryFolder.path, directory)
+      if ('libraryItemTitle' in existing) {
         return res.json({
           exists: true,
-          libraryItemTitle: libraryItem.title
+          libraryItemTitle: existing.libraryItemTitle
         })
       }
+      return res.json({
+        exists: existing.exists
+      })
+    } catch (error) {
+      if (error instanceof uploadPath.UploadError) {
+        Logger.error(`[FileSystemController] Filepath is not inside library folder: ${directory}`)
+        return res.sendStatus(error.statusCode)
+      }
+      Logger.error('[FileSystemController] Failed to check if path exists', directory, error)
+      return res.sendStatus(500)
     }
-
-    return res.json({
-      exists: false
-    })
   }
 }
 module.exports = new FileSystemController()
