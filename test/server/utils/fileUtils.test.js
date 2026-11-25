@@ -134,4 +134,60 @@ describe('fileUtils', () => {
       })
     })
   })
+
+  describe('isSameOrSubPath and isStrictSubPath', () => {
+    let prevIsWin
+
+    beforeEach(() => {
+      prevIsWin = global.isWin
+    })
+
+    afterEach(() => {
+      global.isWin = prevIsWin
+    })
+
+    it('identifies POSIX same paths, subpaths, and paths outside the parent', () => {
+      global.isWin = false
+
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/b')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('/a/b/', '/a/b')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/b/')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/b/c')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/b/..foo')).to.equal(true)
+
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/bc')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('/a/b', '/a/b/../c')).to.equal(false)
+
+      expect(fileUtils.isStrictSubPath('/a/b', '/a/b')).to.equal(false)
+      expect(fileUtils.isStrictSubPath('/a/b/', '/a/b')).to.equal(false)
+      expect(fileUtils.isStrictSubPath('/a/b', '/a/b/')).to.equal(false)
+      expect(fileUtils.isStrictSubPath('/a/b', '/a/b/c')).to.equal(true)
+      expect(fileUtils.isStrictSubPath('/a/b', '/a/b/..foo')).to.equal(true)
+      expect(fileUtils.isStrictSubPath('/a/b', '/a/bc')).to.equal(false)
+    })
+
+    it('matches standard and Windows namespaced drive and UNC paths', () => {
+      global.isWin = true
+
+      expect(fileUtils.isSameOrSubPath('C:\\lib\\Author', '\\\\?\\C:\\lib\\Author')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('\\\\?\\C:\\lib\\Author', 'C:\\lib\\Author\\Book')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('C:/lib', '\\\\?\\C:\\lib\\Author')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('C:\\lib', 'C:\\lib\\..foo')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('\\\\server\\share\\lib', '\\\\?\\UNC\\server\\share\\lib\\Author')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('\\\\server/share/lib', '\\\\?\\UNC\\server\\share\\lib\\Author')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('\\\\?\\UNC\\server\\share\\lib', '\\\\server\\share\\lib\\Author')).to.equal(true)
+      expect(fileUtils.isSameOrSubPath('\\\\?\\Volume{1234}\\lib', '\\\\?\\Volume{1234}\\lib\\Author')).to.equal(true)
+
+      expect(fileUtils.isSameOrSubPath('C:\\lib', '\\\\?\\D:\\lib\\Author')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('C:\\lib', 'C:\\lib2\\Author')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('\\\\server\\share\\lib', '\\\\other\\share\\lib\\Author')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('\\\\?\\UNC\\server\\share\\lib', '\\\\other\\share\\lib\\Author')).to.equal(false)
+      expect(fileUtils.isSameOrSubPath('\\\\?\\C:\\lib', '\\\\?\\UNC\\server\\share\\lib')).to.equal(false)
+
+      expect(fileUtils.isStrictSubPath('\\\\?\\C:\\lib\\Author', 'C:\\lib\\Author')).to.equal(false)
+      expect(fileUtils.isStrictSubPath('\\\\?\\C:\\lib\\Author', 'C:\\lib\\Author\\Book')).to.equal(true)
+      expect(fileUtils.isStrictSubPath('\\\\server\\share\\lib', '\\\\?\\UNC\\server\\share\\lib\\Author')).to.equal(true)
+    })
+  })
 })

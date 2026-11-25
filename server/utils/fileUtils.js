@@ -20,23 +20,34 @@ const filePathToPOSIX = (path) => {
 module.exports.filePathToPOSIX = filePathToPOSIX
 
 /**
+ * Check whether childPath is inside parentPath (or the same directory when allowSame is true).
+ */
+function checkSubPath(parentPath, childPath, allowSame) {
+  const pathImpl = global.isWin === undefined ? Path : global.isWin ? Path.win32 : Path.posix
+  parentPath = pathImpl.toNamespacedPath(parentPath)
+  childPath = pathImpl.toNamespacedPath(childPath)
+  if (parentPath === childPath) return allowSame
+  const relativePath = pathImpl.relative(parentPath, childPath)
+  if (relativePath === '') return allowSame // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
+  return relativePath !== '..' && !relativePath.startsWith('..' + pathImpl.sep) && !pathImpl.isAbsolute(relativePath)
+}
+
+/**
  * Check path is a child of or equal to another path
- *
- * @param {string} parentPath
- * @param {string} childPath
- * @returns {boolean}
  */
 function isSameOrSubPath(parentPath, childPath) {
-  parentPath = filePathToPOSIX(parentPath)
-  childPath = filePathToPOSIX(childPath)
-  if (parentPath === childPath) return true
-  const relativePath = Path.relative(parentPath, childPath)
-  return (
-    relativePath === '' || // Same path (e.g. parentPath = '/a/b/', childPath = '/a/b')
-    (!relativePath.startsWith('..') && !Path.isAbsolute(relativePath)) // Sub path
-  )
+  return checkSubPath(parentPath, childPath, true)
 }
 module.exports.isSameOrSubPath = isSameOrSubPath
+
+/**
+ * True when childPath is inside parentPath and is not the same directory.
+ * Trailing separators still count as the same directory.
+ */
+function isStrictSubPath(parentPath, childPath) {
+  return checkSubPath(parentPath, childPath, false)
+}
+module.exports.isStrictSubPath = isStrictSubPath
 
 function getFileStat(path) {
   try {
