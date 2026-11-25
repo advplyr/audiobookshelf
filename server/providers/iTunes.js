@@ -76,6 +76,18 @@ function cleanAuthor(artistName) {
   return authors.join(', ')
 }
 
+const DEFAULT_SEARCH_URL = 'https://itunes.apple.com/search'
+
+/**
+ * The iTunes Search API endpoint. ITUNES_SEARCH_URL replaces it with any service that answers the same way,
+ * such as a self-hosted mirror or a shim over another podcast directory.
+ *
+ * @returns {string}
+ */
+function getSearchUrl() {
+  return process.env.ITUNES_SEARCH_URL?.trim() || DEFAULT_SEARCH_URL
+}
+
 class iTunes {
   #responseTimeout = 10000
 
@@ -104,7 +116,7 @@ class iTunes {
       country: options.country
     }
     return axios
-      .get('https://itunes.apple.com/search', {
+      .get(getSearchUrl(), {
         params: query,
         timeout
       })
