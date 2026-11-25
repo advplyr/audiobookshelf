@@ -19,12 +19,16 @@ const UPLOAD_PATH_EXISTS_MESSAGE = 'File already exists'
 const UPLOAD_LIBRARY_ITEM_EXISTS_PREFIX = 'Library item exists: '
 const UPLOAD_DUPLICATE_FILENAME_MESSAGE = 'Duplicate file name in upload'
 const UPLOAD_FOLDER_NOT_WRITABLE_MESSAGE = 'Cannot write to this library folder'
+const UPLOAD_INVALID_PATH_MESSAGE = 'Invalid upload path'
+const UPLOAD_INVALID_FILENAME_MESSAGE = 'Invalid file name'
+const PLAIN_TEXT_UPLOAD_ERRORS = [UPLOAD_INVALID_PATH_MESSAGE, UPLOAD_INVALID_FILENAME_MESSAGE]
 
 module.exports.UPLOAD_ERROR_CODE = UPLOAD_ERROR_CODE
 module.exports.UPLOAD_PATH_EXISTS_MESSAGE = UPLOAD_PATH_EXISTS_MESSAGE
 module.exports.UPLOAD_LIBRARY_ITEM_EXISTS_PREFIX = UPLOAD_LIBRARY_ITEM_EXISTS_PREFIX
 module.exports.UPLOAD_DUPLICATE_FILENAME_MESSAGE = UPLOAD_DUPLICATE_FILENAME_MESSAGE
 module.exports.UPLOAD_FOLDER_NOT_WRITABLE_MESSAGE = UPLOAD_FOLDER_NOT_WRITABLE_MESSAGE
+module.exports.PLAIN_TEXT_UPLOAD_ERRORS = PLAIN_TEXT_UPLOAD_ERRORS
 
 /**
  * Paths of library items this upload would be nested inside (issue #4146).
@@ -105,7 +109,7 @@ module.exports.UploadError = UploadError
  */
 async function lookupUploadDirectory(folderPath, outputDirectory) {
   if (!isSameOrSubPath(folderPath, outputDirectory)) {
-    throw new UploadError(400, 'Invalid upload path')
+    throw new UploadError(400, UPLOAD_INVALID_PATH_MESSAGE)
   }
   if (await fs.pathExists(outputDirectory)) {
     return { exists: true }
@@ -130,7 +134,7 @@ async function lookupUploadDirectory(folderPath, outputDirectory) {
 async function assertUploadDestination(folderPath, outputDirectory, filenames) {
   // The library folder itself is not a valid item directory, even when every name sanitized away.
   if (!isStrictSubPath(folderPath, outputDirectory)) {
-    throw new UploadError(400, 'Invalid upload path')
+    throw new UploadError(400, UPLOAD_INVALID_PATH_MESSAGE)
   }
   const existing = await lookupUploadDirectory(folderPath, outputDirectory)
   if ('libraryItemTitle' in existing) {
@@ -143,7 +147,7 @@ async function assertUploadDestination(folderPath, outputDirectory, filenames) {
 
   const seen = new Set()
   for (const name of filenames) {
-    if (!name) throw new UploadError(400, 'Invalid file name')
+    if (!name) throw new UploadError(400, UPLOAD_INVALID_FILENAME_MESSAGE)
     const key = name.toLowerCase()
     if (seen.has(key)) throw new UploadError(409, UPLOAD_DUPLICATE_FILENAME_MESSAGE, UPLOAD_ERROR_CODE.duplicateFileName)
     seen.add(key)

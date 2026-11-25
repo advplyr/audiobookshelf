@@ -63,8 +63,10 @@ class MiscController {
       if (error instanceof uploadPath.UploadError) {
         Logger.warn(`[MiscController] User "${req.user.username}" upload failed (${error.statusCode}): ${error.message}`)
         if (error.body) return res.status(error.statusCode).json(error.body)
+        // Send only a known plain-text literal rather than arbitrary exception text.
+        const message = uploadPath.PLAIN_TEXT_UPLOAD_ERRORS.find((known) => known === error.message)
         res.type('text/plain')
-        return res.status(error.statusCode).send(error.message)
+        return message ? res.status(error.statusCode).send(message) : res.sendStatus(error.statusCode)
       }
       return res.sendStatus(500)
     }
