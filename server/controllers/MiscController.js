@@ -1,7 +1,6 @@
 const Sequelize = require('sequelize')
 const Path = require('path')
 const { Request, Response } = require('express')
-const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
@@ -12,6 +11,7 @@ const cron = require('../libs/nodeCron')
 const { isObject, getTitleIgnorePrefix } = require('../utils/index')
 const ServerSettings = require('../objects/settings/ServerSettings')
 const { sanitizeFilename } = require('../utils/fileUtils')
+const uploadPath = require('../utils/uploadPath')
 const { sanitize } = require('../utils/htmlSanitizer')
 
 const TaskManager = require('../managers/TaskManager')
@@ -29,7 +29,7 @@ class MiscController {
 
   /**
    * POST: /api/upload
-   * Update library item
+   * Upload files for a new library item. Refuses to overwrite an existing item or file.
    *
    * @param {RequestWithUser} req
    * @param {Response} res
@@ -39,12 +39,12 @@ class MiscController {
       Logger.warn(`User "${req.user.username}" attempted to upload without permission`)
       return res.sendStatus(403)
     }
-    if (!req.files || !Object.values(req.files).length) {
+    // Flatten first. A field can be present and still hold no files.
+    const files = Object.values(req.files || {}).flat()
+    if (!files.length) {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
-
-    const files = Object.values(req.files).flat()
     let { title, author, series, folder: folderId, library: libraryId } = req.body
     // Validate request body
     if (!libraryId || !folderId || typeof libraryId !== 'string' || typeof folderId !== 'string' || !title || typeof title !== 'string') {
@@ -57,55 +57,75 @@ class MiscController {
       author = null
     }
 
-    const library = await Database.libraryModel.findByIdWithFolders(libraryId)
-    if (!library) {
-      return res.status(404).send('Library not found')
-    }
+    const filenames = files.map((file) => sanitizeFilename(file.name))
 
-    if (!req.user.checkCanAccessLibrary(library.id)) {
-      Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
-      return res.sendStatus(403)
-    }
-
-    const folder = library.libraryFolders.find((fold) => fold.id === folderId)
-    if (!folder) {
-      return res.status(404).send('Folder not found')
-    }
-
-    // Podcasts should only be one folder deep
-    const outputDirectoryParts = library.isPodcast ? [title] : [author, series, title]
-    // `.filter(Boolean)` to strip out all the potentially missing details (eg: `author`)
-    // before sanitizing all the directory parts to remove illegal chars and finally prepending
-    // the base folder path
-    const cleanedOutputDirectoryParts = outputDirectoryParts.filter(Boolean).map((part) => sanitizeFilename(part))
-    const outputDirectory = Path.join(...[folder.path, ...cleanedOutputDirectoryParts])
-
-    try {
-      await fs.ensureDir(outputDirectory)
-    } catch (error) {
-      Logger.error('[MiscController] Failed to create upload directory', outputDirectory, error)
+    const respond = (error) => {
+      if (error instanceof uploadPath.UploadError) {
+        Logger.warn(`[MiscController] User "${req.user.username}" upload failed (${error.statusCode}): ${error.message}`)
+        if (error.body) return res.status(error.statusCode).json(error.body)
+        // Send only a known plain-text literal rather than arbitrary exception text.
+        const message = uploadPath.PLAIN_TEXT_UPLOAD_ERRORS.find((known) => known === error.message)
+        res.type('text/plain')
+        return message ? res.status(error.statusCode).send(message) : res.sendStatus(error.statusCode)
+      }
       return res.sendStatus(500)
     }
 
-    Logger.info(`Uploading ${files.length} files to`, outputDirectory)
+    // A 409 means the destination already belongs to another item. createUploadDirectory
+    // removes only directories this request created when a later mkdir fails.
+    // The library lookup is inside the try: Express 4 does not answer a rejected async route.
+    let outputDirectory
+    let firstCreated = null
+    try {
+      const library = await Database.libraryModel.findByIdWithFolders(libraryId)
+      if (!library) {
+        return res.status(404).send('Library not found')
+      }
 
-    for (const file of files) {
-      const path = Path.join(outputDirectory, sanitizeFilename(file.name))
+      if (!req.user.checkCanAccessLibrary(library.id)) {
+        Logger.error(`[MiscController] User "${req.user.username}" attempting to upload to library "${library.id}" without access`)
+        return res.sendStatus(403)
+      }
 
-      await file
-        .mv(path)
-        .then(() => {
-          return true
-        })
-        .catch((error) => {
-          Logger.error('Failed to move file', path, error)
-          return false
-        })
+      const folder = library.libraryFolders.find((fold) => fold.id === folderId)
+      if (!folder) {
+        return res.status(404).send('Folder not found')
+      }
+
+      // Podcasts should only be one folder deep. A title that sanitizes to an empty name
+      // must not fall through to the author folder or the library folder.
+      const sanitizedTitle = sanitizeFilename(title)
+      if (!sanitizedTitle) {
+        return res.status(400).send('Invalid upload path')
+      }
+      const parentParts = library.isPodcast ? [] : [author, series].map((part) => sanitizeFilename(part)).filter(Boolean)
+      const directoryParts = [...parentParts, sanitizedTitle]
+      outputDirectory = Path.join(folder.path, ...directoryParts)
+
+      await uploadPath.assertUploadDestination(folder.path, outputDirectory, filenames)
+      firstCreated = await uploadPath.createUploadDirectory(outputDirectory)
+    } catch (error) {
+      if (!(error instanceof uploadPath.UploadError)) {
+        Logger.error('[MiscController] Failed to upload', outputDirectory, error)
+      }
+      return respond(error)
     }
 
-    res.sendStatus(200)
-  }
+    try {
+      Logger.info(`Uploading ${files.length} files to`, outputDirectory)
+      for (let i = 0; i < files.length; i++) {
+        await files[i].mv(Path.join(outputDirectory, filenames[i]))
+      }
 
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.error('[MiscController] Failed to upload', outputDirectory, error)
+      await uploadPath.rollbackFailedUpload(outputDirectory, firstCreated)
+      const notWritable = uploadPath.notWritableUploadError(error)
+      if (notWritable) return respond(notWritable)
+      return res.sendStatus(500)
+    }
+  }
   /**
    * GET: /api/tasks
    * Get tasks for task manager

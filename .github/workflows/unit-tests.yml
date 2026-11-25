@@ -34,6 +34,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install libnusqlite3
+        run: |
+          curl -fsSL -o /tmp/libnusqlite3.zip "https://github.com/mikiher/nunicode-sqlite/releases/download/v1.2/libnusqlite3-linux-x64.zip"
+          unzip -o /tmp/libnusqlite3.zip -d /tmp/nusqlite3
+          echo "NUSQLITE3_PATH=/tmp/nusqlite3/libnusqlite3.so" >> "$GITHUB_ENV"
+          rm /tmp/libnusqlite3.zip
+
       - name: Run lint
         run: npm run lint
 
