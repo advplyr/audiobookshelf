@@ -604,6 +604,8 @@
   "LabelSettingsHideSingleBookSeriesHelp": "Series that have a single book will be hidden from the series page and home page shelves.",
   "LabelSettingsHomePageBookshelfView": "Home page use bookshelf view",
   "LabelSettingsLibraryBookshelfView": "Library use bookshelf view",
+  "LabelSettingsKeepDeletedMediaProgress": "Keep progress of deleted items",
+  "LabelSettingsKeepDeletedMediaProgressHelp": "When a book or podcast episode is deleted, keep a record of your progress (title, author, finished date). Deleted books that you finished still count in your stats, and progress is restored if the same item is added back. Only applies to items deleted after enabling this setting",
   "LabelSettingsLibraryMarkAsFinishedPercentComplete": "Percent complete is greater than",
   "LabelSettingsLibraryMarkAsFinishedTimeRemaining": "Time remaining is less than (seconds)",
   "LabelSettingsLibraryMarkAsFinishedWhen": "Mark media item as finished when",

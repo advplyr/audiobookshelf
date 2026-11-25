@@ -4,6 +4,7 @@ const sequelize = require('sequelize')
 
 const Logger = require('../Logger')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 const SocketAuthority = require('../SocketAuthority')
 
 const fs = require('../libs/fsExtra')
@@ -185,6 +186,8 @@ class ApiRouter {
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:libraryItemId/:episodeId?', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
+    this.router.get('/me/deleted-progress', MeController.getDeletedMediaProgress.bind(this))
+    this.router.delete('/me/deleted-progress/:id', MeController.removeDeletedMediaProgress.bind(this))
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
@@ -372,6 +375,9 @@ class ApiRouter {
    * @param {string} libraryId
    */
   async handleDeleteLibraryItem(libraryItemId, mediaItemIds, libraryId) {
+    // Opt-in: keep a snapshot of progress (no-op when server setting keepDeletedMediaProgress is disabled)
+    await deletedMediaProgress.archive(mediaItemIds)
+
     const numProgressRemoved = await Database.mediaProgressModel.destroy({
       where: {
         mediaItemId: mediaItemIds

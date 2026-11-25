@@ -25,6 +25,7 @@ const PATCHABLE_SETTINGS_KEYS = new Set([
   'timeFormat',
   'language',
   'chromecastEnabled',
+  'keepDeletedMediaProgress',
   'sortingIgnorePrefix'
 ])
 
@@ -75,6 +76,8 @@ class ServerSettings {
 
     // Misc Flags
     this.chromecastEnabled = false
+    /** Opt-in: keep a record of progress for books/episodes that are deleted (used for stats + restored if re-added) */
+    this.keepDeletedMediaProgress = false
     this.dateFormat = 'MM/dd/yyyy'
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
@@ -143,6 +146,7 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.keepDeletedMediaProgress = !!settings.keepDeletedMediaProgress
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
@@ -255,6 +259,7 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      keepDeletedMediaProgress: this.keepDeletedMediaProgress,
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,
       language: this.language,

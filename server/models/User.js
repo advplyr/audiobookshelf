@@ -490,6 +490,17 @@ class User extends Model {
     return count > 0
   }
 
+  /**
+   * Add a restored media progress to the potentially cached user
+   * @param {import('./MediaProgress')} mediaProgress
+   */
+  static mediaProgressRestored(mediaProgress) {
+    const cachedUser = userCache.getById(mediaProgress.userId)
+    if (cachedUser?.mediaProgresses && !cachedUser.mediaProgresses.some((mp) => mp.id === mediaProgress.id)) {
+      cachedUser.mediaProgresses.push(mediaProgress)
+    }
+  }
+
   static mediaProgressRemoved(mediaProgress) {
     const cachedUser = userCache.getById(mediaProgress.userId)
     if (cachedUser) {
