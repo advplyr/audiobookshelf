@@ -2,6 +2,7 @@
   "name": "audiobookshelf",
   "version": "3.0.0-beta",
   "buildNumber": 1,
+  "clientReactRelease": "v0.2.0",
   "description": "Self-hosted audiobook and podcast server",
   "main": "dist-server/index.js",
   "scripts": {
