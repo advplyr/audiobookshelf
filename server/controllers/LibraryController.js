@@ -16,6 +16,7 @@ const naturalSort = createNewSortInstance({
 
 const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
+const AudiobookDBError = require('../providers/AudiobookDBError')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
 const RssFeedManager = require('../managers/RssFeedManager')
@@ -1248,6 +1249,9 @@ class LibraryController {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user "${req.user.username}" attempted to match library items`)
       return res.sendStatus(403)
+    }
+    if (req.library.provider === 'audiobookdb') {
+      return new AudiobookDBError('audiobookdb_search_only').sendResponse(res)
     }
     Scanner.matchLibraryItems(this, req.library)
     res.sendStatus(200)

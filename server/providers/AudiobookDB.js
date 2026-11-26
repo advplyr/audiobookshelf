@@ -1,0 +1,354 @@
+const axios = require('axios').default
+const { marked } = require('marked')
+const htmlSanitizer = require('../utils/htmlSanitizer')
+const packageJson = require('../../package.json')
+const Logger = require('../Logger')
+const AudiobookDBError = require('./AudiobookDBError')
+const { isValidASIN, timestampToSeconds, levenshteinSimilarity } = require('../utils/index')
+
+/**
+ * Serial queue on a promise tail: one request at a time, at least `interval`
+ * ms apart; an entry past its deadline skips the front without a slot.
+ */
+function createSpacedQueue(interval) {
+  let slot = Promise.resolve()
+  let lastStart = 0
+  return (fn, deadline) => {
+    const run = slot.then(async () => {
+      const now = Date.now()
+      const wait = Math.max(0, lastStart + interval - now)
+      if (now + wait >= deadline) throw new AudiobookDBError('audiobookdb_timeout')
+      if (wait) await new Promise((resolve) => setTimeout(resolve, wait))
+      const start = Date.now()
+      if (start >= deadline) throw new AudiobookDBError('audiobookdb_timeout')
+      lastStart = start
+      return fn()
+    })
+    slot = run.then(() => {}, () => {})
+    return run
+  }
+}
+
+/**
+ * Native AudiobookDB book/release search provider (https://audiobookdb.org/api,
+ * key from AUDIOBOOKDB_API_KEY). One candidate per release (recording):
+ * book-scoped fields come from the book, release-scoped fields from the
+ * release refs in the book detail response. A supplied ASIN resolves only
+ * its matchedReleaseId; a miss returns no candidates. An ASIN-shaped title
+ * (no ASIN supplied) is probed opportunistically, then falls through to the
+ * title search.
+ */
+class AudiobookDB {
+  #responseTimeout = 10000
+
+  // Cap hydrated book detail requests per search to conserve quota.
+  #maxBooksPerSearch = 5
+
+  // Relations hydrated per search hit: release refs carry each recording's
+  // Audible ASIN and other release-scoped identifiers.
+  #hydrationInclude = 'releasesExternal,people,series,genres,tags,externalItems,images'
+
+  constructor() {
+    this.baseUrl = 'https://audiobookdb.org/api'
+    this.limiter = createSpacedQueue(300)
+  }
+
+  get userAgentString() {
+    return `audiobookshelf/${packageJson.version} (https://audiobookshelf.org)`
+  }
+
+  get apiKey() {
+    return process.env.AUDIOBOOKDB_API_KEY?.trim() || ''
+  }
+
+  /**
+   * Rate-limited request to the AudiobookDB API. The deadline bounds the
+   * whole call, including queue wait: the deadline timer rejects with the
+   * typed timeout and aborts in-flight axios work; a queue entry that
+   * reaches the front past the deadline skips without a slot, so its timer
+   * settles it. `maxRedirects: 0` makes any redirect a failure, never a hop
+   * to another origin. With `expectedMiss404` a 404 is a normal identifier
+   * miss, not a failure.
+   */
+  async _request(path, method = 'GET', body = null, deadline, expectedMiss404 = false) {
+    const apiKey = this.apiKey
+    if (!apiKey || apiKey === 'anonymous') throw new AudiobookDBError('audiobookdb_key_required')
+    if (!deadline || isNaN(deadline)) deadline = Date.now() + this.#responseTimeout
+    const config = {
+      method,
+      url: `${this.baseUrl}${path}`,
+      maxRedirects: 0,
+      headers: { 'User-Agent': this.userAgentString, 'X-API-Key': apiKey }
+    }
+    if (method === 'POST') {
+      config.data = body
+      config.headers['Content-Type'] = 'application/json'
+    }
+    const controller = new AbortController()
+    const request = this.limiter(() => {
+      return axios({ ...config, timeout: Math.max(1, deadline - Date.now()), signal: controller.signal })
+        .then((res) => {
+          if (res.status >= 300) throw new Error('Unexpected AudiobookDB redirect')
+          return res.data
+        })
+        .catch((error) => {
+          if (error?.response?.status === 404 && expectedMiss404) {
+            Logger.debug(`[AudiobookDB] ${method} ${path} not found (expected identifier miss)`)
+            return null
+          }
+          const providerError = AudiobookDBError.fromResponse(error.response, error.code)
+          Logger.error(`[AudiobookDB] request failed: ${providerError.code}`)
+          throw providerError
+        })
+    }, deadline)
+    let timer
+    const deadlineTimer = new Promise((resolve, reject) => {
+      timer = setTimeout(() => {
+        controller.abort('deadline-expired')
+        reject(new AudiobookDBError('audiobookdb_timeout'))
+      }, Math.max(0, deadline - Date.now()))
+    })
+    try {
+      return await Promise.race([request, deadlineTimer])
+    } finally {
+      clearTimeout(timer)
+      controller.abort('request-settled')
+    }
+  }
+
+  /** Image URLs are storage keys that 404 bare; append a derivative name. */
+  buildCoverUrl(url) {
+    if (!url || typeof url !== 'string') return undefined
+    if (/\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(url)) return url
+    return `${url}/detail.jpg`
+  }
+
+  /** Prefer the full-resolution `sourceUrl` over any CDN derivative. */
+  #imageCover(image) {
+    if (!image || typeof image !== 'object') return undefined
+    const sourceUrl = image.sourceUrl
+    if (typeof sourceUrl === 'string' && /^https?:\/\//i.test(sourceUrl)) return sourceUrl
+    return this.buildCoverUrl(image.url)
+  }
+
+  /** Comma-join names of people with a given role. */
+  #peopleNames(people, role) {
+    const names = (Array.isArray(people) ? people : [])
+      .filter((p) => p?.role?.name === role && p?.person?.name)
+      .map((p) => p.person.name)
+    return names.length ? names.join(', ') : undefined
+  }
+
+  /** Map series to native series name + sequence only; an absent relation is unknown, never an empty set. */
+  #mapSeries(series) {
+    if (!Array.isArray(series)) return undefined
+    const mapped = []
+    for (const membership of series) {
+      const ref = membership?.series
+      if (typeof ref?.title !== 'string' || !ref.title.trim()) continue
+      const item = { series: ref.title }
+      const rawSequence = membership.position?.label ?? membership.position?.value ?? membership.ordinal
+      const sequence = typeof rawSequence === 'string' ? rawSequence.trim() : rawSequence
+      if (typeof sequence === 'number' || (typeof sequence === 'string' && sequence)) item.sequence = String(sequence)
+      mapped.push(item)
+    }
+    return mapped.length ? mapped : undefined
+  }
+
+  /** Find the itemId of an external item by category title. */
+  #externalItemId(external, categoryTitle) {
+    if (!Array.isArray(external)) return undefined
+    return external.find((e) => e?.itemId && e?.category?.title?.toLowerCase() === categoryTitle.toLowerCase())?.itemId
+  }
+
+  /** Book-scoped candidate fields; description is markdown, rendered with marked then sanitized as BookFinder does. */
+  #bookBase(book) {
+    return {
+      id: book.id,
+      title: book.title,
+      subtitle: book.subtitle,
+      description: book.description ? htmlSanitizer.sanitize(marked.parse(book.description)) : undefined,
+      author: this.#peopleNames(book.people, 'Author'),
+      // isAdult is a nullable boolean: null or absent means unknown, so only a real boolean maps to the ABS flag.
+      explicit: typeof book.isAdult === 'boolean' ? book.isAdult : undefined,
+      genres: Array.isArray(book.genres) ? book.genres.map((g) => g?.title).filter(Boolean) : undefined,
+      tags: Array.isArray(book.tags) ? book.tags.map((t) => t?.title).filter(Boolean) : undefined,
+      series: this.#mapSeries(book.series),
+      cover: this.#imageCover(book.coverImage) || this.#imageCover(book.image) || this.#imageCover(book.images?.[0])
+    }
+  }
+
+  /** Return the UTC calendar date of the release, if valid. */
+  #publishedDate(releaseDate) {
+    if (!releaseDate) return undefined
+    const date = new Date(releaseDate)
+    return date.getUTCFullYear() > 0 ? date.toISOString().slice(0, 10) : undefined
+  }
+
+  /** Convert a duration string (HH:MM:SS / MM:SS) to whole minutes. */
+  parseDurationToMinutes(duration) {
+    if (typeof duration !== 'string' || !duration.trim()) return undefined
+    const seconds = timestampToSeconds(duration)
+    if (seconds == null) return undefined
+    return Math.round(seconds / 60)
+  }
+
+  /** Release-scoped candidate fields, mapped from a BookReleaseRef. */
+  #mapRelease(bookBase, release) {
+    const publishedDate = this.#publishedDate(release.releaseDate)
+    return {
+      ...bookBase,
+      releaseId: release.id,
+      asin: this.#externalItemId(release.external, 'Audible'),
+      isbn: release.isbn,
+      narrator: this.#peopleNames(release.people, 'Narrator'),
+      publisher: release.publishers?.map((credit) => credit.creditedName || credit.name).join(', '),
+      publishedYear: publishedDate?.slice(0, 4),
+      publishedDate,
+      language: release.language?.name,
+      duration: this.parseDurationToMinutes(release.duration),
+      // The release's own cover is preferred over the book's.
+      cover: this.#imageCover(release.images?.[0]) || bookBase.cover
+    }
+  }
+
+  /** Build one candidate per release for a book. */
+  buildCandidates(book) {
+    if (!book || !book.id) return []
+    const base = this.#bookBase(book)
+    const releases = Array.isArray(book.releases) ? book.releases : []
+    const candidates = releases.filter((r) => r?.id).map((ref) => this.#mapRelease(base, ref))
+    if (!candidates.length) candidates.push(base)
+    for (const candidate of candidates) {
+      for (const key of Object.keys(candidate)) {
+        const value = candidate[key]
+        if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) delete candidate[key]
+      }
+    }
+    return candidates
+  }
+
+  /**
+   * Resolve an ASIN to its exact recording. Returns [] when the API does not
+   * name the matched release: the other releases must not be substituted.
+   */
+  async resolveByASIN(asin, deadline) {
+    // A 404 on the exact-ASIN endpoint is a normal identifier miss (unknown ASIN).
+    const data = await this._request(`/audiobooks/external/audible/${encodeURIComponent(asin)}`, 'GET', null, deadline, true)
+    if (!data?.id || !data.matchedReleaseId) return []
+    const candidate = this.buildCandidates(data).find((c) => c.releaseId === data.matchedReleaseId)
+    if (!candidate) return []
+    candidate.asin = asin
+    return [candidate]
+  }
+
+  /**
+   * Search for books and return hydrated book/release candidates in native
+   * shape. A supplied ASIN is resolved exactly and nothing else; a miss
+   * returns no candidates. An ASIN-shaped title is probed opportunistically,
+   * then falls through to the title search (a bounded variant list: short
+   * titles combine with the author to meet the API's three-character
+   * minimum). Hits are ranked with author-matching books ahead, but a
+   * mismatched manual author choice is kept, since the stored name may be
+   * inaccurate. Hydration attempts are capped by #maxBooksPerSearch, and the
+   * shared deadline rejecting with the typed timeout bounds the whole chain.
+   */
+  async search(title, author, asin, timeout = this.#responseTimeout) {
+    title = (title || '').trim()
+    author = (author || '').trim()
+    const deadline = Date.now() + timeout
+
+    const supplied = (asin || '').trim().toUpperCase()
+    if (supplied) {
+      // Exact-only identifier lookup: no title search is ever attempted.
+      if (!isValidASIN(supplied)) {
+        Logger.debug(`[AudiobookDB] search: skipping invalid explicit ASIN "${supplied}"`)
+        return []
+      }
+      return this.resolveByASIN(supplied, deadline)
+    }
+
+    if (!title) return []
+
+    // An ASIN-shaped title may be an identifier; a probe miss is a miss.
+    if (isValidASIN(title.toUpperCase())) {
+      const resolved = await this.resolveByASIN(title.toUpperCase(), deadline)
+      if (resolved.length) return resolved
+    }
+
+    // The catalog requires three characters. A short title can include the author.
+    const query = title.length < 3 ? `${title} ${author}`.trim() : title
+    if (query.length < 3) return []
+    let hits = await this._request('/search', 'POST', { q: query, type: 'books' }, deadline)
+    const mainTitle = title.replace(/[:：].*$|\s+-\s+.*$|\s+\([^)]*\)\s*$/g, '').trim()
+    if (Array.isArray(hits) && !hits.length && mainTitle.length >= 3 && mainTitle !== query) {
+      hits = await this._request('/search', 'POST', { q: mainTitle, type: 'books' }, deadline)
+    }
+    if (!Array.isArray(hits)) throw new AudiobookDBError('audiobookdb_unavailable')
+    if (!hits.length) return []
+
+    const authorNames = author.split(',').map((name) => name.trim()).filter(Boolean)
+    const sorted = authorNames.length
+      ? [...hits].sort((a, b) => Number(this.bookAuthorsContain(b, authorNames)) - Number(this.bookAuthorsContain(a, authorNames)))
+      : hits
+
+    const books = []
+    let attempts = 0
+    for (const hit of sorted) {
+      if (!hit?.id || attempts >= this.#maxBooksPerSearch) break
+      attempts += 1
+      const book = await this._request(`/books/${hit.id}?include=${this.#hydrationInclude}`, 'GET', null, deadline, true)
+      if (!book?.id) continue
+      books.push({ ...hit, ...book, series: book.series })
+    }
+    return books.flatMap((book) => this.buildCandidates(book))
+  }
+
+  /** Normalize an author name: strip diacritics, lowercase, collapse non-alphanumerics to single spaces. */
+  normalizeAuthorName(name) {
+    if (!name || typeof name !== 'string') return ''
+    return name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+  }
+
+  /**
+   * True when every requested author name matches one of the book's author
+   * credits under a tolerant token rule: LATIN single-letter initials are
+   * ignored, and every remaining requested token must appear in the credit
+   * (containment in either direction, e.g. abbreviated names, or a Levenshtein
+   * similarity of at least 0.95, e.g. diacritic/stress variants). A
+   * one-character token in a non-Latin script is a meaningful name, never a
+   * Latin initial, so it is kept. "Smith" matches "Smith, John" and a
+   * reordered "Patrick O'Brien" matches "O'Brien, Patrick"; a one-letter
+   * mutation ("Kate Reeding" vs "Kate Reading") does not.
+   */
+  #authorTokens(name) {
+    const normalized = this.normalizeAuthorName(name)
+    // A single Latin letter may be an ignorable initial; a single non-Latin
+    // letter (CJK, Cyrillic, Greek, ...) is a meaningful name token.
+    return normalized.split(' ').filter((token) => token.length > 1 || !/^[a-z]$/.test(token))
+  }
+
+  #tokenMatch(a, b) {
+    return a.includes(b) || b.includes(a) || levenshteinSimilarity(a, b) >= 0.95
+  }
+
+  bookAuthorsContain(book, authorNames) {
+    const authors = (Array.isArray(book.people) ? book.people : [])
+      .filter((p) => p?.role?.name === 'Author' && p?.person?.name)
+      .map((p) => this.#authorTokens(p.person.name))
+      .filter((tokens) => tokens.length)
+    if (!authors.length) return false
+    return authorNames.every((name) => {
+      const requestedTokens = this.#authorTokens(name)
+      if (!requestedTokens.length) return true
+      return authors.some((tokens) => requestedTokens.every((requested) => tokens.some((token) => this.#tokenMatch(token, requested))))
+    })
+  }
+}
+
+module.exports = new AudiobookDB()
