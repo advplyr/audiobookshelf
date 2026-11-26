@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+# dpkg removes the packaged files. This deletes the base-path snapshot and Next
+# cache, which are created at runtime and are not in the package file list.
+# postrm upgrade runs after the new package is unpacked, so leave the directory in place then.
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+  rm -rf /usr/share/audiobookshelf/client-react
+fi
