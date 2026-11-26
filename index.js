@@ -49,6 +49,12 @@ const SOURCE = options.source || process.env.SOURCE || 'debian'
 
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH ?? '/audiobookshelf'
 
+// v3 serves only the React client.
+if (!String(process.env.REACT_CLIENT_PATH || '').trim()) {
+  console.error('REACT_CLIENT_PATH is required')
+  process.exit(1)
+}
+
 console.log(`Running in ${process.env.NODE_ENV} mode.`)
 console.log(`Options: CONFIG_PATH=${CONFIG_PATH}, METADATA_PATH=${METADATA_PATH}, PORT=${PORT}, HOST=${HOST}, SOURCE=${SOURCE}, ROUTER_BASE_PATH=${ROUTER_BASE_PATH}`)
 
