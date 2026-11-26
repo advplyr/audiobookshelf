@@ -617,7 +617,12 @@ class LibraryItem extends Model {
     } else {
       // Make sure metadata book dir exists
       storeMetadataWithItem = false
-      await fsExtra.ensureDir(metadataPath)
+      try {
+        await fsExtra.ensureDir(metadataPath)
+      } catch (error) {
+        Logger.error(`[LibraryItem] Failed to ensure metadata directory at "${metadataPath}"`, error)
+        return null
+      }
     }
 
     const metadataFilePath = Path.join(metadataPath, `metadata.${global.ServerSettings.metadataFileFormat}`)
