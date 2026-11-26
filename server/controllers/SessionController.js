@@ -125,13 +125,22 @@ class SessionController {
       return res.sendStatus(404)
     }
 
+    // Validate "user" query
+    let userId = req.query.user
+    if (userId && !isUUID(userId)) {
+      Logger.warn(`[SessionController] getOpenSessions: Invalid "user" query string "${userId}"`)
+      userId = null
+    }
+
     const minifiedUserObjects = await Database.userModel.getMinifiedUserObjects()
-    const openSessions = this.playbackSessionManager.sessions.map((se) => {
-      return {
-        ...se.toJSON(),
-        user: minifiedUserObjects.find((u) => u.id === se.userId) || null
-      }
-    })
+    const openSessions = this.playbackSessionManager.sessions
+      .filter((se) => !userId || se.userId === userId)
+      .map((se) => {
+        return {
+          ...se.toJSON(),
+          user: minifiedUserObjects.find((u) => u.id === se.userId) || null
+        }
+      })
 
     const shareSessions = ShareManager.openSharePlaybackSessions.map((se) => se.toJSON())
 
