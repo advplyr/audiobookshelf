@@ -1,13 +1,13 @@
 ARG NUSQLITE3_DIR="/usr/local/lib/nusqlite3"
 ARG NUSQLITE3_PATH="${NUSQLITE3_DIR}/libnusqlite3.so"
 
-### STAGE 0: Build client ###
-FROM node:24-alpine AS build-client
+### STAGE 0: Fetch the pinned React client runtime. ###
+FROM node:24-alpine AS fetch-client
 
-WORKDIR /client
-COPY /client /client
-RUN npm ci && npm cache clean --force
-RUN npm run generate
+WORKDIR /fetch
+COPY package.json /fetch/package.json
+COPY scripts/fetch-client-react-runtime.js /fetch/scripts/fetch-client-react-runtime.js
+RUN node scripts/fetch-client-react-runtime.js --out /out/client-react
 
 ### STAGE 1: Compile server on the builder CPU (avoid QEMU SIGILL from tsc on arm64) ###
 FROM --platform=$BUILDPLATFORM node:24-alpine AS compile-server
@@ -63,8 +63,10 @@ RUN apk add --no-cache --update \
 
 WORKDIR /app
 
-# Copy compiled frontend and server from build stages
-COPY --from=build-client /client/dist /app/client/dist
+# The React runtime must be writable: startup rewrites the base-path placeholder
+# and Next writes its cache under .next.
+COPY --from=fetch-client /out/client-react /app/client-react
+RUN chmod -R a+rwX /app/client-react/.next
 COPY --from=build-server /server /app
 COPY --from=build-server ${NUSQLITE3_PATH} ${NUSQLITE3_PATH}
 
@@ -75,6 +77,7 @@ ENV NODE_ENV=production
 ENV CONFIG_PATH="/config"
 ENV METADATA_PATH="/metadata"
 ENV SOURCE="docker"
+ENV REACT_CLIENT_PATH="/app/client-react"
 ENV NUSQLITE3_DIR=${NUSQLITE3_DIR}
 ENV NUSQLITE3_PATH=${NUSQLITE3_PATH}
 
