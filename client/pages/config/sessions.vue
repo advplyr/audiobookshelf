@@ -427,6 +427,7 @@ export default {
     },
     updateUserFilter() {
       this.loadSessions(0)
+      this.loadOpenSessions()
     },
     prevPage() {
       this.loadSessions(this.currentPage - 1)
@@ -496,7 +497,12 @@ export default {
       this.userFilter = data.userId
     },
     async loadOpenSessions() {
-      const data = await this.$axios.$get('/api/sessions/open').catch((err) => {
+      const urlSearchParams = new URLSearchParams()
+      if (this.selectedUser) {
+        urlSearchParams.set('user', this.selectedUser)
+      }
+      const query = urlSearchParams.toString()
+      const data = await this.$axios.$get(`/api/sessions/open${query ? `?${query}` : ''}`).catch((err) => {
         console.error('Failed to load open sessions', err)
         return null
       })
