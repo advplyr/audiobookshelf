@@ -49,6 +49,10 @@ class UserCache {
   maybeInvalidate(user) {
     if (!user.fromCache) this.delete(user.id)
   }
+
+  clear() {
+    this.cache.clear()
+  }
 }
 
 const userCache = new UserCache()
@@ -461,6 +465,13 @@ class User extends Model {
         username: u.username
       }
     })
+  }
+
+  /**
+   * Drop all cached users, e.g. after the database was replaced by a backup
+   */
+  static clearCache() {
+    userCache.clear()
   }
 
   /**

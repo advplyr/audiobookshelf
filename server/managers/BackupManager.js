@@ -254,6 +254,9 @@ class BackupManager {
     // Reconnect db
     await Database.reconnect()
 
+    // Users cached from the old db would hide the restored ones and overwrite them on save
+    Database.userModel.clearCache()
+
     // Reset api cache, set hooks again
     await apiCacheManager.reset()
 
