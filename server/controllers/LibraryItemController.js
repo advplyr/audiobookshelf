@@ -14,7 +14,7 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
-const AudiobookDBError = require('../providers/AudiobookDBError')
+const AudiobookDB = require('../providers/AudiobookDB')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
@@ -527,7 +527,7 @@ class LibraryItemController {
   async match(req, res) {
     const reqBody = req.body || {}
     if (reqBody.provider === 'audiobookdb') {
-      return new AudiobookDBError('audiobookdb_search_only').sendResponse(res)
+      return new AudiobookDB.Error('audiobookdb_search_only').sendResponse(res)
     }
 
     const options = {}
@@ -770,7 +770,7 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
     if (req.body?.options?.provider === 'audiobookdb') {
-      return new AudiobookDBError('audiobookdb_search_only').sendResponse(res)
+      return new AudiobookDB.Error('audiobookdb_search_only').sendResponse(res)
     }
 
     let itemsUpdated = 0

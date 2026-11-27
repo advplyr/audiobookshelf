@@ -2,7 +2,6 @@ const http = require('http')
 const { expect } = require('chai')
 
 const provider = require('../../../server/providers/AudiobookDB')
-const AudiobookDBError = require('../../../server/providers/AudiobookDBError')
 
 const BOOK_ID = 'WQQDcMBQ3qUT'
 const MATCHED_RELEASE = 'dPL9fC7YnK8X'
@@ -186,7 +185,7 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     mergedLocation = `http://127.0.0.1:${decoy.address().port}/api/books/${BOOK_ID}`
 
     const failure = await provider.search('The Martian').catch((error) => error)
-    expect(failure).to.be.instanceOf(AudiobookDBError).and.include({ code: 'audiobookdb_unavailable', status: 503 })
+    expect(failure).to.be.instanceOf(provider.Error).and.include({ code: 'audiobookdb_unavailable', status: 503 })
     expect(redirectedKeys).to.deep.equal([])
     expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`])
   })
@@ -194,7 +193,7 @@ describe('AudiobookDB provider over loopback HTTP', function () {
   it('does not follow a second merge redirect', async () => {
     mergedLocation = `/api/books/${MERGED_BOOK}`
     const failure = await provider.search('The Martian').catch((error) => error)
-    expect(failure).to.be.instanceOf(AudiobookDBError).and.include({ code: 'audiobookdb_unavailable', status: 503 })
+    expect(failure).to.be.instanceOf(provider.Error).and.include({ code: 'audiobookdb_unavailable', status: 503 })
     expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`, `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`])
   })
 
@@ -202,7 +201,7 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     expect(await provider.search('', '', UNKNOWN_ASIN)).to.deep.equal([])
 
     const failure = await provider.search('', '', UNKNOWN_ASIN, 1).catch((error) => error)
-    expect(failure).to.be.instanceOf(AudiobookDBError)
+    expect(failure).to.be.instanceOf(provider.Error)
     expect(failure.code).to.equal('audiobookdb_timeout')
     expect(failure.status).to.equal(504)
     expect((await provider.search('', '', ASIN)).map((candidate) => candidate.releaseId)).to.deep.equal([MATCHED_RELEASE])
@@ -222,7 +221,7 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     } catch (error) {
       failure = error
     }
-    expect(failure).to.be.instanceOf(AudiobookDBError)
+    expect(failure).to.be.instanceOf(provider.Error)
     expect(failure.code).to.equal('audiobookdb_rate_limited')
     expect(failure.status).to.equal(429)
     expect(failure.retryAfter).to.equal(7)

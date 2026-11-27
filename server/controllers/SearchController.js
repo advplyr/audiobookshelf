@@ -4,7 +4,6 @@ const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const AudiobookDB = require('../providers/AudiobookDB')
-const AudiobookDBError = require('../providers/AudiobookDBError')
 const Database = require('../Database')
 const { isValidASIN, getQueryParamAsString, ValidationError, NotFoundError } = require('../utils')
 
@@ -106,7 +105,7 @@ class SearchController {
       res.json(results)
     } catch (error) {
       Logger.error(`[SearchController] findBooks: ${error.message}`)
-      if (error instanceof AudiobookDBError) return error.sendResponse(res)
+      if (error instanceof AudiobookDB.Error) return error.sendResponse(res)
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         return res.status(error.status).json({ error: error.message })
       }

@@ -16,7 +16,7 @@ const naturalSort = createNewSortInstance({
 
 const LibraryScanner = require('../scanner/LibraryScanner')
 const Scanner = require('../scanner/Scanner')
-const AudiobookDBError = require('../providers/AudiobookDBError')
+const AudiobookDB = require('../providers/AudiobookDB')
 const Database = require('../Database')
 const Watcher = require('../Watcher')
 const RssFeedManager = require('../managers/RssFeedManager')
@@ -1251,7 +1251,7 @@ class LibraryController {
       return res.sendStatus(403)
     }
     if (req.library.provider === 'audiobookdb') {
-      return new AudiobookDBError('audiobookdb_search_only').sendResponse(res)
+      return new AudiobookDB.Error('audiobookdb_search_only').sendResponse(res)
     }
     Scanner.matchLibraryItems(this, req.library)
     res.sendStatus(200)
