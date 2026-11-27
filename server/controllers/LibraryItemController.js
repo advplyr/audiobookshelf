@@ -6,6 +6,7 @@ const uaParserJs = require('../libs/uaParser')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 
 const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp, clampPositiveInt } = require('../utils/index')
@@ -1036,6 +1037,9 @@ class LibraryItemController {
       const episodeToRemove = req.libraryItem.media.podcastEpisodes.find((ep) => ep.audioFile.ino === req.params.fileid)
       // Remove episode from all playlists
       await Database.playlistModel.removeMediaItemsFromPlaylists([episodeToRemove.id])
+
+      // Opt-in: keep a snapshot of the episode progress
+      await deletedMediaProgress.archive([episodeToRemove.id])
 
       // Remove episode media progress
       const numProgressRemoved = await Database.mediaProgressModel.destroy({

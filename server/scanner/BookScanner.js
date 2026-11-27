@@ -11,6 +11,7 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 const SocketAuthority = require('../SocketAuthority')
 const BookFinder = require('../finders/BookFinder')
 const fsExtra = require('../libs/fsExtra')
@@ -634,6 +635,9 @@ class BookScanner {
         ]
       }
     })
+
+    // Opt-in: if this book was previously deleted, restore the user's progress
+    await deletedMediaProgress.restoreForBook(libraryItem.book, (libraryItem.book.bookAuthors || []).map((ba) => ba.author?.name).filter(Boolean).join(', '), libraryItem.id)
 
     // Update library filter data
     if (libraryItem.book.bookSeries?.length) {

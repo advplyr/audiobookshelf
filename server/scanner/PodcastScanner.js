@@ -4,6 +4,7 @@ const { LogLevel } = require('../utils/constants')
 const { getTitleIgnorePrefix } = require('../utils/index')
 const AudioFileScanner = require('./AudioFileScanner')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 const { filePathToPOSIX, getFileTimestampsWithIno } = require('../utils/fileUtils')
 const AudioFile = require('../objects/files/AudioFile')
 const CoverManager = require('../managers/CoverManager')
@@ -77,6 +78,8 @@ class PodcastScanner {
         hasEpisodeChanges = true
         // Remove episodes from playlists and media progress
         const episodeIds = episodesToRemove.map((ep) => ep.id)
+        // Opt-in: keep a snapshot of the episodes' progress
+        await deletedMediaProgress.archive(episodeIds)
         await Database.playlistModel.removeMediaItemsFromPlaylists(episodeIds)
         const mediaProgressRemoved = await Database.mediaProgressModel.destroy({
           where: {
@@ -160,6 +163,8 @@ class PodcastScanner {
         AudioFileScanner.setPodcastEpisodeMetadataFromAudioMetaTags(newPodcastEpisode, libraryScan)
         libraryScan.addLog(LogLevel.INFO, `New Podcast episode "${newPodcastEpisode.title}" added`)
         await newPodcastEpisode.save()
+        // Opt-in: if this episode was previously deleted, restore the user's progress
+        await deletedMediaProgress.restoreForPodcastEpisode(newPodcastEpisode, media.title, existingLibraryItem.id)
         existingPodcastEpisodes.push(newPodcastEpisode)
         hasEpisodeChanges = true
       }
@@ -354,6 +359,11 @@ class PodcastScanner {
         include: Database.podcastEpisodeModel
       }
     })
+
+    // Opt-in: restore progress for any previously deleted episodes found in this new podcast
+    for (const episode of libraryItem.podcast.podcastEpisodes || []) {
+      await deletedMediaProgress.restoreForPodcastEpisode(episode, libraryItem.podcast.title, libraryItem.id)
+    }
 
     Database.addGenresToFilterData(libraryItemData.libraryId, libraryItem.podcast.genres)
     Database.addTagsToFilterData(libraryItemData.libraryId, libraryItem.podcast.tags)

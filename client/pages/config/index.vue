@@ -16,6 +16,16 @@
             </ui-tooltip>
           </div>
 
+          <div role="article" :aria-label="$strings.LabelSettingsKeepDeletedMediaProgressHelp" class="flex items-center py-2">
+            <ui-toggle-switch :label="$strings.LabelSettingsKeepDeletedMediaProgress" v-model="newServerSettings.keepDeletedMediaProgress" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('keepDeletedMediaProgress', val)" />
+            <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsKeepDeletedMediaProgressHelp">
+              <p class="pl-4">
+                <span id="settings-keep-deleted-media-progress">{{ $strings.LabelSettingsKeepDeletedMediaProgress }}</span>
+                <span class="material-symbols icon-text">info</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div role="article" :aria-label="$strings.LabelSettingsStoreMetadataWithItemHelp" class="flex items-center py-2">
             <ui-toggle-switch :label="$strings.LabelSettingsStoreMetadataWithItem" v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
             <ui-tooltip aria-hidden="true" :text="$strings.LabelSettingsStoreMetadataWithItemHelp">

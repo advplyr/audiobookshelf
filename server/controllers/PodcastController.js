@@ -3,6 +3,7 @@ const { Request, Response, NextFunction } = require('express')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 
 const fs = require('../libs/fsExtra')
 const cron = require('../libs/nodeCron')
@@ -524,6 +525,9 @@ class PodcastController {
 
     // Remove episode from playlists
     await Database.playlistModel.removeMediaItemsFromPlaylists([episodeId])
+
+    // Opt-in: keep a snapshot of the episode progress
+    await deletedMediaProgress.archive([episode.id])
 
     // Remove media progress for this episode
     const mediaProgressRemoved = await Database.mediaProgressModel.destroy({

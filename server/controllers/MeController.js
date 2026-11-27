@@ -266,6 +266,42 @@ class MeController {
   }
 
   /**
+   * GET: /api/me/deleted-progress
+   * Progress kept for books/episodes that were deleted from the server.
+   * Only populated when the server setting keepDeletedMediaProgress is enabled.
+   * Query: ?finished=1 (finished only), ?year=YYYY (finished in year)
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async getDeletedMediaProgress(req, res) {
+    const where = { userId: req.user.id }
+    if (req.query.finished === '1' || req.query.year) where.isFinished = true
+    if (req.query.year) {
+      const year = Number(req.query.year)
+      if (!Number.isInteger(year) || year < 1970 || year > 9999) return res.status(400).send('Invalid year')
+      where.finishedAt = { [Sequelize.Op.gte]: `${year}-01-01`, [Sequelize.Op.lt]: `${year + 1}-01-01` }
+    }
+    const rows = await Database.deletedMediaProgressModel.findAll({ where, order: [['createdAt', 'DESC']] })
+    res.json({
+      enabled: !!Database.serverSettings.keepDeletedMediaProgress,
+      deletedMediaProgress: rows.map((r) => r.toJSON())
+    })
+  }
+
+  /**
+   * DELETE: /api/me/deleted-progress/:id
+   *
+   * @param {RequestWithUser} req
+   * @param {Response} res
+   */
+  async removeDeletedMediaProgress(req, res) {
+    const numRemoved = await Database.deletedMediaProgressModel.destroy({ where: { id: req.params.id, userId: req.user.id } })
+    if (!numRemoved) return res.sendStatus(404)
+    res.sendStatus(200)
+  }
+
+  /**
    * PATCH: /api/me/progress/:libraryItemId/:episodeId?
    * TODO: Update to use mediaItemId and mediaItemType
    *

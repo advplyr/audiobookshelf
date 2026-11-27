@@ -65,12 +65,35 @@ module.exports = {
   },
 
   /**
+   * Books finished in the year that have since been deleted from the server (opt-in setting keepDeletedMediaProgress)
+   *
+   * @param {string} userId
+   * @param {number} year YYYY
+   * @returns {Promise<import('../../models/DeletedMediaProgress')[]>}
+   */
+  async getDeletedBookMediaProgressFinishedForYear(userId, year) {
+    if (!Database.serverSettings?.keepDeletedMediaProgress) return []
+    return Database.deletedMediaProgressModel.findAll({
+      where: {
+        userId,
+        mediaItemType: 'book',
+        isFinished: true,
+        finishedAt: {
+          [Sequelize.Op.gte]: `${year}-01-01`,
+          [Sequelize.Op.lt]: `${year + 1}-01-01`
+        }
+      }
+    })
+  },
+
+  /**
    * @param {string} userId
    * @param {number} year YYYY
    */
   async getStatsForYear(userId, year) {
     const listeningSessions = await this.getUserListeningSessionsForYear(userId, year)
     const bookProgressesFinished = await this.getBookMediaProgressFinishedForYear(userId, year)
+    const deletedBookProgressesFinished = await this.getDeletedBookMediaProgressFinishedForYear(userId, year)
 
     let totalBookListeningTime = 0
     let totalPodcastListeningTime = 0
@@ -86,7 +109,7 @@ module.exports = {
     const finishedBooksWithCovers = []
 
     // Get finished book stats
-    const numBooksFinished = bookProgressesFinished.length
+    const numBooksFinished = bookProgressesFinished.length + deletedBookProgressesFinished.length
     let longestAudiobookFinished = null
     for (const mediaProgress of bookProgressesFinished) {
       // Grab first 5 that have a cover
@@ -100,6 +123,18 @@ module.exports = {
           title: mediaProgress.mediaItem.title,
           duration: Math.round(mediaProgress.duration),
           finishedAt: mediaProgress.finishedAt
+        }
+      }
+    }
+
+    // Books that were finished but have since been deleted still count (no cover available)
+    for (const deletedProgress of deletedBookProgressesFinished) {
+      if (deletedProgress.duration && (!longestAudiobookFinished?.duration || deletedProgress.duration > longestAudiobookFinished.duration)) {
+        longestAudiobookFinished = {
+          id: deletedProgress.originalMediaItemId,
+          title: deletedProgress.title,
+          duration: Math.round(deletedProgress.duration),
+          finishedAt: deletedProgress.finishedAt
         }
       }
     }

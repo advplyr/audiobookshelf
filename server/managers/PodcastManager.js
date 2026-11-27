@@ -2,6 +2,7 @@ const Path = require('path')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 const Database = require('../Database')
+const deletedMediaProgress = require('../utils/deletedMediaProgress')
 const Watcher = require('../Watcher')
 
 const fs = require('../libs/fsExtra')
@@ -205,6 +206,8 @@ class PodcastManager {
     }
 
     const podcastEpisode = await Database.podcastEpisodeModel.createFromRssPodcastEpisode(this.currentDownload.rssPodcastEpisode, libraryItem.media.id, audioFile)
+    // Opt-in: if this episode was previously deleted, restore the user's progress
+    await deletedMediaProgress.restoreForPodcastEpisode(podcastEpisode, libraryItem.media.title, libraryItem.id)
 
     libraryItem.libraryFiles.push(libraryFile.toJSON())
     // Re-calculating library item size because this wasnt being updated properly for podcasts in v2.20.0 and below
@@ -228,6 +231,8 @@ class PodcastManager {
         if (episodeToRemove) {
           // Remove episode from playlists
           await Database.playlistModel.removeMediaItemsFromPlaylists([episodeToRemove.id])
+          // Opt-in: keep a snapshot of the episode progress
+          await deletedMediaProgress.archive([episodeToRemove.id])
           // Remove media progress for this episode
           await Database.mediaProgressModel.destroy({
             where: {
