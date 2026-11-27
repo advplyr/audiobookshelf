@@ -211,6 +211,7 @@ class CronManager {
     // Stop and remove cron if no more library items
     if (!podcastCron.libraryItemIds.length) {
       this.removePodcastEpisodeCron(podcastCron)
+      this.podcastCronExpressionsExecuting = this.podcastCronExpressionsExecuting.filter((exp) => exp !== expression)
       return
     }
 
