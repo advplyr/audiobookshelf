@@ -1,0 +1,133 @@
+name: Debian package
+
+# Build the .deb, smoke-test it, and publish it to the apt archive. The apt archive defaults to
+# advplyr/audiobookshelf-ppa (the Pages URL already in sources.list). Set
+# APT_ARCHIVE_REPOSITORY when that repo moves, or to point a test run at a
+# scratch archive.
+#
+# Build and smoke-test use none of the settings below.
+#
+# apt-archive publish:
+#   secret PPA_REPO_TOKEN — contents write on the apt archive repo.
+#   secret GPG_PRIVATE_KEY — armored private key matching the archive KEY.gpg.
+#   secret GPG_PASSPHRASE — passphrase for GPG_PRIVATE_KEY, when the key has one.
+#   variable APT_ARCHIVE_REPOSITORY — owner/repo of the apt archive.
+#     Default advplyr/audiobookshelf-ppa.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: debian-package
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install packager tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq fakeroot
+          npm install -g @yao-pkg/pkg
+
+      - name: Build the Debian package
+        id: package
+        run: |
+          set -euo pipefail
+          bash build/linuxpackager
+          version="$(jq -r '.version' package.json)"
+          deb="dist/audiobookshelf_${version}_amd64.deb"
+          if [ ! -f "$deb" ]; then
+            echo "Expected package was not produced: $deb"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test the package
+        run: bash build/smoke-test-deb.sh "dist/audiobookshelf_${{ steps.package.outputs.version }}_amd64.deb"
+
+      - name: Upload the package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: dist/audiobookshelf_${{ steps.package.outputs.version }}_amd64.deb
+          retention-days: 14
+          if-no-files-found: error
+
+  publish-apt-archive:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the server repo
+        uses: actions/checkout@v4
+
+      - name: Require the PPA credentials
+        env:
+          PPA_REPO_TOKEN: ${{ secrets.PPA_REPO_TOKEN }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PPA_REPO_TOKEN" ]; then
+            echo "PPA_REPO_TOKEN is required. The workflow token cannot push to ${{ vars.APT_ARCHIVE_REPOSITORY || 'advplyr/audiobookshelf-ppa' }}."
+            exit 1
+          fi
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "GPG_PRIVATE_KEY is required to sign the apt archive."
+            exit 1
+          fi
+
+      - name: Check out the apt archive
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.APT_ARCHIVE_REPOSITORY || 'advplyr/audiobookshelf-ppa' }}
+          token: ${{ secrets.PPA_REPO_TOKEN }}
+          path: ppa
+          fetch-depth: 1
+
+      - name: Download the Debian package
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-package
+          path: dist
+
+      - name: Install apt archive tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev gnupg
+
+      - name: Add the package and sign the index
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          cp "dist/audiobookshelf_${{ needs.build.outputs.version }}_amd64.deb" ppa/
+          bash build/update-apt-archive.sh ppa
+
+      - name: Commit and push the apt archive
+        working-directory: ppa
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- Packages Packages.gz Release Release.gpg InRelease "audiobookshelf_${{ needs.build.outputs.version }}_amd64.deb"
+          git commit -m "Publish audiobookshelf ${{ needs.build.outputs.version }}"
+          git push
