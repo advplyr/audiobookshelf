@@ -1,7 +1,7 @@
 const errors = {
-  audiobookdb_search_only: [400, 'AudiobookDB is available for manual book search only.'],
+  audiobookdb_search_only: [400, 'AudiobookDB is available for book metadata search only.'],
   audiobookdb_key_required: [503, 'Set AUDIOBOOKDB_API_KEY on the server using a key from your AudiobookDB account.'],
-  audiobookdb_auth: [502, 'AudiobookDB rejected the server API key. Check AUDIOBOOKDB_API_KEY.'],
+  audiobookdb_auth: [502, 'AudiobookDB refused access. Check AUDIOBOOKDB_API_KEY and your AudiobookDB account status.'],
   audiobookdb_timeout: [504, 'The AudiobookDB search took too long. Please try again.'],
   audiobookdb_rate_limited: [429, 'AudiobookDB request or account quota limit reached.'],
   audiobookdb_unavailable: [503, 'AudiobookDB is unavailable. Please try again later.']

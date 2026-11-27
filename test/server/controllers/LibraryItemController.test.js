@@ -5,6 +5,7 @@ const sinon = require('sinon')
 const Database = require('../../../server/Database')
 const ApiRouter = require('../../../server/routers/ApiRouter')
 const LibraryItemController = require('../../../server/controllers/LibraryItemController')
+const Scanner = require('../../../server/scanner/Scanner')
 const ApiCacheManager = require('../../../server/managers/ApiCacheManager')
 const Auth = require('../../../server/Auth')
 const Logger = require('../../../server/Logger')
@@ -297,6 +298,69 @@ describe('LibraryItemController', () => {
       }
       await LibraryItemController.batchDelete.bind(apiRouter)(fakeReq, fakeRes)
       expect(fakeRes.sendStatus.calledWith(403)).to.be.true
+    })
+  })
+
+  describe('audiobookdb provider guard', () => {
+    let library
+    let libraryItem
+
+    beforeEach(async () => {
+      library = await Database.libraryModel.create({ name: 'ABDB Library', mediaType: 'book', provider: 'audiobookdb' })
+      const libraryFolder = await Database.libraryFolderModel.create({ path: '/abdb-lib', libraryId: library.id })
+      const book = await Database.bookModel.create({ title: 'ABDB Book', audioFiles: [], tags: [], narrators: [], genres: [], chapters: [] })
+      libraryItem = await Database.libraryItemModel.create({
+        libraryFiles: [],
+        mediaId: book.id,
+        mediaType: 'book',
+        libraryId: library.id,
+        libraryFolderId: libraryFolder.id
+      })
+    })
+
+    function makeRes() {
+      return {
+        status: sinon.stub().returnsThis(),
+        json: sinon.spy(),
+        sendStatus: sinon.spy()
+      }
+    }
+
+    function expectSearchOnlyError(res) {
+      expect(res.status.calledOnceWith(400)).to.be.true
+      expect(res.json.calledOnce).to.be.true
+      expect(res.json.firstCall.args[0].code).to.equal('audiobookdb_search_only')
+      expect(res.sendStatus.called).to.be.false
+    }
+
+    it('match rejects an explicit audiobookdb provider without matching', async () => {
+      const quickMatchStub = sinon.stub(Scanner, 'quickMatchLibraryItem')
+      const res = makeRes()
+      const req = {
+        body: { provider: 'audiobookdb' },
+        libraryItem
+      }
+
+      await LibraryItemController.match.bind(apiRouter)(req, res)
+
+      expectSearchOnlyError(res)
+      expect(quickMatchStub.called).to.be.false
+    })
+
+    it('batchQuickMatch rejects an explicit audiobookdb provider without matching', async () => {
+      const quickMatchStub = sinon.stub(Scanner, 'quickMatchLibraryItem')
+      const findAllStub = sinon.stub(Database.libraryItemModel, 'findAllExpandedWhere')
+      const res = makeRes()
+      const req = {
+        body: { libraryItemIds: [libraryItem.id], options: { provider: 'audiobookdb' } },
+        user: { username: 'admin', isAdminOrUp: true }
+      }
+
+      await LibraryItemController.batchQuickMatch.bind(apiRouter)(req, res)
+
+      expectSearchOnlyError(res)
+      expect(findAllStub.called).to.be.false
+      expect(quickMatchStub.called).to.be.false
     })
   })
 })

@@ -7,8 +7,13 @@ const AudiobookDBError = require('../../../server/providers/AudiobookDBError')
 const BOOK_ID = 'WQQDcMBQ3qUT'
 const MATCHED_RELEASE = 'dPL9fC7YnK8X'
 const COMPETING_RELEASE = 'RAffFyqchypK'
+const MERGED_BOOK = 'LoseBook0001'
+const OTHER_BOOK = 'NextBook0001'
 const ASIN = 'B00B5HZGUG'
+const COMPETING_ASIN = 'B00COMPET1'
 const UNKNOWN_ASIN = 'B00NOPE999'
+const BOOK_INCLUDE = '?include=releasesExternal,people,series,genres,tags,externalItems,images'
+const releaseCover = { sourceUrl: 'https://example.invalid/first-release.jpg' }
 
 // BookDTO from GET /books/{id}: one candidate per BookReleaseRef recording.
 // The description mixes safe Markdown with markup a full render must drop.
@@ -18,9 +23,13 @@ const book = {
   description: 'The **Martian** log survives.\n\n<script>alert("unsafe")</script>\n\nA [link](javascript:alert(1)) and the rest.',
   people: [{ role: { name: 'Author' }, person: { id: 'a1', name: 'Andy Weir' } }],
   genres: [{ id: 'g1', title: 'Science' }],
+  series: [{ series: { title: 'Mission logs' }, ordinal: '2.5', position: { label: 'Books 2.5–3', sortKey: 2.5 } }, { series: { title: 'Audio editions' }, position: { label: 'Book 7', sortKey: 7 } }],
+  coverImage: releaseCover,
+  images: [releaseCover],
   releases: [
     {
       id: MATCHED_RELEASE,
+      images: [releaseCover],
       duration: '10:53:35',
       releaseDate: '2013-03-22T00:00:00Z',
       publishers: [{ id: 'p1', name: 'Podium Publishing', creditedName: 'Podium Publishing' }],
@@ -36,7 +45,7 @@ const book = {
       publishers: [{ id: 'p2', name: 'Audible Studios' }],
       language: { name: 'English' },
       people: [{ role: { name: 'Narrator' }, person: { id: 'n2', name: 'Wil Wheaton' } }],
-      external: [{ id: 'e2', itemId: 'B00COMPET1', category: { title: 'Audible' } }]
+      external: [{ id: 'e2', itemId: COMPETING_ASIN, category: { title: 'Audible' } }]
     }
   ]
 }
@@ -52,6 +61,8 @@ describe('AudiobookDB provider over loopback HTTP', function () {
   let requests
   let rateLimited
   let omitMatchedRelease
+  let mergedLocation
+  let decoy
 
   beforeEach(async () => {
     savedBaseUrl = provider.baseUrl
@@ -60,24 +71,30 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     requests = []
     rateLimited = false
     omitMatchedRelease = false
+    mergedLocation = null
+    decoy = null
     server = http.createServer((req, res) => {
-      // Real transport: paths are recorded as the provider sent them.
       const url = new URL(req.url, 'http://127.0.0.1')
-      const path = url.pathname.replace(/\/{2,}/g, '/')
-      requests.push(`${req.method} ${path}`)
+      const path = url.pathname
+      requests.push(`${req.method} ${path}${url.search}`)
       const send = (status, body, headers = {}) => {
         res.writeHead(status, { 'Content-Type': 'application/json', ...headers })
         res.end(JSON.stringify(body))
       }
       if (path === '/api/search') {
         if (rateLimited) return send(429, { errors: [{ detail: 'quota exceeded' }] }, { 'Retry-After': '7' })
-        return send(200, searchHits)
+        const hits = mergedLocation ? [{ id: MERGED_BOOK, title: book.title }, ...searchHits, { id: OTHER_BOOK, title: 'Another book' }] : searchHits
+        return send(200, hits)
       }
       const exact = path.match(/^\/api\/audiobooks\/external\/audible\/([^/]+)$/)
       if (exact) {
-        if (decodeURIComponent(exact[1]) !== ASIN) return send(404, { message: 'not found' })
-        return send(200, omitMatchedRelease ? { ...book } : { ...book, matchedReleaseId: MATCHED_RELEASE })
+        const asin = decodeURIComponent(exact[1])
+        const matchedReleaseId = asin === ASIN ? MATCHED_RELEASE : asin === COMPETING_ASIN ? COMPETING_RELEASE : null
+        if (!matchedReleaseId) return send(404, { message: 'not found' })
+        return send(200, omitMatchedRelease ? book : { ...book, matchedReleaseId })
       }
+      if (path === `/api/books/${MERGED_BOOK}` && mergedLocation) return send(301, null, { Location: mergedLocation })
+      if (path === `/api/books/${OTHER_BOOK}`) return send(200, { id: OTHER_BOOK, title: 'Another book' })
       if (path === `/api/books/${BOOK_ID}`) return send(200, book)
       return send(404, { message: 'not found' })
     })
@@ -89,9 +106,10 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     provider.baseUrl = savedBaseUrl
     if (previousApiKey === undefined) delete process.env.AUDIOBOOKDB_API_KEY
     else process.env.AUDIOBOOKDB_API_KEY = previousApiKey
-    if (server) {
-      server.closeAllConnections?.()
-      await new Promise((resolve) => server.close(resolve))
+    for (const listener of [server, decoy]) {
+      if (!listener) continue
+      listener.closeAllConnections()
+      await new Promise((resolve) => listener.close(resolve))
     }
   })
 
@@ -108,7 +126,14 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     })
     expect(results[0].releaseId).to.not.equal(COMPETING_RELEASE)
     expect(results[0].narrator).to.not.contain('Wil Wheaton')
+    expect(results[0].cover).to.equal(releaseCover.sourceUrl)
     expect(requests).to.deep.equal([`GET /api/audiobooks/external/audible/${ASIN}`])
+  })
+
+  it('does not give an exact recording another release’s fallback cover', async () => {
+    const results = await provider.search('', '', COMPETING_ASIN)
+    expect(results.map(({ releaseId }) => releaseId)).to.deep.equal([COMPETING_RELEASE])
+    expect(results[0]).not.to.have.property('cover')
   })
 
   it('returns no candidate when the exact ASIN names no matched release, and does not title-search', async () => {
@@ -139,9 +164,38 @@ describe('AudiobookDB provider over loopback HTTP', function () {
     expect(candidate.description).to.include('and the rest.')
     expect(candidate.description).to.not.include('<script')
     expect(candidate.description).to.not.include('javascript:')
-    expect(requests).to.have.length(2)
-    expect(requests[0]).to.equal('POST /api/search')
-    expect(requests[1]).to.equal(`GET /api/books/${BOOK_ID}`)
+    expect(candidate.descriptionPlain).to.include('The Martian log survives.').and.include('and the rest.').and.not.include('<')
+    expect(candidate.series).to.deep.equal([{ series: 'Mission logs', sequence: '2.5' }, { series: 'Audio editions', sequence: '7' }])
+    expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${BOOK_ID}${BOOK_INCLUDE}`])
+  })
+
+  it('uses the merged book once and keeps the other search results', async () => {
+    mergedLocation = `/api/books/${BOOK_ID}`
+    const results = await provider.search('The Martian')
+    expect(results.map(({ id, releaseId }) => [id, releaseId])).to.deep.equal([[BOOK_ID, MATCHED_RELEASE], [BOOK_ID, COMPETING_RELEASE], [OTHER_BOOK, undefined]])
+    expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`, `GET /api/books/${BOOK_ID}${BOOK_INCLUDE}`, `GET /api/books/${OTHER_BOOK}${BOOK_INCLUDE}`])
+  })
+
+  it('does not send a request to a different redirect origin', async () => {
+    const redirectedKeys = []
+    decoy = http.createServer((req, res) => {
+      redirectedKeys.push(req.headers['x-api-key'])
+      res.end('{}')
+    })
+    await new Promise((resolve) => decoy.listen(0, '127.0.0.1', resolve))
+    mergedLocation = `http://127.0.0.1:${decoy.address().port}/api/books/${BOOK_ID}`
+
+    const failure = await provider.search('The Martian').catch((error) => error)
+    expect(failure).to.be.instanceOf(AudiobookDBError).and.include({ code: 'audiobookdb_unavailable', status: 503 })
+    expect(redirectedKeys).to.deep.equal([])
+    expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`])
+  })
+
+  it('does not follow a second merge redirect', async () => {
+    mergedLocation = `/api/books/${MERGED_BOOK}`
+    const failure = await provider.search('The Martian').catch((error) => error)
+    expect(failure).to.be.instanceOf(AudiobookDBError).and.include({ code: 'audiobookdb_unavailable', status: 503 })
+    expect(requests).to.deep.equal(['POST /api/search', `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`, `GET /api/books/${MERGED_BOOK}${BOOK_INCLUDE}`])
   })
 
   it('skips a request with no time left for its slot and serves the next search', async () => {

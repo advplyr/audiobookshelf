@@ -6,9 +6,12 @@ const Logger = require('../Logger')
 const AudiobookDBError = require('./AudiobookDBError')
 const { isValidASIN, timestampToSeconds, levenshteinSimilarity } = require('../utils/index')
 
+const API_ORIGIN = 'https://api.audiobookdb.org'
+const WEBSITE_ORIGIN = 'https://audiobookdb.org'
+
 /**
- * Serial queue on a promise tail: one request at a time, at least `interval`
- * ms apart; an entry past its deadline skips the front without a slot.
+ * Unlike p-throttle, this queue can skip expired work without spending a slot.
+ * Requests run one at a time, with at least `interval` ms between starts.
  */
 function createSpacedQueue(interval) {
   let slot = Promise.resolve()
@@ -30,7 +33,7 @@ function createSpacedQueue(interval) {
 }
 
 /**
- * Native AudiobookDB book/release search provider (https://audiobookdb.org/api,
+ * Native AudiobookDB book/release search provider (https://api.audiobookdb.org/api,
  * key from AUDIOBOOKDB_API_KEY). One candidate per release (recording):
  * book-scoped fields come from the book, release-scoped fields from the
  * release refs in the book detail response. A supplied ASIN resolves only
@@ -49,7 +52,7 @@ class AudiobookDB {
   #hydrationInclude = 'releasesExternal,people,series,genres,tags,externalItems,images'
 
   constructor() {
-    this.baseUrl = 'https://audiobookdb.org/api'
+    this.baseUrl = `${API_ORIGIN}/api`
     this.limiter = createSpacedQueue(300)
   }
 
@@ -66,14 +69,12 @@ class AudiobookDB {
    * whole call, including queue wait: the deadline timer rejects with the
    * typed timeout and aborts in-flight axios work; a queue entry that
    * reaches the front past the deadline skips without a slot, so its timer
-   * settles it. `maxRedirects: 0` makes any redirect a failure, never a hop
-   * to another origin. With `expectedMiss404` a 404 is a normal identifier
-   * miss, not a failure.
+   * settles it. Axios never follows redirects. Book hydration can inspect one
+   * merged-book response and make a separate request through this queue.
    */
-  async _request(path, method = 'GET', body = null, deadline, expectedMiss404 = false) {
+  async _request(path, method, body, deadline, { expectedMiss404 = false, allowBookRedirect = false } = {}) {
     const apiKey = this.apiKey
-    if (!apiKey || apiKey === 'anonymous') throw new AudiobookDBError('audiobookdb_key_required')
-    if (!deadline || isNaN(deadline)) deadline = Date.now() + this.#responseTimeout
+    if (!apiKey) throw new AudiobookDBError('audiobookdb_key_required')
     const config = {
       method,
       url: `${this.baseUrl}${path}`,
@@ -87,11 +88,9 @@ class AudiobookDB {
     const controller = new AbortController()
     const request = this.limiter(() => {
       return axios({ ...config, timeout: Math.max(1, deadline - Date.now()), signal: controller.signal })
-        .then((res) => {
-          if (res.status >= 300) throw new Error('Unexpected AudiobookDB redirect')
-          return res.data
-        })
         .catch((error) => {
+          if (controller.signal.reason === 'deadline-expired') throw new AudiobookDBError('audiobookdb_timeout')
+          if (error?.response?.status === 301 && allowBookRedirect) return error.response
           if (error?.response?.status === 404 && expectedMiss404) {
             Logger.debug(`[AudiobookDB] ${method} ${path} not found (expected identifier miss)`)
             return null
@@ -114,6 +113,32 @@ class AudiobookDB {
       clearTimeout(timer)
       controller.abort('request-settled')
     }
+  }
+
+  async #getBook(id, deadline) {
+    const include = `?include=${this.#hydrationInclude}`
+    const path = `/books/${encodeURIComponent(id)}${include}`
+    const response = await this._request(path, 'GET', null, deadline, { expectedMiss404: true, allowBookRedirect: true })
+    if (response?.status !== 301) return response?.data
+
+    // The catalog can use its website origin in Location. Extract only the
+    // winner ID and keep the original API host, query, queue and deadline.
+    const location = response.headers.location
+    let winner
+    if (location) {
+      try {
+        const source = new URL(`${this.baseUrl}${path}`)
+        const target = new URL(location, source)
+        if (target.origin === source.origin || (source.origin === API_ORIGIN && target.origin === WEBSITE_ORIGIN)) {
+          winner = /^\/api\/books\/([a-zA-Z0-9]{12})$/.exec(target.pathname)?.[1]
+        }
+      } catch {
+        // Malformed Location is an upstream failure, not a catalog miss.
+      }
+    }
+    if (!winner) throw new AudiobookDBError('audiobookdb_unavailable')
+    const merged = await this._request(`/books/${winner}${include}`, 'GET', null, deadline, { expectedMiss404: true })
+    return merged?.data
   }
 
   /** Image URLs are storage keys that 404 bare; append a derivative name. */
@@ -147,7 +172,7 @@ class AudiobookDB {
       const ref = membership?.series
       if (typeof ref?.title !== 'string' || !ref.title.trim()) continue
       const item = { series: ref.title }
-      const rawSequence = membership.position?.label ?? membership.position?.value ?? membership.ordinal
+      const rawSequence = membership.ordinal ?? membership.position?.sortKey ?? membership.position?.label
       const sequence = typeof rawSequence === 'string' ? rawSequence.trim() : rawSequence
       if (typeof sequence === 'number' || (typeof sequence === 'string' && sequence)) item.sequence = String(sequence)
       mapped.push(item)
@@ -163,18 +188,19 @@ class AudiobookDB {
 
   /** Book-scoped candidate fields; description is markdown, rendered with marked then sanitized as BookFinder does. */
   #bookBase(book) {
+    const description = book.description ? htmlSanitizer.sanitize(marked.parse(book.description)) : undefined
     return {
       id: book.id,
       title: book.title,
       subtitle: book.subtitle,
-      description: book.description ? htmlSanitizer.sanitize(marked.parse(book.description)) : undefined,
+      description,
+      descriptionPlain: description ? htmlSanitizer.stripAllTags(description) : undefined,
       author: this.#peopleNames(book.people, 'Author'),
       // isAdult is a nullable boolean: null or absent means unknown, so only a real boolean maps to the ABS flag.
       explicit: typeof book.isAdult === 'boolean' ? book.isAdult : undefined,
       genres: Array.isArray(book.genres) ? book.genres.map((g) => g?.title).filter(Boolean) : undefined,
       tags: Array.isArray(book.tags) ? book.tags.map((t) => t?.title).filter(Boolean) : undefined,
-      series: this.#mapSeries(book.series),
-      cover: this.#imageCover(book.coverImage) || this.#imageCover(book.image) || this.#imageCover(book.images?.[0])
+      series: this.#mapSeries(book.series)
     }
   }
 
@@ -207,8 +233,8 @@ class AudiobookDB {
       publishedDate,
       language: release.language?.name,
       duration: this.parseDurationToMinutes(release.duration),
-      // The release's own cover is preferred over the book's.
-      cover: this.#imageCover(release.images?.[0]) || bookBase.cover
+      // The catalog's book cover can come from a different release.
+      cover: this.#imageCover(release.images?.[0])
     }
   }
 
@@ -218,7 +244,7 @@ class AudiobookDB {
     const base = this.#bookBase(book)
     const releases = Array.isArray(book.releases) ? book.releases : []
     const candidates = releases.filter((r) => r?.id).map((ref) => this.#mapRelease(base, ref))
-    if (!candidates.length) candidates.push(base)
+    if (!candidates.length) candidates.push({ ...base, cover: this.#imageCover(book.coverImage) || this.#imageCover(book.image) || this.#imageCover(book.images?.[0]) })
     for (const candidate of candidates) {
       for (const key of Object.keys(candidate)) {
         const value = candidate[key]
@@ -234,7 +260,7 @@ class AudiobookDB {
    */
   async resolveByASIN(asin, deadline) {
     // A 404 on the exact-ASIN endpoint is a normal identifier miss (unknown ASIN).
-    const data = await this._request(`/audiobooks/external/audible/${encodeURIComponent(asin)}`, 'GET', null, deadline, true)
+    const data = (await this._request(`/audiobooks/external/audible/${encodeURIComponent(asin)}`, 'GET', null, deadline, { expectedMiss404: true }))?.data
     if (!data?.id || !data.matchedReleaseId) return []
     const candidate = this.buildCandidates(data).find((c) => c.releaseId === data.matchedReleaseId)
     if (!candidate) return []
@@ -279,10 +305,10 @@ class AudiobookDB {
     // The catalog requires three characters. A short title can include the author.
     const query = title.length < 3 ? `${title} ${author}`.trim() : title
     if (query.length < 3) return []
-    let hits = await this._request('/search', 'POST', { q: query, type: 'books' }, deadline)
+    let { data: hits } = await this._request('/search', 'POST', { q: query, type: 'books' }, deadline)
     const mainTitle = title.replace(/[:：].*$|\s+-\s+.*$|\s+\([^)]*\)\s*$/g, '').trim()
     if (Array.isArray(hits) && !hits.length && mainTitle.length >= 3 && mainTitle !== query) {
-      hits = await this._request('/search', 'POST', { q: mainTitle, type: 'books' }, deadline)
+      hits = (await this._request('/search', 'POST', { q: mainTitle, type: 'books' }, deadline)).data
     }
     if (!Array.isArray(hits)) throw new AudiobookDBError('audiobookdb_unavailable')
     if (!hits.length) return []
@@ -296,10 +322,11 @@ class AudiobookDB {
     let attempts = 0
     for (const hit of sorted) {
       if (!hit?.id || attempts >= this.#maxBooksPerSearch) break
+      if (books.some((book) => book.id === hit.id)) continue
       attempts += 1
-      const book = await this._request(`/books/${hit.id}?include=${this.#hydrationInclude}`, 'GET', null, deadline, true)
-      if (!book?.id) continue
-      books.push({ ...hit, ...book, series: book.series })
+      const book = await this.#getBook(hit.id, deadline)
+      if (!book?.id || books.some((existing) => existing.id === book.id)) continue
+      books.push(book.id === hit.id ? { ...hit, ...book, series: book.series } : book)
     }
     return books.flatMap((book) => this.buildCandidates(book))
   }
