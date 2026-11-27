@@ -14,6 +14,7 @@ const { getAudioMimeTypeFromExtname, encodeUriPath } = require('../utils/fileUti
 const LibraryItemScanner = require('../scanner/LibraryItemScanner')
 const AudioFileScanner = require('../scanner/AudioFileScanner')
 const Scanner = require('../scanner/Scanner')
+const AudiobookDB = require('../providers/AudiobookDB')
 
 const RssFeedManager = require('../managers/RssFeedManager')
 const CacheManager = require('../managers/CacheManager')
@@ -525,6 +526,9 @@ class LibraryItemController {
    */
   async match(req, res) {
     const reqBody = req.body || {}
+    if (reqBody.provider === 'audiobookdb') {
+      return new AudiobookDB.Error('audiobookdb_search_only').sendResponse(res)
+    }
 
     const options = {}
     const matchOptions = ['provider', 'title', 'author', 'isbn', 'asin']
@@ -764,6 +768,9 @@ class LibraryItemController {
     if (!req.user.isAdminOrUp) {
       Logger.warn(`Non-admin user "${req.user.username}" other than admin attempted to batch quick match library items`)
       return res.sendStatus(403)
+    }
+    if (req.body?.options?.provider === 'audiobookdb') {
+      return new AudiobookDB.Error('audiobookdb_search_only').sendResponse(res)
     }
 
     let itemsUpdated = 0

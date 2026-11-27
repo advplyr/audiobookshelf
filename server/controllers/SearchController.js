@@ -3,6 +3,7 @@ const Logger = require('../Logger')
 const BookFinder = require('../finders/BookFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
+const AudiobookDB = require('../providers/AudiobookDB')
 const Database = require('../Database')
 const { isValidASIN, getQueryParamAsString, ValidationError, NotFoundError } = require('../utils')
 
@@ -88,6 +89,13 @@ class SearchController {
       const provider = getQueryParamAsString(query, 'provider', 'google')
       const title = getQueryParamAsString(query, 'title', '')
       const author = getQueryParamAsString(query, 'author', '')
+      if (provider === 'audiobookdb') {
+        const asin = getQueryParamAsString(query, 'asin', '').trim().toUpperCase()
+        if (asin && !isValidASIN(asin)) throw new ValidationError('asin', 'is invalid')
+        if (!asin && !title.trim()) throw new ValidationError('title', 'is required without an ASIN')
+        const results = await AudiobookDB.search(title.slice(0, 500), author.slice(0, 500), asin)
+        return res.json(results)
+      }
       const id = getQueryParamAsString(query, 'id', undefined)
 
       // Fetch library item
@@ -97,6 +105,7 @@ class SearchController {
       res.json(results)
     } catch (error) {
       Logger.error(`[SearchController] findBooks: ${error.message}`)
+      if (error instanceof AudiobookDB.Error) return error.sendResponse(res)
       if (error instanceof ValidationError || error instanceof NotFoundError) {
         return res.status(error.status).json({ error: error.message })
       }

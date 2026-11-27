@@ -4,6 +4,7 @@ const sinon = require('sinon')
 
 const Database = require('../../../server/Database')
 const LibraryController = require('../../../server/controllers/LibraryController')
+const Scanner = require('../../../server/scanner/Scanner')
 const zipHelpers = require('../../../server/utils/zipHelpers')
 const Logger = require('../../../server/Logger')
 
@@ -174,5 +175,44 @@ describe('LibraryController.downloadMultiple', () => {
     const pathObjects = zipHelpers.zipDirectoriesPipe.firstCall.args[0]
     expect(pathObjects).to.have.length(1)
     expect(pathObjects[0].path).to.equal('/test-lib/allowed')
+  })
+})
+
+describe('LibraryController.matchAll', () => {
+  let library
+
+  beforeEach(async () => {
+    global.ServerSettings = {}
+    Database.sequelize = new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+    Database.sequelize.uppercaseFirst = (str) => (str ? `${str[0].toUpperCase()}${str.substr(1)}` : '')
+    await Database.buildModels()
+
+    library = await Database.libraryModel.create({ name: 'ABDB Library', mediaType: 'book', provider: 'audiobookdb' })
+  })
+
+  afterEach(async () => {
+    sinon.restore()
+    await Database.sequelize.sync({ force: true })
+  })
+
+  it('rejects a stored audiobookdb provider without starting a match scan', async () => {
+    const matchLibraryItemsStub = sinon.stub(Scanner, 'matchLibraryItems')
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+      sendStatus: sinon.spy()
+    }
+    const req = {
+      library,
+      user: { username: 'admin', isAdminOrUp: true }
+    }
+
+    await LibraryController.matchAll(req, res)
+
+    expect(res.status.calledOnceWith(400)).to.be.true
+    expect(res.json.calledOnce).to.be.true
+    expect(res.json.firstCall.args[0].code).to.equal('audiobookdb_search_only')
+    expect(matchLibraryItemsStub.called).to.be.false
+    expect(res.sendStatus.called).to.be.false
   })
 })
