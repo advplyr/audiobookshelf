@@ -43,6 +43,9 @@ const inputMetadata = options.metadata ? Path.resolve(options.metadata) : null
 
 const PORT = options.port || process.env.PORT || 3333
 const HOST = options.host || process.env.HOST
+// Keep process.env in sync so the embedded React client calls this server when CLI flags are used.
+process.env.PORT = String(PORT)
+if (HOST) process.env.HOST = HOST
 const CONFIG_PATH = inputConfig || process.env.CONFIG_PATH || Path.resolve('config')
 const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve('metadata')
 const SOURCE = options.source || process.env.SOURCE || 'debian'
