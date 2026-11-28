@@ -15,7 +15,7 @@ on:
       - 'v*.*.*'
     # Only build when files in these directories have been changed
     paths:
-      - client/**
+      - scripts/fetch-client-react-runtime.js
       - server/**
       - index.js
       - package.json

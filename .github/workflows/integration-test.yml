@@ -7,12 +7,13 @@ on:
       - 'dependabot/**' # Don't run dependabot branches, as they are already covered by pull requests
     # Only build when files in these directories have been changed
     paths:
-      - client/**
       - server/**
       - test/**
       - index.js
       - package.json
       - tsconfig.server.json
+      - scripts/fetch-client-react-runtime.js
+      - .github/workflows/integration-test.yml
 
 jobs:
   build:
@@ -30,24 +31,19 @@ jobs:
       - name: install pkg (using yao-pkg fork for targeting node24)
         run: npm install -g @yao-pkg/pkg
 
-      - name: get client dependencies
-        working-directory: client
-        run: npm ci
-
-      - name: build client
-        working-directory: client
-        run: npm run generate
-
       - name: get server dependencies and compile server
         run: npm ci && npm run build:server && npm prune --omit=dev
 
       - name: build binary
-        run: pkg --config package.json -t node24-linux-x64 -o audiobookshelf dist-server/index.js
+        run: pkg --config package.json -t node24-linux-x64 -o dist/pkg/audiobookshelf dist-server/index.js
+
+      - name: fetch the React client runtime
+        run: node scripts/fetch-client-react-runtime.js --out dist/pkg/client-react
 
       - name: run audiobookshelf
         run: |
-          ./audiobookshelf &
+          REACT_CLIENT_PATH="$PWD/dist/pkg/client-react" ./dist/pkg/audiobookshelf &
           sleep 5
 
       - name: test if server is available
-        run: curl -sf http://127.0.0.1:3333 | grep Audiobookshelf
+        run: curl -sf --retry 30 --retry-delay 2 --retry-connrefused http://127.0.0.1:3333/healthcheck
