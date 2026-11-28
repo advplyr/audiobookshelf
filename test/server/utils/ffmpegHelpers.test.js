@@ -4,7 +4,7 @@ const fileUtils = require('../../../server/utils/fileUtils')
 const fs = require('../../../server/libs/fsExtra')
 const EventEmitter = require('events')
 
-const { generateFFMetadata, addCoverAndMetadataToFile } = require('../../../server/utils/ffmpegHelpers')
+const { generateFFMetadata, addCoverAndMetadataToFile, mergeAudioFiles } = require('../../../server/utils/ffmpegHelpers')
 
 global.isWin = process.platform === 'win32'
 
@@ -245,5 +245,35 @@ describe('addCoverAndMetadataToFile', () => {
 
     // Restore the stub
     sinon.restore()
+  })
+})
+
+describe('mergeAudioFiles', () => {
+  const audioTracks = [{ metadata: { ext: '.mp3', path: '/path/to/book.mp3' } }]
+
+  function createFfmpegStub() {
+    const ffmpegStub = new EventEmitter()
+    ffmpegStub.input = sinon.stub().returnsThis()
+    ffmpegStub.inputOptions = sinon.stub().returnsThis()
+    ffmpegStub.outputOptions = sinon.stub().returnsThis()
+    ffmpegStub.output = sinon.stub().returnsThis()
+    ffmpegStub.run = sinon.stub().callsFake(() => {
+      ffmpegStub.emit('end')
+    })
+    return ffmpegStub
+  }
+
+  it('should encode opus with libopus', async () => {
+    const ffmpegStub = createFfmpegStub()
+    await mergeAudioFiles(audioTracks, 60, '/path/to/cache', '/path/to/out.m4b', { codec: 'opus', bitrate: '64k', channels: 2 }, null, ffmpegStub)
+
+    expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-map 0:a', '-acodec libopus', '-ac 2', '-b:a 64k'])
+  })
+
+  it('should leave other codecs as they are', async () => {
+    const ffmpegStub = createFfmpegStub()
+    await mergeAudioFiles(audioTracks, 60, '/path/to/cache', '/path/to/out.m4b', { codec: 'aac', bitrate: '128k', channels: 2 }, null, ffmpegStub)
+
+    expect(ffmpegStub.outputOptions.getCall(1).args[0]).to.deep.equal(['-map 0:a', '-acodec aac', '-ac 2', '-b:a 128k'])
   })
 })
