@@ -446,7 +446,8 @@ module.exports.getFFMetadataObject = getFFMetadataObject
  */
 async function mergeAudioFiles(audioTracks, duration, itemCachePath, outputFilePath, encodingOptions, progressCB = null, ffmpeg = Ffmpeg()) {
   const audioBitrate = encodingOptions.bitrate || '128k'
-  const audioCodec = encodingOptions.codec || 'aac'
+  // ffmpeg's native opus encoder is experimental, use libopus instead
+  const audioCodec = encodingOptions.codec === 'opus' ? 'libopus' : encodingOptions.codec || 'aac'
   const audioChannels = encodingOptions.channels || 2
 
   // TODO: Updated in 2.2.11 to always encode even if merging multiple m4b. This is because just using the file extension as was being done before is not enough. This can be an option or do more to check if a concat is possible.
