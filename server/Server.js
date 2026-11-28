@@ -1,4 +1,5 @@
 const Path = require('path')
+const Module = require('module')
 const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
@@ -68,6 +69,51 @@ function normalizeBasePath(basePath) {
  * one more `.server` down. Older react clients have no basePath and must keep
  * Express-stripped URLs.
  */
+/**
+ * Next 16's production custom server loads `start-server.js` during prepare().
+ * That file loads `app-info-log.js`, which requires `inspector` at module scope
+ * to print a debugger URL. pkg's Node binary has no inspector, and calling the
+ * real builtin throws ERR_INSPECTOR_NOT_AVAILABLE. Return a stub instead of
+ * calling it. Outside pkg, Next gets the real module.
+ */
+function inspectorStub() {
+  const stub = {
+    url: () => undefined,
+    open() {},
+    close() {},
+    waitForDebugger() {},
+    console
+  }
+  stub.Session = class Session {
+    connect() {}
+    disconnect() {}
+    post(_method, callback) {
+      if (typeof callback === 'function') callback(null, {})
+    }
+  }
+  return stub
+}
+
+function isInspectorRequest(id) {
+  return id === 'inspector' || id === 'node:inspector'
+}
+
+function allowPkgWithoutInspector() {
+  if (!process.pkg || Module.prototype.require.__absInspectorPatched) return
+  const originalRequire = Module.prototype.require
+  const originalLoad = Module._load
+  function requireWithInspectorFallback(id) {
+    if (isInspectorRequest(id)) return inspectorStub()
+    return originalRequire.apply(this, arguments)
+  }
+  requireWithInspectorFallback.__absInspectorPatched = true
+  Module.prototype.require = requireWithInspectorFallback
+  Module._load = function (request, parent, isMain) {
+    if (isInspectorRequest(request)) return inspectorStub()
+    return originalLoad.call(this, request, parent, isMain)
+  }
+}
+
 function getPreparedNextBasePath(nextApp) {
   const nodeServer = nextApp.server?.server
   const basePath = nodeServer?.nextConfig?.basePath
@@ -395,65 +441,43 @@ class Server {
     })
     router.get('/healthcheck', (req, res) => res.sendStatus(200))
 
+    // v3 serves only the React client. REACT_CLIENT_PATH is required.
+    // Next joins process.cwd() with dir. On Windows, path.join does not reset
+    // when dir is an absolute drive path, so the manifest lookup becomes
+    // cwd\D:\client\D:\client\.next\.... Run Next from the client directory
+    // and pass a relative dir.
     const ReactClientPath = process.env.REACT_CLIENT_PATH
-    if (!ReactClientPath) {
-      // Static path to generated nuxt
-      const distPath = Path.join(global.appRoot, '/client/dist')
-      router.use(express.static(distPath))
-
-      // Client dynamic routes
-      const dynamicRoutes = [
-        '/item/:id',
-        '/author/:id',
-        '/audiobook/:id/chapters',
-        '/audiobook/:id/edit',
-        '/audiobook/:id/manage',
-        '/library/:library',
-        '/library/:library/search',
-        '/library/:library/bookshelf/:id?',
-        '/library/:library/authors',
-        '/library/:library/narrators',
-        '/library/:library/stats',
-        '/library/:library/series/:id?',
-        '/library/:library/podcast/search',
-        '/library/:library/podcast/latest',
-        '/library/:library/podcast/download-queue',
-        '/config/users/:id',
-        '/config/users/:id/sessions',
-        '/config/item-metadata-utils/:id',
-        '/collection/:id',
-        '/playlist/:id',
-        '/share/:slug'
-      ]
-      dynamicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
-    } else {
-      // This is for using the experimental Next.js client
-      Logger.info(`Using React client at ${ReactClientPath}`)
-      const nextPath = Path.join(ReactClientPath, 'node_modules/next')
-      const next = require(nextPath)
-      const nextApp = next({ dev: Logger.isDev, dir: ReactClientPath })
-      const handle = nextApp.getRequestHandler()
-      await nextApp.prepare()
-      const nextBasePath = getPreparedNextBasePath(nextApp)
-      if (nextBasePath) {
-        Logger.info(`[Server] Next client basePath is "${nextBasePath}"`)
-      } else {
-        Logger.info(`[Server] Next client has no basePath; leaving Express-stripped URLs as-is`)
-      }
-      router.all('*', (req, res) => {
-        // Next is configured with the same base path as this router, but Express strips the mount
-        // prefix from req.url, so put it back. The bare mount path is passed through without a
-        // trailing slash, which Next would otherwise redirect away from on every request.
-        // Skip when Next has no basePath (older client on master).
-        if (nextBasePath && req.baseUrl) {
-          const queryIndex = req.url.indexOf('?')
-          const pathname = queryIndex === -1 ? req.url : req.url.slice(0, queryIndex)
-          const search = queryIndex === -1 ? '' : req.url.slice(queryIndex)
-          req.url = `${req.baseUrl}${pathname === '/' ? '' : pathname}${search}`
-        }
-        handle(req, res)
-      })
+    if (!String(ReactClientPath || '').trim()) {
+      throw new Error('REACT_CLIENT_PATH is required')
     }
+    const reactClientDir = Path.resolve(ReactClientPath)
+    process.chdir(reactClientDir)
+    Logger.info(`Using React client at ${reactClientDir}`)
+    allowPkgWithoutInspector()
+    const nextPath = Path.join(reactClientDir, 'node_modules', 'next')
+    const next = require(nextPath)
+    const nextApp = next({ dev: Logger.isDev, dir: '.' })
+    const handle = nextApp.getRequestHandler()
+    await nextApp.prepare()
+    const nextBasePath = getPreparedNextBasePath(nextApp)
+    if (nextBasePath) {
+      Logger.info(`[Server] Next client basePath is "${nextBasePath}"`)
+    } else {
+      Logger.info(`[Server] Next client has no basePath; leaving Express-stripped URLs as-is`)
+    }
+    router.all('*', (req, res) => {
+      // Next is configured with the same base path as this router, but Express strips the mount
+      // prefix from req.url, so put it back. The bare mount path is passed through without a
+      // trailing slash, which Next would otherwise redirect away from on every request.
+      // Skip when Next has no basePath (older client on master).
+      if (nextBasePath && req.baseUrl) {
+        const queryIndex = req.url.indexOf('?')
+        const pathname = queryIndex === -1 ? req.url : req.url.slice(0, queryIndex)
+        const search = queryIndex === -1 ? '' : req.url.slice(queryIndex)
+        req.url = `${req.baseUrl}${pathname === '/' ? '' : pathname}${search}`
+      }
+      handle(req, res)
+    })
 
     const unixSocketPrefix = 'unix/'
     if (this.Host?.startsWith(unixSocketPrefix)) {

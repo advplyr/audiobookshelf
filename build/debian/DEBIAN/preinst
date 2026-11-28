@@ -46,19 +46,18 @@ add_group() {
 }
 
 setup_config() {
+  if [ ! -d "$DEFAULT_DATA_DIR" ]; then
+    # Create directory and set permissions
+    echo "Creating default data dir at $DEFAULT_DATA_DIR"
+    mkdir -p "$DEFAULT_DATA_DIR"
+  fi
+  chown 'audiobookshelf:audiobookshelf' "$DEFAULT_DATA_DIR"
+
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
     cat $CONFIG_PATH
 
   else
-
-    if [ ! -d "$DEFAULT_DATA_DIR" ]; then
-      # Create directory and set permissions
-      echo "Creating default data dir at $DEFAULT_DATA_DIR"
-      mkdir "$DEFAULT_DATA_DIR"
-      chown -R 'audiobookshelf:audiobookshelf' "$DEFAULT_DATA_DIR"
-    fi
-
     echo "Creating default config."
 
     config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata

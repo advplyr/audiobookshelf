@@ -12,6 +12,7 @@ Restart=always
 User=audiobookshelf
 Group=audiobookshelf
 Environment=HOME=/var/cache/audiobookshelf
+Environment=REACT_CLIENT_PATH=/usr/share/audiobookshelf/client-react
 CacheDirectory=audiobookshelf
 
 [Install]
